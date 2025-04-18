@@ -1,0 +1,10 @@
+{
+    "security": "Security",
+    "biometrics": "Biometrics",
+    "unlock_app": "Unlock the app using your face {\n} or your fingerprint",
+    "notifications": "Notifications",
+    "ensure_notifications": "Make sure you have enabled notifications in the settings of your device",
+    "switch_on": "On",
+    "switch_off": "Off"
+  }
+  
