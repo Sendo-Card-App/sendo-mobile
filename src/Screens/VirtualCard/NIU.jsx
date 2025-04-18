@@ -2,7 +2,7 @@ import { View, Text, Image, TouchableOpacity, Dimensions } from "react-native";
 import React from "react";
 import { AntDesign, Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
-import TopLogo from "../../Images/TopLogo.png";
+import TopLogo from "../../images/TopLogo.png";
 
 const NIU = ({ navigation }) => {
   const { width } = Dimensions.get("screen");
@@ -38,7 +38,7 @@ const NIU = ({ navigation }) => {
 
         {/* Placeholder for Document Upload/Image */}
         <Image
-          source={require("../../Images/DGI.png")} // Placeholder image
+          source={require("../../images/DGI.png")} // Placeholder image
           className="w-[80%] mx-auto mt-2"
           style={{ height: width / 1.77 }}
           resizeMode="center"

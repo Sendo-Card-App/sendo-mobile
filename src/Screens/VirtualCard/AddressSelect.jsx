@@ -1,7 +1,7 @@
 import { View, Text, Image, TouchableOpacity, ScrollView, Dimensions } from "react-native";
 import React from "react";
 import KycTab from "../../components/KycTab";
-import TopLogo from "../../Images/TopLogo.png";
+import TopLogo from "../../images/TopLogo.png";
 import { AntDesign, Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 
@@ -57,7 +57,7 @@ const AddressSelect = ({ navigation }) => {
                 >
                     <View className="flex-row items-center bg-gray-200 rounded-lg p-3">
                     <Image
-                        source={require("../../Images/Localisation.png")} // Placeholder image
+                        source={require("../../images/Localisation.png")} // Placeholder image
                         className="w-[80%] mx-auto"
                         style={{ height: width * 0.45 }} // Responsive height based on width
                         resizeMode="contain" // Ensure the image scales correctly
@@ -73,7 +73,7 @@ const AddressSelect = ({ navigation }) => {
                 >
                     <View className="flex-row items-center bg-gray-200 rounded-lg p-3">
                     <Image
-                        source={require("../../Images/Facture.png")} // Placeholder image
+                        source={require("../../images/Facture.png")} // Placeholder image
                         className="w-[80%] mx-auto"
                         style={{ height: width * 0.45 }} // Responsive height based on width
                         resizeMode="contain" // Ensure the image scales correctly

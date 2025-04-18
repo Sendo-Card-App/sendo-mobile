@@ -1,6 +1,6 @@
 import { View, Text, Image, TouchableOpacity, Dimensions, Alert } from "react-native";
 import React, { useState } from "react";
-import TopLogo from "../../Images/TopLogo.png";
+import TopLogo from "../../images/TopLogo.png";
 import { AntDesign, Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 
@@ -22,7 +22,7 @@ const IdentityVerification = ({ navigation }) => {
 
     // Launch image picker for selecting a document
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ImagePicker.MediaTypeOptions.images,
       allowsEditing: false,
       aspect: [4, 3],
       quality: 1,

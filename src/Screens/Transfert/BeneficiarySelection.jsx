@@ -12,10 +12,10 @@ import {
 import { AntDesign } from '@expo/vector-icons';
 import Ionicons from "@expo/vector-icons/Ionicons";
 import MaterialIcons from '@expo/vector-icons/Feather';
-import HomeImage from "../../Images/HomeImage2.png";
-import button from "../../Images/ButtomLogo.png";
-import Cameroon from "../../Images/Cameroon.png";
-import Canada from "../../Images/Canada.png";
+import HomeImage from "../../images/HomeImage2.png";
+import button from "../../images/ButtomLogo.png";
+import Cameroon from "../../images/Cameroon.png";
+import Canada from "../../images/Canada.png";
 import { useNavigation } from '@react-navigation/native';
 
 const BeneficiarySelection = () => {

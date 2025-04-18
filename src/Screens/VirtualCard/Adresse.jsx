@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Image, ScrollView, ImageBackground, Dimensions } from 'react-native';
-import TopLogo from "../../Images/TopLogo.png";
-import BG from "../../Images/BG.jpg"; // Update with your background image path
+import TopLogo from "../../images/TopLogo.png";
+import BG from "../../images/BG.jpg"; // Update with your background image path
 import { AntDesign, Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 
@@ -15,7 +15,7 @@ const Addresse = ({ navigation }) => {
       <View className="flex-1 justify-center items-center">
         <View className="bg-white bg-opacity-80 p-6 rounded-lg shadow-lg w-11/12 max-w-md">
           <Image
-            source={require("../../Images/Localisation.png")} // Placeholder image
+            source={require("../../images/Localisation.png")} // Placeholder image
             style={{
               width: "100%", // Make the image responsive
               height: width * 0.45, // Set height based on width for aspect ratio

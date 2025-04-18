@@ -11,9 +11,9 @@ import React, { useState } from "react";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons, Entypo } from "@expo/vector-icons";
-import ButtomLogo from "../../Images/ButtomLogo.png";
-import HomeImage1 from "../../Images/HomeImage1.png";
-import HomeImage2 from "../../Images/HomeImage2.png";
+import ButtomLogo from "../../images/ButtomLogo.png";
+import HomeImage1 from "../../images/HomeImage1.png";
+import HomeImage2 from "../../images/HomeImage2.png";
 import { useNavigation } from "@react-navigation/native";
 
 const Home = () => {

@@ -1,6 +1,6 @@
 import { View, Text, FlatList, Image } from "react-native";
 import React from "react";
-import OrangeMoney from "../../Images/om.png";
+import OrangeMoney from "../../images/om.png";
 const HistoryCard = () => {
   return (
     <View className="border p-4 mx-5 my-2 rounded-3xl border-gray-500">

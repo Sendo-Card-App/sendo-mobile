@@ -35,8 +35,8 @@ const Auth = () => {
   const [isToggled, setIsToggled] = useState(false);
 
   // Icons to toggle between
-  const firstIcon = require("../../Images/Artboard 1.png");
-  const secondIcon = require("../../Images/Artboard 2 copy 2.png");
+  const firstIcon = require("../../images/Artboard 1.png");
+  const secondIcon = require("../../images/Artboard 2 copy 2.png");
   const [isLogin, setIsLogin] = useState(true);
 
   // Shared States
@@ -189,7 +189,7 @@ const Auth = () => {
             />
           </TouchableOpacity>
           <Image
-            source={require("../../Images/LogoSendo.png")}
+            source={require("../../images/LogoSendo.png")}
             className="mt-3 mb-3 w-28 h-28"
           />
 
@@ -240,13 +240,13 @@ const Auth = () => {
                   <TouchableOpacity onPress={ signInFacebook}>
                     <Image
                       className="w-28 h-28 "
-                      source={require("../../Images/Artboard 2.png")}
+                      source={require("../../images/Artboard 2.png")}
                     />
                   </TouchableOpacity>
                   <TouchableOpacity onPress={signInGoogle}>
                     <Image
                       className="w-28 h-28 "
-                      source={require("../../Images/Artboard 3.png")}
+                      source={require("../../images/Artboard 3.png")}
                     />
                   </TouchableOpacity>
                 </View>
@@ -341,7 +341,7 @@ const Auth = () => {
                   <View className="w-9/12 bg-[white] items-center p-6 rounded-xl shadow-md">
                     <Image
                       className="w-40 h-40 "
-                      source={require("../../Images/Artboard 5.png")}
+                      source={require("../../images/Artboard 5.png")}
                     />
                     <Text className="mb-4 text-lg text-gray-800 opacity-40">
                       Enter 4 Digits code

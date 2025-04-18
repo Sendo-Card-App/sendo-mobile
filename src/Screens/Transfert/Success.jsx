@@ -4,7 +4,7 @@ import { StatusBar } from "expo-status-bar";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import Entypo from "@expo/vector-icons/Entypo";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import ButtomLogo from "../../Images/ButtomLogo.png";
+import ButtomLogo from "../../images/ButtomLogo.png";
 import { useNavigation } from "@react-navigation/native";
 
 const Success = () => {

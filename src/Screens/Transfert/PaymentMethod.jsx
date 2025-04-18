@@ -3,11 +3,11 @@ import { View, Text, TouchableOpacity, FlatList, Image, StatusBar } from 'react-
 import { AntDesign } from '@expo/vector-icons';
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { MaterialIcons } from '@expo/vector-icons';
-import HomeImage from "../../Images/HomeImage2.png";
-import button from "../../Images/ButtomLogo.png";
-import RoyalBank from "../../Images/RoyalBank.png"; // Make sure to import your images
-import om from "../../Images/om.png"; // Import respective logos
-import mtn from "../../Images/mtn.png"; // Import respective logos
+import HomeImage from "../../images/HomeImage2.png";
+import button from "../../images/ButtomLogo.png";
+import RoyalBank from "../../images/RoyalBank.png"; // Make sure to import your images
+import om from "../../images/om.png"; // Import respective logos
+import mtn from "../../images/mtn.png"; // Import respective logos
 import { useNavigation } from '@react-navigation/native';
 
 const PaymentMethod = () => {

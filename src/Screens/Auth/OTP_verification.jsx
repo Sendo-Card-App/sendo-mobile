@@ -12,7 +12,7 @@ import {
 const OTP_verification = () => {
 <SafeAreaView className="bg-[#000000] flex-1 items-center justify-center">
         <Image
-              source={require('../../Images/Artboard_5.png')} // Path to your arrow image
+              source={require('../../images/Artboard_5.png')} // Path to your arrow image
               
             />
 </SafeAreaView>    

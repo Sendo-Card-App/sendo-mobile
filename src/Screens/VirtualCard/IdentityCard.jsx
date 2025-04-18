@@ -1,7 +1,7 @@
 import { View, Text, Image, TouchableOpacity, ScrollView, Alert } from "react-native";
 import React, { useState } from "react";
 import KycTab from "../../components/KycTab";
-import TopLogo from "../../Images/TopLogo.png";
+import TopLogo from "../../images/TopLogo.png";
 import { AntDesign, Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 

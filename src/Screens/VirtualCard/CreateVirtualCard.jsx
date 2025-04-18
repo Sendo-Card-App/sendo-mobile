@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import React from "react";
-import Card from "../../Images/VirtualCard.png";
+import Card from "../../images/VirtualCard.png";
 import { useNavigation } from "@react-navigation/native";
 const CreateVirtualCard = () => {
   const navigation = useNavigation();

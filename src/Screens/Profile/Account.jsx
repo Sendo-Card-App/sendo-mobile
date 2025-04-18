@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import React from "react";
 import { AntDesign, EvilIcons } from "@expo/vector-icons";
-import Avatar from "../../Images/Avatar.png";
+import Avatar from "../../images/Avatar.png";
 import KeyboardAvoidinWrapper from "../../components/KeyboardAvoidinWrapper";
 
 const Account = () => {

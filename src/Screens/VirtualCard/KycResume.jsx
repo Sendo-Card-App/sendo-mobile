@@ -1,6 +1,6 @@
 import { View, Text, TouchableOpacity, Image, FlatList } from "react-native";
 import React from "react";
-import TopLogo from "../../Images/TopLogo.png";
+import TopLogo from "../../images/TopLogo.png";
 import {
   AntDesign,
   Entypo,

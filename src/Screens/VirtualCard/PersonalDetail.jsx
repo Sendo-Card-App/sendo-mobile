@@ -1,6 +1,6 @@
 import { View, Text, TouchableOpacity,Image, ScrollView, CheckBox , TextInput, StatusBar, Modal } from "react-native";
 import React, { useState } from "react";
-import TopLogo from "../../Images/TopLogo.png";
+import TopLogo from "../../images/TopLogo.png";
 import { AntDesign, Ionicons } from "@expo/vector-icons";
 
 const PersonalDetail = ({ navigation }) => {
