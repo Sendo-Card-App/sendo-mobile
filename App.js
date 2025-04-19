@@ -43,6 +43,7 @@ import AddressSelect from "./src/screens/VirtualCard/AddressSelect";
 import AddressConfirm from "./src/screens/VirtualCard/AddressConfirm";
 import Address from "./src/screens/Transfert/Address";
 import Camera from "./src/screens/VirtualCard/Camera";
+import ChangePassword from "./src/screens/Setting/ChangePassword";
 
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -71,6 +72,7 @@ function RootStack() {
       <Stack.Screen name="AboutUs" component={AboutUs} options={{ headerTitle: "À propos de nous" }} />
       <Stack.Screen name="BeneficiaryDetails" component={BeneficiaryDetails}   options={{headerShown: false }} />
       <Stack.Screen name="Settings" component={Settings} options={{ headerTitle: "Paramètres" }} />
+      <Stack.Screen name="ChangePassword" component={ChangePassword} options={{ headerTitle: "Changer le mot de passe" }} />
       <Stack.Screen name="PaymentMethod" component={PaymentMethod} options={{ headerShown: false }} />
       <Stack.Screen name="Curency" component={Curency} options={{ headerShown: false }} />
       

@@ -18,6 +18,11 @@ import {
 
 const DrawerComponent = ({ navigation }) => {
   const navigation2 = useNavigation();
+
+  const handleLogout = () => {
+
+  };
+
   return (
     <SafeAreaView className="flex-1">
       {/* The upper Green section  */}
@@ -36,7 +41,7 @@ const DrawerComponent = ({ navigation }) => {
       </View>
       {/* Lower section */}
       <View className="flex-1 mx-8">
-        {/*  */}
+        {/* Bonus Section */}
         <View className="border-b border-gray-400 py-3">
           <Text className="font-bold text-gray-600">
             Bonus de 5,00 CAD gratuit
@@ -46,20 +51,17 @@ const DrawerComponent = ({ navigation }) => {
             premier transfert. Des exigences d’envoi minimales peuvent
             s’appliquer. Sous réserve de conditions.
           </Text>
-
           <Text className="text-sm text-gray-500">
             Votre code: <Text className="font-bold">ANDRE237</Text>
           </Text>
-
           <View className="flex-row gap-2 items-center mt-2">
             <EvilIcons name="share-google" size={24} color="#7ddd7d" />
             <Text className="text-[#7ddd7d] font-bold">INVITER VOS AMIS</Text>
           </View>
         </View>
 
-        {/* Part 2 */}
+        {/* Navigation Items */}
         <ScrollView className="py-4" showsVerticalScrollIndicator={false}>
-          {/* One1 */}
           <TouchableOpacity
             className="flex-row gap-2 my-2 items-center"
             onPress={() => navigation2.navigate("MonSolde")}
@@ -73,7 +75,7 @@ const DrawerComponent = ({ navigation }) => {
               <Text className="font-bold text-gray-500">Mon solde</Text>
             </View>
           </TouchableOpacity>
-          {/* One */}
+          {/* More navigation items */}
           <TouchableOpacity
             className="flex-row gap-2 my-2"
             onPress={() => navigation2.navigate("History")}
@@ -90,7 +92,6 @@ const DrawerComponent = ({ navigation }) => {
               </Text>
             </View>
           </TouchableOpacity>
-          {/* Two */}
           <TouchableOpacity
             className="flex-row gap-2 my-2"
             onPress={() => navigation2.navigate("PayBill")}
@@ -110,7 +111,7 @@ const DrawerComponent = ({ navigation }) => {
               </Text>
             </View>
           </TouchableOpacity>
-          {/* Three */}
+          {/* Additional navigation items */}
           <TouchableOpacity
             className="flex-row gap-2 my-2"
             onPress={() => navigation2.navigate("Account")}
@@ -127,10 +128,9 @@ const DrawerComponent = ({ navigation }) => {
               </Text>
             </View>
           </TouchableOpacity>
-          {/* Four */}
           <TouchableOpacity
-            className="flex-row gap-2 my-2"
             onPress={() => navigation2.navigate("Payment")}
+            className="flex-row gap-2 my-2"
           >
             <MaterialCommunityIcons
               name="bank-outline"
@@ -144,10 +144,9 @@ const DrawerComponent = ({ navigation }) => {
               </Text>
             </View>
           </TouchableOpacity>
-          {/* Five */}
           <TouchableOpacity
-            onPress={() => navigation2.navigate("Settings")}
             className="flex-row gap-2 my-2"
+            onPress={() => navigation2.navigate("Settings")}
           >
             <AntDesign
               name="setting"
@@ -159,7 +158,6 @@ const DrawerComponent = ({ navigation }) => {
               <Text className="text-sm text-gray-500">Options & securite</Text>
             </View>
           </TouchableOpacity>
-          {/* Six */}
           <TouchableOpacity
             className="flex-row gap-2 my-2"
             onPress={() => navigation2.navigate("Support")}
@@ -176,8 +174,6 @@ const DrawerComponent = ({ navigation }) => {
               </Text>
             </View>
           </TouchableOpacity>
-          {/* seven */}
-
           <TouchableOpacity
             className="flex-row gap-2 my-2"
             onPress={() => navigation2.navigate("AboutUs")}
@@ -188,16 +184,30 @@ const DrawerComponent = ({ navigation }) => {
               color="gray"
             />
             <View>
-              <Text className="font-bold text-gray-500">A propos de nous</Text>
+              <Text className="font-bold text-gray-500">À propos de nous</Text>
               <Text className="text-sm text-gray-500 pr-8">
-                Mentions le gales et conditions d'utilisation
+                Mentions légales et conditions d'utilisation
               </Text>
             </View>
           </TouchableOpacity>
         </ScrollView>
       </View>
+
+      {/* Logout Button */}
+      <View className="mx-8 border-t border-gray-400 pt-4 items-center">
+        <TouchableOpacity 
+          onPress={handleLogout}
+          className="flex-row gap-2 items-center"
+          style={{ justifyContent: 'center' }} // Ensure items are centered
+        >
+          <AntDesign name="logout" size={24} color="gray" />
+          <Text className="font-bold text-gray-500">Déconnexion</Text>
+        </TouchableOpacity>
+      </View>
+
+      
       <Text
-        className="text-center  text-gray-400 text-sm"
+        className="text-center text-gray-400 text-sm font-bold mt-2"
         style={{ paddingBottom: Platform.OS === "ios" ? 32 : 20 }}
       >
         Sendo App V1.0.1
