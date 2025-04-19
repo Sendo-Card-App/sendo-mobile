@@ -1,0 +1,122 @@
+import "./global.css";
+import { TouchableOpacity } from "react-native";
+import { NavigationContainer, useNavigation } from "@react-navigation/native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { createDrawerNavigator } from "@react-navigation/drawer";
+import { Ionicons, AntDesign } from "@expo/vector-icons";
+import './i18n'; // Import i18next
+// 🧠 Redux
+import { Provider } from "react-redux";
+import { store } from "./src/store/store";
+
+// screens & Components
+import Home from "./src/screens/Home/Home";
+import Auth from "./src/screens/Auth/Auth";
+import BeneficiarySelection from "./src/screens/Transfert/BeneficiarySelection";
+import BeneficiaryDetails from "./src/screens/Transfert/BeneficiaryDetails";
+import BankCard from "./src/screens/VirtualCard/BankCard";
+import BankCard1 from "./src/screens/Transfert/BankCard1";
+import ConﬁrmeTheTransfer from "./src/screens/Transfert/ConﬁrmeTheTransfer";
+import Success from "./src/screens/Transfert/Success";
+import AboutUs from "./src/screens/Setting/AboutUs";
+import BeneficiaryScreen from "./src/screens/Transfert/BeneficiaryScreen";
+import Curency from "./src/screens/Transfert/Curency";
+import PaymentMethod from "./src/screens/Transfert/PaymentMethod";
+import Support from "./src/screens/Setting/Support";
+import Payment from "./src/screens/VirtualCard/Payment";
+import DrawerComponent from "./src/components/DrawerComponent";
+import History from "./src/screens/VirtualCard/History";
+import Account from "./src/screens/Profile/Account";
+import Settings from "./src/screens/Setting/Settings";
+import MonSolde from "./src/screens/Solde/MonSolde";
+import CreateVirtualCard from "./src/screens/VirtualCard/CreateVirtualCard";
+import VerifyIdentity from "./src/screens/VirtualCard/VerifyIdentity";
+import ManageVirtualCard from "./src/screens/VirtualCard/ManageVirtualCard";
+import KycResume from "./src/screens/VirtualCard/KycResume";
+import KycSelfie from "./src/screens/VirtualCard/KycSelfie";
+import PersonalDetail from "./src/screens/VirtualCard/PersonalDetail";
+import NIU from "./src/screens/VirtualCard/NIU";
+import Addresse from "./src/screens/VirtualCard/Adresse";
+import IdentityCard from "./src/screens/VirtualCard/IdentityCard";
+import IdentityVerification from "./src/screens/VirtualCard/IdentityVerification";
+import AddressSelect from "./src/screens/VirtualCard/AddressSelect";
+import AddressConfirm from "./src/screens/VirtualCard/AddressConfirm";
+import Address from "./src/screens/Transfert/Address";
+import Camera from "./src/screens/VirtualCard/Camera";
+import ChangePassword from "./src/screens/Setting/ChangePassword";
+
+const Stack = createNativeStackNavigator();
+const Drawer = createDrawerNavigator();
+
+function RootStack() {
+  const navigation = useNavigation();
+  return (
+    <Stack.Navigator
+      initialRouteName="Home"
+      screenOptions={({ navigation }) => ({
+        headerStyle: { backgroundColor: "#7ddd7d" },
+        headerTitleStyle: { fontSize: 18, fontWeight: 10, color: "white" },
+        headerTitleAlign: "center",
+        headerLeft: () => (
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <AntDesign name="arrowleft" size={20} color="white" className="p-3" />
+          </TouchableOpacity>
+        ),
+      })}
+    >
+      <Stack.Screen name="Auth" component={Auth} options={{ headerShown: false }} />
+      <Stack.Screen name="Account" component={Account} options={{ headerTitle: "Compte" }} />
+      <Stack.Screen name="Home" component={Home} options={{ headerShown: false }} />
+      <Stack.Screen name="BeneficiaryScreen" component={BeneficiaryScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="BeneficiarySelection" component={BeneficiarySelection}  options={{headerShown: false }}/>
+      <Stack.Screen name="AboutUs" component={AboutUs} options={{ headerTitle: "À propos de nous" }} />
+      <Stack.Screen name="BeneficiaryDetails" component={BeneficiaryDetails}   options={{headerShown: false }} />
+      <Stack.Screen name="Settings" component={Settings} options={{ headerTitle: "Paramètres" }} />
+      <Stack.Screen name="ChangePassword" component={ChangePassword} options={{ headerTitle: "Changer le mot de passe" }} />
+      <Stack.Screen name="PaymentMethod" component={PaymentMethod} options={{ headerShown: false }} />
+      <Stack.Screen name="Curency" component={Curency} options={{ headerShown: false }} />
+      
+    
+      <Stack.Screen name="BankCard" component={BankCard} options={{ headerShown: false }} />
+      <Stack.Screen name="BankCard1" component={BankCard1} options={{ headerShown: false }} />
+      <Stack.Screen name="ConﬁrmeTheTransfer" component={ConﬁrmeTheTransfer} options={{ headerShown: false }} />
+      <Stack.Screen name="Success" component={Success} options={{ headerShown: false }} />
+      <Stack.Screen name="Support" component={Support} />
+      <Stack.Screen name="Payment" component={Payment}  />
+      <Stack.Screen name="History" component={History} />
+      <Stack.Screen name="MonSolde" component={MonSolde} options={{ headerTitle: "Mon Solde" }} />
+      <Stack.Screen name="CreateVirtualCard" component={CreateVirtualCard} options={{ headerTitle: "Créer une carte virtuelle" }} />
+      <Stack.Screen name="VerifyIdentity" component={VerifyIdentity} options={{ headerShown: false }} />
+      <Stack.Screen name="ManageVirtualCard" component={ManageVirtualCard} options={{ headerShown: false }} />
+      <Stack.Screen name="KycResume" component={KycResume} options={{ headerShown: false }} />
+      <Stack.Screen name="KycSelfie" component={KycSelfie} options={{ headerShown: false }} />
+      <Stack.Screen name="PersonalDetail" component={PersonalDetail} options={{ headerShown: false }} />
+      <Stack.Screen name="NIU" component={NIU} options={{ headerShown: false }} />
+      <Stack.Screen name="Addresse" component={Addresse} options={{ headerShown: false }} />
+      <Stack.Screen name="IdentityCard" component={IdentityCard} options={{ headerShown: false }} />
+      <Stack.Screen name="IdentityVerification" component={IdentityVerification} options={{ headerShown: false }} />
+      <Stack.Screen name="AddressSelect" component={AddressSelect} options={{ headerShown: false }} />
+      <Stack.Screen name="AddressConfirm" component={AddressConfirm} options={{ headerShown: false }} />
+      <Stack.Screen name="Address" component={Address} options={{ headerShown: false }} />
+      <Stack.Screen name="Camera" component={Camera} options={{ headerShown: false }} />
+    </Stack.Navigator>
+  );
+}
+
+function DrawerNavigator() {
+  return (
+    <Drawer.Navigator drawerContent={(props) => <DrawerComponent {...props} />}>
+      <Drawer.Screen name="HomeStack" component={RootStack} options={{ headerShown: false }} />
+    </Drawer.Navigator>
+  );
+}
+
+export default function App() {
+  return (
+    <Provider store={store}>
+      <NavigationContainer>
+        <DrawerNavigator />
+      </NavigationContainer>
+    </Provider>
+  );
+}
