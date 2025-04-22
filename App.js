@@ -1,4 +1,5 @@
 import "./global.css";
+import { Colors } from './src/constants/colors';
 import { TouchableOpacity } from "react-native";
 import { NavigationContainer, useNavigation } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
@@ -57,21 +58,19 @@ const Drawer = createDrawerNavigator();
 function RootStack() {
   const navigation = useNavigation();
   return (
-    <Stack.Navigator
-      initialRouteName="LogIn"
-
-     Stashed changes
-      screenOptions={({ navigation }) => ({
-        headerStyle: { backgroundColor: "#7ddd7d" },
-        headerTitleStyle: { fontSize: 18, fontWeight: 10, color: "white" },
-        headerTitleAlign: "center",
-        headerLeft: () => (
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <AntDesign name="arrowleft" size={20} color="white" className="p-3" />
-          </TouchableOpacity>
-        ),
-      })}
-    >
+      <Stack.Navigator
+        initialRouteName="LogIn"
+        screenOptions={({ navigation }) => ({
+          headerStyle: { backgroundColor: Colors.primary },
+          headerTitleStyle: { fontSize: 18, fontWeight: "bold", color: Colors.text },
+          headerTitleAlign: "center",
+          headerLeft: () => (
+            <TouchableOpacity onPress={() => navigation.goBack()}>
+              <AntDesign name="arrowleft" size={20} color={Colors.text} className="p-3" />
+            </TouchableOpacity>
+          ),
+        })}
+      >
 
       <Stack.Screen name="LogIn" component={LogIn} options={{ headerShown: false }} />
       <Stack.Screen name="SignIn" component={SignIn} options={{ headerShown: false }} />

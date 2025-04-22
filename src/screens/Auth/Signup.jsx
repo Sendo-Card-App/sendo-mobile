@@ -1,15 +1,16 @@
+import 'react-native-get-random-values';
 import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
-  Alert,
   SafeAreaView,
   StatusBar,
   Image,
   ActivityIndicator,
 } from "react-native";
+import Loader from "../../components/Loader";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from "@react-navigation/native";
 import { AntDesign } from "@expo/vector-icons";
@@ -23,13 +24,15 @@ import {
   resetSignupState,
 } from "../../features/Auth/authSlice";
 import { useTranslation } from "react-i18next";
+import { parsePhoneNumberFromString } from 'libphonenumber-js'; // Importing the method for phone number parsing
+import SweetAlert from 'react-native-sweet-alert'; // Import SweetAlert
 
 const Signup = () => {
   const { t } = useTranslation();
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const [register, { isLoading }] = useRegisterMutation();
-  const { error,  isSignupSuccess  } = useSelector((state) => state.auth);
+  const { error, isSignupSuccess } = useSelector((state) => state.auth);
 
   const [isToggled, setIsToggled] = useState(false);
   const firstIcon = require("../../images/Artboard 1.png");
@@ -52,11 +55,6 @@ const Signup = () => {
     phone: "",
     address: "",
   });
-
-  const isValidPhone = (phone) => {
-    const prefix = isToggled ? "+1" : "+237";
-    return phone.startsWith(prefix) || /^\d+$/.test(phone);
-  };
 
   const isValidEmail = (email) => {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -97,6 +95,12 @@ const Signup = () => {
     validateField(name, value);
   };
 
+  const isValidPhone = (phone) => {
+    const countryCode = isToggled ? 'US' : 'CM'; // Set the country code based on the toggle
+    const phoneNumber = parsePhoneNumberFromString(phone, countryCode);
+    return phoneNumber && phoneNumber.isValid(); // Check if the parsed phone number is valid
+  };
+
   const handleSignup = async () => {
     const isFirstNameValid = validateField("firstName", signupDetails.firstName);
     const isLastNameValid = validateField("lastName", signupDetails.lastName);
@@ -104,17 +108,19 @@ const Signup = () => {
     const isPhoneValid = validateField("phone", signupDetails.phone);
     const isPasswordValid = validateField("password", signupDetails.password);
     const isAddressValid = validateField("address", signupDetails.address);
-  
+    
+    // Format the phone according to the valid phone number
+    const phoneNumber = parsePhoneNumberFromString(signupDetails.phone, isToggled ? 'US' : 'CM');
+    
     const payload = {
       firstname: signupDetails.firstName,
       lastname: signupDetails.lastName,
       email: signupDetails.email,
       password: signupDetails.password,
-      phone: isToggled ? `+1${signupDetails.phone}` : `+237${signupDetails.phone}`,
+      phone: phoneNumber ? phoneNumber.number : signupDetails.phone, // Use the formatted phone number
       address: signupDetails.address,
     };
-  
-  
+
     if (
       !isFirstNameValid ||
       !isLastNameValid ||
@@ -127,7 +133,7 @@ const Signup = () => {
     }
   
     try {
-      dispatch(signupStart({ phone: signupDetails.phone }));
+      dispatch(signupStart({ phone: payload.phone }));
       const response = await register(payload).unwrap();
       // Store the access token if it exists in the response
       if (response.accessToken) {
@@ -135,8 +141,6 @@ const Signup = () => {
       }
       dispatch(signupSuccess(response));
     } catch (err) {
-     
-      
       // Create a serializable error object
       const errorData = {
         message: err?.data?.message || "Registration failed",
@@ -152,8 +156,13 @@ const Signup = () => {
         else if (err.data.message.includes("phone")) errorMessage = "This phone is already used.";
         else errorMessage = err.data.message;
       }
-  
-      Alert.alert(t("error"), errorMessage);
+
+      SweetAlert.showAlertWithOptions({
+        title: t("error"),
+        subTitle: errorMessage,
+        style: "error",
+        confirmButtonText: "OK",
+      });
     }
   };
 
@@ -163,7 +172,12 @@ const Signup = () => {
 
   useEffect(() => {
     if (isSignupSuccess) {
-      Alert.alert(t("success"), t("signup.successMessage"));
+      SweetAlert.showAlertWithOptions({
+        title: t("success"),
+        subTitle: t("signup.successMessage"),
+        style: "success",
+        confirmButtonText: "OK",
+      });
       setTimeout(() => {
         navigation.navigate("OtpVerification");
       }, 2000);
@@ -277,20 +291,6 @@ const Signup = () => {
             </Text>
           )}
 
-          {/* Password */}
-          <TextInput
-            placeholder={t("signup.password")}
-            value={signupDetails.password}
-            onChangeText={(text) => handleChange("password", text)}
-            secureTextEntry
-            className="border-[#fff] bg-[#ffffff] rounded-3xl mb-8 py-5 text-center"
-          />
-          {validationErrors.password && (
-            <Text className="text-red-500 text-xs mb-5 text-center">
-              {validationErrors.password}
-            </Text>
-          )}
-
           {/* Submit Button */}
           <TouchableOpacity
             onPress={handleSignup}
@@ -298,7 +298,7 @@ const Signup = () => {
             className={`border-[#7ddd7d] border-2 bg-[#7ddd7d] rounded-3xl p-4 items-center justify-center ${isLoading ? "opacity-60" : ""}`}
           >
             {isLoading ? (
-              <ActivityIndicator color="white" />
+              <Loader />  
             ) : (
               <Text className="font-bold text-center">{t("signup.buttonText")}</Text>
             )}

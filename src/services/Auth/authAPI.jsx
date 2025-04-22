@@ -1,51 +1,43 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Helper functions for token management
-const getAccessToken = async () => {
-  try {
-    return await AsyncStorage.getItem('@accessToken');
-  } catch (error) {
-    console.error('Error getting access token:', error);
-    return null;
-  }
+// Constantes pour les endpoints
+const AUTH_ENDPOINTS = {
+  REGISTER: '/auth/register',
+  VERIFY_OTP: '/auth/otp/verify',
+  SEND_OTP: '/auth/otp/send',
+  REFRESH_TOKEN: '/auth/refresh-token',
+  LOGIN: '/auth/login',
+  FORGOT_PASSWORD: '/auth/forgot-password',
+  RESET_PASSWORD: '/auth/reset-password',
+  PROFILE: '/auth/me',
+  LOGOUT: '/auth/logout'
 };
 
-const setAccessToken = async (token) => {
-  try {
-    await AsyncStorage.setItem('@accessToken', token);
-  } catch (error) {
-    console.error('Error setting access token:', error);
-  }
-};
-
-const clearAccessToken = async () => {
-  try {
-    await AsyncStorage.removeItem('@accessToken');
-  } catch (error) {
-    console.error('Error clearing access token:', error);
-  }
+// Tags pour le cache
+const TAG_TYPES = {
+  AUTH: 'Auth',
+  SESSIONS: 'Sessions',
+  PROFILE: 'Profile'
 };
 
 export const authApi = createApi({
   reducerPath: 'authApi',
   baseQuery: fetchBaseQuery({ 
     baseUrl: 'http://217.65.146.204:3000/api',
-    prepareHeaders: async (headers) => {
-      // Add authorization header if token exists
-      const token = await getAccessToken();
+    prepareHeaders: (headers, { getState }) => {
+      const token = getState().auth.accessToken;
       if (token) {
         headers.set('Authorization', `Bearer ${token}`);
       }
       return headers;
     }
   }),
-  tagTypes: ['Auth', 'Sessions'],
+  tagTypes: Object.values(TAG_TYPES),
   endpoints: (builder) => ({
-    // Registration Endpoints
+    // Endpoint d'enregistrement
     register: builder.mutation({
       query: (userData) => ({
-        url: '/auth/register',
+        url: AUTH_ENDPOINTS.REGISTER,
         method: 'POST',
         body: {
           firstname: userData.firstname,
@@ -56,69 +48,50 @@ export const authApi = createApi({
           address: userData.address,
         }
       }),
-      transformResponse: async (response) => {
-        // Store token on successful registration
-        if (response.accessToken) {
-          await setAccessToken(response.accessToken);
-        }
-        return response;
-      },
-      invalidatesTags: ['Auth']
+      invalidatesTags: [TAG_TYPES.AUTH]
     }),
 
-    // OTP Endpoints
+    // Endpoints OTP
     verifyOtp: builder.mutation({
       query: ({ phone, code }) => ({
-        url: '/auth/otp/verify',
+        url: AUTH_ENDPOINTS.VERIFY_OTP,
         method: 'POST',
-        body: { phone, code}
+        body: { phone, code }
       }),
-
+      invalidatesTags: [TAG_TYPES.AUTH]
     }),
 
     resendOtp: builder.mutation({
-      query: (phone) => ({
-        url: '/auth/otp/send',
+      query: ({ phone, deviceId }) => ({
+        url: AUTH_ENDPOINTS.SEND_OTP,
         method: 'POST',
-        body: { phone }
+        body: { phone, deviceId }
       })
     }),
 
-    // Login Endpoints
+    // Endpoints de connexion
     loginWithPhone: builder.mutation({
       query: ({ phone, deviceId }) => ({
-        url: '/auth/refresh-token',
+        url: AUTH_ENDPOINTS.REFRESH_TOKEN,
         method: 'POST',
         body: { phone, deviceId }
       }),
-      transformResponse: async (response) => {
-        if (response.accessToken) {
-          await setAccessToken(response.accessToken);
-        }
-        return response;
-      },
-      invalidatesTags: ['Auth']
+      invalidatesTags: [TAG_TYPES.AUTH]
     }),
 
     loginWithEmail: builder.mutation({
       query: ({ email, password, deviceId }) => ({
-        url: '/auth/login',
+        url: AUTH_ENDPOINTS.LOGIN,
         method: 'POST',
         body: { email, password, deviceId }
       }),
-      transformResponse: async (response) => {
-        if (response.accessToken) {
-          await setAccessToken(response.accessToken);
-        }
-        return response;
-      },
-      invalidatesTags: ['Auth']
+      invalidatesTags: [TAG_TYPES.AUTH]
     }),
 
-    // Password Recovery
+    // Récupération de mot de passe
     forgotPassword: builder.mutation({
       query: (email) => ({
-        url: '/auth/forgot-password',
+        url: AUTH_ENDPOINTS.FORGOT_PASSWORD,
         method: 'POST',
         body: { email }
       })
@@ -126,78 +99,43 @@ export const authApi = createApi({
 
     resetPassword: builder.mutation({
       query: ({ token, newPassword }) => ({
-        url: '/auth/reset-password',
+        url: AUTH_ENDPOINTS.RESET_PASSWORD,
         method: 'POST',
         body: { token, newPassword }
       }),
-      invalidatesTags: ['Auth']
+      invalidatesTags: [TAG_TYPES.AUTH]
     }),
 
-    // Session Management
-    getActiveSessions: builder.query({
-      query: () => '/auth/sessions',
-      providesTags: ['Sessions']
-    }),
-
-    revokeSession: builder.mutation({
-      query: (sessionId) => ({
-        url: `/auth/sessions/${sessionId}`,
-        method: 'DELETE'
-      }),
-      invalidatesTags: ['Sessions']
-    }),
-
-    revokeAllSessions: builder.mutation({
-      query: () => ({
-        url: '/auth/sessions',
-        method: 'DELETE'
-      }),
-      async onQueryStarted(arg, { dispatch, queryFulfilled }) {
-        try {
-          await queryFulfilled;
-          await clearAccessToken();
-        } catch (error) {
-          console.error('Error revoking sessions:', error);
-        }
-      },
-      invalidatesTags: ['Auth', 'Sessions']
-    }),
-
-    // User Management
+    // Gestion du profil
     getUserProfile: builder.query({
-      query: () => '/auth/me',
-      providesTags: ['Auth']
+      query: () => AUTH_ENDPOINTS.PROFILE,
+      providesTags: [TAG_TYPES.PROFILE]
     }),
 
     updateProfile: builder.mutation({
       query: (userData) => ({
-        url: '/auth/me',
+        url: AUTH_ENDPOINTS.PROFILE,
         method: 'PUT',
         body: userData
       }),
-      invalidatesTags: ['Auth']
+      invalidatesTags: [TAG_TYPES.PROFILE]
     }),
 
-    // Logout
+    // Déconnexion
     logout: builder.mutation({
       query: () => ({
-        url: '/auth/logout',
+        url: AUTH_ENDPOINTS.LOGOUT,
         method: 'POST'
       }),
-      async onQueryStarted(arg, { dispatch, queryFulfilled }) {
-        try {
-          await queryFulfilled;
-          await clearAccessToken();
-        } catch (error) {
-          console.error('Error during logout:', error);
-        }
-      },
-      invalidatesTags: ['Auth']
+      invalidatesTags: [TAG_TYPES.AUTH, TAG_TYPES.PROFILE]
     })
   })
 });
 
-// Export hooks for usage in components
+// Export des endpoints constants pour une utilisation ailleurs
+export { AUTH_ENDPOINTS, TAG_TYPES };
+
+// Export des hooks générés
 export const { 
   useRegisterMutation,
   useVerifyOtpMutation,
@@ -206,13 +144,7 @@ export const {
   useLoginWithEmailMutation,
   useForgotPasswordMutation,
   useResetPasswordMutation,
-  useGetActiveSessionsQuery,
-  useRevokeSessionMutation,
-  useRevokeAllSessionsMutation,
   useGetUserProfileQuery,
   useUpdateProfileMutation,
   useLogoutMutation
 } = authApi;
-
-// Export token management functions for use outside React components
-export { getAccessToken, setAccessToken, clearAccessToken };

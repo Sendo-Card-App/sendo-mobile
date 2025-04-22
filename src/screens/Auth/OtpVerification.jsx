@@ -6,16 +6,16 @@ import {
   TouchableOpacity,
   Alert,
   Image,
-  ActivityIndicator,
 } from "react-native";
 import { OtpInput } from "react-native-otp-entry";
 import KeyboardAvoidinWrapper from "../../components/KeyboardAvoidinWrapper";
 import { useTranslation } from "react-i18next";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { useVerifyOtpMutation, useResendOtpMutation } from "../../services/Auth/authAPI";
 import { verifyOtpSuccess } from "../../features/Auth/authSlice";
 import { useNavigation } from "@react-navigation/native";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Loader from "../../components/Loader"; // Import the Loader component
 
 // Timer duration in seconds (5 minutes)
 const OTP_TIMER_DURATION = 300;
@@ -65,7 +65,6 @@ const OtpVerification = ({ route, onVerify, onResend, onClose }) => {
       const response = await verifyOtp({ 
         phone, 
         code: otp,
-        deviceId 
       }).unwrap();
       
       // Store auth data
@@ -158,7 +157,7 @@ const OtpVerification = ({ route, onVerify, onResend, onClose }) => {
               className="mb-6"
             >
               {isResending ? (
-                <ActivityIndicator size="small" color="#7ddd7d" />
+                <Loader />  // Use the Loader component when resending
               ) : (
                 <Text className={`text-center ${seconds > 0 ? 'text-gray-400' : 'text-[#7ddd7d]'}`}>
                   {t("otpVerification.resendOtp")}
@@ -172,7 +171,7 @@ const OtpVerification = ({ route, onVerify, onResend, onClose }) => {
               className="w-full bg-[#7ddd7d] rounded-3xl p-4 items-center justify-center"
             >
               {isVerifying ? (
-                <ActivityIndicator color="white" />
+                <Loader />  // Use the Loader component when verifying
               ) : (
                 <Text className="font-bold text-white">
                   {t("otpVerification.verify")}

@@ -11,8 +11,7 @@ import {
   Alert,
   SafeAreaView,
   StatusBar,
-  Modal,
-  ActivityIndicator
+  Modal
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import KeyboardAvoidinWrapper from "../../components/KeyboardAvoidinWrapper";
@@ -20,18 +19,16 @@ import OtpVerification from "./OtpVerification";
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
 import {
-  useLoginWithPhoneMutation,
-  useVerifyOtpMutation,
-  useResendOtpMutation
+  useResendOtpMutation,
+  useVerifyOtpMutation
 } from "../../services/Auth/authAPI";
-import { loginStart, loginSuccess, loginFailure } from "../../features/Auth/authSlice";
-
+import { loginSuccess } from "../../features/Auth/authSlice";
+import Loader from "../../components/Loader"; // Import the Loader component
 
 const Log = () => {
   const { t, i18n } = useTranslation();
   const navigation = useNavigation();
   const dispatch = useDispatch();
-  const [loginWithPhone] = useLoginWithPhoneMutation();
   const [verifyOtp] = useVerifyOtpMutation();
   const [resendOtp] = useResendOtpMutation();
 
@@ -44,42 +41,19 @@ const Log = () => {
   const firstIcon = require("../../images/Artboard 1.png");
   const secondIcon = require("../../images/Artboard 2 copy 2.png");
 
-  useEffect(() => {
-    const checkAuthStatus = async () => {
-      const authData = await getAuthData();
-      if (authData) {
-        if (authData.isGuest) {
-          dispatch(loginAsGuest());
-        } else {
-          dispatch(loginSuccess(authData));
-        }
-      }
-    };
-    checkAuthStatus();
-  }, []);
-
-  const handleSubmit = async () => {
+  const handleNext = async () => {
     if (!phone) {
-      Alert.alert("Error", "Please enter your phone number.");
+      Alert.alert("Error", "Please enter a valid phone number.");
       return;
     }
-
-    if (!/^\d+$/.test(phone)) {
-      Alert.alert("Error", "Invalid phone number.");
-      return;
-    }
-
-    const fullPhone = isToggled ? `+1${phone}` : `+237${phone}`;
-
     try {
       setIsLoading(true);
-      dispatch(loginStart({ phone: fullPhone }));
-      await loginWithPhone({ phone: fullPhone}).unwrap();
-      setModalVisible(true);
+      const fullPhone = isToggled ? `+1${phone}` : `+237${phone}`;
+      // Trigger the OTP sending process
+      await resendOtp(fullPhone).unwrap(); // Call resendOtp mutation
+      setModalVisible(true); // Show OTP modal after OTP is sent
     } catch (err) {
-      const errorMessage = err.data?.message || "Login failed. Please try again.";
-      dispatch(loginFailure(errorMessage));
-      Alert.alert("Error", errorMessage);
+      Alert.alert("Error", err.data?.message || "Failed to send OTP.");
     } finally {
       setIsLoading(false);
     }
@@ -89,7 +63,7 @@ const Log = () => {
     try {
       setIsLoading(true);
       const fullPhone = isToggled ? `+1${phone}` : `+237${phone}`;
-      const response = await verifyOtp({ phone: fullPhone, code}).unwrap();
+      const response = await verifyOtp({ phone: fullPhone, code }).unwrap();
 
       const authData = {
         user: response.user,
@@ -124,7 +98,6 @@ const Log = () => {
   const handleToggle = () => {
     navigation.navigate('Signup');
   };
-
 
   const changeLanguage = (lang) => {
     i18n.changeLanguage(lang);
@@ -188,12 +161,12 @@ const Log = () => {
           />
 
           <TouchableOpacity
-            onPress={handleSubmit}
             disabled={isLoading}
+            onPress={handleNext} // Trigger OTP send
             className="bg-[#7ddd7d] rounded-3xl p-4"
           >
             {isLoading ? (
-              <ActivityIndicator color="white" />
+              <Loader /> // Use Loader instead of ActivityIndicator
             ) : (
               <Text className="font-bold text-center">{t("log.next")}</Text>
             )}
@@ -205,21 +178,22 @@ const Log = () => {
             </Text>
           </TouchableOpacity>
         </View>
+
         <Text className="text-center text-white mt-5">
-            {t("signIn.dontHaveAccount")}
+          {t("signIn.dontHaveAccount")}
+        </Text>
+
+        <TouchableOpacity onPress={handleToggle} className="mt-2">
+          <Text className="border-2 border-[#7ddd7d] rounded-3xl text-[#7ddd7d] py-3 px-24 text-center">
+            {t("signIn.signUp")}
           </Text>
+        </TouchableOpacity>
 
-          <TouchableOpacity onPress={handleToggle} className="mt-2">
-            <Text className="border-2 border-[#7ddd7d] rounded-3xl text-[#7ddd7d] py-3 px-24 text-center">
-              {t("signIn.signUp")}
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity  className="mt-2 mb-5">
-            <Text className="text-[#7ddd7d] underline text-center">
-              {t("signIn.guestUser")}
-            </Text>
-          </TouchableOpacity>
+        <TouchableOpacity className="mt-2 mb-5">
+          <Text className="text-[#7ddd7d] underline text-center">
+            {t("signIn.guestUser")}
+          </Text>
+        </TouchableOpacity>
 
         <Modal animationType="slide" transparent={true} visible={isModalVisible}>
           <OtpVerification

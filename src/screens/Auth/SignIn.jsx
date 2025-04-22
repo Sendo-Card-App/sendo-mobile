@@ -6,7 +6,6 @@ import {
   TextInput,
   Image,
   TouchableOpacity,
-  Alert,
   SafeAreaView,
   StatusBar,
 } from "react-native";
@@ -21,16 +20,39 @@ import {
 } from "../../features/Auth/authSlice";
 import { useLoginWithEmailMutation } from "../../services/Auth/authAPI";
 import { useTranslation } from "react-i18next";
+import Loader from "../../components/Loader";
+import SweetAlert from "react-native-sweet-alert";
 
 const SignIn = () => {
-  const { t } = useTranslation(); // Keep translation for UI text
+  const { t } = useTranslation();
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loginWithEmail] = useLoginWithEmailMutation();
+  const [showPassword, setShowPassword] = useState(false);
+  const [loginWithEmail, { isLoading }] = useLoginWithEmailMutation();
+  const [emailError, setEmailError] = useState(false);
+  const [passwordError, setPasswordError] = useState(false);
 
   const handleSubmit = async () => {
+    let hasError = false;
+
+    if (!email) {
+      setEmailError(true);
+      hasError = true;
+    } else {
+      setEmailError(false);
+    }
+
+    if (!password) {
+      setPasswordError(true);
+      hasError = true;
+    } else {
+      setPasswordError(false);
+    }
+
+    if (hasError) return;
+
     const deviceId = uuidv4();
     dispatch(loginStart({ email, deviceId }));
 
@@ -40,12 +62,21 @@ const SignIn = () => {
       if (response?.accessToken && response?.user) {
         dispatch(loginSuccess({ ...response, deviceId }));
         navigation.navigate("Home");
+
+        SweetAlert.showAlertWithOptions({
+          title: "Success",
+          subTitle: "Login Successful!",
+          style: "success",
+        });
       } else {
-        Alert.alert("Login Failed", "Unknown error occurred.");
+        SweetAlert.showAlertWithOptions({
+          title: "Login Failed",
+          subTitle: "Unknown error occurred.",
+          style: "error",
+        });
       }
     } catch (err) {
       console.log("Login error:", err);
-
       let errorMessage = "An error occurred during login.";
       if (err?.status === 403) {
         errorMessage = "Account Not Verified.";
@@ -54,18 +85,21 @@ const SignIn = () => {
       }
 
       dispatch(loginFailure(errorMessage));
-      Alert.alert("Login Failed", errorMessage);
+
+      SweetAlert.showAlertWithOptions({
+        title: "Login Failed",
+        subTitle: errorMessage,
+        style: "error",
+      });
     }
   };
 
   const signInFacebook = () => {
     console.log("Sign in with Facebook");
-    // Add your Facebook sign-in logic here
   };
 
   const signInGoogle = () => {
     console.log("Sign in with Google");
-    // Add your Google sign-in logic here
   };
 
   const handleToggle = () => {
@@ -99,20 +133,47 @@ const SignIn = () => {
             value={email}
             autoCapitalize="none"
             keyboardType="email-address"
-            className="border-[#fff] bg-[#ffffff] rounded-3xl text-center mb-5 py-5"
+            className="border-[#fff] bg-[#ffffff] rounded-3xl text-center mb-2 py-5"
           />
-          <TextInput
-            placeholder={t("signIn.password")}
-            onChangeText={setPassword}
-            value={password}
-            secureTextEntry
-            className="border-[#fff] bg-[#ffffff] rounded-3xl text-center mb-5 py-5"
-          />
+          {emailError && (
+            <Text className="text-red-500 text-center mb-2">
+              Email is required
+            </Text>
+          )}
+
+          <View className="relative">
+            <TextInput
+              placeholder={t("signIn.password")}
+              onChangeText={setPassword}
+              value={password}
+              secureTextEntry={!showPassword}
+              className="border-[#fff] bg-[#ffffff] rounded-3xl text-center mb-2 py-5"
+            />
+            <TouchableOpacity
+              onPress={() => setShowPassword(!showPassword)}
+              style={{ position: "absolute", right: 10, top: 12 }}
+            >
+              <AntDesign
+                name={showPassword ? "eye" : "eyeo"}
+                size={24}
+                color="gray"
+              />
+            </TouchableOpacity>
+          </View>
+          {passwordError && (
+            <Text className="text-red-500 text-center mb-2">
+             Password is required
+            </Text>
+          )}
 
           <TouchableOpacity onPress={handleSubmit}>
-            <Text className="text-center mt-3 border-1-[#7ddd7d] bg-[#7ddd7d] rounded-3xl p-4 font-bold">
-              {t("signIn.next")}
-            </Text>
+            {isLoading ? (
+              <Loader />
+            ) : (
+              <Text className="text-center mt-3 border-1-[#7ddd7d] bg-[#7ddd7d] rounded-3xl p-4 font-bold">
+                {t("signIn.next")}
+              </Text>
+            )}
           </TouchableOpacity>
 
           <TouchableOpacity onPress={() => navigation.navigate("ForgetPassword")}>
