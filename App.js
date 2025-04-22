@@ -1,17 +1,24 @@
 import "./global.css";
+import { Colors } from './src/constants/colors';
 import { TouchableOpacity } from "react-native";
 import { NavigationContainer, useNavigation } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createDrawerNavigator } from "@react-navigation/drawer";
 import { Ionicons, AntDesign } from "@expo/vector-icons";
 import './i18n'; // Import i18next
-// 🧠 Redux
+
+
+
 import { Provider } from "react-redux";
 import { store } from "./src/store/store";
 
 // screens & Components
 import Home from "./src/screens/Home/Home";
-import Auth from "./src/screens/Auth/Auth";
+import LogIn from "./src/screens/Auth/LogIn";
+import SignIn from "./src/screens/Auth/SignIn";
+import Signup from "./src/screens/Auth/Signup";
+import OtpVerification from "./src/screens/Auth/OtpVerification";
+import ForgetPassword from "./src/screens/Auth/ForgetPassword";
 import BeneficiarySelection from "./src/screens/Transfert/BeneficiarySelection";
 import BeneficiaryDetails from "./src/screens/Transfert/BeneficiaryDetails";
 import BankCard from "./src/screens/VirtualCard/BankCard";
@@ -51,20 +58,26 @@ const Drawer = createDrawerNavigator();
 function RootStack() {
   const navigation = useNavigation();
   return (
-    <Stack.Navigator
-      initialRouteName="Home"
-      screenOptions={({ navigation }) => ({
-        headerStyle: { backgroundColor: "#7ddd7d" },
-        headerTitleStyle: { fontSize: 18, fontWeight: 10, color: "white" },
-        headerTitleAlign: "center",
-        headerLeft: () => (
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <AntDesign name="arrowleft" size={20} color="white" className="p-3" />
-          </TouchableOpacity>
-        ),
-      })}
-    >
-      <Stack.Screen name="Auth" component={Auth} options={{ headerShown: false }} />
+      <Stack.Navigator
+        initialRouteName="LogIn"
+        screenOptions={({ navigation }) => ({
+          headerStyle: { backgroundColor: Colors.primary },
+          headerTitleStyle: { fontSize: 18, fontWeight: "bold", color: Colors.text },
+          headerTitleAlign: "center",
+          headerLeft: () => (
+            <TouchableOpacity onPress={() => navigation.goBack()}>
+              <AntDesign name="arrowleft" size={20} color={Colors.text} className="p-3" />
+            </TouchableOpacity>
+          ),
+        })}
+      >
+
+      <Stack.Screen name="LogIn" component={LogIn} options={{ headerShown: false }} />
+      <Stack.Screen name="SignIn" component={SignIn} options={{ headerShown: false }} />
+      <Stack.Screen name="Signup" component={Signup} options={{ headerShown: false }} />
+      <Stack.Screen name="OtpVerification" component={OtpVerification} options={{ headerShown: false }} />
+      <Stack.Screen name="ForgetPassword" component={ForgetPassword}  options={{ headerShown: false }} />
+      
       <Stack.Screen name="Account" component={Account} options={{ headerTitle: "Compte" }} />
       <Stack.Screen name="Home" component={Home} options={{ headerShown: false }} />
       <Stack.Screen name="BeneficiaryScreen" component={BeneficiaryScreen} options={{ headerShown: false }} />
