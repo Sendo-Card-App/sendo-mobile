@@ -6,6 +6,8 @@ import { createDrawerNavigator } from "@react-navigation/drawer";
 import { Ionicons, AntDesign } from "@expo/vector-icons";
 import './i18n'; // Import i18next
 
+
+
 import { Provider } from "react-redux";
 import { store } from "./src/store/store";
 
@@ -57,7 +59,8 @@ function RootStack() {
   return (
     <Stack.Navigator
       initialRouteName="LogIn"
-       Stashed changes
+
+     Stashed changes
       screenOptions={({ navigation }) => ({
         headerStyle: { backgroundColor: "#7ddd7d" },
         headerTitleStyle: { fontSize: 18, fontWeight: 10, color: "white" },
@@ -70,14 +73,12 @@ function RootStack() {
       })}
     >
 
-   
-
       <Stack.Screen name="LogIn" component={LogIn} options={{ headerShown: false }} />
       <Stack.Screen name="SignIn" component={SignIn} options={{ headerShown: false }} />
       <Stack.Screen name="Signup" component={Signup} options={{ headerShown: false }} />
       <Stack.Screen name="OtpVerification" component={OtpVerification} options={{ headerShown: false }} />
       <Stack.Screen name="ForgetPassword" component={ForgetPassword}  options={{ headerShown: false }} />
-
+      
       <Stack.Screen name="Account" component={Account} options={{ headerTitle: "Compte" }} />
       <Stack.Screen name="Home" component={Home} options={{ headerShown: false }} />
       <Stack.Screen name="BeneficiaryScreen" component={BeneficiaryScreen} options={{ headerShown: false }} />
