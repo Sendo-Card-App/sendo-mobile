@@ -94,14 +94,6 @@ const SignIn = () => {
     }
   };
 
-  const signInFacebook = () => {
-    console.log("Sign in with Facebook");
-  };
-
-  const signInGoogle = () => {
-    console.log("Sign in with Google");
-  };
-
   const handleToggle = () => {
     navigation.navigate("Signup");
   };
