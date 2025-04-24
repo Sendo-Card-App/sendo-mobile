@@ -9,7 +9,7 @@ const AUTH_ENDPOINTS = {
   LOGIN: '/auth/login',
   FORGOT_PASSWORD: '/auth/forgot-password',
   RESET_PASSWORD: '/auth/reset-password',
-  PROFILE: '/auth/me',
+  PROFILE: '/users/me',
   LOGOUT: '/auth/logout'
 };
 
@@ -62,10 +62,10 @@ export const authApi = createApi({
     }),
 
     resendOtp: builder.mutation({
-      query: ({ phone, deviceId }) => ({
+      query: ({ phone }) => ({
         url: AUTH_ENDPOINTS.SEND_OTP,
         method: 'POST',
-        body: { phone, deviceId }
+        body: { phone }
       })
     }),
 
@@ -80,10 +80,10 @@ export const authApi = createApi({
     }),
 
     loginWithEmail: builder.mutation({
-      query: ({ email, password, deviceId }) => ({
+      query: ({ email, password }) => ({
         url: AUTH_ENDPOINTS.LOGIN,
         method: 'POST',
-        body: { email, password, deviceId }
+        body: { email, password}
       }),
       invalidatesTags: [TAG_TYPES.AUTH]
     }),

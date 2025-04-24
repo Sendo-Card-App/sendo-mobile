@@ -12,7 +12,6 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import KeyboardAvoidinWrapper from "../../components/KeyboardAvoidinWrapper";
 import { useDispatch } from "react-redux";
-import { v4 as uuidv4 } from "uuid";
 import {
   loginStart,
   loginSuccess,
@@ -21,7 +20,7 @@ import {
 import { useLoginWithEmailMutation } from "../../services/Auth/authAPI";
 import { useTranslation } from "react-i18next";
 import Loader from "../../components/Loader";
-import SweetAlert from "react-native-sweet-alert";
+import Toast from "react-native-toast-message"; 
 
 const SignIn = () => {
   const { t } = useTranslation();
@@ -35,71 +34,87 @@ const SignIn = () => {
   const [passwordError, setPasswordError] = useState(false);
 
   const handleSubmit = async () => {
+    // Input validation
     let hasError = false;
-
+    
     if (!email) {
       setEmailError(true);
       hasError = true;
     } else {
       setEmailError(false);
     }
-
+  
     if (!password) {
       setPasswordError(true);
       hasError = true;
     } else {
       setPasswordError(false);
     }
-
-    if (hasError) return;
-
-    const deviceId = uuidv4();
-    dispatch(loginStart({ email, deviceId }));
-
+  
+    if (hasError) {
+      Toast.show({
+        type: 'error',
+        text1: 'Validation Error',
+        text2: 'Please fill in all required fields',
+      });
+      return;
+    }
+  
+    dispatch(loginStart({ email }));
+  
     try {
-      const response = await loginWithEmail({ email, password, deviceId }).unwrap();
-
-      if (response?.accessToken && response?.user) {
-        dispatch(loginSuccess({ ...response, deviceId }));
-        navigation.navigate("Home");
-
-        SweetAlert.showAlertWithOptions({
-          title: "Success",
-          subTitle: "Login Successful!",
-          style: "success",
+      const response = await loginWithEmail({ email, password }).unwrap();
+  
+      if (response?.status === 200 && response?.data?.accessToken) {
+        dispatch(loginSuccess({ 
+          user: response.data,
+          accessToken: response.data.accessToken,
+          isGuest: false
+        }));
+  
+        navigation.navigate("Main");
+        
+        Toast.show({
+          type: 'success',
+          text1: 'Login Successful',
+          text2: response.message || 'Welcome back!',
         });
       } else {
-        SweetAlert.showAlertWithOptions({
-          title: "Login Failed",
-          subTitle: "Unknown error occurred.",
-          style: "error",
-        });
+        throw new Error('Invalid response structure');
       }
     } catch (err) {
       console.log("Login error:", err);
       let errorMessage = "An error occurred during login.";
+  
       if (err?.status === 403) {
         errorMessage = "Account Not Verified.";
       } else if (err?.status === 500) {
         errorMessage = "Could not connect. Please try again.";
+      } else if (err?.status === 401) {
+        errorMessage = "Invalid Email or Password.";
+      } else if (err?.status === 404) {
+        errorMessage = "User Not Found.";
+      } else if (err?.data?.message) {
+        errorMessage = err.data.message;
       }
-
+  
       dispatch(loginFailure(errorMessage));
-
-      SweetAlert.showAlertWithOptions({
-        title: "Login Failed",
-        subTitle: errorMessage,
-        style: "error",
+  
+      Toast.show({
+        type: 'error',
+        text1: 'Login Failed',
+        text2: errorMessage,
       });
     }
   };
-
-  const signInFacebook = () => {
-    console.log("Sign in with Facebook");
-  };
-
-  const signInGoogle = () => {
-    console.log("Sign in with Google");
+  
+  // Helper function to store auth data
+  const storeAuthData = async (authData) => {
+    try {
+      await AsyncStorage.setItem('@authData', JSON.stringify(authData));
+    } catch (error) {
+      console.error('Error storing auth data:', error);
+    }
   };
 
   const handleToggle = () => {
@@ -133,7 +148,7 @@ const SignIn = () => {
             value={email}
             autoCapitalize="none"
             keyboardType="email-address"
-            className="border-[#fff] bg-[#ffffff] rounded-3xl text-center mb-2 py-5"
+            className="border-[#fff] bg-[#ffffff] rounded-3xl text-center mb-5 py-5"
           />
           {emailError && (
             <Text className="text-red-500 text-center mb-2">
@@ -147,7 +162,7 @@ const SignIn = () => {
               onChangeText={setPassword}
               value={password}
               secureTextEntry={!showPassword}
-              className="border-[#fff] bg-[#ffffff] rounded-3xl text-center mb-2 py-5"
+              className="border-[#fff] bg-[#ffffff] rounded-3xl text-center mb-6 py-5"
             />
             <TouchableOpacity
               onPress={() => setShowPassword(!showPassword)}
@@ -162,7 +177,7 @@ const SignIn = () => {
           </View>
           {passwordError && (
             <Text className="text-red-500 text-center mb-2">
-             Password is required
+              Password is required
             </Text>
           )}
 
@@ -181,28 +196,13 @@ const SignIn = () => {
               {t("signIn.forgotPassword")}
             </Text>
           </TouchableOpacity>
-
-          <TouchableOpacity>
-            <Text className="mt-5 text-center">
-              {t("signIn.loginWith")}
+           <Text className="text-center mt-5 opacity-20">{t("signIn.orSignInWith")}</Text>
+          <TouchableOpacity onPress={() => navigation.navigate("LogIn")}>
+            <Text className="mt-5 mb-5 text-center">
+              OTP LOGIN
             </Text>
           </TouchableOpacity>
-          <Text className="text-center opacity-20">{t("signIn.orSignInWith")}</Text>
-
-          <View className="flex-row items-center justify-center space-x-4">
-            <TouchableOpacity onPress={signInFacebook}>
-              <Image
-                className="w-28 h-28"
-                source={require("../../images/Artboard 2.png")}
-              />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={signInGoogle}>
-              <Image
-                className="w-28 h-28"
-                source={require("../../images/Artboard 3.png")}
-              />
-            </TouchableOpacity>
-          </View>
+          
         </View>
 
         <Text className="text-center text-white mt-5">
