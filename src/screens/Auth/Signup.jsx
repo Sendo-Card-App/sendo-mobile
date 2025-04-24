@@ -73,10 +73,6 @@ const Signup = () => {
         case "email":
           if (!isValidEmail(value)) error = t("signup.invalidEmail");
           break;
-        case "phone":
-          if (!isValidPhone(value))
-            error = t("signup.invalidPhone");
-          break;
         case "password":
           if (!isValidPassword(value))
             error = t("signup.invalidPassword");
@@ -255,20 +251,7 @@ const Signup = () => {
               className="border-[#fff] bg-[#ffffff] rounded-3xl py-5 text-center pl-10"
               keyboardType="phone-pad"
             />
-            <TouchableOpacity
-              onPress={() => setIsToggled(!isToggled)}
-              className="absolute left-3 top-1/2 transform -translate-y-1/2"
-            >
-              <Image
-                source={isToggled ? secondIcon : firstIcon}
-                className="w-12 h-12"
-              />
-            </TouchableOpacity>
-            {validationErrors.phone && (
-              <Text className="text-red-500 text-xs mb-2 text-center">
-                {validationErrors.phone}
-              </Text>
-            )}
+            
           </View>
 
           {/* Address */}

@@ -59,7 +59,7 @@ const OtpVerification = ({ route, onVerify, onResend, onClose }) => {
 
     setIsVerifying(true);
     try {
-      const response = await verifyOtp({ phone, code }).unwrap();
+      const response = await verifyOtp({ phone}).unwrap();
 
       await AsyncStorage.setItem('@authData', JSON.stringify({
         user: response.user,
@@ -77,7 +77,7 @@ const OtpVerification = ({ route, onVerify, onResend, onClose }) => {
       if (onVerify) {
         onVerify(response);
       } else {
-        navigation.navigate("Home");
+        navigation.navigate("Main");
       }
 
     } catch (err) {

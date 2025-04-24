@@ -85,7 +85,7 @@ function CustomTabBar({ state, descriptors, navigation }) {
           case 'PaymentTab':
             iconName = isFocused ? 'card' : 'card-outline';
             break;
-          case 'HistoryTab':
+          case 'ManageVirtualCardTab':
             iconName = isFocused ? 'swap-horizontal' : 'swap-horizontal-outline';
             break;
           case 'SettingsTab':
@@ -140,8 +140,8 @@ function MainTabs() {
         options={{ title: 'Cards' }}
       />
       <Tab.Screen 
-        name="HistoryTab" 
-        component={History} 
+        name="ManageVirtualCardTab" 
+        component={ManageVirtualCard} 
         options={{ title: 'Transactions' }}
       />
       <Tab.Screen 
@@ -220,7 +220,7 @@ function MainStack() {
 function RootNavigator() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      {/* <Stack.Screen name="Auth" component={AuthStack} /> */}
+      <Stack.Screen name="Auth" component={AuthStack} /> 
       <Stack.Screen name="Main" component={MainStack} />
     </Stack.Navigator>
   );

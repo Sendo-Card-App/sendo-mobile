@@ -195,7 +195,7 @@ const DrawerComponent = ({ navigation }) => {
           </TouchableOpacity>
           <TouchableOpacity
             className="flex-row gap-2 my-2"
-            onPress={() => navigation2.navigate("Settings")}
+            onPress={() => navigation2.navigate("SettingsTab")}
           >
             <AntDesign
               name="setting"

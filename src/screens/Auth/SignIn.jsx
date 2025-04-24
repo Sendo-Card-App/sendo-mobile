@@ -34,63 +34,86 @@ const SignIn = () => {
   const [passwordError, setPasswordError] = useState(false);
 
   const handleSubmit = async () => {
+    // Input validation
     let hasError = false;
-
+    
     if (!email) {
       setEmailError(true);
       hasError = true;
     } else {
       setEmailError(false);
     }
-
+  
     if (!password) {
       setPasswordError(true);
       hasError = true;
     } else {
       setPasswordError(false);
     }
-
-    if (hasError) return;
-
-   
-    dispatch(loginStart({ email}));
-
+  
+    if (hasError) {
+      Toast.show({
+        type: 'error',
+        text1: 'Validation Error',
+        text2: 'Please fill in all required fields',
+      });
+      return;
+    }
+  
+    dispatch(loginStart({ email }));
+  
     try {
-      const response = await loginWithEmail({ email, password}).unwrap();
-
-      if (response?.accessToken && response?.user) {
-        dispatch(loginSuccess({ ...response}));
-        navigation.navigate("Home");
-
+      const response = await loginWithEmail({ email, password }).unwrap();
+  
+      if (response?.status === 200 && response?.data?.accessToken) {
+        dispatch(loginSuccess({ 
+          user: response.data,
+          accessToken: response.data.accessToken,
+          isGuest: false
+        }));
+  
+        navigation.navigate("Main");
+        
         Toast.show({
           type: 'success',
-          text1: 'Login Successful!',
+          text1: 'Login Successful',
+          text2: response.message || 'Welcome back!',
         });
       } else {
-        Toast.show({
-          type: 'error',
-          text1: 'Login Failed',
-          text2: 'Unknown error occurred.',
-        });
+        throw new Error('Invalid response structure');
       }
     } catch (err) {
       console.log("Login error:", err);
       let errorMessage = "An error occurred during login.";
+  
       if (err?.status === 403) {
         errorMessage = "Account Not Verified.";
       } else if (err?.status === 500) {
         errorMessage = "Could not connect. Please try again.";
-      }else if (err?.status === 401) {
+      } else if (err?.status === 401) {
         errorMessage = "Invalid Email or Password.";
+      } else if (err?.status === 404) {
+        errorMessage = "User Not Found.";
+      } else if (err?.data?.message) {
+        errorMessage = err.data.message;
       }
-
+  
       dispatch(loginFailure(errorMessage));
-
+  
       Toast.show({
         type: 'error',
         text1: 'Login Failed',
         text2: errorMessage,
       });
+    }
+  };
+  
+  // Helper function to store auth data
+  const storeAuthData = async (authData) => {
+    try {
+      await AsyncStorage.setItem('@authData', JSON.stringify(authData));
+    } catch (error) {
+      console.error('Error storing auth data:', error);
     }
   };
 
@@ -125,7 +148,7 @@ const SignIn = () => {
             value={email}
             autoCapitalize="none"
             keyboardType="email-address"
-            className="border-[#fff] bg-[#ffffff] rounded-3xl text-center mb-2 py-5"
+            className="border-[#fff] bg-[#ffffff] rounded-3xl text-center mb-5 py-5"
           />
           {emailError && (
             <Text className="text-red-500 text-center mb-2">
@@ -139,7 +162,7 @@ const SignIn = () => {
               onChangeText={setPassword}
               value={password}
               secureTextEntry={!showPassword}
-              className="border-[#fff] bg-[#ffffff] rounded-3xl text-center mb-2 py-5"
+              className="border-[#fff] bg-[#ffffff] rounded-3xl text-center mb-6 py-5"
             />
             <TouchableOpacity
               onPress={() => setShowPassword(!showPassword)}

@@ -109,7 +109,7 @@ const Log = () => {
         text2: 'Login successful',
         position: 'bottom'
       });
-      navigation.navigate("Home");
+      navigation.navigate("Main");
     } catch (err) {
       Toast.show({
         type: 'error',
@@ -202,7 +202,7 @@ const Log = () => {
             </View>
           </Modal>
 
-          <Image source={require("../../images/LogoSendo.png")} className="mt-3 mb-3 w-28 h-28" />
+          <Image source={require("../../images/LogoSendo.png")} className=" mb-10 w-28 h-28" />
 
           <View className="w-[80%] bg-[#f1f1f1] rounded-3xl mb-2 px-5">
             <Text className="text-3xl font-bold mt-5 mb-5">{t("log.title")}</Text>
@@ -212,12 +212,12 @@ const Log = () => {
                 <Image source={isToggled ? secondIcon : firstIcon} className="w-16 h-16" />
               </TouchableOpacity>
               <Text className="ml-3 text-lg font-bold">
-                {isToggled ? "+1 (US)" : "+237 (CMR)"}
+                {isToggled ? "+1 (CA)" : "+237 (CMR)"}
               </Text>
             </View>
 
             <TextInput
-              placeholder={t("log.phonePlaceholder")}
+              placeholder={t("signup.phone")}
               onChangeText={setPhone}
               value={phone}
               keyboardType="phone-pad"
