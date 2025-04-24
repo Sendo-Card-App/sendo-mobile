@@ -48,9 +48,8 @@ const Log = () => {
     }
     try {
       setIsLoading(true);
-      const fullPhone = isToggled ? `+1${phone}` : `+237${phone}`;
       // Trigger the OTP sending process
-      await resendOtp(fullPhone).unwrap(); // Call resendOtp mutation
+      await resendOtp(phone).unwrap(); // Call resendOtp mutation
       setModalVisible(true); // Show OTP modal after OTP is sent
     } catch (err) {
       Alert.alert("Error", err.data?.message || "Failed to send OTP.");
@@ -62,8 +61,7 @@ const Log = () => {
   const handleVerifyOtp = async (code) => {
     try {
       setIsLoading(true);
-      const fullPhone = isToggled ? `+1${phone}` : `+237${phone}`;
-      const response = await verifyOtp({ phone: fullPhone, code }).unwrap();
+      const response = await verifyOtp({ phone, code }).unwrap();
 
       const authData = {
         user: response.user,
@@ -85,8 +83,7 @@ const Log = () => {
   const handleResendOtp = async () => {
     try {
       setIsLoading(true);
-      const fullPhone = isToggled ? `+1${phone}` : `+237${phone}`;
-      await resendOtp(fullPhone).unwrap();
+      await resendOtp(phone).unwrap();
       Alert.alert("Success", "OTP resent successfully.");
     } catch (err) {
       Alert.alert("Error", err.data?.message || "Failed to resend OTP.");
@@ -197,7 +194,7 @@ const Log = () => {
 
         <Modal animationType="slide" transparent={true} visible={isModalVisible}>
           <OtpVerification
-            phone={isToggled ? `+1${phone}` : `+237${phone}`}
+            phone={phone}
             onVerify={handleVerifyOtp}
             onResend={handleResendOtp}
             onClose={() => setModalVisible(false)}

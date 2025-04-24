@@ -1,18 +1,18 @@
 import "./global.css";
 import { Colors } from './src/constants/colors';
-import { TouchableOpacity } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NavigationContainer, useNavigation } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createDrawerNavigator } from "@react-navigation/drawer";
-import { Ionicons, AntDesign } from "@expo/vector-icons";
-import './i18n'; // Import i18next
-
-
-
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { Ionicons, AntDesign, MaterialIcons, FontAwesome } from "@expo/vector-icons";
+import './i18n';
+import Toast from 'react-native-toast-message';
 import { Provider } from "react-redux";
 import { store } from "./src/store/store";
 
-// screens & Components
+// Screens & Components
 import Home from "./src/screens/Home/Home";
 import LogIn from "./src/screens/Auth/LogIn";
 import SignIn from "./src/screens/Auth/SignIn";
@@ -54,48 +54,148 @@ import ChangePassword from "./src/screens/Setting/ChangePassword";
 
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
+const Tab = createBottomTabNavigator();
 
-function RootStack() {
-  const navigation = useNavigation();
+// Custom tab bar component
+function CustomTabBar({ state, descriptors, navigation }) {
+  const insets = useSafeAreaInsets();
   return (
-      <Stack.Navigator
-        initialRouteName="LogIn"
-        screenOptions={({ navigation }) => ({
-          headerStyle: { backgroundColor: Colors.primary },
-          headerTitleStyle: { fontSize: 18, fontWeight: "bold", color: Colors.text },
-          headerTitleAlign: "center",
-          headerLeft: () => (
-            <TouchableOpacity onPress={() => navigation.goBack()}>
-              <AntDesign name="arrowleft" size={20} color={Colors.text} className="p-3" />
-            </TouchableOpacity>
-          ),
-        })}
-      >
+    <View style={styles.tabContainer}>
+      {state.routes.map((route, index) => {
+        const { options } = descriptors[route.key];
+        const isFocused = state.index === index;
 
-      <Stack.Screen name="LogIn" component={LogIn} options={{ headerShown: false }} />
-      <Stack.Screen name="SignIn" component={SignIn} options={{ headerShown: false }} />
-      <Stack.Screen name="Signup" component={Signup} options={{ headerShown: false }} />
-      <Stack.Screen name="OtpVerification" component={OtpVerification} options={{ headerShown: false }} />
-      <Stack.Screen name="ForgetPassword" component={ForgetPassword}  options={{ headerShown: false }} />
-      
+        const onPress = () => {
+          const event = navigation.emit({
+            type: 'tabPress',
+            target: route.key,
+            canPreventDefault: true,
+          });
+
+          if (!isFocused && !event.defaultPrevented) {
+            navigation.navigate(route.name);
+          }
+        };
+
+        let iconName;
+        switch (route.name) {
+          case 'HomeTab':
+            iconName = isFocused ? 'home' : 'home-outline';
+            break;
+          case 'PaymentTab':
+            iconName = isFocused ? 'card' : 'card-outline';
+            break;
+          case 'HistoryTab':
+            iconName = isFocused ? 'swap-horizontal' : 'swap-horizontal-outline';
+            break;
+          case 'SettingsTab':
+            iconName = isFocused ? 'settings' : 'settings-outline';
+            break;
+          default:
+            iconName = 'home';
+        }
+
+        return (
+          <TouchableOpacity
+            key={route.key}
+            accessibilityRole="button"
+            accessibilityState={isFocused ? { selected: true } : {}}
+            accessibilityLabel={options.tabBarAccessibilityLabel}
+            testID={options.tabBarTestID}
+            onPress={onPress}
+            style={styles.tabButton}
+          >
+            <Ionicons 
+              name={iconName} 
+              size={24} 
+              color={isFocused ? Colors.primary : Colors.text} 
+            />
+            <Text style={[styles.tabLabel, { color: isFocused ? Colors.primary : Colors.text }]}>
+              {options.title || route.name}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+}
+
+// Tab Navigator
+function MainTabs() {
+  return (
+    <Tab.Navigator
+      tabBar={(props) => <CustomTabBar {...props} />}
+      screenOptions={{
+        headerShown: false,
+      }}
+    >
+      <Tab.Screen 
+        name="HomeTab" 
+        component={Home} 
+        options={{ title: 'Home' }}
+      />
+      <Tab.Screen 
+        name="PaymentTab" 
+        component={Payment} 
+        options={{ title: 'Cards' }}
+      />
+      <Tab.Screen 
+        name="HistoryTab" 
+        component={History} 
+        options={{ title: 'Transactions' }}
+      />
+      <Tab.Screen 
+        name="SettingsTab" 
+        component={Settings} 
+        options={{ title: 'Settings' }}
+      />
+    </Tab.Navigator>
+  );
+}
+
+// Stack Navigator for auth screens
+function AuthStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="LogIn" component={LogIn} />
+      <Stack.Screen name="SignIn" component={SignIn} />
+      <Stack.Screen name="Signup" component={Signup} />
+      <Stack.Screen name="OtpVerification" component={OtpVerification} />
+      <Stack.Screen name="ForgetPassword" component={ForgetPassword} />
+    </Stack.Navigator>
+  );
+}
+
+// Main Stack Navigator
+function MainStack() {
+  return (
+    <Stack.Navigator
+      screenOptions={({ navigation }) => ({
+        headerStyle: { backgroundColor: Colors.primary },
+        headerTitleStyle: { fontSize: 18, fontWeight: "bold", color: Colors.text },
+        headerTitleAlign: "center",
+        headerLeft: () => (
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <AntDesign name="arrowleft" size={20} color={Colors.text} style={{ padding: 12 }} />
+          </TouchableOpacity>
+        ),
+      })}
+    >
+      <Stack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
       <Stack.Screen name="Account" component={Account} options={{ headerTitle: "Compte" }} />
-      <Stack.Screen name="Home" component={Home} options={{ headerShown: false }} />
       <Stack.Screen name="BeneficiaryScreen" component={BeneficiaryScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="BeneficiarySelection" component={BeneficiarySelection}  options={{headerShown: false }}/>
+      <Stack.Screen name="BeneficiarySelection" component={BeneficiarySelection} options={{ headerShown: false }} />
       <Stack.Screen name="AboutUs" component={AboutUs} options={{ headerTitle: "À propos de nous" }} />
-      <Stack.Screen name="BeneficiaryDetails" component={BeneficiaryDetails}   options={{headerShown: false }} />
-      <Stack.Screen name="Settings" component={Settings} options={{ headerTitle: "Paramètres" }} />
+      <Stack.Screen name="BeneficiaryDetails" component={BeneficiaryDetails} options={{ headerShown: false }} />
       <Stack.Screen name="ChangePassword" component={ChangePassword} options={{ headerTitle: "Changer le mot de passe" }} />
       <Stack.Screen name="PaymentMethod" component={PaymentMethod} options={{ headerShown: false }} />
       <Stack.Screen name="Curency" component={Curency} options={{ headerShown: false }} />
-      
-    
       <Stack.Screen name="BankCard" component={BankCard} options={{ headerShown: false }} />
       <Stack.Screen name="BankCard1" component={BankCard1} options={{ headerShown: false }} />
       <Stack.Screen name="ConﬁrmeTheTransfer" component={ConﬁrmeTheTransfer} options={{ headerShown: false }} />
       <Stack.Screen name="Success" component={Success} options={{ headerShown: false }} />
       <Stack.Screen name="Support" component={Support} />
-      <Stack.Screen name="Payment" component={Payment}  />
+      <Stack.Screen name="Payment" component={Payment} />
       <Stack.Screen name="History" component={History} />
       <Stack.Screen name="MonSolde" component={MonSolde} options={{ headerTitle: "Mon Solde" }} />
       <Stack.Screen name="CreateVirtualCard" component={CreateVirtualCard} options={{ headerTitle: "Créer une carte virtuelle" }} />
@@ -116,10 +216,21 @@ function RootStack() {
   );
 }
 
+// Root Navigator to switch between Auth and Main stacks
+function RootNavigator() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      {/* <Stack.Screen name="Auth" component={AuthStack} /> */}
+      <Stack.Screen name="Main" component={MainStack} />
+    </Stack.Navigator>
+  );
+}
+
+// Drawer Navigator
 function DrawerNavigator() {
   return (
     <Drawer.Navigator drawerContent={(props) => <DrawerComponent {...props} />}>
-      <Drawer.Screen name="HomeStack" component={RootStack} options={{ headerShown: false }} />
+      <Drawer.Screen name="MainStack" component={RootNavigator} options={{ headerShown: false }} />
     </Drawer.Navigator>
   );
 }
@@ -129,7 +240,40 @@ export default function App() {
     <Provider store={store}>
       <NavigationContainer>
         <DrawerNavigator />
+        <Toast />
       </NavigationContainer>
     </Provider>
   );
 }
+
+const styles = StyleSheet.create({
+  tabContainer: {
+    flexDirection: 'row',
+    height: 80,
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+   
+    backgroundColor: '#87CEEB', // Light blue background
+    borderTopLeftRadius: 40,
+    borderTopRightRadius: 40,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  tabButton: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 8,
+   
+  },
+  tabLabel: {
+    fontSize: 12,
+    marginTop: 5,
+  },
+});

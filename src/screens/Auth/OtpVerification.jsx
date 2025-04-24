@@ -4,7 +4,6 @@ import {
   Text,
   Modal,
   TouchableOpacity,
-  Alert,
   Image,
 } from "react-native";
 import { OtpInput } from "react-native-otp-entry";
@@ -15,9 +14,9 @@ import { useVerifyOtpMutation, useResendOtpMutation } from "../../services/Auth/
 import { verifyOtpSuccess } from "../../features/Auth/authSlice";
 import { useNavigation } from "@react-navigation/native";
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Loader from "../../components/Loader"; // Import the Loader component
+import Loader from "../../components/Loader";
+import Toast from "react-native-toast-message";
 
-// Timer duration in seconds (5 minutes)
 const OTP_TIMER_DURATION = 300;
 
 const OtpVerification = ({ route, onVerify, onResend, onClose }) => {
@@ -26,28 +25,23 @@ const OtpVerification = ({ route, onVerify, onResend, onClose }) => {
   const navigation = useNavigation();
   const [verifyOtp] = useVerifyOtpMutation();
   const [resendOtp] = useResendOtpMutation();
-  
-  // Get phone from props or route params
+
   const phone = route?.params?.phone || '';
   const deviceId = route?.params?.deviceId || '';
-  
+
   const [otp, setOtp] = useState("");
   const [seconds, setSeconds] = useState(OTP_TIMER_DURATION);
   const [isResending, setIsResending] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
 
-  // Timer countdown effect
   useEffect(() => {
     let timer;
     if (seconds > 0) {
-      timer = setInterval(() => {
-        setSeconds(prev => prev - 1);
-      }, 1000);
+      timer = setInterval(() => setSeconds(prev => prev - 1), 1000);
     }
     return () => clearInterval(timer);
   }, [seconds]);
 
-  // Format time to MM:SS
   const formatTime = (timeInSeconds) => {
     const minutes = Math.floor(timeInSeconds / 60);
     const seconds = timeInSeconds % 60;
@@ -56,57 +50,66 @@ const OtpVerification = ({ route, onVerify, onResend, onClose }) => {
 
   const handleVerifyOtp = async () => {
     if (otp.length !== 6) {
-      Alert.alert(t("error"), t("otpVerification.incompleteCode"));
+      Toast.show({
+        type: 'error',
+        text1: 'Incomplete code',
+      });
       return;
     }
 
     setIsVerifying(true);
     try {
-      const response = await verifyOtp({ 
-        phone, 
-        code: otp,
-      }).unwrap();
-      
-      // Store auth data
+      const response = await verifyOtp({ phone, code }).unwrap();
+
       await AsyncStorage.setItem('@authData', JSON.stringify({
         user: response.user,
         accessToken: response.accessToken,
         isGuest: false
       }));
-      
+
       dispatch(verifyOtpSuccess(response));
-      
+
+      Toast.show({
+        type: 'success',
+        text1: 'OTP verified successfully',
+      });
+
       if (onVerify) {
         onVerify(response);
       } else {
         navigation.navigate("Home");
       }
-      
+
     } catch (err) {
       console.error("OTP Verification Error:", err);
-      Alert.alert(
-        t("error"),
-        err?.data?.message || t("otpVerification.verificationFailed")
-      );
+      Toast.show({
+        type: 'error',
+        text1: err?.data?.message || 'OTP verification failed',
+      });
     } finally {
       setIsVerifying(false);
     }
   };
 
   const handleResendOtp = async () => {
-    if (seconds > 0) return; // Prevent resend if timer is still active
+    if (seconds > 0) return;
 
     setIsResending(true);
     try {
-      await resendOtp({ phone, deviceId }).unwrap();
-      setSeconds(OTP_TIMER_DURATION); // Reset timer
-      Alert.alert(t("success"), t("otpVerification.otpResent"));
+      await resendOtp({ phone }).unwrap();
+      setSeconds(OTP_TIMER_DURATION);
+
+      Toast.show({
+        type: 'success',
+        text1: 'OTP resent successfully',
+      });
+
     } catch (err) {
       console.error("Resend OTP Error:", err);
-      Alert.alert(
-        t("error"),
-        err?.data?.message || t("otpVerification.resendFailed")
-      );
+      Toast.show({
+        type: 'error',
+        text1: err?.data?.message || 'Failed to resend OTP',
+      });
     } finally {
       setIsResending(false);
     }
@@ -157,7 +160,7 @@ const OtpVerification = ({ route, onVerify, onResend, onClose }) => {
               className="mb-6"
             >
               {isResending ? (
-                <Loader />  // Use the Loader component when resending
+                <Loader />
               ) : (
                 <Text className={`text-center ${seconds > 0 ? 'text-gray-400' : 'text-[#7ddd7d]'}`}>
                   {t("otpVerification.resendOtp")}
@@ -171,7 +174,7 @@ const OtpVerification = ({ route, onVerify, onResend, onClose }) => {
               className="w-full bg-[#7ddd7d] rounded-3xl p-4 items-center justify-center"
             >
               {isVerifying ? (
-                <Loader />  // Use the Loader component when verifying
+                <Loader />
               ) : (
                 <Text className="font-bold text-white">
                   {t("otpVerification.verify")}
