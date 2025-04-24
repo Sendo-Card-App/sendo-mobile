@@ -1,4 +1,3 @@
-import 'react-native-get-random-values';
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -8,9 +7,7 @@ import {
   SafeAreaView,
   StatusBar,
   Image,
-  ActivityIndicator,
 } from "react-native";
-import Loader from "../../components/Loader";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from "@react-navigation/native";
 import { AntDesign } from "@expo/vector-icons";
@@ -24,8 +21,8 @@ import {
   resetSignupState,
 } from "../../features/Auth/authSlice";
 import { useTranslation } from "react-i18next";
-import { parsePhoneNumberFromString } from 'libphonenumber-js'; // Importing the method for phone number parsing
-import SweetAlert from 'react-native-sweet-alert'; // Import SweetAlert
+import Toast from 'react-native-toast-message';
+import Loader from "../../components/Loader";
 
 const Signup = () => {
   const { t } = useTranslation();
@@ -56,6 +53,7 @@ const Signup = () => {
     address: "",
   });
 
+
   const isValidEmail = (email) => {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return re.test(email);
@@ -75,10 +73,6 @@ const Signup = () => {
         case "email":
           if (!isValidEmail(value)) error = t("signup.invalidEmail");
           break;
-        case "phone":
-          if (!isValidPhone(value))
-            error = t("signup.invalidPhone");
-          break;
         case "password":
           if (!isValidPassword(value))
             error = t("signup.invalidPassword");
@@ -95,12 +89,6 @@ const Signup = () => {
     validateField(name, value);
   };
 
-  const isValidPhone = (phone) => {
-    const countryCode = isToggled ? 'US' : 'CM'; // Set the country code based on the toggle
-    const phoneNumber = parsePhoneNumberFromString(phone, countryCode);
-    return phoneNumber && phoneNumber.isValid(); // Check if the parsed phone number is valid
-  };
-
   const handleSignup = async () => {
     const isFirstNameValid = validateField("firstName", signupDetails.firstName);
     const isLastNameValid = validateField("lastName", signupDetails.lastName);
@@ -108,19 +96,16 @@ const Signup = () => {
     const isPhoneValid = validateField("phone", signupDetails.phone);
     const isPasswordValid = validateField("password", signupDetails.password);
     const isAddressValid = validateField("address", signupDetails.address);
-    
-    // Format the phone according to the valid phone number
-    const phoneNumber = parsePhoneNumberFromString(signupDetails.phone, isToggled ? 'US' : 'CM');
-    
+  
     const payload = {
       firstname: signupDetails.firstName,
       lastname: signupDetails.lastName,
       email: signupDetails.email,
       password: signupDetails.password,
-      phone: phoneNumber ? phoneNumber.number : signupDetails.phone, // Use the formatted phone number
+      phone: signupDetails.phone,
       address: signupDetails.address,
     };
-
+  
     if (
       !isFirstNameValid ||
       !isLastNameValid ||
@@ -129,19 +114,29 @@ const Signup = () => {
       !isPasswordValid ||
       !isAddressValid
     ) {
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Please fill all fields correctly',
+      });
       return;
     }
   
     try {
-      dispatch(signupStart({ phone: payload.phone }));
+      dispatch(signupStart({ phone: signupDetails.phone }));
       const response = await register(payload).unwrap();
-      // Store the access token if it exists in the response
+      
       if (response.accessToken) {
         await AsyncStorage.setItem('@accessToken', response.accessToken);
       }
+      
       dispatch(signupSuccess(response));
+      Toast.show({
+        type: 'success',
+        text1: 'Success',
+        text2: 'Account created successfully',
+      });
     } catch (err) {
-      // Create a serializable error object
       const errorData = {
         message: err?.data?.message || "Registration failed",
         status: err?.status,
@@ -151,17 +146,17 @@ const Signup = () => {
       dispatch(signupFailure(errorData));
   
       let errorMessage = "Registration failed. Please try again.";
+      console.log("Login error:", err);
       if (err?.data?.message) {
         if (err.data.message.includes("email")) errorMessage = "This email is already used.";
         else if (err.data.message.includes("phone")) errorMessage = "This phone is already used.";
         else errorMessage = err.data.message;
       }
-
-      SweetAlert.showAlertWithOptions({
-        title: t("error"),
-        subTitle: errorMessage,
-        style: "error",
-        confirmButtonText: "OK",
+  
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: errorMessage,
       });
     }
   };
@@ -172,12 +167,6 @@ const Signup = () => {
 
   useEffect(() => {
     if (isSignupSuccess) {
-      SweetAlert.showAlertWithOptions({
-        title: t("success"),
-        subTitle: t("signup.successMessage"),
-        style: "success",
-        confirmButtonText: "OK",
-      });
       setTimeout(() => {
         navigation.navigate("OtpVerification");
       }, 2000);
@@ -204,11 +193,11 @@ const Signup = () => {
 
         <Image
           source={require("../../images/LogoSendo.png")}
-          className="mt-3 mb-3 w-28 h-28"
+          className="mt-50 mb-3 w-28 h-28"
         />
 
         <View className="m-3 flex w-[85%] bg-[#f1f1f1] border-1 mt-3 mx-auto rounded-3xl mb-2 shadow-lg p-5">
-          <Text className="mt-5 mb-5 text-3xl font-bold text-center">
+          <Text className=" mb-2 text-3xl font-bold text-center">
             {t("signup.title")}
           </Text>
 
@@ -256,26 +245,13 @@ const Signup = () => {
           {/* Phone */}
           <View className="relative mb-5">
             <TextInput
-              placeholder={isToggled ? "CANADA(+1) Phone" : "CAMEROUN(+237) Phone"}
+              placeholder="Phone number"
               value={signupDetails.phone}
               onChangeText={(text) => handleChange("phone", text)}
               className="border-[#fff] bg-[#ffffff] rounded-3xl py-5 text-center pl-10"
               keyboardType="phone-pad"
             />
-            <TouchableOpacity
-              onPress={() => setIsToggled(!isToggled)}
-              className="absolute left-3 top-1/2 transform -translate-y-1/2"
-            >
-              <Image
-                source={isToggled ? secondIcon : firstIcon}
-                className="w-12 h-12"
-              />
-            </TouchableOpacity>
-            {validationErrors.phone && (
-              <Text className="text-red-500 text-xs mb-2 text-center">
-                {validationErrors.phone}
-              </Text>
-            )}
+            
           </View>
 
           {/* Address */}
@@ -291,6 +267,20 @@ const Signup = () => {
             </Text>
           )}
 
+          {/* Password */}
+          <TextInput
+            placeholder={t("signup.password")}
+            value={signupDetails.password}
+            onChangeText={(text) => handleChange("password", text)}
+            secureTextEntry
+            className="border-[#fff] bg-[#ffffff] rounded-3xl mb-8 py-5 text-center"
+          />
+          {validationErrors.password && (
+            <Text className="text-red-500 text-xs mb-5 text-center">
+              {validationErrors.password}
+            </Text>
+          )}
+
           {/* Submit Button */}
           <TouchableOpacity
             onPress={handleSignup}
@@ -298,7 +288,7 @@ const Signup = () => {
             className={`border-[#7ddd7d] border-2 bg-[#7ddd7d] rounded-3xl p-4 items-center justify-center ${isLoading ? "opacity-60" : ""}`}
           >
             {isLoading ? (
-              <Loader />  
+              <Loader />
             ) : (
               <Text className="font-bold text-center">{t("signup.buttonText")}</Text>
             )}
@@ -306,7 +296,7 @@ const Signup = () => {
         </View>
 
         {/* Sign In link */}
-        <Text className="text-center text-white mt-5">{t("signup.alreadyHaveAccount")}</Text>
+        <Text className="text-center text-white mt-1">{t("signup.alreadyHaveAccount")}</Text>
         <TouchableOpacity onPress={handleToggle}>
           <Text className="border-2 border-[#7ddd7d] rounded-3xl bg-[#181e25] text-[#7ddd7d] py-3 mt-2 px-24">
             {t("signup.signIn")}

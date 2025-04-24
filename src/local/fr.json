@@ -37,13 +37,16 @@
     "appVersion": "Sendo App V1.0.1",
       "signup": {
         "title": "Créer un compte",
+        "title1": "Mon Compte",
         "firstName": "Prénom",
         "lastName": "Nom",
+        "name": "Nom Complet",
         "email": "Adresse email",
         "phone": "Numéro de téléphone",
         "address": "Adresse",
         "password": "Mot de passe",
         "buttonText": "S'INSCRIRE",
+        "save": "Enregistrer",
         "alreadyHaveAccount": "Vous avez déjà un compte?",
         "signIn": "SE CONNECTER",
         "fieldRequired": "Ce champ est obligatoire",
@@ -100,7 +103,47 @@
           "error": "Erreur",
           "enterPhoneNumber": "Veuillez entrer votre numéro de téléphone.",
           "close": "Fermer"
-        }
+        },
+        "account1": {
+    "title": "Mon Compte",
+    "labels": {
+      "name": "Nom",
+      "phone": "Numéro de téléphone",
+      "email": "Adresse email"
+    },
+    "placeholders": {
+      "firstName": "Prénom",
+      "lastName": "Nom"
+    },
+    "actions": {
+      "save": "Enregistrer",
+      "retry": "Réessayer"
+    },
+    "errors": {
+      "loading": "Erreur lors du chargement du profil"
+    }
+  },
+    "drawer": {
+      "title": "André",
+      "email": "randré24cand@gmail.com",
+      "phone": "+237 600 00 00 00",
+      "bonus": "Bonus de 5,00 CAD gratuit",
+      "bonus_description": "Vous recevrez 5,00 CAD et votre ami recevra 5,00 CAD lors de son premier transfert. Des exigences d’envoi minimales peuvent s’appliquer. Sous réserve de conditions.",
+      "bonus_code": "Votre code: ANDRE237",
+      "invite_friends": "INVITER VOS AMIS",
+      "balance": "Mon solde",
+      "history": "Historique",
+      "pay_bills": "Payer les factures",
+      "account": "Compte",
+      "payment": "Paiement",
+      "settings": "Paramètres",
+      "support": "Support",
+      "about_us": "À propos de nous",
+      "logout": "Déconnexion",
+      "app_version": "Sendo App V1.0.1"
+    }
+ 
+  
       
       
 
