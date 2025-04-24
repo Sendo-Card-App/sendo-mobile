@@ -35,7 +35,7 @@ const DrawerComponent = ({ navigation }) => {
       await AsyncStorage.multiRemove(['@accessToken', '@refreshToken']);
       
       // Navigate to login screen
-      navigation2.navigate("LogIn");
+      navigation2.navigate("Auth");
       
       Toast.show({
         type: 'success',
@@ -66,13 +66,7 @@ const DrawerComponent = ({ navigation }) => {
   if (error) {
     return (
       <SafeAreaView className="flex-1 justify-center items-center">
-        <Text className="text-red-500">Error loading profile</Text>
-        <TouchableOpacity 
-          onPress={refetch} 
-          className="mt-4 bg-[#7ddd7d] px-6 py-2 rounded-full"
-        >
-          <Text className="text-white">Retry</Text>
-        </TouchableOpacity>
+         <Loader />
       </SafeAreaView>
     );
   }
@@ -115,7 +109,7 @@ const DrawerComponent = ({ navigation }) => {
         {/* Navigation Items */}
         <ScrollView className="py-4" showsVerticalScrollIndicator={false}>
           <TouchableOpacity
-            className="flex-row gap-2 my-2 items-center"
+            className="flex-row gap-2 my-2 items-center mb-5"
             onPress={() => navigation2.navigate("MonSolde")}
           >
             <AntDesign
@@ -129,7 +123,7 @@ const DrawerComponent = ({ navigation }) => {
           </TouchableOpacity>
           {/* More navigation items */}
           <TouchableOpacity
-            className="flex-row gap-2 my-2"
+            className="flex-row gap-2 my-2 mb-5"
             onPress={() => navigation2.navigate("History")}
           >
             <Ionicons
@@ -144,25 +138,10 @@ const DrawerComponent = ({ navigation }) => {
               </Text>
             </View>
           </TouchableOpacity>
-          <TouchableOpacity
-            className="flex-row gap-2 my-2"
-            onPress={() => navigation2.navigate("PayBill")}
-          >
-            <Ionicons
-              name="calculator-outline"
-              size={Platform.OS === "ios" ? 32 : 24}
-              color="gray"
-            />
-            <View>
-              <Text className="font-bold text-gray-500">{t('drawer.pay_bills')}</Text>
-              <Text className="text-sm text-gray-500 pr-8">
-                Payer des factures tels que les pass mobiles, internet et bouquets Tv
-              </Text>
-            </View>
-          </TouchableOpacity>
+          
           {/* Additional navigation items */}
           <TouchableOpacity
-            className="flex-row gap-2 my-2"
+            className="flex-row gap-2 my-2 mb-5"
             onPress={() => navigation2.navigate("Account")}
           >
             <Feather
@@ -179,7 +158,7 @@ const DrawerComponent = ({ navigation }) => {
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => navigation2.navigate("Payment")}
-            className="flex-row gap-2 my-2"
+            className="flex-row gap-2 my-2 mb-5"
           >
             <MaterialCommunityIcons
               name="bank-outline"
@@ -194,7 +173,7 @@ const DrawerComponent = ({ navigation }) => {
             </View>
           </TouchableOpacity>
           <TouchableOpacity
-            className="flex-row gap-2 my-2"
+            className="flex-row gap-2 my-2 mb-5"
             onPress={() => navigation2.navigate("SettingsTab")}
           >
             <AntDesign
@@ -208,7 +187,7 @@ const DrawerComponent = ({ navigation }) => {
             </View>
           </TouchableOpacity>
           <TouchableOpacity
-            className="flex-row gap-2 my-2"
+            className="flex-row gap-2 my-2 mb-5"
             onPress={() => navigation2.navigate("Support")}
           >
             <EvilIcons
@@ -224,7 +203,7 @@ const DrawerComponent = ({ navigation }) => {
             </View>
           </TouchableOpacity>
           <TouchableOpacity
-            className="flex-row gap-2 my-2"
+            className="flex-row gap-2 my-2 mb-5"
             onPress={() => navigation2.navigate("AboutUs")}
           >
             <EvilIcons

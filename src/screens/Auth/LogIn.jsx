@@ -186,7 +186,7 @@ const Log = () => {
           </View>
 
           <Modal animationType="slide" transparent={true} visible={languageModalVisible}>
-            <View className="flex-1 justify-center items-center bg-black bg-opacity-50">
+            <View className="flex-1 justify-center items-center bg-transparent bg-opacity-50">
               <View className="w-3/4 bg-white rounded-lg py-5">
                 <Text className="text-lg text-center mb-4">Select your language</Text>
                 <TouchableOpacity onPress={() => changeLanguage("en")}>
