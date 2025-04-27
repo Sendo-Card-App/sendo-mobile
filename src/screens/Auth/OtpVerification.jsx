@@ -3,31 +3,32 @@ import {
   View,
   Text,
   Modal,
+  SafeAreaView,
+  StyleSheet,
   TouchableOpacity,
   Image,
 } from "react-native";
 import { OtpInput } from "react-native-otp-entry";
 import KeyboardAvoidinWrapper from "../../components/KeyboardAvoidinWrapper";
-import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
 import { useVerifyOtpMutation, useResendOtpMutation } from "../../services/Auth/authAPI";
 import { verifyOtpSuccess } from "../../features/Auth/authSlice";
-import { useNavigation } from "@react-navigation/native";
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation, useRoute } from "@react-navigation/native";
 import Loader from "../../components/Loader";
 import Toast from "react-native-toast-message";
 
 const OTP_TIMER_DURATION = 300;
 
 const OtpVerification = ({ route, onVerify, onResend, onClose }) => {
-  const { t } = useTranslation();
   const dispatch = useDispatch();
   const navigation = useNavigation();
+  const componentRoute = useRoute();
   const [verifyOtp] = useVerifyOtpMutation();
   const [resendOtp] = useResendOtpMutation();
 
-  const phone = route?.params?.phone || '';
-  const deviceId = route?.params?.deviceId || '';
+  // Get phone from either props (modal) or route (screen)
+  const phone = route?.params?.phone || componentRoute?.params?.phone;
+  const isForgotPasswordFlow = componentRoute.params?.isForgotPassword || false;
 
   const [otp, setOtp] = useState("");
   const [seconds, setSeconds] = useState(OTP_TIMER_DURATION);
@@ -52,20 +53,30 @@ const OtpVerification = ({ route, onVerify, onResend, onClose }) => {
     if (otp.length !== 6) {
       Toast.show({
         type: 'error',
-        text1: 'Incomplete code',
+        text1: 'Invalid Code',
+        text2: 'Please enter a 6-digit OTP'
       });
       return;
     }
 
     setIsVerifying(true);
     try {
-      const response = await verifyOtp({ phone}).unwrap();
+      console.log('Verifying OTP with:', verificationPayload);
 
-      await AsyncStorage.setItem('@authData', JSON.stringify({
-        user: response.user,
-        accessToken: response.accessToken,
-        isGuest: false
-      }));
+      const response = await verifyOtp({ phone, code: otp }).unwrap();
+      console.log('OTP Verification Response:', response);
+      // Handle forgot password flow
+      if (isForgotPasswordFlow) {
+        Toast.show({
+          type: 'success',
+          text1: 'OTP verified successfully',
+        });
+        navigation.navigate("ResetPassword", { 
+          phone,
+          verificationToken: response.data?.token 
+        });
+        return;
+      }
 
       dispatch(verifyOtpSuccess(response));
 
@@ -104,6 +115,9 @@ const OtpVerification = ({ route, onVerify, onResend, onClose }) => {
         text1: 'OTP resent successfully',
       });
 
+      if (onResend) {
+        onResend();
+      }
     } catch (err) {
       console.error("Resend OTP Error:", err);
       Toast.show({
@@ -115,83 +129,152 @@ const OtpVerification = ({ route, onVerify, onResend, onClose }) => {
     }
   };
 
-  return (
-    <Modal 
-      animationType="slide" 
-      transparent 
-      visible={true}
-      onRequestClose={onClose}
-    >
-      <KeyboardAvoidinWrapper>
-        <View className="flex-1 bg-[#181e25] bg-opacity-50 justify-center items-center">
-          <View className="w-9/12 bg-white p-6 rounded-xl items-center"> 
-            <Image
-              className="w-40 h-40"
-              source={require("../../images/Artboard 5.png")}
-            />
-            
-            <Text className="mb-4 text-lg text-gray-800 opacity-40 text-center">
-              {t("otpVerification.enterCode")} {phone}
-            </Text>
-            
-            <OtpInput
-              numberOfDigits={6}
-              onTextChange={setOtp}
-              focusColor="#7ddd7d"
-              theme={{
-                containerStyle: { marginBottom: 20 },
-                pinCodeContainerStyle: { height: 50, width: 40 },
-                pinCodeTextStyle: { fontSize: 24 },
-              }}
-            />
-            
-            <View className="flex-row items-center mb-6">
-              <Text className="text-gray-600 mr-2">
-                {t("otpVerification.codeExpiresIn")}
+  // For modal version
+  if (onClose) {
+    return (
+      <Modal 
+        animationType="slide" 
+        transparent 
+        visible={true}
+        onRequestClose={onClose}
+      >
+        <KeyboardAvoidinWrapper>
+          <View className="flex-1 bg-[#181e25] bg-opacity-50 justify-center items-center">
+            <View className="w-9/12 bg-white p-6 rounded-xl items-center"> 
+              <Image
+                className="w-40 h-40"
+                source={require("../../images/Artboard 5.png")}
+              />
+              
+              <Text className="mb-4 text-lg text-gray-800 opacity-40 text-center">
+                Enter code sent to {phone}
               </Text>
-              <Text className="font-bold">
-                {formatTime(seconds)}
-              </Text>
+              
+              <OtpInput
+                numberOfDigits={6}
+                onTextChange={setOtp}
+                focusColor="#7ddd7d"
+                theme={{
+                  containerStyle: { marginBottom: 20 },
+                  pinCodeContainerStyle: { height: 50, width: 40 },
+                  pinCodeTextStyle: { fontSize: 24 },
+                }}
+              />
+              
+              <View className="flex-row items-center mb-6">
+                <Text className="text-gray-600 mr-2">
+                  Code expires in
+                </Text>
+                <Text className="font-bold">
+                  {formatTime(seconds)}
+                </Text>
+              </View>
+              
+              <TouchableOpacity 
+                onPress={handleResendOtp} 
+                disabled={seconds > 0 || isResending}
+                className="mb-6"
+              >
+                {isResending ? (
+                  <Loader />
+                ) : (
+                  <Text className={`text-center ${seconds > 0 ? 'text-gray-400' : 'text-[#7ddd7d]'}`}>
+                    Resend OTP
+                  </Text>
+                )}
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                onPress={handleVerifyOtp}
+                disabled={otp.length !== 6 || isVerifying}
+                className="w-full bg-[#7ddd7d] rounded-3xl p-4 items-center justify-center"
+              >
+                {isVerifying ? (
+                  <Loader />
+                ) : (
+                  <Text className="font-bold text-white">
+                    Verify
+                  </Text>
+                )}
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                onPress={onClose}
+                className="mt-4"
+              >
+                <Text className="text-red-500">Cancel</Text>
+              </TouchableOpacity>
             </View>
-            
-            <TouchableOpacity 
-              onPress={handleResendOtp} 
-              disabled={seconds > 0 || isResending}
-              className="mb-6"
-            >
-              {isResending ? (
-                <Loader />
-              ) : (
-                <Text className={`text-center ${seconds > 0 ? 'text-gray-400' : 'text-[#7ddd7d]'}`}>
-                  {t("otpVerification.resendOtp")}
-                </Text>
-              )}
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              onPress={handleVerifyOtp}
-              disabled={otp.length !== 6 || isVerifying}
-              className="w-full bg-[#7ddd7d] rounded-3xl p-4 items-center justify-center"
-            >
-              {isVerifying ? (
-                <Loader />
-              ) : (
-                <Text className="font-bold text-white">
-                  {t("otpVerification.verify")}
-                </Text>
-              )}
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              onPress={onClose}
-              className="mt-4"
-            >
-              <Text className="text-red-500">{t("cancel")}</Text>
-            </TouchableOpacity>
           </View>
+        </KeyboardAvoidinWrapper>
+      </Modal>
+    );
+  }
+
+  // For screen version
+  return (
+    <SafeAreaView className="flex-1 bg-[#181e25] justify-center">
+      <KeyboardAvoidinWrapper>
+        <View className="w-full bg-[#f1f1f1] rounded-t-3xl p-6 items-center" style={{marginTop: 100}}>
+          <Image
+            className="w-40 h-40"
+            source={require("../../images/Artboard 5.png")}
+          />
+          
+          <Text className="mb-4 text-lg text-gray-800 opacity-40 text-center">
+            Enter code sent to {phone}
+          </Text>
+          
+          <OtpInput
+            numberOfDigits={6}
+            onTextChange={setOtp}
+            focusColor="#7ddd7d"
+            theme={{
+              containerStyle: { marginBottom: 20 },
+              pinCodeContainerStyle: { height: 50, width: 40 },
+              pinCodeTextStyle: { fontSize: 24 },
+            }}
+          />
+          
+          <View className="flex-row items-center mb-6">
+            <Text className="text-gray-600 mr-2">
+              Code expires in
+            </Text>
+            <Text className="font-bold">
+              {formatTime(seconds)}
+            </Text>
+          </View>
+          
+          <TouchableOpacity 
+            onPress={handleResendOtp} 
+            disabled={seconds > 0 || isResending}
+            className="mb-6"
+          >
+            {isResending ? (
+              <Loader />
+            ) : (
+              <Text className={`text-center ${seconds > 0 ? 'text-gray-400' : 'text-[#7ddd7d]'}`}>
+                Resend OTP
+              </Text>
+            )}
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            onPress={handleVerifyOtp}
+            disabled={otp.length !== 6 || isVerifying}
+            className="w-full bg-[#7ddd7d] rounded-3xl p-4 items-center justify-center"
+          >
+            {isVerifying ? (
+              <Loader />
+            ) : (
+              <Text className="font-bold text-white">
+                Verify
+              </Text>
+            )}
+          </TouchableOpacity>
         </View>
       </KeyboardAvoidinWrapper>
-    </Modal>
+    </SafeAreaView>
   );
 };
 

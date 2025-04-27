@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { AntDesign } from "@expo/vector-icons";
 import {
   View,
@@ -21,6 +21,7 @@ import { useLoginWithEmailMutation } from "../../services/Auth/authAPI";
 import { useTranslation } from "react-i18next";
 import Loader from "../../components/Loader";
 import Toast from "react-native-toast-message"; 
+import { storeData, getData  } from "../../services/storage"; // Import the storage utility
 
 const SignIn = () => {
   const { t } = useTranslation();
@@ -32,11 +33,25 @@ const SignIn = () => {
   const [loginWithEmail, { isLoading }] = useLoginWithEmailMutation();
   const [emailError, setEmailError] = useState(false);
   const [passwordError, setPasswordError] = useState(false);
-
+  
+  useEffect(() => {
+    const checkAuthData = async () => {
+      try {
+        const authData = await getData('@authData');
+        if (authData?.accessToken) {
+          dispatch(loginSuccess(authData));
+          navigation.navigate("Main");
+        }
+      } catch (error) {
+        console.log("Error checking auth data:", error);
+      }
+    };
+    checkAuthData();
+  }, []);
+  
   const handleSubmit = async () => {
-    // Input validation
     let hasError = false;
-    
+  
     if (!email) {
       setEmailError(true);
       hasError = true;
@@ -63,17 +78,45 @@ const SignIn = () => {
     dispatch(loginStart({ email }));
   
     try {
+      // 1. Login with Email
       const response = await loginWithEmail({ email, password }).unwrap();
   
       if (response?.status === 200 && response?.data?.accessToken) {
-        dispatch(loginSuccess({ 
-          user: response.data,
-          accessToken: response.data.accessToken,
-          isGuest: false
-        }));
+        const userData = response.data;
   
+        // 2. Fetch refreshToken and deviceId after login
+        const refreshResponse = await fetch('http://217.65.146.204:3000/api/auth/refresh-token', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${userData.accessToken}`,
+          },
+          body: JSON.stringify({
+            deviceId: userData.deviceId, // Or userData.id if no deviceId
+          }),
+        });
+  
+        if (!refreshResponse.ok) {
+          throw new Error('Failed to fetch refresh token');
+        }
+  
+        const refreshData = await refreshResponse.json(); // { refreshToken, deviceId }
+  
+        // 3. Merge and store everything
+        const authData = {
+          user: userData,
+          accessToken: userData.accessToken,
+          refreshToken: refreshData.refreshToken,
+          deviceId: refreshData.deviceId,
+          isGuest: false,
+        };
+  
+        await storeData('@authData', authData);
+        dispatch(loginSuccess(authData));
+  
+        // Navigate to main page after successful login
         navigation.navigate("Main");
-        
+  
         Toast.show({
           type: 'success',
           text1: 'Login Successful',
@@ -84,6 +127,7 @@ const SignIn = () => {
       }
     } catch (err) {
       console.log("Login error:", err);
+  
       let errorMessage = "An error occurred during login.";
   
       if (err?.status === 403) {
@@ -108,14 +152,7 @@ const SignIn = () => {
     }
   };
   
-  // Helper function to store auth data
-  const storeAuthData = async (authData) => {
-    try {
-      await AsyncStorage.setItem('@authData', JSON.stringify(authData));
-    } catch (error) {
-      console.error('Error storing auth data:', error);
-    }
-  };
+  
 
   const handleToggle = () => {
     navigation.navigate("Signup");

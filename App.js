@@ -14,10 +14,12 @@ import { store } from "./src/store/store";
 
 // Screens & Components
 import Home from "./src/screens/Home/Home";
+import WelcomeScreen from "./src/screens/Auth/WelcomeScreen";
 import LogIn from "./src/screens/Auth/LogIn";
 import SignIn from "./src/screens/Auth/SignIn";
 import Signup from "./src/screens/Auth/Signup";
 import OtpVerification from "./src/screens/Auth/OtpVerification";
+import ResetPassword from "./src/screens/Auth/ResetPassword";
 import ForgetPassword from "./src/screens/Auth/ForgetPassword";
 import BeneficiarySelection from "./src/screens/Transfert/BeneficiarySelection";
 import BeneficiaryDetails from "./src/screens/Transfert/BeneficiaryDetails";
@@ -157,11 +159,13 @@ function MainTabs() {
 function AuthStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="LogIn" component={LogIn} />
+      <Stack.Screen name="Welcome" component={WelcomeScreen} />
       <Stack.Screen name="SignIn" component={SignIn} />
+      <Stack.Screen name="LogIn" component={LogIn} />
       <Stack.Screen name="Signup" component={Signup} />
       <Stack.Screen name="OtpVerification" component={OtpVerification} />
       <Stack.Screen name="ForgetPassword" component={ForgetPassword} />
+      <Stack.Screen name="ResetPassword" component={ResetPassword} />
     </Stack.Navigator>
   );
 }
@@ -249,7 +253,7 @@ export default function App() {
 const styles = StyleSheet.create({
   tabContainer: {
     flexDirection: 'row',
-    height: 80,
+    height: 65,
     backgroundColor: '#fff',
     borderTopWidth: 1,
     borderTopColor: '#e0e0e0',

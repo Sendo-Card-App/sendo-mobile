@@ -52,7 +52,12 @@ const Signup = () => {
     phone: "",
     address: "",
   });
-
+  
+  const isValidPhone = (phone) => {
+    const prefix = isToggled ? "+1" : "+237";
+    return phone.startsWith(prefix) || /^\d+$/.test(phone);
+  };
+  
 
   const isValidEmail = (email) => {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -77,6 +82,10 @@ const Signup = () => {
           if (!isValidPassword(value))
             error = t("signup.invalidPassword");
           break;
+          case "phone":
+            if (!isValidPhone(value))
+              error = t("signup.invalidPhone");
+            break;
       }
     }
 
@@ -168,7 +177,7 @@ const Signup = () => {
   useEffect(() => {
     if (isSignupSuccess) {
       setTimeout(() => {
-        navigation.navigate("OtpVerification");
+        navigation.navigate("OtpVerification",  { phone: signupDetails.phone });
       }, 2000);
     }
   }, [isSignupSuccess]);
@@ -251,6 +260,11 @@ const Signup = () => {
               className="border-[#fff] bg-[#ffffff] rounded-3xl py-5 text-center pl-10"
               keyboardType="phone-pad"
             />
+            {validationErrors.phone && (
+            <Text className="text-red-500 text-xs mb-2 text-center">
+              {validationErrors.phone}
+            </Text>
+          )}
             
           </View>
 

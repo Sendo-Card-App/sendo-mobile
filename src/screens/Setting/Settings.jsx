@@ -106,7 +106,7 @@ const Settings = ({ navigation }) => {
       {/* Language Modal */}
       <Modal animationType="slide" transparent={true} visible={languageModalVisible}>
         <View className="flex-1 justify-center items-center bg-transparent bg-opacity-50">
-          <View className="w-3/4 bg-white rounded-lg py-5 px-4">
+          <View className="w-3/4 bg-blue-50 rounded-lg py-5 px-4">
             <Text className="text-lg text-center mb-4 font-semibold">{t('choose_language')}</Text>
             <TouchableOpacity onPress={() => changeLanguage("en")}>
               <Text className="text-center font-bold py-2 text-base">English</Text>

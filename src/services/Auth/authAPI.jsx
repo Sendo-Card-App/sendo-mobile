@@ -4,20 +4,21 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 const AUTH_ENDPOINTS = {
   REGISTER: '/auth/register',
   VERIFY_OTP: '/auth/otp/verify',
-  SEND_OTP: '/auth/otp/send',
+  SEND_OTP: '/auth/otp/send',  // Ensure this endpoint is defined
   REFRESH_TOKEN: '/auth/refresh-token',
   LOGIN: '/auth/login',
   FORGOT_PASSWORD: '/auth/forgot-password',
   RESET_PASSWORD: '/auth/reset-password',
-  PROFILE: '/users/me',
-  LOGOUT: '/auth/logout'
+  MY_PROFILE: '/users/me', // For getting current user
+  USER_PROFILE: '/users', // For getting/updating specific users
+  LOGOUT: '/auth/logout',
 };
 
 // Tags pour le cache
 const TAG_TYPES = {
   AUTH: 'Auth',
   SESSIONS: 'Sessions',
-  PROFILE: 'Profile'
+  PROFILE: 'Profile',
 };
 
 export const authApi = createApi({
@@ -30,7 +31,7 @@ export const authApi = createApi({
         headers.set('Authorization', `Bearer ${token}`);
       }
       return headers;
-    }
+    },
   }),
   tagTypes: Object.values(TAG_TYPES),
   endpoints: (builder) => ({
@@ -39,16 +40,9 @@ export const authApi = createApi({
       query: (userData) => ({
         url: AUTH_ENDPOINTS.REGISTER,
         method: 'POST',
-        body: {
-          firstname: userData.firstname,
-          lastname: userData.lastname,
-          email: userData.email,
-          password: userData.password,
-          phone: userData.phone,
-          address: userData.address,
-        }
+        body: userData, // Assuming userData includes all necessary fields
       }),
-      invalidatesTags: [TAG_TYPES.AUTH]
+      invalidatesTags: [TAG_TYPES.AUTH],
     }),
 
     // Endpoints OTP
@@ -56,36 +50,44 @@ export const authApi = createApi({
       query: ({ phone, code }) => ({
         url: AUTH_ENDPOINTS.VERIFY_OTP,
         method: 'POST',
-        body: { phone, code }
+        body: { phone, code },
       }),
-      invalidatesTags: [TAG_TYPES.AUTH]
+      invalidatesTags: [TAG_TYPES.AUTH],
+    }),
+
+    sendOtp: builder.mutation({ // Add this mutation to send OTP
+      query: (phone) => ({
+        url: AUTH_ENDPOINTS.SEND_OTP,
+        method: 'POST',
+        body: { phone },
+      }),
     }),
 
     resendOtp: builder.mutation({
       query: ({ phone }) => ({
         url: AUTH_ENDPOINTS.SEND_OTP,
         method: 'POST',
-        body: { phone }
-      })
+        body: { phone },
+      }),
     }),
 
     // Endpoints de connexion
     loginWithPhone: builder.mutation({
-      query: ({ phone, deviceId }) => ({
+      query: ({ phone}) => ({
         url: AUTH_ENDPOINTS.REFRESH_TOKEN,
         method: 'POST',
-        body: { phone, deviceId }
+        body: { phone},
       }),
-      invalidatesTags: [TAG_TYPES.AUTH]
+      invalidatesTags: [TAG_TYPES.AUTH],
     }),
 
     loginWithEmail: builder.mutation({
       query: ({ email, password }) => ({
         url: AUTH_ENDPOINTS.LOGIN,
         method: 'POST',
-        body: { email, password}
+        body: { email, password },
       }),
-      invalidatesTags: [TAG_TYPES.AUTH]
+      invalidatesTags: [TAG_TYPES.AUTH],
     }),
 
     // Récupération de mot de passe
@@ -93,43 +95,52 @@ export const authApi = createApi({
       query: (email) => ({
         url: AUTH_ENDPOINTS.FORGOT_PASSWORD,
         method: 'POST',
-        body: { email }
-      })
+        body: { email },
+      }),
     }),
 
     resetPassword: builder.mutation({
       query: ({ token, newPassword }) => ({
         url: AUTH_ENDPOINTS.RESET_PASSWORD,
         method: 'POST',
-        body: { token, newPassword }
+        body: { token, newPassword },
       }),
-      invalidatesTags: [TAG_TYPES.AUTH]
+      invalidatesTags: [TAG_TYPES.AUTH],
     }),
 
     // Gestion du profil
-    getUserProfile: builder.query({
-      query: () => AUTH_ENDPOINTS.PROFILE,
-      providesTags: [TAG_TYPES.PROFILE]
+    getMyProfile: builder.query({
+      query: () => AUTH_ENDPOINTS.MY_PROFILE,
+      providesTags: [TAG_TYPES.PROFILE],
+      // ... logging
     }),
 
+    getUserProfile: builder.query({
+      query: () => AUTH_ENDPOINTS.MY_PROFILE,
+      providesTags: [TAG_TYPES.PROFILE],
+      // ... logging
+    }),
+    
     updateProfile: builder.mutation({
-      query: (userData) => ({
-        url: AUTH_ENDPOINTS.PROFILE,
-        method: 'PUT',
-        body: userData
+      query: (formData) => ({
+        url: `${AUTH_ENDPOINTS.USER_PROFILE}/me`,
+        method: 'PATCH',
+        body: formData,
+        formData: true, // Important pour FormData
       }),
-      invalidatesTags: [TAG_TYPES.PROFILE]
+      invalidatesTags: [TAG_TYPES.PROFILE],
     }),
 
     // Déconnexion
     logout: builder.mutation({
-      query: () => ({
+      query: ({deviceId}) => ({
         url: AUTH_ENDPOINTS.LOGOUT,
-        method: 'POST'
+        method: 'POST',
+        body: { deviceId },
       }),
-      invalidatesTags: [TAG_TYPES.AUTH, TAG_TYPES.PROFILE]
-    })
-  })
+      invalidatesTags: [TAG_TYPES.AUTH, TAG_TYPES.PROFILE],
+    }),
+  }),
 });
 
 // Export des endpoints constants pour une utilisation ailleurs
@@ -139,6 +150,7 @@ export { AUTH_ENDPOINTS, TAG_TYPES };
 export const { 
   useRegisterMutation,
   useVerifyOtpMutation,
+  useSendOtpMutation,  // Ensure you export it here
   useResendOtpMutation,
   useLoginWithPhoneMutation,
   useLoginWithEmailMutation,
@@ -146,5 +158,5 @@ export const {
   useResetPasswordMutation,
   useGetUserProfileQuery,
   useUpdateProfileMutation,
-  useLogoutMutation
+  useLogoutMutation,
 } = authApi;

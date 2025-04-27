@@ -1,4 +1,4 @@
-import {
+import { 
   View,
   Text,
   TouchableOpacity,
@@ -18,7 +18,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useGetUserProfileQuery, useLogoutMutation } from "../services/Auth/authAPI";
 import Loader from "./Loader";
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { removeData } from "../services/storage"; // Import storage utilities
 import Toast from 'react-native-toast-message';
 
 const DrawerComponent = ({ navigation }) => {
@@ -27,46 +27,61 @@ const DrawerComponent = ({ navigation }) => {
   const { data: userProfile, isLoading, error, refetch } = useGetUserProfileQuery();
   const [logout, { isLoading: isLoggingOut }] = useLogoutMutation();
 
+  console.log("User Profile1:", userProfile);
+
+  // Handle logout logic
   const handleLogout = async () => {
     try {
-      await logout({ deviceId }).unwrap();
+      // Call logout API
+      await logout({deviceId}).unwrap();
       
-      // Clear authentication data
-      await AsyncStorage.multiRemove(['@accessToken', '@refreshToken']);
+      // Clear authentication data using storage utilities
+      await removeData('@authData');
       
-      // Navigate to login screen
-      navigation2.navigate("Auth");
-      
+      // Reset navigation state to SignIn page
+      navigation2.reset({
+        index: 0,
+        routes: [{ name: 'SignIn' }],
+      });
+
       Toast.show({
         type: 'success',
         text1: 'Success',
         text2: 'Logged out successfully',
       });
     } catch (err) {
+      console.error("Logout error:", err);
       Toast.show({
         type: 'error',
         text1: 'Error',
-        text2: 'Failed to logout. Please try again.',
+        text2: err?.data?.message || 'Failed to logout. Please try again.',
       });
     }
   };
 
+  // Handle session invalidation and redirect to SignIn page
   useEffect(() => {
-    refetch();
-  }, []);
+    if (error && error.status === 401) {
+      Toast.show({
+        type: 'error',
+        text1: 'Session Invalid',
+        text2: 'Your session has expired. Please log in again.',
+      });
 
+      // Clear any saved data and redirect to SignIn page
+      removeData('@authData');
+      navigation2.reset({
+        index: 0,
+        routes: [{ name: 'Auth' }],
+      });
+    }
+  }, [error, navigation2]);
+
+  // If loading or error, show a loader
   if (isLoading || isLoggingOut) {
     return (
       <SafeAreaView className="flex-1 justify-center items-center">
         <Loader />
-      </SafeAreaView>
-    );
-  }
-
-  if (error) {
-    return (
-      <SafeAreaView className="flex-1 justify-center items-center">
-         <Loader />
       </SafeAreaView>
     );
   }
@@ -89,6 +104,7 @@ const DrawerComponent = ({ navigation }) => {
         <Text className="text-white">{userProfile?.email}</Text>
         <Text className="text-white">{userProfile?.phone}</Text>
       </View>
+      
       {/* Lower section */}
       <View className="flex-1 mx-8">
         {/* Bonus Section */}
@@ -121,6 +137,7 @@ const DrawerComponent = ({ navigation }) => {
               <Text className="font-bold text-gray-500">{t('drawer.balance')}</Text>
             </View>
           </TouchableOpacity>
+          
           {/* More navigation items */}
           <TouchableOpacity
             className="flex-row gap-2 my-2 mb-5"
@@ -139,7 +156,6 @@ const DrawerComponent = ({ navigation }) => {
             </View>
           </TouchableOpacity>
           
-          {/* Additional navigation items */}
           <TouchableOpacity
             className="flex-row gap-2 my-2 mb-5"
             onPress={() => navigation2.navigate("Account")}
@@ -156,6 +172,7 @@ const DrawerComponent = ({ navigation }) => {
               </Text>
             </View>
           </TouchableOpacity>
+          
           <TouchableOpacity
             onPress={() => navigation2.navigate("Payment")}
             className="flex-row gap-2 my-2 mb-5"
@@ -172,6 +189,7 @@ const DrawerComponent = ({ navigation }) => {
               </Text>
             </View>
           </TouchableOpacity>
+          
           <TouchableOpacity
             className="flex-row gap-2 my-2 mb-5"
             onPress={() => navigation2.navigate("SettingsTab")}
@@ -186,6 +204,7 @@ const DrawerComponent = ({ navigation }) => {
               <Text className="text-sm text-gray-500">Options & securite</Text>
             </View>
           </TouchableOpacity>
+          
           <TouchableOpacity
             className="flex-row gap-2 my-2 mb-5"
             onPress={() => navigation2.navigate("Support")}
@@ -202,6 +221,7 @@ const DrawerComponent = ({ navigation }) => {
               </Text>
             </View>
           </TouchableOpacity>
+          
           <TouchableOpacity
             className="flex-row gap-2 my-2 mb-5"
             onPress={() => navigation2.navigate("AboutUs")}
