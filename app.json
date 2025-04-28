@@ -2,7 +2,7 @@
   "expo": {
     "name": "Sendo",
     "slug": "sendo",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -22,9 +22,11 @@
       },
       "permissions": [
         "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO"
+        "android.permission.RECORD_AUDIO",
+        "android.permission.INTERNET"
       ],
-      "package": "com.sendo"
+      "package": "com.sendo",
+      "allowCleartextTraffic": true
     },
     "web": {
       "favicon": "./assets/favicon.png"

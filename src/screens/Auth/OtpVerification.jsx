@@ -11,6 +11,7 @@ import {
 import { OtpInput } from "react-native-otp-entry";
 import KeyboardAvoidinWrapper from "../../components/KeyboardAvoidinWrapper";
 import { useDispatch } from "react-redux";
+import { AntDesign } from '@expo/vector-icons';
 import { useVerifyOtpMutation, useResendOtpMutation } from "../../services/Auth/authAPI";
 import { verifyOtpSuccess } from "../../features/Auth/authSlice";
 import { useNavigation, useRoute } from "@react-navigation/native";
@@ -128,6 +129,9 @@ const OtpVerification = ({ route, onVerify, onResend, onClose }) => {
       setIsResending(false);
     }
   };
+  const handleBack = () => {
+    navigation.goBack();
+  };
 
   // For modal version
   if (onClose) {
@@ -140,6 +144,12 @@ const OtpVerification = ({ route, onVerify, onResend, onClose }) => {
       >
         <KeyboardAvoidinWrapper>
           <View className="flex-1 bg-[#181e25] bg-opacity-50 justify-center items-center">
+                <TouchableOpacity
+              className="absolute z-10 top-5 left-5"
+              onPress={handleBack}
+            >
+              <AntDesign name="arrowleft" size={24} color="white" />
+            </TouchableOpacity>
             <View className="w-9/12 bg-white p-6 rounded-xl items-center"> 
               <Image
                 className="w-40 h-40"
