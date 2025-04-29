@@ -89,7 +89,7 @@ const OtpVerification = ({ route, onVerify, onResend, onClose }) => {
       if (onVerify) {
         onVerify(response);
       } else {
-        navigation.navigate("Main");
+        navigation.navigate("Auth");
       }
 
     } catch (err) {
@@ -224,6 +224,12 @@ const OtpVerification = ({ route, onVerify, onResend, onClose }) => {
   // For screen version
   return (
     <SafeAreaView className="flex-1 bg-[#181e25] justify-center">
+       <TouchableOpacity
+              className="absolute z-10 top-20 left-5"
+              onPress={handleBack}
+            >
+              <AntDesign name="arrowleft" size={24} color="white" />
+            </TouchableOpacity>
       <KeyboardAvoidinWrapper>
         <View className="w-full bg-[#f1f1f1] rounded-t-3xl p-6 items-center" style={{marginTop: 100}}>
           <Image

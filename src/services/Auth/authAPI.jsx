@@ -4,13 +4,13 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 const AUTH_ENDPOINTS = {
   REGISTER: '/auth/register',
   VERIFY_OTP: '/auth/otp/verify',
-  SEND_OTP: '/auth/otp/send',  // Ensure this endpoint is defined
+  SEND_OTP: '/auth/otp/send',
   REFRESH_TOKEN: '/auth/refresh-token',
   LOGIN: '/auth/login',
   FORGOT_PASSWORD: '/auth/forgot-password',
   RESET_PASSWORD: '/auth/reset-password',
-  MY_PROFILE: '/users/me', // For getting current user
-  USER_PROFILE: '/users', // For getting/updating specific users
+  MY_PROFILE: '/users/me',
+  USER_PROFILE: '/users',
   LOGOUT: '/auth/logout',
 };
 
@@ -24,7 +24,7 @@ const TAG_TYPES = {
 export const authApi = createApi({
   reducerPath: 'authApi',
   baseQuery: fetchBaseQuery({ 
-    baseUrl: 'http://217.65.146.204:3000/api',
+    baseUrl: process.env.REACT_APP_API_BASE_URL, // Use environment variable here
     prepareHeaders: (headers, { getState }) => {
       const token = getState().auth.accessToken;
       if (token) {

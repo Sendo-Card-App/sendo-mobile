@@ -84,30 +84,10 @@ const SignIn = () => {
       if (response?.status === 200 && response?.data?.accessToken) {
         const userData = response.data;
   
-        // 2. Fetch refreshToken and deviceId after login
-        const refreshResponse = await fetch('http://217.65.146.204:3000/api/auth/refresh-token', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${userData.accessToken}`,
-          },
-          body: JSON.stringify({
-            deviceId: userData.deviceId, // Or userData.id if no deviceId
-          }),
-        });
-  
-        if (!refreshResponse.ok) {
-          throw new Error('Failed to fetch refresh token');
-        }
-  
-        const refreshData = await refreshResponse.json(); // { refreshToken, deviceId }
-  
-        // 3. Merge and store everything
         const authData = {
           user: userData,
           accessToken: userData.accessToken,
-          refreshToken: refreshData.refreshToken,
-          deviceId: refreshData.deviceId,
+          deviceId: userData.deviceId,
           isGuest: false,
         };
   

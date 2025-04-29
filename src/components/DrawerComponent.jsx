@@ -24,21 +24,29 @@ import Toast from 'react-native-toast-message';
 const DrawerComponent = ({ navigation }) => {
   const navigation2 = useNavigation();
   const { t } = useTranslation();
-  const { data: userProfile, isLoading, error, refetch } = useGetUserProfileQuery();
+   const { 
+      data: userProfile, 
+      isLoading, 
+    } = useGetUserProfileQuery();
   const [logout, { isLoading: isLoggingOut }] = useLogoutMutation();
-
-  console.log("User Profile1:", userProfile);
 
   // Handle logout logic
   const handleLogout = async () => {
     try {
-      // Call logout API
-      await logout({deviceId}).unwrap();
+      // Get the stored auth data
+      const authData = await getData('@authData');
       
-      // Clear authentication data using storage utilities
+      if (!authData?.deviceId) {
+        throw new Error('Device ID not found');
+      }
+      
+      // Call logout API with deviceId
+      await logout({ deviceId: authData.deviceId }).unwrap();
+      
+      // Clear authentication data
       await removeData('@authData');
       
-      // Reset navigation state to SignIn page
+      // Reset navigation stack and go to SignIn
       navigation2.reset({
         index: 0,
         routes: [{ name: 'SignIn' }],
@@ -51,31 +59,25 @@ const DrawerComponent = ({ navigation }) => {
       });
     } catch (err) {
       console.error("Logout error:", err);
+      
+      // Even if logout API fails, clear local data
+      await removeData('@authData');
+      
       Toast.show({
         type: 'error',
         text1: 'Error',
-        text2: err?.data?.message || 'Failed to logout. Please try again.',
+        text2: err?.data?.message || 'Logged out locally (server unavailable)',
       });
-    }
-  };
-
-  // Handle session invalidation and redirect to SignIn page
-  useEffect(() => {
-    if (error && error.status === 401) {
-      Toast.show({
-        type: 'error',
-        text1: 'Session Invalid',
-        text2: 'Your session has expired. Please log in again.',
-      });
-
-      // Clear any saved data and redirect to SignIn page
-      removeData('@authData');
+      
       navigation2.reset({
         index: 0,
         routes: [{ name: 'Auth' }],
       });
     }
-  }, [error, navigation2]);
+  };
+
+  // Handle session invalidation and redirect to SignIn page
+  
 
   // If loading or error, show a loader
   if (isLoading || isLoggingOut) {
@@ -92,7 +94,7 @@ const DrawerComponent = ({ navigation }) => {
       <View className="bg-[#7ddd7d] pt-10 pl-10 pr-5 pb-5">
         <View className="flex-row justify-between items-center">
           <Text className="text-white font-bold text-xl">
-            {userProfile?.firstname} {userProfile?.lastname}
+          {userProfile?.data?.firstname || ''} {userProfile?.data?.lastname || ''}
           </Text>
           <TouchableOpacity
             onPress={() => navigation.closeDrawer()}
@@ -101,8 +103,8 @@ const DrawerComponent = ({ navigation }) => {
             <AntDesign name="arrowleft" size={24} color="white" />
           </TouchableOpacity>
         </View>
-        <Text className="text-white">{userProfile?.email}</Text>
-        <Text className="text-white">{userProfile?.phone}</Text>
+        <Text className="text-white">{userProfile?.data?.email || ''}</Text>
+        <Text className="text-white">{userProfile?.data?.phone || ''}</Text>
       </View>
       
       {/* Lower section */}
