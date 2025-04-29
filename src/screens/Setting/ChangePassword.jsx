@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useDispatch } from 'react-redux';
 import { useResetPasswordMutation } from '../../services/Auth/authAPI'; 
 import Toast from 'react-native-toast-message'; 
+import { getData } from "../../services/storage";
 import Loader from "../../components/Loader"; // Importing the Loader component
 
 const ChangePassword = () => {
@@ -19,83 +20,98 @@ const ChangePassword = () => {
   const [isLoading, setIsLoading] = useState(false); // Loading state
   const [resetPassword] = useResetPasswordMutation();
 
-  const handleSubmit = async () => {
-    // Validation des champs
-    if (!oldPassword || !newPassword || !confirmPassword) {
+  
+
+const handleSubmit = async () => {
+  if (!oldPassword || !newPassword || !confirmPassword) {
+    Toast.show({
+      type: 'error',
+      position: 'top',
+      text1: 'Field required',
+      text2: 'All fields are required',
+    });
+    return;
+  }
+
+  if (oldPassword === newPassword) {
+    Toast.show({
+      type: 'error',
+      position: 'top',
+      text1: 'Password same as old',
+      text2: 'The new password must be different from the old one.',
+    });
+    return;
+  }
+
+  if (newPassword.length < 8) {
+    Toast.show({
+      type: 'error',
+      position: 'top',
+      text1: 'Password too short',
+      text2: 'The password must be at least 8 characters long.',
+    });
+    return;
+  }
+
+  if (newPassword !== confirmPassword) {
+    Toast.show({
+      type: 'error',
+      position: 'top',
+      text1: 'Password mismatch',
+      text2: 'The passwords do not match.',
+    });
+    return;
+  }
+
+  try {
+    setIsLoading(true);
+
+    const authData = await getData('auth');
+    const token = authData?.accessToken;
+
+    if (!token) {
       Toast.show({
         type: 'error',
         position: 'top',
-        text1: 'Field required', 
-        text2: 'All fields are required',
+        text1: 'Not authenticated',
+        text2: 'User token not found. Please log in again.',
       });
       return;
     }
 
-    if (oldPassword === newPassword) {
+    const response = await resetPassword({
+      token,
+      newPassword,
+    });
+
+    if (response?.data?.code === 200) {
+      Toast.show({
+        type: 'success',
+        position: 'top',
+        text1: 'Password updated',
+        text2: 'Your password has been successfully updated.',
+      });
+    } else {
       Toast.show({
         type: 'error',
         position: 'top',
-        text1: 'Password same as old', 
-        text2: 'The new password must be different from the old one.',
+        text1: 'Update failed',
+        text2: response?.error?.data?.message || 'Failed to update password.',
       });
-      return;
     }
+  } catch (error) {
+    Toast.show({
+      type: 'error',
+      position: 'top',
+      text1: 'Something went wrong',
+      text2: 'There was an issue updating your password.',
+    });
+  } finally {
+    setIsLoading(false);
+  }
+};
 
-    if (newPassword.length < 8) {
-      Toast.show({
-        type: 'error',
-        position: 'top',
-        text1: 'Password too short', 
-        text2: 'The password must be at least 8 characters long.',
-      });
-      return;
-    }
-
-    if (newPassword !== confirmPassword) {
-      Toast.show({
-        type: 'error',
-        position: 'top',
-        text1: 'Password mismatch', 
-        text2: 'The passwords do not match.',
-      });
-      return;
-    }
-
-    try {
-      setIsLoading(true); // Start loading
-      // Appel API pour la mise à jour du mot de passe
-      const response = await resetPassword({
-        token: 'USER_AUTH_TOKEN', // Replace with the actual user's token
-        newPassword: newPassword,
-      });
-
-      if (response.error) {
-        Toast.show({
-          type: 'error',
-          position: 'top',
-          text1: 'Current password incorrect', // Don't translate the error message
-          text2: 'The current password you entered is incorrect.',
-        });
-      } else {
-        Toast.show({
-          type: 'success',
-          position: 'top',
-          text1: 'Password updated', // Don't translate the success message
-          text2: 'Your password has been successfully updated.',
-        });
-        // Redirect or perform another action after the update
-      }
-    } catch (error) {
-      Toast.show({
-        type: 'error',
-        position: 'top',
-        text1: 'Something went wrong', // Don't translate the error message
-        text2: 'There was an issue updating your password.',
-      });
-    } finally {
-      setIsLoading(false); // Stop loading
-    }
-  };
+  
 
   return (
     <View style={{ padding: 20 }}>

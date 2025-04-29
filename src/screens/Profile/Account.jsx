@@ -37,18 +37,6 @@ const Account = () => {
     refetch 
   } = useGetUserProfileQuery();
   
-  useEffect(() => {
-    if (userProfile) {
-      console.log("User Profile Data:", userProfile);
-    }
-    if (isLoading) {
-      console.log("Loading data...");
-    }
-    if (error) {
-      console.log("Error fetching data:", error);
-    }
-  }, [userProfile, isLoading, error]);
-  
   // Mutations
   const [updateProfile, { isLoading: isUpdating }] = useUpdateProfileMutation();
   const [sendOtp] = useSendOtpMutation();
@@ -73,12 +61,10 @@ const Account = () => {
   useEffect(() => {
     if (userProfile) {
       const profileData = {
-        firstname: userProfile.firstname || "", // Default to empty string if undefined
-        lastname: userProfile.lastname || "",   // Default to empty string if undefined
-        phone: userProfile.phone || "",
-        email: userProfile.email || "",
-        cniFront: userProfile.cniFront || null,
-        cniBack: userProfile.cniBack || null,
+        firstname: userProfile.data.firstname || "", // Default to empty string if undefined
+        lastname: userProfile.data.lastname || "",   // Default to empty string if undefined
+        phone: userProfile.data.phone || "",
+        email: userProfile.data.email || "",
       };
       setFormData(profileData);
       setOriginalData(profileData);
@@ -317,7 +303,7 @@ const Account = () => {
                 </View>
               ) : (
                 <Text className="text-lg bg-white rounded-xl p-3">
-                  {userProfile ? `${userProfile.firstname} ${userProfile.lastname}` : "Data not available"}
+                  {userProfile ? `${userProfile.data.firstname} ${userProfile.data.lastname}` : "Data not available"}
                 </Text>
 
               )}
@@ -336,7 +322,7 @@ const Account = () => {
                 />
               ) : (
                 <Text className="text-lg bg-white rounded-xl p-3">
-                  {userProfile?.phone || "Loading..."}
+                  {userProfile?.data?.phone || "Loading..."}
                 </Text>
               )}
             </View>
@@ -355,34 +341,9 @@ const Account = () => {
                 />
               ) : (
                 <Text className="text-lg bg-white rounded-xl p-3">
-                  {userProfile?.email || "Loading..."}
+                  {userProfile?.data?.email || "Loading..."}
                 </Text>
               )}
-            </View>
-
-            {/* CNI Upload */}
-            <View className="mb-6">
-              <Text className="text-gray-700 font-bold mb-2">CNI Document</Text>
-              <View className="flex-row justify-between">
-                <TouchableOpacity 
-                  className={`items-center p-3 rounded-xl ${isEditing ? 'bg-[#7ddd7d]' : 'bg-gray-200'}`}
-                  onPress={() => isEditing && pickImage('cniFront')}
-                  disabled={!isEditing}
-                >
-                  <Text className={isEditing ? 'text-white' : 'text-gray-500'}>
-                    {formData.cniFront ? "Front Updated" : "Upload Front"}
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity 
-                  className={`items-center p-3 rounded-xl ${isEditing ? 'bg-[#7ddd7d]' : 'bg-gray-200'}`}
-                  onPress={() => isEditing && pickImage('cniBack')}
-                  disabled={!isEditing}
-                >
-                  <Text className={isEditing ? 'text-white' : 'text-gray-500'}>
-                    {formData.cniBack ? "Back Updated" : "Upload Back"}
-                  </Text>
-                </TouchableOpacity>
-              </View>
             </View>
 
             {/* Save Button */}
