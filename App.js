@@ -34,7 +34,8 @@ import PaymentMethod from "./src/screens/Transfert/PaymentMethod";
 import Support from "./src/screens/Setting/Support";
 import Payment from "./src/screens/VirtualCard/Payment";
 import DrawerComponent from "./src/components/DrawerComponent";
-import History from "./src/screens/VirtualCard/History";
+import History from "./src/screens/Transfert/History";
+import Receipt from "./src/screens/Transfert/Receipt";
 import Account from "./src/screens/Profile/Account";
 import Settings from "./src/screens/Setting/Settings";
 import MonSolde from "./src/screens/Solde/MonSolde";
@@ -84,10 +85,10 @@ function CustomTabBar({ state, descriptors, navigation }) {
           case 'HomeTab':
             iconName = isFocused ? 'home' : 'home-outline';
             break;
-          case 'PaymentTab':
+          case 'ManageVirtualCardTab':
             iconName = isFocused ? 'card' : 'card-outline';
             break;
-          case 'ManageVirtualCardTab':
+          case 'TransferTab':
             iconName = isFocused ? 'swap-horizontal' : 'swap-horizontal-outline';
             break;
           case 'SettingsTab':
@@ -137,14 +138,14 @@ function MainTabs() {
         options={{ title: 'Home' }}
       />
       <Tab.Screen 
-        name="PaymentTab" 
-        component={Payment} 
+        name="ManageVirtualCardTab" 
+        component={ManageVirtualCard} 
         options={{ title: 'Cards' }}
       />
       <Tab.Screen 
-        name="ManageVirtualCardTab" 
-        component={ManageVirtualCard} 
-        options={{ title: 'Transactions' }}
+        name="TransferTab"
+        component={History} 
+        options={{ title: 'Transfer' }}
       />
       <Tab.Screen 
         name="SettingsTab" 
@@ -199,8 +200,10 @@ function MainStack() {
       <Stack.Screen name="ConﬁrmeTheTransfer" component={ConﬁrmeTheTransfer} options={{ headerShown: false }} />
       <Stack.Screen name="Success" component={Success} options={{ headerShown: false }} />
       <Stack.Screen name="Support" component={Support} />
+      <Stack.Screen name="Settings" component={Settings}/>
       <Stack.Screen name="Payment" component={Payment} />
-      <Stack.Screen name="History" component={History} />
+      <Stack.Screen name="History" component={History}  />
+      <Stack.Screen name="Receipt" component={Receipt} />
       <Stack.Screen name="MonSolde" component={MonSolde} options={{ headerTitle: "Mon Solde" }} />
       <Stack.Screen name="CreateVirtualCard" component={CreateVirtualCard} options={{ headerTitle: "Créer une carte virtuelle" }} />
       <Stack.Screen name="VerifyIdentity" component={VerifyIdentity} options={{ headerShown: false }} />
@@ -254,16 +257,13 @@ const styles = StyleSheet.create({
   tabContainer: {
     flexDirection: 'row',
     height: 65,
-    backgroundColor: '#fff',
     borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
+    borderTopColor: 'green',
     justifyContent: 'space-around',
     alignItems: 'center',
    
-    backgroundColor: '#87CEEB', // Light blue background
-    borderTopLeftRadius: 40,
-    borderTopRightRadius: 40,
-    shadowColor: '#000',
+    backgroundColor: 'blue', // Light blue background
+    shadowColor: 'pink',
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,

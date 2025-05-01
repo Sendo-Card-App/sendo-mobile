@@ -13,11 +13,14 @@ import { AntDesign, EvilIcons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import Avatar from "../../images/Avatar.png";
 import KeyboardAvoidinWrapper from "../../components/KeyboardAvoidinWrapper";
-import { 
-  useGetUserProfileQuery, 
+import {
+  useGetUserProfileQuery,
   useUpdateProfileMutation,
   useSendOtpMutation,
-  useVerifyOtpMutation
+  useVerifyOtpMutation,
+  useAddSecondPhoneMutation,
+  useSendSecondPhoneOtpMutation,
+  useVerifySecondPhoneOtpMutation,
 } from "../../services/Auth/authAPI";
 import { useNavigation } from "@react-navigation/native";
 import Loader from "../../components/Loader";
@@ -28,109 +31,73 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
 const Account = () => {
   const navigation = useNavigation();
-  
-  // Fetch user profile
-  const { 
-    data: userProfile, 
-    isLoading, 
-    error, 
-    refetch 
-  } = useGetUserProfileQuery();
-  
-  // Mutations
+
+  const { data: userProfile, isLoading, error, refetch } = useGetUserProfileQuery();
+
   const [updateProfile, { isLoading: isUpdating }] = useUpdateProfileMutation();
   const [sendOtp] = useSendOtpMutation();
   const [verifyOtp] = useVerifyOtpMutation();
+  const [addSecondPhone] = useAddSecondPhoneMutation();
+  const [sendSecondPhoneOtp] = useSendSecondPhoneOtpMutation();
+  const [verifySecondPhoneOtp] = useVerifySecondPhoneOtpMutation();
 
-  // States
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     firstname: "",
     lastname: "",
     phone: "",
     email: "",
-    cniFront: null,
-    cniBack: null,
+    profession: "",
+    region: "",
+    city: "",
+    district: "",
+    picture: null,
   });
   const [originalData, setOriginalData] = useState({});
   const [showOtpModal, setShowOtpModal] = useState(false);
-  const [otpTarget, setOtpTarget] = useState(null); // 'email' or 'phone'
-  const [tempValue, setTempValue] = useState(""); // Stores new email/phone during OTP verification
-       
-  // Initialize form data
+  const [otpTarget, setOtpTarget] = useState(null); // 'email', 'phone', or 'secondPhone'
+  const [tempValue, setTempValue] = useState("");
+  const [isSecondPhone, setIsSecondPhone] = useState(false);
+
+
   useEffect(() => {
     if (userProfile) {
       const profileData = {
-        firstname: userProfile.data.firstname || "", // Default to empty string if undefined
-        lastname: userProfile.data.lastname || "",   // Default to empty string if undefined
+        firstname: userProfile.data.firstname || "",
+        lastname: userProfile.data.lastname || "",
         phone: userProfile.data.phone || "",
         email: userProfile.data.email || "",
+        profession: userProfile.data.profession || "",
+        region: userProfile.data.region || "",
+        city: userProfile.data.city || "",
+        district: userProfile.data.district || "",
+        picture: userProfile.data.picture || null,
       };
       setFormData(profileData);
       setOriginalData(profileData);
     }
   }, [userProfile]);
 
-  // Handle image selection for CNI
-  const pickImage = async (type) => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: [ImagePicker.MediaTypeImages],
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 1,
-    });
-
-    if (!result.canceled) {
-      const file = result.assets[0];
-      
-      // Check file size
-      if (file.fileSize > MAX_FILE_SIZE) {
-        Toast.show({
-          type: "error",
-          text1: "Error",
-          text2: "File size exceeds 5MB limit",
-        });
-        return;
-      }
-
-      // Check file type
-      const validTypes = ['image/jpeg', 'image/png', 'image/jpg'];
-      if (!validTypes.includes(file.type)) {
-        Toast.show({
-          type: "error",
-          text1: "Error",
-          text2: "Only JPG, JPEG, and PNG files are allowed",
-        });
-        return;
-      }
-
-      setFormData(prev => ({
-        ...prev,
-        [type]: file
-      }));
-    }
-  };
-
-  // Handle OTP verification for email/phone changes
   const handleVerifyOtp = async (code) => {
     try {
-      const response = await verifyOtp({ 
-        [otpTarget]: tempValue, 
-        code 
-      }).unwrap();
-
-      // Update the form data with the verified value
-      setFormData(prev => ({
-        ...prev,
-        [otpTarget]: tempValue
-      }));
+      if (isSecondPhone) {
+        await verifySecondPhoneOtp({ phone: tempValue, code }).unwrap();
+        await addSecondPhone({ phone: tempValue }).unwrap();
+        Toast.show({
+          type: "success",
+          text1: "Success",
+          text2: "Second phone number added successfully",
+        });
+      } else {
+        await verifyOtp({ [otpTarget]: tempValue, code }).unwrap();
+        setFormData((prev) => ({
+          ...prev,
+          [otpTarget]: tempValue,
+        }));
+      }
 
       setShowOtpModal(false);
-      Toast.show({
-        type: "success",
-        text1: "Success",
-        text2: `${otpTarget === 'email' ? 'Email' : 'Phone'} verified successfully`,
-      });
+      setIsSecondPhone(false);
     } catch (err) {
       console.error("OTP Verification Error:", err);
       Toast.show({
@@ -141,10 +108,20 @@ const Account = () => {
     }
   };
 
-  // Handle save profile
   const handleSave = async () => {
-    // Validate required fields
-    if (!formData.firstname || !formData.lastname || !formData.phone || !formData.email) {
+    const {
+      firstname,
+      lastname,
+      phone,
+      email,
+      profession,
+      region,
+      city,
+      district,
+      picture,
+    } = formData;
+  
+    if (!firstname || !lastname || !phone || !email || !profession || !region || !city || !district) {
       Toast.show({
         type: "error",
         text1: "Error",
@@ -152,151 +129,204 @@ const Account = () => {
       });
       return;
     }
-
-    // Check if CNI is required (not already uploaded)
-    if ((!formData.cniFront || !formData.cniBack) && (!originalData.cniFront || !originalData.cniBack)) {
-      Toast.show({
-        type: "error",
-        text1: "Error",
-        text2: "Please upload both sides of your CNI",
-      });
-      return;
-    }
-
+  
     try {
-      // Prepare form data (including file uploads)
-      const formDataToSend = new FormData();
-      formDataToSend.append('firstname', formData.firstname);
-      formDataToSend.append('lastname', formData.lastname);
-      formDataToSend.append('phone', formData.phone);
-      formDataToSend.append('email', formData.email);
-      
-      if (formData.cniFront?.uri) {
-        formDataToSend.append('cniFront', {
-          uri: formData.cniFront.uri,
-          type: formData.cniFront.type,
-          name: `cniFront.${formData.cniFront.type.split('/')[1]}`,
+      let payloadToSend;
+  
+      if (picture) {
+        const formDataToSend = new FormData();
+        formDataToSend.append("firstname", firstname);
+        formDataToSend.append("lastname", lastname);
+        formDataToSend.append("phone", phone);
+        formDataToSend.append("email", email);
+        formDataToSend.append("profession", profession);
+        formDataToSend.append("region", region);
+        formDataToSend.append("city", city);
+        formDataToSend.append("district", district);
+        formDataToSend.append("picture", {
+          uri: picture.uri,
+          name: picture.name,
+          type: picture.type,
         });
+  
+        payloadToSend = formDataToSend;
+      } else {
+        payloadToSend = {
+          firstname,
+          lastname,
+          phone,
+          email,
+          profession,
+          region,
+          city,
+          district,
+          picture,
+        };
       }
-      
-      if (formData.cniBack?.uri) {
-        formDataToSend.append('cniBack', {
-          uri: formData.cniBack.uri,
-          type: formData.cniBack.type,
-          name: `cniBack.${formData.cniBack.type.split('/')[1]}`,
-        });
-      }
-
-      // Send update request
-      await updateProfile(formDataToSend).unwrap();
-
+  
+      await updateProfile({
+        userId: userProfile.data.id,
+        formData: payloadToSend,
+      }).unwrap();
+  
       Toast.show({
         type: "success",
         text1: "Success",
         text2: "Profile updated successfully",
       });
-      
+  
       setIsEditing(false);
       refetch();
     } catch (err) {
       console.error("Profile update error:", err);
-      let errorMessage = "Failed to update profile";
-      
-      if (err.data?.message?.includes("email")) {
-        errorMessage = "Email already in use";
-      } else if (err.data?.message?.includes("phone")) {
-        errorMessage = "Phone number already in use";
-      } else if (err.status === 401) {
-        errorMessage = "Session expired. Please login again.";
-      }
-
       Toast.show({
         type: "error",
         text1: "Error",
-        text2: errorMessage,
+        text2: err?.data?.message || "Failed to update profile",
+      });
+    }
+  };
+  
+
+  const pickImage = async () => {
+    try {
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      const cameraPermissionResult = await ImagePicker.requestCameraPermissionsAsync();
+
+      if (permissionResult.status !== "granted" || cameraPermissionResult.status !== "granted") {
+        Toast.show({
+          type: "error",
+          text1: "Permission denied",
+          text2: "Please grant camera and media library permissions.",
+        });
+        return;
+      }
+
+      const pickerResult = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 1,
+        base64: false,
+      });
+
+      if (pickerResult.cancelled) return;
+
+      const { uri } = pickerResult.assets?.[0] || pickerResult;
+
+      const fileInfo = await fetch(uri);
+      const blob = await fileInfo.blob();
+      if (blob.size > MAX_FILE_SIZE) {
+        Toast.show({
+          type: "error",
+          text1: "File too large",
+          text2: "Image must be less than 5MB.",
+        });
+        return;
+      }
+
+      setFormData((prev) => ({
+        ...prev,
+        picture: {
+          uri,
+          name: "profile.jpg",
+          type: "image/jpeg",
+        },
+      }));
+    } catch (err) {
+      console.error("Image Picker Error:", err);
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Failed to pick image",
       });
     }
   };
 
-  // Handle field changes (with OTP verification for email/phone)
   const handleFieldChange = (field, value) => {
-    if ((field === 'email' || field === 'phone') && 
-        value !== originalData[field]) {
-      setOtpTarget(field);
+    if (field === "phone" && value !== originalData.phone) {
+      setOtpTarget("phone");
       setTempValue(value);
-      
-      // Send OTP to the new value
-      sendOtp({ [field]: value })
+      sendOtp({ phone: value })
         .unwrap()
-        .then(() => {
-          setShowOtpModal(true);
-        })
-        .catch(err => {
+        .then(() => setShowOtpModal(true))
+        .catch((err) => {
           console.error("OTP send error:", err);
           Toast.show({
             type: "error",
             text1: "Error",
-            text2: `Failed to send OTP to new ${field}`,
+            text2: `Failed to send OTP to new phone number`,
+          });
+        });
+    } else if (field === "email" && value !== originalData.email) {
+      setOtpTarget("email");
+      setTempValue(value);
+      sendOtp({ email: value })
+        .unwrap()
+        .then(() => setShowOtpModal(true))
+        .catch((err) => {
+          console.error("OTP send error:", err);
+          Toast.show({
+            type: "error",
+            text1: "Error",
+            text2: `Failed to send OTP to new email`,
           });
         });
     } else {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        [field]: value
+        [field]: value,
       }));
     }
+  };
+
+  const handleAddSecondPhone = () => {
+    setIsSecondPhone(true);
+    setOtpTarget("phone");
+    setTempValue("");
+    setShowOtpModal(true);
   };
 
   return (
     <SafeAreaView className="flex-1 bg-[#181e25]">
       <StatusBar style="light" backgroundColor="#181e25" />
-      
       <KeyboardAvoidinWrapper>
         <View className="flex-1 p-6">
-          {/* Header */}
           <View className="flex-row justify-between items-center mb-6">
             <Text className="text-white text-2xl font-bold">My Account</Text>
             <TouchableOpacity onPress={() => setIsEditing(!isEditing)}>
-              <AntDesign 
-                name={isEditing ? "close" : "edit"} 
-                size={24} 
-                color="white" 
-              />
+              <AntDesign name={isEditing ? "close" : "edit"} size={24} color="white" />
             </TouchableOpacity>
           </View>
 
-          {/* Profile Picture */}
           <View className="items-center mb-8">
             <Image
-              source={userProfile?.avatar ? { uri: userProfile.avatar } : Avatar}
+              source={formData.picture ? { uri: formData.picture.uri } : Avatar}
               className="w-32 h-32 rounded-full border-4 border-[#7ddd7d]"
             />
             {isEditing && (
-              <TouchableOpacity 
+              <TouchableOpacity
                 className="absolute bottom-0 right-0 bg-[#7ddd7d] rounded-full p-2"
-                onPress={() => pickImage('avatar')}
+                onPress={pickImage}
               >
                 <EvilIcons name="camera" size={24} color="white" />
               </TouchableOpacity>
             )}
           </View>
 
-          {/* Profile Form */}
           <View className="bg-[#f1f1f1] rounded-2xl p-6">
-            {/* Name Fields */}
+            {/* Full Name */}
             <View className="mb-6">
               <Text className="text-gray-700 font-bold mb-2">Full Name</Text>
               {isEditing ? (
                 <View className="flex-row space-x-2">
                   <TextInput
                     value={formData.firstname}
-                    onChangeText={(text) => handleFieldChange('firstname', text)}
+                    onChangeText={(text) => handleFieldChange("firstname", text)}
                     placeholder="First Name"
                     className="flex-1 bg-white rounded-xl p-3"
                   />
                   <TextInput
                     value={formData.lastname}
-                    onChangeText={(text) => handleFieldChange('lastname', text)}
+                    onChangeText={(text) => handleFieldChange("lastname", text)}
                     placeholder="Last Name"
                     className="flex-1 bg-white rounded-xl p-3"
                   />
@@ -305,21 +335,28 @@ const Account = () => {
                 <Text className="text-lg bg-white rounded-xl p-3">
                   {userProfile ? `${userProfile.data.firstname} ${userProfile.data.lastname}` : "Data not available"}
                 </Text>
-
               )}
             </View>
 
-            {/* Phone Field */}
+            {/* Phone Number */}
             <View className="mb-6">
               <Text className="text-gray-700 font-bold mb-2">Phone Number</Text>
               {isEditing ? (
-                <TextInput
-                  value={formData.phone}
-                  onChangeText={(text) => handleFieldChange('phone', text)}
-                  keyboardType="phone-pad"
-                  placeholder="Phone Number"
-                  className="bg-white rounded-xl p-3"
-                />
+                <>
+                  <TextInput
+                    value={formData.phone}
+                    onChangeText={(text) => handleFieldChange("phone", text)}
+                    keyboardType="phone-pad"
+                    placeholder="Phone Number"
+                    className="bg-white rounded-xl p-3 mb-2"
+                  />
+                  <TouchableOpacity
+                    onPress={handleAddSecondPhone}
+                    className="bg-blue-500 p-2 rounded-lg items-center"
+                  >
+                    <Text className="text-white">Add Second Phone</Text>
+                  </TouchableOpacity>
+                </>
               ) : (
                 <Text className="text-lg bg-white rounded-xl p-3">
                   {userProfile?.data?.phone || "Loading..."}
@@ -327,13 +364,13 @@ const Account = () => {
               )}
             </View>
 
-            {/* Email Field */}
+            {/* Email */}
             <View className="mb-6">
               <Text className="text-gray-700 font-bold mb-2">Email</Text>
               {isEditing ? (
                 <TextInput
                   value={formData.email}
-                  onChangeText={(text) => handleFieldChange('email', text)}
+                  onChangeText={(text) => handleFieldChange("email", text)}
                   keyboardType="email-address"
                   autoCapitalize="none"
                   placeholder="Email"
@@ -345,6 +382,67 @@ const Account = () => {
                 </Text>
               )}
             </View>
+
+            {/* Other Fields */}
+            {isEditing ? (
+              <>
+                <TextInput
+                  placeholder="Profession"
+                  value={formData.profession}
+                  onChangeText={(text) => handleFieldChange("profession", text)}
+                  className="bg-white rounded-xl p-3 mb-3"
+                />
+                <TextInput
+                  placeholder="Region"
+                  value={formData.region}
+                  onChangeText={(text) => handleFieldChange("region", text)}
+                  className="bg-white rounded-xl p-3 mb-3"
+                />
+                <TextInput
+                  placeholder="City"
+                  value={formData.city}
+                  onChangeText={(text) => handleFieldChange("city", text)}
+                  className="bg-white rounded-xl p-3 mb-3"
+                />
+                <TextInput
+                  placeholder="District"
+                  value={formData.district}
+                  onChangeText={(text) => handleFieldChange("district", text)}
+                  className="bg-white rounded-xl p-3 mb-3"
+                />
+              </>
+            ) : (
+              <>
+                <View className="mb-6">
+                  <Text className="text-gray-700 font-bold mb-2">Profession</Text>
+                  <Text className="text-lg bg-white rounded-xl p-3">
+                    {userProfile?.data?.profession || "Not set"}
+                  </Text>
+                </View>
+
+                <View className="mb-6">
+                  <Text className="text-gray-700 font-bold mb-2">Region</Text>
+                  <Text className="text-lg bg-white rounded-xl p-3">
+                    {userProfile?.data?.region || "Not set"}
+                  </Text>
+                </View>
+
+                <View className="mb-6">
+                  <Text className="text-gray-700 font-bold mb-2">City</Text>
+                  <Text className="text-lg bg-white rounded-xl p-3">
+                    {userProfile?.data?.city || "Not set"}
+                  </Text>
+                </View>
+
+                <View className="mb-6">
+                  <Text className="text-gray-700 font-bold mb-2">District</Text>
+                  <Text className="text-lg bg-white rounded-xl p-3">
+                    {userProfile?.data?.district || "Not set"}
+                  </Text>
+                </View>
+              </>
+            )}
+
 
             {/* Save Button */}
             {isEditing && (
@@ -367,10 +465,12 @@ const Account = () => {
       {/* OTP Verification Modal */}
       <OtpVerificationModal
         visible={showOtpModal}
-        onClose={() => setShowOtpModal(false)}
+        onClose={() => {
+          setShowOtpModal(false);
+          setIsSecondPhone(false);
+        }}
         onVerify={handleVerifyOtp}
-        target={otpTarget === 'email' ? tempValue : `+${tempValue}`}
-        onResend={() => sendOtp({ [otpTarget]: tempValue })}
+        target={otpTarget === "email" ? tempValue : `+${tempValue}`}
       />
     </SafeAreaView>
   );

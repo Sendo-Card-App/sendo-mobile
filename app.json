@@ -7,6 +7,11 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#181e25"
+    },
     "ios": {
       "supportsTablet": true
     },
@@ -39,7 +44,7 @@
     "extra": {
       "eas": {
         "projectId": "3c5e2368-a9f0-420d-aebf-8265754fe6a8",
-         "apiBaseUrl": "https://217.65.146.204:3000/api"
+        "apiBaseUrl": "https://217.65.146.204:3000/api"
       }
     }
   }

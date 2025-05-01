@@ -1,200 +1,296 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useDispatch } from 'react-redux';
-import { useResetPasswordMutation } from '../../services/Auth/authAPI'; 
-import Toast from 'react-native-toast-message'; 
-import { getData } from "../../services/storage";
-import Loader from "../../components/Loader"; // Importing the Loader component
+import {
+  useUpdatePasswordMutation,
+  useGetMyProfileQuery,
+} from '../../services/Auth/authAPI';
+import Toast from 'react-native-toast-message';
+import Loader from '../../components/Loader';
+import { Ionicons } from '@expo/vector-icons';
 
 const ChangePassword = () => {
   const { t } = useTranslation();
-  const dispatch = useDispatch();
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [errorMessage, setErrorMessage] = useState(null);
-  const [showOldPassword, setShowOldPassword] = useState(false); // State for old password visibility
-  const [showNewPassword, setShowNewPassword] = useState(false); // State for new password visibility
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false); // State for confirm password visibility
-  const [isLoading, setIsLoading] = useState(false); // Loading state
-  const [resetPassword] = useResetPasswordMutation();
+  const [showOldPassword, setShowOldPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  
+  const { data: profile, error: profileError } = useGetMyProfileQuery();
+  const [updatePassword] = useUpdatePasswordMutation();
 
-const handleSubmit = async () => {
-  if (!oldPassword || !newPassword || !confirmPassword) {
-    Toast.show({
-      type: 'error',
-      position: 'top',
-      text1: 'Field required',
-      text2: 'All fields are required',
-    });
-    return;
-  }
+  const getPasswordStrength = (password) => {
+    let strength = 0;
+    if (password.length >= 8) strength++;
+    if (/[A-Z]/.test(password)) strength++;
+    if (/\d/.test(password)) strength++;
+    if (/[!@#$%^&*()_+[\]{};':"\\|,.<>/?]/.test(password)) strength++;
 
-  if (oldPassword === newPassword) {
-    Toast.show({
-      type: 'error',
-      position: 'top',
-      text1: 'Password same as old',
-      text2: 'The new password must be different from the old one.',
-    });
-    return;
-  }
+    if (strength <= 1) return { label: t('Weak'), color: '#e74c3c', width: '33%' };
+    if (strength === 2 || strength === 3) return { label: t('Medium'), color: '#f1c40f', width: '66%' };
+    return { label: t('Strong'), color: '#2ecc71', width: '100%' };
+  };
 
-  if (newPassword.length < 8) {
-    Toast.show({
-      type: 'error',
-      position: 'top',
-      text1: 'Password too short',
-      text2: 'The password must be at least 8 characters long.',
-    });
-    return;
-  }
+  const passwordStrength = getPasswordStrength(newPassword);
 
-  if (newPassword !== confirmPassword) {
-    Toast.show({
-      type: 'error',
-      position: 'top',
-      text1: 'Password mismatch',
-      text2: 'The passwords do not match.',
-    });
-    return;
-  }
-
-  try {
-    setIsLoading(true);
-
-    const authData = await getData('auth');
-    const token = authData?.accessToken;
-
-    if (!token) {
+  const handleSubmit = async () => {
+    if (!oldPassword || !newPassword || !confirmPassword) {
       Toast.show({
         type: 'error',
-        position: 'top',
-        text1: 'Not authenticated',
-        text2: 'User token not found. Please log in again.',
+        text1: t('Field required'),
+        text2: t('All fields are required'),
       });
       return;
     }
 
-    const response = await resetPassword({
-      token,
-      newPassword,
-    });
-
-    if (response?.data?.code === 200) {
-      Toast.show({
-        type: 'success',
-        position: 'top',
-        text1: 'Password updated',
-        text2: 'Your password has been successfully updated.',
-      });
-    } else {
+    if (oldPassword === newPassword) {
       Toast.show({
         type: 'error',
-        position: 'top',
-        text1: 'Update failed',
-        text2: response?.error?.data?.message || 'Failed to update password.',
+        text1: t('Password same as old'),
+        text2: t('The new password must be different from the old one.'),
       });
+      return;
     }
-  } catch (error) {
-    Toast.show({
-      type: 'error',
-      position: 'top',
-      text1: 'Something went wrong',
-      text2: 'There was an issue updating your password.',
-    });
-  } finally {
-    setIsLoading(false);
-  }
-};
 
-  
+    const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+[\]{};':"\\|,.<>/?]).{8,}$/;
+    if (!passwordRegex.test(newPassword)) {
+      Toast.show({
+        type: 'error',
+        text1: t('Weak password'),
+        text2: t(
+          'Password must be at least 8 characters, include one uppercase letter, one number, and one special character.'
+        ),
+      });
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      Toast.show({
+        type: 'error',
+        text1: t('Password mismatch'),
+        text2: t('The passwords do not match.'),
+      });
+      return;
+    }
+
+    if (profileError) {
+      Toast.show({
+        type: 'error',
+        text1: t('Error fetching profile'),
+        text2: t('Unable to fetch user profile.'),
+      });
+      return;
+    }
+
+    const userId = profile?.data?.id;
+    if (!userId) {
+      Toast.show({
+        type: 'error',
+        text1: t('Not authenticated'),
+        text2: t('User information not found. Please log in again.'),
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const result = await updatePassword({
+        userId,
+        oldPassword,
+        newPassword,
+      }).unwrap();
+
+      if (result.status === 200 || result.code === 200) {
+        Toast.show({
+          type: 'success',
+          text1: t('Password updated'),
+          text2: t('Your password has been successfully updated.'),
+        });
+        setOldPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+      } else if (result.status === 500 || result.code === 500) {
+        Toast.show({
+          type: 'error',
+          text1: t('Server Error'),
+          text2: 'Erreur serveur',
+        });
+      } else if (result.status === 404 || result.code === 404) {
+        Toast.show({
+          type: 'error',
+          text1: t('User not found'),
+          text2: 'Utilisateur non trouvé',
+        });
+      } else {
+        Toast.show({
+          type: 'error',
+          text1: t('Update failed'),
+          text2: result?.message || t('Failed to update password.'),
+        });
+      }
+    } catch (err) {
+      console.error('UpdatePassword error:', err);
+      Toast.show({
+        type: 'error',
+        text1: t('Something went wrong'),
+        text2: t('There was an issue updating your password.'),
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
-    <View style={{ padding: 20 }}>
-      <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 20 }}>
+    <View style={{ flex: 1, backgroundColor: '#fff', padding: 20 }}>
+      <Text
+        style={{
+          fontSize: 24,
+          fontWeight: 'bold',
+          textAlign: 'center',
+          marginBottom: 30,
+          color: '#333',
+        }}
+      >
         {t('change_password')}
       </Text>
 
-      <TextInput
-        secureTextEntry={!showOldPassword}
-        placeholder={t('old_password')}
-        value={oldPassword}
-        onChangeText={setOldPassword}
-        style={{
-          height: 40,
-          borderColor: 'gray',
-          borderWidth: 1,
-          marginBottom: 20,
-          borderRadius: 15,
-          paddingLeft: 10,
-        }}
-      />
-      <TouchableOpacity
-        onPress={() => setShowOldPassword(prev => !prev)}
-        style={{ position: 'absolute', right: 10, top: 10 }}
-      >
-        <Text>{showOldPassword ? 'Hide' : 'Show'}</Text>
-      </TouchableOpacity>
+      {/* Old Password */}
+      <View style={{ marginBottom: 20, position: 'relative' }}>
+        <TextInput
+          secureTextEntry={!showOldPassword}
+          placeholder={t('old_password')}
+          value={oldPassword}
+          onChangeText={setOldPassword}
+          placeholderTextColor="#999"
+          style={{
+            height: 50,
+            borderColor: '#ddd',
+            borderWidth: 1,
+            borderRadius: 10,
+            paddingLeft: 15,
+            backgroundColor: '#f9f9f9',
+          }}
+        />
+        <TouchableOpacity
+          onPress={() => setShowOldPassword(v => !v)}
+          style={{ position: 'absolute', right: 15, top: 15 }}
+        >
+          <Ionicons
+            name={showOldPassword ? 'eye-off' : 'eye'}
+            size={20}
+            color="#666"
+          />
+        </TouchableOpacity>
+      </View>
 
-      <TextInput
-        secureTextEntry={!showNewPassword}
-        placeholder={t('new_password')}
-        value={newPassword}
-        onChangeText={setNewPassword}
-        style={{
-          height: 40,
-          borderColor: 'gray',
-          borderWidth: 1,
-          marginBottom: 20,
-          borderRadius: 15,
-          paddingLeft: 10,
-        }}
-      />
-      <TouchableOpacity
-        onPress={() => setShowNewPassword(prev => !prev)}
-        style={{ position: 'absolute', right: 10, top: 10 }}
-      >
-        <Text>{showNewPassword ? 'Hide' : 'Show'}</Text>
-      </TouchableOpacity>
+      {/* New Password */}
+      <View style={{ marginBottom: 10, position: 'relative' }}>
+        <TextInput
+          secureTextEntry={!showNewPassword}
+          placeholder={t('new_password')}
+          value={newPassword}
+          onChangeText={setNewPassword}
+          placeholderTextColor="#999"
+          style={{
+            height: 50,
+            borderColor: '#ddd',
+            borderWidth: 1,
+            borderRadius: 10,
+            paddingLeft: 15,
+            backgroundColor: '#f9f9f9',
+          }}
+        />
+        <TouchableOpacity
+          onPress={() => setShowNewPassword(v => !v)}
+          style={{ position: 'absolute', right: 15, top: 15 }}
+        >
+          <Ionicons
+            name={showNewPassword ? 'eye-off' : 'eye'}
+            size={20}
+            color="#666"
+          />
+        </TouchableOpacity>
+      </View>
 
-      <TextInput
-        secureTextEntry={!showConfirmPassword}
-        placeholder={t('confirm_new_password')}
-        value={confirmPassword}
-        onChangeText={setConfirmPassword}
-        style={{
-          height: 40,
-          borderRadius: 15,
-          borderColor: 'gray',
-          borderWidth: 1,
-          marginBottom: 20,
-          paddingLeft: 10,
-        }}
-      />
-      <TouchableOpacity
-        onPress={() => setShowConfirmPassword(prev => !prev)}
-        style={{ position: 'absolute', right: 10, top: 10 }}
-      >
-        <Text>{showConfirmPassword ? 'Hide' : 'Show'}</Text>
-      </TouchableOpacity>
+      {/* Password Strength Bar */}
+      {newPassword.length > 0 && (
+        <View style={{ marginBottom: 20 }}>
+          <View
+            style={{
+              height: 8,
+              width: '100%',
+              backgroundColor: '#eee',
+              borderRadius: 10,
+              overflow: 'hidden',
+            }}
+          >
+            <View
+              style={{
+                height: '100%',
+                width: passwordStrength.width,
+                backgroundColor: passwordStrength.color,
+              }}
+            />
+          </View>
+          <Text style={{ marginTop: 5, color: passwordStrength.color }}>
+            {passwordStrength.label}
+          </Text>
+        </View>
+      )}
 
+      {/* Confirm Password */}
+      <View style={{ marginBottom: 20, position: 'relative' }}>
+        <TextInput
+          secureTextEntry={!showConfirmPassword}
+          placeholder={t('confirm_new_password')}
+          value={confirmPassword}
+          onChangeText={setConfirmPassword}
+          placeholderTextColor="#999"
+          style={{
+            height: 50,
+            borderColor: '#ddd',
+            borderWidth: 1,
+            borderRadius: 10,
+            paddingLeft: 15,
+            backgroundColor: '#f9f9f9',
+          }}
+        />
+        <TouchableOpacity
+          onPress={() => setShowConfirmPassword(v => !v)}
+          style={{ position: 'absolute', right: 15, top: 15 }}
+        >
+          <Ionicons
+            name={showConfirmPassword ? 'eye-off' : 'eye'}
+            size={20}
+            color="#666"
+          />
+        </TouchableOpacity>
+      </View>
+
+      {/* Submit Button */}
       <TouchableOpacity
         onPress={handleSubmit}
+        disabled={isLoading}
         style={{
-          backgroundColor: '#7ddd7d',
+          backgroundColor: '#4CAF50',
           paddingVertical: 15,
-          borderRadius: 50,
-          marginTop: 20,
-          justifyContent: 'center',
+          borderRadius: 10,
           alignItems: 'center',
+          marginTop: 20,
+          elevation: 3,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.2,
+          shadowRadius: 3,
         }}
       >
-        {isLoading ? <Loader /> : (
-          <Text style={{ fontSize: 18, textAlign: 'center', fontWeight: 'bold', color: 'white' }}>
+        {isLoading ? (
+          <Loader color="#fff" />
+        ) : (
+          <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 18 }}>
             {t('submit')}
           </Text>
         )}

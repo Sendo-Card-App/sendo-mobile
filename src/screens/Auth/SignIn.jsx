@@ -32,22 +32,29 @@ const SignIn = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loginWithEmail, { isLoading }] = useLoginWithEmailMutation();
   const [emailError, setEmailError] = useState(false);
+  const [loading, setLoading] = React.useState(true);
   const [passwordError, setPasswordError] = useState(false);
   
-  useEffect(() => {
-    const checkAuthData = async () => {
-      try {
-        const authData = await getData('@authData');
-        if (authData?.accessToken) {
-          dispatch(loginSuccess(authData));
-          navigation.navigate("Main");
-        }
-      } catch (error) {
-        console.log("Error checking auth data:", error);
-      }
-    };
-    checkAuthData();
-  }, []);
+ useEffect(() => {
+     const checkAuthData = async () => {
+       try {
+         const authData = await getData('@authData');
+         if (authData?.accessToken) {
+           dispatch(loginSuccess(authData));
+           navigation.replace("Main");
+         } else {
+           navigation.replace("AUTH");
+         }
+       } catch (error) {
+         console.log("Error checking auth data:", error);
+         navigation.replace("Auth");
+       } finally {
+         setLoading(false); // stop loader once done
+       }
+     };
+   
+     checkAuthData();
+   }, [])
   
   const handleSubmit = async () => {
     let hasError = false;
@@ -137,6 +144,7 @@ const SignIn = () => {
   const handleToggle = () => {
     navigation.navigate("Signup");
   };
+  if (loading) return <Loader />;
 
   return (
     <KeyboardAvoidinWrapper>
@@ -166,6 +174,19 @@ const SignIn = () => {
             autoCapitalize="none"
             keyboardType="email-address"
             className="border-[#fff] bg-[#ffffff] rounded-3xl text-center mb-5 py-5"
+            style={{
+              backgroundColor: '#fff',
+              borderRadius: 30,
+              paddingVertical: 16,
+              paddingHorizontal: 20,
+              textAlign: 'center',
+              fontSize: 16,
+              // Shadow for iOS
+              shadowColor: '#f0',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 10,
+              shadowRadius: 1,
+            }}
           />
           {emailError && (
             <Text className="text-red-500 text-center mb-2">
@@ -180,6 +201,19 @@ const SignIn = () => {
               value={password}
               secureTextEntry={!showPassword}
               className="border-[#fff] bg-[#ffffff] rounded-3xl text-center mb-6 py-5"
+              style={{
+                backgroundColor: '#fff',
+                borderRadius: 30,
+                paddingVertical: 16,
+                paddingHorizontal: 20,
+                textAlign: 'center',
+                fontSize: 16,
+                // Shadow for iOS
+                shadowColor: '#f0',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 10,
+                shadowRadius: 1,
+              }}
             />
             <TouchableOpacity
               onPress={() => setShowPassword(!showPassword)}
@@ -202,7 +236,20 @@ const SignIn = () => {
             {isLoading ? (
               <Loader />
             ) : (
-              <Text className="text-center mt-3 border-1-[#7ddd7d] bg-[#7ddd7d] rounded-3xl p-4 font-bold">
+              <Text className="text-center mt-3 border-1-[#7ddd7d] bg-[#7ddd7d] rounded-3xl p-4 font-bold"
+              style={{
+               
+                borderRadius: 30,
+                paddingVertical: 16,
+                paddingHorizontal: 20,
+                textAlign: 'center',
+                fontSize: 16,
+                // Shadow for iOS
+                shadowColor: '#fff',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 10,
+                shadowRadius: 1,
+              }}>
                 {t("signIn.next")}
               </Text>
             )}

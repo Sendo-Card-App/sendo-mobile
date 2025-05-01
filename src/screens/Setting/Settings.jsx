@@ -5,21 +5,54 @@ import {
   Switch,
   TouchableOpacity,
   ScrollView,
-  Modal
+  Modal,
+  Alert
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { useDispatch } from 'react-redux';
 import { AntDesign, Ionicons, MaterialIcons } from '@expo/vector-icons';
+import * as LocalAuthentication from 'expo-local-authentication';
+import Loader from '../../components/Loader'; // make sure path is correct
 
 const Settings = ({ navigation }) => {
   const { t, i18n } = useTranslation();
+  const dispatch = useDispatch();
   const [isBiometricsEnabled, setIsBiometricsEnabled] = useState(false);
   const [isNotificationsEnabled, setIsNotificationsEnabled] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState(i18n.language);
   const [languageModalVisible, setLanguageModalVisible] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const toggleBiometrics = () => setIsBiometricsEnabled(prev => !prev);
   const toggleNotifications = () => setIsNotificationsEnabled(prev => !prev);
+
+  const toggleBiometrics = async () => {
+    setLoading(true);
+
+    try {
+      const isHardwareSupported = await LocalAuthentication.hasHardwareAsync();
+      const supportedTypes = await LocalAuthentication.supportedAuthenticationTypesAsync();
+      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+
+      if (!isHardwareSupported || supportedTypes.length === 0 || !isEnrolled) {
+        Alert.alert(t('biometric_not_available'));
+        setLoading(false);
+        return;
+      }
+
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: t('authenticate_to_toggle_biometrics'),
+      });
+
+      if (result.success) {
+        setIsBiometricsEnabled(prev => !prev);
+      }
+    } catch (error) {
+      console.error("Biometric error:", error);
+    }
+
+    setLoading(false);
+  };
 
   const changeLanguage = (lang) => {
     i18n.changeLanguage(lang);
@@ -35,12 +68,13 @@ const Settings = ({ navigation }) => {
     return () => parent?.setOptions({ tabBarStyle: undefined });
   }, [navigation]);
 
+  if (loading) return <Loader />;
+
   return (
     <ScrollView
       className="flex-1 bg-white"
       contentContainerStyle={{ paddingBottom: 30 }}
     >
-      {/* Section Title */}
       <Text className="p-5 ml-1 mt-10 text-xl font-bold text-gray-600">{t('security')}</Text>
 
       {/* Biometrics */}
@@ -121,7 +155,6 @@ const Settings = ({ navigation }) => {
         </View>
       </Modal>
 
-      {/* Bottom Padding */}
       <View className="h-20" />
     </ScrollView>
   );
