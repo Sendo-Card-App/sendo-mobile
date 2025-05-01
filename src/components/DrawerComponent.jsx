@@ -1,13 +1,14 @@
-import { 
+import React, { useEffect, useState, useCallback } from "react";
+import {
   View,
   Text,
   TouchableOpacity,
   ScrollView,
   Platform,
+  RefreshControl,
+  SafeAreaView,
 } from "react-native";
-import React, { useEffect } from "react";
 import { useNavigation } from "@react-navigation/native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import {
   AntDesign,
   EvilIcons,
@@ -15,141 +16,170 @@ import {
   Ionicons,
   MaterialCommunityIcons,
 } from "@expo/vector-icons";
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from "react-i18next";
 import { useGetUserProfileQuery, useLogoutMutation } from "../services/Auth/authAPI";
 import Loader from "./Loader";
-import { removeData } from "../services/storage"; // Import storage utilities
-import Toast from 'react-native-toast-message';
+import { getData, removeData } from "../services/storage";
+import Toast from "react-native-toast-message";
 
 const DrawerComponent = ({ navigation }) => {
   const navigation2 = useNavigation();
   const { t } = useTranslation();
-   const { 
-      data: userProfile, 
-      isLoading, 
-    } = useGetUserProfileQuery();
+
+  const [authChecked, setAuthChecked] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(true);
+  const [authData, setAuthData] = useState(null);
+
+  const {
+    data: userProfile,
+    isLoading: isProfileLoading,
+    isFetching: isProfileFetching,
+    refetch: refetchProfile,
+  } = useGetUserProfileQuery();
+
   const [logout, { isLoading: isLoggingOut }] = useLogoutMutation();
 
-  // Handle logout logic
+  // Load stored auth data once on mount
+  useEffect(() => {
+    (async () => {
+      const data = await getData('@authData');
+      setAuthData(data);
+      setIsAuthenticated(!!data);
+      setAuthChecked(true);
+    })();
+  }, []);
+
+  // Pull-to-refresh header
+  const handleRefresh = useCallback(() => {
+    setAuthChecked(false);
+    (async () => {
+      const data = await getData('@authData');
+      setAuthData(data);
+      setIsAuthenticated(!!data);
+      setAuthChecked(true);
+      refetchProfile();
+    })();
+  }, [refetchProfile]);
+
   const handleLogout = async () => {
     try {
-      // Get the stored auth data
-      const authData = await getData('@authData');
-      
-      if (!authData?.deviceId) {
+      const stored = authData || (await getData('@authData'));
+      if (!stored?.deviceId) {
         throw new Error('Device ID not found');
       }
-      
-      // Call logout API with deviceId
-      await logout({ deviceId: authData.deviceId }).unwrap();
-      
-      // Clear authentication data
-      await removeData('@authData');
-      
-      // Reset navigation stack and go to SignIn
-      navigation2.reset({
-        index: 0,
-        routes: [{ name: 'SignIn' }],
-      });
+      const deviceId = stored.deviceId;
 
-      Toast.show({
-        type: 'success',
-        text1: 'Success',
-        text2: 'Logged out successfully',
-      });
-    } catch (err) {
-      console.error("Logout error:", err);
-      
-      // Even if logout API fails, clear local data
+      // Clear before calling API
       await removeData('@authData');
-      
+
+      // Call logout mutation
+      const response = await logout({ deviceId }).unwrap();
+      if (response.status === 204 || response) {
+        Toast.show({
+          type: 'success',
+          text1: 'Success',
+          text2: 'Logged out successfully',
+        });
+        navigation2.reset({
+          index: 0,
+          routes: [{ name: 'Auth' }],
+        });
+      } else {
+        throw new Error('Logout failed');
+      }
+    } catch (err) {
+      console.error('Logout error:', err);
       Toast.show({
         type: 'error',
         text1: 'Error',
-        text2: err?.data?.message || 'Logged out locally (server unavailable)',
-      });
-      
-      navigation2.reset({
-        index: 0,
-        routes: [{ name: 'Auth' }],
+        text2: err.message || 'Logged out locally (server unavailable)',
       });
     }
   };
 
-  // Handle session invalidation and redirect to SignIn page
-  
-
-  // If loading or error, show a loader
-  if (isLoading || isLoggingOut) {
+  if (!authChecked || isProfileLoading || isLoggingOut) {
     return (
       <SafeAreaView className="flex-1 justify-center items-center">
         <Loader />
       </SafeAreaView>
     );
   }
+  if (!isAuthenticated) return null;
 
   return (
     <SafeAreaView className="flex-1">
-      {/* The upper Green section */}
-      <View className="bg-[#7ddd7d] pt-10 pl-10 pr-5 pb-5">
+      {/* Header */}
+      <View
+        style={{ backgroundColor: '#7ddd7d', padding: 10 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={isProfileFetching}
+            onRefresh={handleRefresh}
+          />
+        }
+      >
         <View className="flex-row justify-between items-center">
           <Text className="text-white font-bold text-xl">
-          {userProfile?.data?.firstname || ''} {userProfile?.data?.lastname || ''}
+            {userProfile?.data?.firstname} {userProfile?.data?.lastname}
           </Text>
-          <TouchableOpacity
-            onPress={() => navigation.closeDrawer()}
-            className="p-2"
-          >
+          <TouchableOpacity onPress={() => navigation.closeDrawer()}>
             <AntDesign name="arrowleft" size={24} color="white" />
           </TouchableOpacity>
         </View>
-        <Text className="text-white">{userProfile?.data?.email || ''}</Text>
-        <Text className="text-white">{userProfile?.data?.phone || ''}</Text>
+        <View className="mt-2 bg-gray-800 px-4 py-3 rounded-md flex-row justify-between items-center">
+          <View>
+            <Text className="text-white">{userProfile?.data?.email}</Text>
+            <Text className="text-white">{userProfile?.data?.phone}</Text>
+          </View>
+          {userProfile?.data?.isVerifiedEmail && (
+            <Text className="text-green-600 bg-green-100 px-2 py-1 rounded-full">
+              ✅ Verified
+            </Text>
+          )}
+        </View>
       </View>
-      
-      {/* Lower section */}
+
+      {/* Body */}
       <View className="flex-1 mx-8">
-        {/* Bonus Section */}
         <View className="border-b border-gray-400 py-3">
           <Text className="font-bold text-gray-600">{t('drawer.bonus')}</Text>
-          <Text className="text-xs my-2 text-gray-500">
+          <Text className="text-xs text-gray-500 my-2">
             {t('drawer.bonus_description')}
           </Text>
-          <Text className="text-sm text-gray-500">
-            {t('drawer.bonus_code')}
-          </Text>
-          <View className="flex-row gap-2 items-center mt-2">
+          <Text className="text-sm text-gray-500">{t('drawer.bonus_code')}</Text>
+          <View className="flex-row items-center mt-2">
             <EvilIcons name="share-google" size={24} color="#7ddd7d" />
-            <Text className="text-[#7ddd7d] font-bold">{t('drawer.invite_friends')}</Text>
+            <Text className="text-[#7ddd7d] font-bold">
+              {t('drawer.invite_friends')}
+            </Text>
           </View>
         </View>
 
-        {/* Navigation Items */}
-        <ScrollView className="py-4" showsVerticalScrollIndicator={false}>
+        <ScrollView
+          className="py-4"
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={isProfileFetching}
+              onRefresh={refetchProfile}
+            />
+          }
+        >
           <TouchableOpacity
             className="flex-row gap-2 my-2 items-center mb-5"
             onPress={() => navigation2.navigate("MonSolde")}
           >
-            <AntDesign
-              name="wallet"
-              size={Platform.OS === "ios" ? 32 : 24}
-              color="gray"
-            />
+            <AntDesign name="wallet" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
             <View>
               <Text className="font-bold text-gray-500">{t('drawer.balance')}</Text>
             </View>
           </TouchableOpacity>
-          
-          {/* More navigation items */}
+
           <TouchableOpacity
             className="flex-row gap-2 my-2 mb-5"
             onPress={() => navigation2.navigate("History")}
           >
-            <Ionicons
-              name="document-text-outline"
-              size={Platform.OS === "ios" ? 32 : 24}
-              color="gray"
-            />
+            <Ionicons name="document-text-outline" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
             <View>
               <Text className="font-bold text-gray-500">{t('drawer.history')}</Text>
               <Text className="text-sm text-gray-500">
@@ -157,16 +187,12 @@ const DrawerComponent = ({ navigation }) => {
               </Text>
             </View>
           </TouchableOpacity>
-          
+
           <TouchableOpacity
             className="flex-row gap-2 my-2 mb-5"
             onPress={() => navigation2.navigate("Account")}
           >
-            <Feather
-              name="user"
-              size={Platform.OS === "ios" ? 32 : 24}
-              color="gray"
-            />
+            <Feather name="user" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
             <View>
               <Text className="font-bold text-gray-500">{t('drawer.account')}</Text>
               <Text className="text-sm text-gray-500">
@@ -174,16 +200,12 @@ const DrawerComponent = ({ navigation }) => {
               </Text>
             </View>
           </TouchableOpacity>
-          
+
           <TouchableOpacity
             onPress={() => navigation2.navigate("Payment")}
             className="flex-row gap-2 my-2 mb-5"
           >
-            <MaterialCommunityIcons
-              name="bank-outline"
-              size={Platform.OS === "ios" ? 32 : 24}
-              color="gray"
-            />
+            <MaterialCommunityIcons name="bank-outline" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
             <View>
               <Text className="font-bold text-gray-500">{t('drawer.payment')}</Text>
               <Text className="text-sm text-gray-500">
@@ -191,31 +213,23 @@ const DrawerComponent = ({ navigation }) => {
               </Text>
             </View>
           </TouchableOpacity>
-          
+
           <TouchableOpacity
             className="flex-row gap-2 my-2 mb-5"
             onPress={() => navigation2.navigate("SettingsTab")}
           >
-            <AntDesign
-              name="setting"
-              size={Platform.OS === "ios" ? 32 : 24}
-              color="gray"
-            />
+            <AntDesign name="setting" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
             <View>
               <Text className="font-bold text-gray-500">{t('drawer.settings')}</Text>
               <Text className="text-sm text-gray-500">Options & securite</Text>
             </View>
           </TouchableOpacity>
-          
+
           <TouchableOpacity
             className="flex-row gap-2 my-2 mb-5"
             onPress={() => navigation2.navigate("Support")}
           >
-            <EvilIcons
-              name="question"
-              size={Platform.OS === "ios" ? 32 : 24}
-              color="gray"
-            />
+            <EvilIcons name="question" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
             <View>
               <Text className="font-bold text-gray-500">{t('drawer.support')}</Text>
               <Text className="text-sm text-gray-500">
@@ -223,16 +237,12 @@ const DrawerComponent = ({ navigation }) => {
               </Text>
             </View>
           </TouchableOpacity>
-          
+
           <TouchableOpacity
             className="flex-row gap-2 my-2 mb-5"
             onPress={() => navigation2.navigate("AboutUs")}
           >
-            <EvilIcons
-              name="exclamation"
-              size={Platform.OS === "ios" ? 32 : 24}
-              color="gray"
-            />
+            <EvilIcons name="exclamation" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
             <View>
               <Text className="font-bold text-gray-500">{t('drawer.about_us')}</Text>
               <Text className="text-sm text-gray-500 pr-8">
@@ -243,9 +253,9 @@ const DrawerComponent = ({ navigation }) => {
         </ScrollView>
       </View>
 
-      {/* Logout Button */}
+      {/* Logout */}
       <View className="mx-8 border-t border-gray-400 pt-4 items-center">
-        <TouchableOpacity 
+        <TouchableOpacity
           onPress={handleLogout}
           className="flex-row gap-2 items-center"
           style={{ justifyContent: 'center' }}

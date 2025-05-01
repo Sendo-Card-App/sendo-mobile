@@ -1,6 +1,8 @@
 {
     "security": "Security",
     "biometrics": "Biometrics",
+    "biometric_not_available": "Biometric authentication is not available",
+  "authenticate_to_toggle_biometrics": "Please authenticate to toggle biometric setting",
     "unlock_app": "Unlock the app using your face {\n} or your fingerprint",
     "notifications": "Notifications",
     "ensure_notifications": "Make sure you have enabled notifications in the settings of your device",

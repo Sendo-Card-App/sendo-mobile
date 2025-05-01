@@ -2,6 +2,11 @@
     "security": "Sécurité",
     "biometrics": "Biométriques",
     "unlock_app": "Déverrouillez l’appli en utilisant votre visage {\n} ou votre empreinte",
+    "biometric_not_available": "L'authentification biométrique n'est pas disponible",
+    "Weak": "Faible",
+  "Medium": "Moyen",
+  "Strong": "Fort",
+  "authenticate_to_toggle_biometrics": "Veuillez vous authentifier pour activer/désactiver la biométrie",
     "notifications": "Notiﬁcations",
     "ensure_notifications": "Assurez-vous d’avoir activé les notiﬁcations dans {\n} les paramètres de votre appareil",
     "switch_on": "Activé",
@@ -140,7 +145,8 @@
       "support": "Support",
       "about_us": "À propos de nous",
       "logout": "Déconnexion",
-      "app_version": "Sendo App V1.0.1"
+      "app_version": "Sendo App V1.0.1",
+       "reload_profile": "🔄 Recharger"
     }
  
   

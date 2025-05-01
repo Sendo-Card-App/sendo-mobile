@@ -1,7 +1,11 @@
 import React, { useEffect, useRef } from 'react';
+import { getData } from '../../services/storage';
+import { useDispatch } from 'react-redux';
+import { loginSuccess } from '../../features/Auth/authSlice';
 import { View, Text, Image, StyleSheet, Animated, Easing, Dimensions } from 'react-native';
 import LogoSendo from '../../images/LogoSendo.png';
 import WorldMap from '../../images/WorldMap.png';
+import Loader from "../../components/Loader"
 
 const { width, height } = Dimensions.get('window');
 
@@ -10,10 +14,35 @@ const SplashScreen = ({ navigation }) => {
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
   const mapScaleAnim = useRef(new Animated.Value(1)).current;
+   const dispatch = useDispatch();
+  const [loading, setLoading] = React.useState(true);
+
 
   const dotAnims = Array.from({ length: 5 }, () => useRef(new Animated.Value(0)).current); 
   // 5 dots (you can add more)
-
+  
+  useEffect(() => {
+    const checkAuthData = async () => {
+      try {
+        const authData = await getData('@authData');
+        if (authData?.accessToken) {
+          dispatch(loginSuccess(authData));
+          navigation.replace("Main");
+        } else {
+          navigation.replace("AUTH");
+        }
+      } catch (error) {
+        console.log("Error checking auth data:", error);
+        navigation.replace("Auth");
+      } finally {
+        setLoading(false); // stop loader once done
+      }
+    };
+  
+    checkAuthData();
+  }, []);
+  
+  
   useEffect(() => {
     Animated.parallel([
       Animated.timing(fadeAnim, {
@@ -78,6 +107,9 @@ const SplashScreen = ({ navigation }) => {
 
     return () => clearTimeout(timer);
   }, []);
+
+  if (loading) return <Loader />;
+
 
   return (
     <View style={styles.container}>
