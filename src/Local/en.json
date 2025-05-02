@@ -133,7 +133,7 @@
       "phone": "+237 600 00 00 00",
       "bonus": "Bonus of 5.00 CAD free",
       "bonus_description": "You will receive 5.00 CAD and your friend will receive 5.00 CAD when they make their first transfer. Minimum sending requirements may apply. Subject to conditions.",
-      "bonus_code": "Your code: ANDRE237",
+      "bonus_code": "Your code:",
       "invite_friends": "INVITE YOUR FRIENDS",
       "balance": "My Balance",
       "history": "History",
@@ -145,7 +145,34 @@
       "about_us": "About Us",
       "logout": "Logout",
       "app_version": "Sendo App V1.0.1"
-    }
+    },
+    
+      "guest_login": {
+        "title": "Guest Access",
+        "welcome": "Continue as Guest",
+        "description": "Explore our services without creating an account. You can always register later.",
+        "referral_placeholder": "Enter referral code (optional)",
+        "continue_as_guest": "Continue as Guest"
+      },
+      "referral": {
+        "title": "Invite Friends",
+        "description": "Share your referral code with friends and both of you will receive a bonus when they make their first valid transfer.",
+        "your_code": "Your Referral Code",
+        "bonus_amount": "Bonus Amount",
+        "how_it_works": "How it works:",
+        "step1": "Share your unique code with friends",
+        "step2": "They sign up using your code",
+        "step3": "You both get a bonus after their first transfer",
+        "share_button": "Share Invitation",
+        "link_copied": "Link Copied!",
+        "share_message": "Join me on Sendo! Use my referral code:"
+      },
+      "errors": {
+        "invalid_referral": "Invalid referral code",
+        "already_used": "This code has already been used",
+        "kyc_required": "Please complete your profile verification to use referrals"
+      }
+    
     
 
   

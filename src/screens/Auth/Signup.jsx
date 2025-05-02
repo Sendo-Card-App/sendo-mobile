@@ -229,7 +229,7 @@ const Signup = () => {
               textAlign: 'center',
               fontSize: 16,
               // Shadow for iOS
-              shadowColor: '#f0',
+              shadowColor: '#fff',
               shadowOffset: { width: 0, height: 2 },
               shadowOpacity: 10,
               shadowRadius: 1,
@@ -257,7 +257,7 @@ const Signup = () => {
               textAlign: 'center',
               fontSize: 16,
               // Shadow for iOS
-              shadowColor: '#f0',
+              shadowColor: '#fff',
               shadowOffset: { width: 0, height: 2 },
               shadowOpacity: 10,
               shadowRadius: 1,
@@ -285,7 +285,7 @@ const Signup = () => {
                       textAlign: 'center',
                       fontSize: 16,
                       // Shadow for iOS
-                      shadowColor: '#f0',
+                      shadowColor: '#fff',
                       shadowOffset: { width: 0, height: 2 },
                       shadowOpacity: 10,
                       shadowRadius: 1,
@@ -313,14 +313,14 @@ const Signup = () => {
               keyboardType="phone-pad"
               className="flex-1 py-5 pl-3"
               style={{
-                backgroundColor: '#fff',
+                
                 borderRadius: 30,
                 paddingVertical: 16,
                 paddingHorizontal: 20,
                 textAlign: 'center',
                 fontSize: 16,
                 // Shadow for iOS
-                shadowColor: '#f0',
+                shadowColor: '#fff',
                 shadowOffset: { width: 0, height: 2 },
                 shadowOpacity: 10,
                 shadowRadius: 1,
@@ -371,7 +371,7 @@ const Signup = () => {
               textAlign: 'center',
               fontSize: 16,
               // Shadow for iOS
-              shadowColor: '#f0',
+              shadowColor: '#fff',
               shadowOffset: { width: 0, height: 2 },
               shadowOpacity: 10,
               shadowRadius: 1,
@@ -401,7 +401,7 @@ const Signup = () => {
                 textAlign: 'center',
                 fontSize: 16,
                 // Shadow for iOS
-                shadowColor: '#f0',
+                shadowColor: '#fff',
                 shadowOffset: { width: 0, height: 2 },
                 shadowOpacity: 10,
                 shadowRadius: 1,

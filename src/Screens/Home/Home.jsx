@@ -252,6 +252,7 @@ const Home = () => {
                   color: "white",
                   fontSize: 12,
                   fontFamily: platformFont,
+                  
                 }}
               >
                 Ne partagez pas vos informations personnelles…

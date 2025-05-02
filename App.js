@@ -18,6 +18,7 @@ import WelcomeScreen from "./src/screens/Auth/WelcomeScreen";
 import LogIn from "./src/screens/Auth/LogIn";
 import SignIn from "./src/screens/Auth/SignIn";
 import Signup from "./src/screens/Auth/Signup";
+import GuestLogin from "./src/screens/Auth/GuestLogin";
 import OtpVerification from "./src/screens/Auth/OtpVerification";
 import ResetPassword from "./src/screens/Auth/ResetPassword";
 import ForgetPassword from "./src/screens/Auth/ForgetPassword";
@@ -111,9 +112,9 @@ function CustomTabBar({ state, descriptors, navigation }) {
             <Ionicons 
               name={iconName} 
               size={24} 
-              color={isFocused ? Colors.primary : Colors.text} 
+              color={isFocused ? 'green' : '#ffff'} 
             />
-            <Text style={[styles.tabLabel, { color: isFocused ? Colors.primary : Colors.text }]}>
+            <Text style={[styles.tabLabel, { color: isFocused ? 'green' : '#ffff' }]}>
               {options.title || route.name}
             </Text>
           </TouchableOpacity>
@@ -164,6 +165,7 @@ function AuthStack() {
       <Stack.Screen name="SignIn" component={SignIn} />
       <Stack.Screen name="LogIn" component={LogIn} />
       <Stack.Screen name="Signup" component={Signup} />
+      <Stack.Screen name="GuestLogin" component={GuestLogin} />
       <Stack.Screen name="OtpVerification" component={OtpVerification} />
       <Stack.Screen name="ForgetPassword" component={ForgetPassword} />
       <Stack.Screen name="ResetPassword" component={ResetPassword} />
@@ -262,7 +264,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     alignItems: 'center',
    
-    backgroundColor: 'blue', // Light blue background
+    backgroundColor: '#181e25', // Light blue background
     shadowColor: 'pink',
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.1,

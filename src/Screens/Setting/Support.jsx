@@ -21,7 +21,7 @@ const Support = () => {
       </View>
       {/*  */}
       <View className="bg-gray-200 p-3 px-6 mt-3 rounded-lg">
-        <Text className="text-gray-900 font-bold">Appel 581 907 2096</Text>
+        <Text className="text-gray-900 font-bold">Appel 581 900 2096</Text>
         <Text className="text-gray-600 ">24/24 et 7 jours sur 7</Text>
       </View>
       <View className="p-6 gap-3">

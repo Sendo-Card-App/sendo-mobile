@@ -26,7 +26,10 @@
         "android.permission.INTERNET"
       ],
       "package": "com.sendo",
-      "allowCleartextTraffic": true
+      "allowCleartextTraffic": true,
+      "config": {
+      "cleartextTraffic": true
+    }
     },
     "web": {
       "favicon": "./assets/favicon.png"

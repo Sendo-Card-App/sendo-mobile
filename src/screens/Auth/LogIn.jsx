@@ -252,7 +252,7 @@ const handleVerifyOtp = async (code) => {
           <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
             <Text style={styles.signupBtn}>{t("signIn.signUp")}</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={handleGuestLogin}>
+          <TouchableOpacity onPress={() => navigation.navigate('SiGuestLogingnup')}>
             <Text style={styles.guestBtn}>{t("signIn.guestUser")}</Text>
           </TouchableOpacity>
 
@@ -362,7 +362,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 16,
     // Shadow for iOS
-    shadowColor: '#f0',
+    shadowColor: '#fff',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 10,
     shadowRadius: 1,
