@@ -26,7 +26,8 @@
         "android.permission.INTERNET"
       ],
       "package": "com.sendo",
-      "allowCleartextTraffic": true
+      "allowCleartextTraffic": true,
+      "useNextNotificationsApi": true
     },
     "web": {
       "favicon": "./assets/favicon.png"

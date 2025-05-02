@@ -1,5 +1,7 @@
-import { View, Text, TouchableOpacity, Image, FlatList } from "react-native";
-import React from "react";
+import React from 'react';
+import { View, Text, TouchableOpacity, Image, FlatList, Alert } from "react-native";
+import { useSelector } from 'react-redux';
+import { useSubmitKYCMutation } from '../../services/VirtualCard/kycSlice';
 import TopLogo from "../../images/TopLogo.png";
 import {
   AntDesign,
@@ -10,48 +12,106 @@ import {
 import { StatusBar } from "expo-status-bar";
 
 const KycResume = ({ navigation }) => {
+  const [submitKYC, { isLoading }] = useSubmitKYCMutation();
+  const { 
+    personalDetails, 
+    selfie, 
+    identityDocument, 
+    niuDocument, 
+    addressProof 
+  } = useSelector(state => state.kyc);
+  
   const Data = [
     {
       id: "1",
       name: "Détails personnels",
       route: "PersonalDetail",
+      completed: !!personalDetails.fullName && !!personalDetails.phoneNumber,
     },
     {
       id: "2",
       name: "Selﬁe",
       route: "KycSelfie",
+      completed: !!selfie,
     },
     {
       id: "3",
-      name: "Pièce d’identité",
+      name: "Pièce d'identité",
       route: "IdentityCard",
+      completed: !!identityDocument.front && 
+               (identityDocument.type !== 'cni' || !!identityDocument.back),
     },
     {
       id: "4",
       name: "NIU (Contribuable)",
       route: "NIU",
+      completed: !!niuDocument,
     },
     {
       id: "5",
       name: "Adresse",
       route: "Addresse",
+      completed: !!addressProof,
     },
   ];
+
+  const allStepsCompleted = Data.every(item => item.completed);
+
+  const handleSubmit = async () => {
+    if (!allStepsCompleted) {
+      Alert.alert(
+        'Incomplet',
+        'Veuillez compléter toutes les étapes avant de soumettre',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
+    try {
+      const kycData = {
+        personalDetails,
+        selfie,
+        identityDocument,
+        niuDocument,
+        addressProof
+      };
+      
+      await submitKYC(kycData).unwrap();
+      navigation.navigate('Success', { 
+        message: 'Votre KYC a été soumis avec succès',
+        nextScreen: 'Home' 
+      });
+    } catch (error) {
+      Alert.alert(
+        'Erreur',
+        error.data?.message || error.error || 'Échec de la soumission du KYC',
+        [{ text: 'OK' }]
+      );
+    }
+  };
+
   const KycOption = (props) => {
     return (
       <TouchableOpacity
-        className="bg-[#ededed] py-2 px-4 my-2 rounded-2xl flex-row items-center gap-3"
+        className={`py-2 px-4 my-2 rounded-2xl flex-row items-center gap-3 ${props.completed ? 'bg-green-100' : 'bg-[#ededed]'}`}
         onPress={() => navigation.navigate(props.route)}
       >
-        <MaterialCommunityIcons name="progress-clock" size={24} color="black" />
+        <MaterialCommunityIcons 
+          name={props.completed ? "check-circle" : "progress-clock"} 
+          size={24} 
+          color={props.completed ? "green" : "black"} 
+        />
         <View className="flex-1">
           <Text className="text-gray-800 font-bold">{props.name}</Text>
-          <Text className="text-sm">En attente d’informations</Text>
+          <Text className="text-sm">
+            {props.completed ? 'Complété' : 'En attente d\'informations'}
+          </Text>
         </View>
         <Entypo name="chevron-small-right" size={24} color="gray" />
       </TouchableOpacity>
     );
   };
+
   return (
     <View className="bg-[#181e25] flex-1 pt-0 relative">
       {/* The top logo in center of the screen */}
@@ -75,7 +135,7 @@ const KycResume = ({ navigation }) => {
       {/* the middle heading */}
       <View className="border border-dashed border-gray-300 my-1" />
       <Text className="text-center text-white text-2xl my-3">
-        Vériﬁcation de l’identité
+        Vériﬁcation de l'identité
       </Text>
 
       {/* the white formsection of the screen */}
@@ -87,7 +147,7 @@ const KycResume = ({ navigation }) => {
           </Text>
           <Text className="text-center text-gray-400 text-sm mt-5">
             Vous pouvez démarrer votre processus de vériﬁcation à partir de
-            n’importe quelle étape
+            n'importe quelle étape
           </Text>
         </View>
 
@@ -95,10 +155,18 @@ const KycResume = ({ navigation }) => {
         <FlatList
           data={Data}
           renderItem={({ item }) => <KycOption {...item} />}
+          keyExtractor={item => item.id}
         />
+        
         {/* submit button */}
-        <TouchableOpacity className="mt-auto bg-[#7ddd7d] py-3 rounded-full mb-8">
-          <Text className="text-xl text-center font-bold ">SOUMETTRE</Text>
+        <TouchableOpacity 
+          className={`mt-auto py-3 rounded-full mb-8 ${allStepsCompleted ? 'bg-[#7ddd7d]' : 'bg-gray-400'}`}
+          onPress={handleSubmit}
+          disabled={!allStepsCompleted || isLoading}
+        >
+          <Text className="text-xl text-center font-bold ">
+            {isLoading ? 'TRAITEMENT...' : 'SOUMETTRE'}
+          </Text>
         </TouchableOpacity>
       </View>
 

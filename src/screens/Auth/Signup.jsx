@@ -229,7 +229,7 @@ const Signup = () => {
               textAlign: 'center',
               fontSize: 16,
               // Shadow for iOS
-              shadowColor: '#f0',
+              shadowColor: '#fff',
               shadowOffset: { width: 0, height: 2 },
               shadowOpacity: 10,
               shadowRadius: 1,
@@ -257,7 +257,7 @@ const Signup = () => {
               textAlign: 'center',
               fontSize: 16,
               // Shadow for iOS
-              shadowColor: '#f0',
+              shadowColor: '#fff',
               shadowOffset: { width: 0, height: 2 },
               shadowOpacity: 10,
               shadowRadius: 1,
@@ -285,7 +285,7 @@ const Signup = () => {
                       textAlign: 'center',
                       fontSize: 16,
                       // Shadow for iOS
-                      shadowColor: '#f0',
+                      shadowColor: '#fff',
                       shadowOffset: { width: 0, height: 2 },
                       shadowOpacity: 10,
                       shadowRadius: 1,
@@ -320,7 +320,7 @@ const Signup = () => {
                 textAlign: 'center',
                 fontSize: 16,
                 // Shadow for iOS
-                shadowColor: '#f0',
+                shadowColor: '#fff',
                 shadowOffset: { width: 0, height: 2 },
                 shadowOpacity: 10,
                 shadowRadius: 1,
@@ -371,7 +371,7 @@ const Signup = () => {
               textAlign: 'center',
               fontSize: 16,
               // Shadow for iOS
-              shadowColor: '#f0',
+              shadowColor: '#fff',
               shadowOffset: { width: 0, height: 2 },
               shadowOpacity: 10,
               shadowRadius: 1,
@@ -401,7 +401,7 @@ const Signup = () => {
                 textAlign: 'center',
                 fontSize: 16,
                 // Shadow for iOS
-                shadowColor: '#f0',
+                shadowColor: '#fff',
                 shadowOffset: { width: 0, height: 2 },
                 shadowOpacity: 10,
                 shadowRadius: 1,
