@@ -26,7 +26,7 @@ const AboutUs = () => {
           </Text>
           <Text className="text-gray-400 text-sm ml-4 mt-3">
             Sendo App est une plateforme opérée par Services {"\n"}
-            Financiers Étudiants Inc., une entreprise de services monétaires
+            Transfert D'argent Inc., une entreprise de services monétaires
             basée au Québec, Canada. Nous sommes autorisés à exercer nos
             activités sous le permis {"\n"}
             numéro 19525 délivré par Revenu Québec et sommes inscrits {"\n"}
