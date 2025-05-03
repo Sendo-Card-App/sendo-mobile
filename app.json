@@ -30,6 +30,7 @@
       "config": {
       "cleartextTraffic": true
     }
+      "useNextNotificationsApi": true
     },
     "web": {
       "favicon": "./assets/favicon.png"

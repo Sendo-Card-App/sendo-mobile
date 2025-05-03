@@ -279,7 +279,7 @@ const SignIn = () => {
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => navigation.navigate('SiGuestLogingnup')}>
+        <TouchableOpacity  onPress={() => navigation.navigate("GuestLogin")}>
           <Text className="text-[#7ddd7d] underline mt-2">
             {t("signIn.guestUser")}
           </Text>

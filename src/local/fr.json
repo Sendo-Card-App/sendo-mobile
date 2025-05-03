@@ -148,7 +148,6 @@
       "app_version": "Sendo App V1.0.1",
        "reload_profile": "🔄 Recharger"
     },
-
       "guest_login": {
         "title": "Accès Invité",
         "welcome": "Continuer en tant qu'invité",
@@ -173,8 +172,14 @@
         "invalid_referral": "Code de parrainage invalide",
         "already_used": "Ce code a déjà été utilisé",
         "kyc_required": "Veuillez compléter la vérification de votre profil pour utiliser le parrainage"
-      }
-    
+      },
+    "guest_login": {
+    "title": "Accès Invité",
+    "welcome": "Continuer en tant qu'invité",
+    "description": "Explorez nos services sans créer de compte. Vous pourrez vous inscrire plus tard.",
+    "referral_placeholder": "Code de parrainage (optionnel)",
+    "continue_as_guest": "Continuer en tant qu'invité"
+  }
  
   
       

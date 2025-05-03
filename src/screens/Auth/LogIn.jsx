@@ -169,7 +169,7 @@ const handleVerifyOtp = async (code) => {
   };
 
   const handleGuestLogin = () => {
-    navigation.navigate("Home", { isGuest: true });
+    navigation.navigate("GuestLogin", { isGuest: true });
   };
 
   const changeLanguage = (lang) => {
@@ -345,7 +345,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 16,
     // Shadow for iOS
-    shadowColor: '#f0',
+    shadowColor: '#fff',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 10,
     shadowRadius: 1,},
