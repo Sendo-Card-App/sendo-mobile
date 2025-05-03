@@ -53,7 +53,7 @@ const GuestLogin = ({ navigation }) => {
           <EvilIcons name="chevron-left" size={30} color="#7ddd7d" />
         </TouchableOpacity>
         <Text style={{ color: 'white', fontSize: 18 }}>{t('guest_login.title')}</Text>
-        <View style={{ width: 30 }} /> 
+        <View style={{ width: 30 }} /> {/* Spacer for alignment */}
       </View>
 
       {/* Main Content */}

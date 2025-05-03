@@ -23,6 +23,7 @@ import WelcomeScreen from "./src/screens/Auth/WelcomeScreen";
 import LogIn from "./src/screens/Auth/LogIn";
 import SignIn from "./src/screens/Auth/SignIn";
 import Signup from "./src/screens/Auth/Signup";
+import GuestLogin from "./src/screens/Auth/GuestLogin";
 import OtpVerification from "./src/screens/Auth/OtpVerification";
 import GuestLogin from "./src/screens/Auth/GuestLogin";
 import ResetPassword from "./src/screens/Auth/ResetPassword";
@@ -117,9 +118,9 @@ function CustomTabBar({ state, descriptors, navigation }) {
             <Ionicons 
               name={iconName} 
               size={24} 
-              color={isFocused ? Colors.primary : Colors.text} 
+              color={isFocused ? 'green' : '#ffff'} 
             />
-            <Text style={[styles.tabLabel, { color: isFocused ? Colors.primary : Colors.text }]}>
+            <Text style={[styles.tabLabel, { color: isFocused ? 'green' : '#ffff' }]}>
               {options.title || route.name}
             </Text>
           </TouchableOpacity>

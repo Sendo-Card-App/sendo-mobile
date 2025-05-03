@@ -64,47 +64,43 @@ const DrawerComponent = ({ navigation }) => {
   const handleLogout = async () => {
     try {
       const stored = authData || (await getData('@authData'));
-      if (!stored?.deviceId) {
-        throw new Error('Device ID not found');
-      }
+      if (!stored?.deviceId) throw new Error('Device ID not found');
       const deviceId = stored.deviceId;
-
-      // Clear before calling API
-      await removeData('@authData');
-
-      // Call logout mutation
+  
+      // Appelle l'API logout
       const response = await logout({ deviceId }).unwrap();
-      if (response.status === 204 || response) {
+  
+      // Succès API (statut 204 ou pas d’erreur)
+      if (response?.status === 204 || response) {
+        await removeData('@authData');
         Toast.show({
           type: 'success',
           text1: 'Success',
           text2: 'Logged out successfully',
         });
-        navigation2.reset({
-          index: 0,
-          routes: [{ name: 'Auth' }],
-        });
       } else {
         throw new Error('Logout failed');
       }
     } catch (err) {
-      console.error('Logout error:', err);
+      console.warn('Logout error:', err);
+  
+      // Forcer une déconnexion locale si token expiré ou API injoignable
+      await removeData('@authData');
       Toast.show({
         type: 'error',
-        text1: 'Error',
-        text2: err.message || 'Logged out locally (server unavailable)',
+        text1: 'Déconnexion',
+        text2: err?.data?.data?.message || err.message || 'Déconnecté localement',
+      });
+    } finally {
+      // Redirige vers login
+      navigation2.reset({
+        index: 0,
+        routes: [{ name: 'Auth' }],
       });
     }
   };
+  
 
-  if (!authChecked || isProfileLoading || isLoggingOut) {
-    return (
-      <SafeAreaView className="flex-1 justify-center items-center">
-        <Loader />
-      </SafeAreaView>
-    );
-  }
-  if (!isAuthenticated) return null;
 
   return (
     <SafeAreaView className="flex-1">
@@ -118,7 +114,7 @@ const DrawerComponent = ({ navigation }) => {
           />
         }
       >
-        <View className="flex-row justify-between items-center">
+        <View className="flex-row justify-between items-center mt-10">
           <Text className="text-white font-bold text-xl">
             {userProfile?.data?.firstname} {userProfile?.data?.lastname}
           </Text>
@@ -146,7 +142,7 @@ const DrawerComponent = ({ navigation }) => {
           <Text className="text-xs text-gray-500 my-2">
             {t('drawer.bonus_description')}
           </Text>
-          <Text className="text-sm text-gray-500">{t('drawer.bonus_code')}</Text>
+          <Text className="text-sm text-gray-500">{t('drawer.bonus_code')}  {userProfile?.data?.firstname} {userProfile?.data?.lastname}</Text>
           <View className="flex-row items-center mt-2">
             <EvilIcons name="share-google" size={24} color="#7ddd7d" />
             <Text className="text-[#7ddd7d] font-bold">
