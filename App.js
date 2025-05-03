@@ -1,16 +1,21 @@
 import "./global.css";
-import { Colors } from './src/constants/colors';
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { NavigationContainer, useNavigation } from "@react-navigation/native";
+import React, { useEffect } from "react";
+import { Colors } from './src/constants/colors'; // Adjust the path as needed
+
+import { StyleSheet, View, Text, TouchableOpacity } from "react-native";
+import { Provider } from "react-redux";
+import { store } from "./src/store/store";
+import Toast from "react-native-toast-message";
+import './i18n';
+import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createDrawerNavigator } from "@react-navigation/drawer";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { Ionicons, AntDesign, MaterialIcons, FontAwesome } from "@expo/vector-icons";
-import './i18n';
-import Toast from 'react-native-toast-message';
-import { Provider } from "react-redux";
-import { store } from "./src/store/store";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Ionicons, AntDesign } from "@expo/vector-icons";
+
+import * as Notifications from "expo-notifications";
+import { registerForPushNotificationsAsync } from "./src/services/notificationService";
 
 // Screens & Components
 import Home from "./src/screens/Home/Home";
@@ -19,6 +24,7 @@ import LogIn from "./src/screens/Auth/LogIn";
 import SignIn from "./src/screens/Auth/SignIn";
 import Signup from "./src/screens/Auth/Signup";
 import OtpVerification from "./src/screens/Auth/OtpVerification";
+import GuestLogin from "./src/screens/Auth/GuestLogin";
 import ResetPassword from "./src/screens/Auth/ResetPassword";
 import ForgetPassword from "./src/screens/Auth/ForgetPassword";
 import BeneficiarySelection from "./src/screens/Transfert/BeneficiarySelection";
@@ -164,6 +170,7 @@ function AuthStack() {
       <Stack.Screen name="SignIn" component={SignIn} />
       <Stack.Screen name="LogIn" component={LogIn} />
       <Stack.Screen name="Signup" component={Signup} />
+      <Stack.Screen name="GuestLogin" component={GuestLogin} />
       <Stack.Screen name="OtpVerification" component={OtpVerification} />
       <Stack.Screen name="ForgetPassword" component={ForgetPassword} />
       <Stack.Screen name="ResetPassword" component={ResetPassword} />
@@ -243,6 +250,13 @@ function DrawerNavigator() {
 }
 
 export default function App() {
+  // Register for push notifications once on mount
+  useEffect(() => {
+    registerForPushNotificationsAsync().then((token) => {
+      console.log("Expo Push Token:", token);
+      // TODO: send token to your backend here if needed
+    });
+  }, []);
   return (
     <Provider store={store}>
       <NavigationContainer>
@@ -262,7 +276,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     alignItems: 'center',
    
-    backgroundColor: 'blue', // Light blue background
+    backgroundColor: '#181e25', // Light blue background
     shadowColor: 'pink',
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.1,

@@ -182,7 +182,7 @@ const SignIn = () => {
               textAlign: 'center',
               fontSize: 16,
               // Shadow for iOS
-              shadowColor: '#f0',
+              shadowColor: '#fff',
               shadowOffset: { width: 0, height: 2 },
               shadowOpacity: 10,
               shadowRadius: 1,
@@ -209,7 +209,7 @@ const SignIn = () => {
                 textAlign: 'center',
                 fontSize: 16,
                 // Shadow for iOS
-                shadowColor: '#f0',
+                shadowColor: '#fff',
                 shadowOffset: { width: 0, height: 2 },
                 shadowOpacity: 10,
                 shadowRadius: 1,
@@ -279,7 +279,7 @@ const SignIn = () => {
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity>
+        <TouchableOpacity  onPress={() => navigation.navigate("GuestLogin")}>
           <Text className="text-[#7ddd7d] underline mt-2">
             {t("signIn.guestUser")}
           </Text>
