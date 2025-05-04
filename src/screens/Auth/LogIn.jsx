@@ -252,7 +252,7 @@ const handleVerifyOtp = async (code) => {
           <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
             <Text style={styles.signupBtn}>{t("signIn.signUp")}</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => navigation.navigate('SiGuestLogingnup')}>
+          <TouchableOpacity onPress={handleGuestLogin}>
             <Text style={styles.guestBtn}>{t("signIn.guestUser")}</Text>
           </TouchableOpacity>
 

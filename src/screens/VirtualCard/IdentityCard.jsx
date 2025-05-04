@@ -4,21 +4,30 @@ import KycTab from "../../components/KycTab";
 import TopLogo from "../../images/TopLogo.png";
 import { AntDesign, Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
+import { useDispatch } from 'react-redux';
+import { setIdentityDocument } from '../../features/Kyc/kycReducer';
 
 const IdentityCard = ({ navigation }) => {
   const [selectedDocument, setSelectedDocument] = useState(null);
+  const dispatch = useDispatch();
 
   const documentOptions = [
-    { id: 'cni', name: 'CNI (Carte Nationale d\'Identité)', requiredCaptures: 2 },
-    { id: 'recepisse', name: 'Récépissé', requiredCaptures: 1 },
-    { id: 'passport', name: 'Passeport', requiredCaptures: 1 },
-    { id: 'residence', name: 'Permis de résidence', requiredCaptures: 2 }
+    { id: 'cni', name: 'CNI (Carte Nationale d\'Identité)', requiredCaptures: 2, frontLabel: 'Recto', backLabel: 'Verso' },
+    { id: 'recepisse', name: 'Récépissé', requiredCaptures: 1, frontLabel: 'Document' },
+    { id: 'passport', name: 'Passeport', requiredCaptures: 1, frontLabel: 'Page photo' },
+    { id: 'residence', name: 'Permis de résidence', requiredCaptures: 2, frontLabel: 'Recto', backLabel: 'Verso' }
   ];
 
-  const handleDocumentSelect = (docId, requiredCaptures) => {
-    setSelectedDocument(docId);
-    // Navigate to Camera page with the required number of captures as a parameter
-    navigation.navigate("Camera", { documentType: docId, captures: requiredCaptures });
+  const handleDocumentSelect = (doc) => {
+    setSelectedDocument(doc.id);
+    
+    // Navigate to a new screen that will handle the multi-step capture
+    navigation.navigate("DocumentCaptureFlow", { 
+      documentType: doc.id,
+      requiredCaptures: doc.requiredCaptures,
+      frontLabel: doc.frontLabel,
+      backLabel: doc.backLabel,
+    });
   };
 
   return (
@@ -50,8 +59,8 @@ const IdentityCard = ({ navigation }) => {
       {/* Main Content */}
       <ScrollView className="flex-1 pb-3 bg-white rounded-t-3xl">
         <View className="px-6 py-4">
-           {/* Top Tab */}
-           <KycTab isActive="3" />
+          {/* Top Tab */}
+          <KycTab isActive="3" />
 
           {/* Document Selection Section */}
           <View className="mb-8">
@@ -67,7 +76,7 @@ const IdentityCard = ({ navigation }) => {
                 <TouchableOpacity
                   key={doc.id}
                   className={`flex-row items-center justify-between border rounded-lg p-4 mb-4 ${selectedDocument === doc.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`} 
-                  onPress={() => handleDocumentSelect(doc.id, doc.requiredCaptures)}  // Pass number of captures
+                  onPress={() => handleDocumentSelect(doc)}
                 >
                   <View className="flex-row items-center">
                     {/* Icons for each document type */}

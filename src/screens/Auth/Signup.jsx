@@ -313,7 +313,7 @@ const Signup = () => {
               keyboardType="phone-pad"
               className="flex-1 py-5 pl-3"
               style={{
-                
+                backgroundColor: '#fff',
                 borderRadius: 30,
                 paddingVertical: 16,
                 paddingHorizontal: 20,

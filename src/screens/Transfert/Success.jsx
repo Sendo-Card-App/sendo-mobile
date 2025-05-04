@@ -2,13 +2,15 @@ import { View, Text, TouchableOpacity, Image } from "react-native";
 import React from "react";
 import { StatusBar } from "expo-status-bar";
 import AntDesign from "@expo/vector-icons/AntDesign";
-import Entypo from "@expo/vector-icons/Entypo";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import ButtomLogo from "../../images/ButtomLogo.png";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 
 const Success = () => {
   const navigation = useNavigation();
+  const route = useRoute();
+  const { message = 'Transaction effectuée avec succès', nextScreen = 'Main' } = route.params || {};
+
   return (
     <View className="bg-[#181e25] flex-1 pt-0 relative">
       {/* the top navigation with a back arrow and a right menu button */}
@@ -24,19 +26,19 @@ const Success = () => {
         <View className="flex-1 items-center justify-center">
           <AntDesign name="checkcircleo" size={260} color={"#7ddd7d"} />
           <Text className="text-[#7ddd7d] text-2xl font-bold text-center w-[240px] mt-6">
-            Transaction eﬀectuée avec succès
+            {message}
           </Text>
         </View>
         {/* Top security message */}
 
         <Text className="text-center text-gray-400 text-sm">
-          Appuyez sur OK pour revenir à l’acceuil
+          Appuyez sur OK pour continuer
         </Text>
 
         {/* the button suivant */}
         <TouchableOpacity
           className="mb-5 bg-[#7ddd7d] py-3 rounded-full w-full"
-          onPress={() => navigation.navigate("Home")}
+          onPress={() => navigation.navigate(nextScreen)}
         >
           <Text className="text-xl text-center font-bold ">OK</Text>
         </TouchableOpacity>

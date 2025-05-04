@@ -20,10 +20,15 @@ import { registerForPushNotificationsAsync } from "./src/services/notificationSe
 // Screens & Components
 import Home from "./src/screens/Home/Home";
 import WelcomeScreen from "./src/screens/Auth/WelcomeScreen";
+import PinCode from "./src/screens/Auth/PinCode";
+import AddBeneficiary from "./src/screens/Solde/AddBeneficiary";
+import SelectMethod from "./src/screens/Solde/SelectMethod";
+import AddContact from "./src/screens/Solde/AddContact";
+import TransfertFund from "./src/screens/Solde/TransfertFund";
+import WalletTransfer from "./src/screens/Solde/WalletTransfer";
 import LogIn from "./src/screens/Auth/LogIn";
 import SignIn from "./src/screens/Auth/SignIn";
 import Signup from "./src/screens/Auth/Signup";
-import GuestLogin from "./src/screens/Auth/GuestLogin";
 import OtpVerification from "./src/screens/Auth/OtpVerification";
 import GuestLogin from "./src/screens/Auth/GuestLogin";
 import ResetPassword from "./src/screens/Auth/ResetPassword";
@@ -58,6 +63,7 @@ import IdentityCard from "./src/screens/VirtualCard/IdentityCard";
 import IdentityVerification from "./src/screens/VirtualCard/IdentityVerification";
 import AddressSelect from "./src/screens/VirtualCard/AddressSelect";
 import AddressConfirm from "./src/screens/VirtualCard/AddressConfirm";
+import DocumentCaptureFlow from "./src/screens/VirtualCard/DocumentCaptureFlow";
 import Address from "./src/screens/Transfert/Address";
 import Camera from "./src/screens/VirtualCard/Camera";
 import ChangePassword from "./src/screens/Setting/ChangePassword";
@@ -118,9 +124,9 @@ function CustomTabBar({ state, descriptors, navigation }) {
             <Ionicons 
               name={iconName} 
               size={24} 
-              color={isFocused ? 'green' : '#ffff'} 
+              color={isFocused ? Colors.primary : Colors.text} 
             />
-            <Text style={[styles.tabLabel, { color: isFocused ? 'green' : '#ffff' }]}>
+            <Text style={[styles.tabLabel, { color: isFocused ? Colors.primary : Colors.text }]}>
               {options.title || route.name}
             </Text>
           </TouchableOpacity>
@@ -169,6 +175,7 @@ function AuthStack() {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Welcome" component={WelcomeScreen} />
       <Stack.Screen name="SignIn" component={SignIn} />
+      <Stack.Screen name="PinCode" component={PinCode} />
       <Stack.Screen name="LogIn" component={LogIn} />
       <Stack.Screen name="Signup" component={Signup} />
       <Stack.Screen name="GuestLogin" component={GuestLogin} />
@@ -205,6 +212,11 @@ function MainStack() {
       <Stack.Screen name="Curency" component={Curency} options={{ headerShown: false }} />
       <Stack.Screen name="BankCard" component={BankCard} options={{ headerShown: false }} />
       <Stack.Screen name="BankCard1" component={BankCard1} options={{ headerShown: false }} />
+      <Stack.Screen name="AddBeneficiary" component={AddBeneficiary} options={{ headerTitle: " Envoyez Gratuitement de l'argent" }} />
+      <Stack.Screen name="SelectMethod" component={SelectMethod} options={{ headerTitle: "Sélectionner une méthode" }} />
+      <Stack.Screen name="TransfertFund" component={TransfertFund} options={{ headerTitle: "Transférer des fonds" }} />
+      <Stack.Screen name="WalletTransfer" component={WalletTransfer} options={{ headerTitle: "Transfert de portefeuille" }} />
+      <Stack.Screen name="AddContact" component={AddContact} options={{ headerTitle: "Ajouter un contact" }} />
       <Stack.Screen name="ConﬁrmeTheTransfer" component={ConﬁrmeTheTransfer} options={{ headerShown: false }} />
       <Stack.Screen name="Success" component={Success} options={{ headerShown: false }} />
       <Stack.Screen name="Support" component={Support} />
@@ -215,6 +227,7 @@ function MainStack() {
       <Stack.Screen name="MonSolde" component={MonSolde} options={{ headerTitle: "Mon Solde" }} />
       <Stack.Screen name="CreateVirtualCard" component={CreateVirtualCard} options={{ headerTitle: "Créer une carte virtuelle" }} />
       <Stack.Screen name="VerifyIdentity" component={VerifyIdentity} options={{ headerShown: false }} />
+      <Stack.Screen name="DocumentCaptureFlow" component={DocumentCaptureFlow} options={{ headerShown: false }} />
       <Stack.Screen name="ManageVirtualCard" component={ManageVirtualCard} options={{ headerShown: false }} />
       <Stack.Screen name="KycResume" component={KycResume} options={{ headerShown: false }} />
       <Stack.Screen name="KycSelfie" component={KycSelfie} options={{ headerShown: false }} />
@@ -267,18 +280,16 @@ export default function App() {
     </Provider>
   );
 }
-
 const styles = StyleSheet.create({
   tabContainer: {
     flexDirection: 'row',
     height: 65,
     borderTopWidth: 1,
-    borderTopColor: 'green',
+    borderTopColor: Colors.borderTop,
     justifyContent: 'space-around',
     alignItems: 'center',
-   
-    backgroundColor: '#181e25', // Light blue background
-    shadowColor: 'pink',
+    backgroundColor: Colors.background2,
+    shadowColor: Colors.shadow,
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -289,10 +300,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: 8,
-   
   },
   tabLabel: {
     fontSize: 12,
     marginTop: 5,
+    color: Colors.text,
   },
 });
