@@ -145,7 +145,7 @@
       "about_us": "About Us",
       "logout": "Logout",
       "app_version": "Sendo App V1.0.1"
-    },  
+    },
       "guest_login": {
         "title": "Guest Access",
         "welcome": "Continue as Guest",
@@ -177,7 +177,7 @@
     "description": "Explore our services without creating an account. You can always register later.",
     "referral_placeholder": "Enter referral code (optional)",
     "continue_as_guest": "Continue as Guest"
-  }
+    }
     
 
   
