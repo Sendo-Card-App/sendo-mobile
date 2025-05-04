@@ -27,9 +27,6 @@
       ],
       "package": "com.sendo",
       "allowCleartextTraffic": true,
-      "config": {
-      "cleartextTraffic": true
-    }
       "useNextNotificationsApi": true
     },
     "web": {

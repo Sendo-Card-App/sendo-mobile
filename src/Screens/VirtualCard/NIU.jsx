@@ -3,17 +3,30 @@ import React from "react";
 import { AntDesign, Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 import TopLogo from "../../images/TopLogo.png";
+import { useDispatch } from 'react-redux';
+import { setNiuDocument } from '../../features/Kyc/kycReducer';
 
 const NIU = ({ navigation }) => {
   const { width } = Dimensions.get("screen");
+  const dispatch = useDispatch();
   
+  const handleNext = () => {
+    navigation.navigate("Camera", { 
+      purpose: 'niu',
+      onCapture: (image) => {
+        dispatch(setNiuDocument(image));
+        navigation.navigate("KycResume");
+      }
+    });
+  };
+
   return (
     <View className="bg-[#181e25] flex-1 pt-0 relative">
       {/* Top Navigation */}
       <View className="border-b border-dashed border-white flex-row justify-between py-4 mt-10 items-center mx-5 pt-5">
         <View className="absolute -top-12 left-0 right-0 items-center justify-center">
-                <Image source={TopLogo} className=" h-36 w-40 " resizeMode="contain" />
-              </View>
+          <Image source={TopLogo} className=" h-36 w-40 " resizeMode="contain" />
+        </View>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <AntDesign name="arrowleft" size={24} color="white" />
         </TouchableOpacity>
@@ -23,9 +36,9 @@ const NIU = ({ navigation }) => {
       </View>
 
       {/* Title */}
-       <View className="border border-dashed border-gray-300 my-1" />
+      <View className="border border-dashed border-gray-300 my-1" />
       <Text className="text-center text-white text-2xl my-3">
-        Vérification de l’identité
+        Vérification de l'identité
       </Text>
 
       {/* Form Section */}
@@ -38,16 +51,13 @@ const NIU = ({ navigation }) => {
 
         {/* Placeholder for Document Upload/Image */}
         <Image
-          source={require("../../images/DGI.png")} // Placeholder image
+          source={require("../../images/DGI.png")}
           className="w-[80%] mx-auto mt-2"
           style={{ height: width / 1.77 }}
           resizeMode="center"
         />
 
         {/* Instruction Text */}
-        <Text className="font-bold text-gray-800 my-3 text-center mx-6">
-         
-        </Text>
         <View className="w-[89%] mx-auto px-8">
           <Text className="text-gray-400 my-1">Le numéro d'identification unique est une combinaison de lettres et de 
             chiffres attribuée aux contribuables. Ce numéro est essentiel pour identifier l'utilisateur en tant que contribuable.</Text>
@@ -56,7 +66,7 @@ const NIU = ({ navigation }) => {
         {/* Next Button */}
         <TouchableOpacity
           className="mb-2 mt-auto bg-[#7ddd7d] py-3 rounded-full w-[85%] mx-auto"
-          onPress={() => navigation.navigate("IdentityVerification")}
+          onPress={handleNext}
         >
           <Text className="text-xl text-center font-bold ">SUIVANT</Text>
         </TouchableOpacity>

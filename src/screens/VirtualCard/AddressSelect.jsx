@@ -1,14 +1,37 @@
-import { View, Text, Image, TouchableOpacity, ScrollView, Dimensions } from "react-native";
+import { View, Text, TouchableOpacity, Image, ScrollView, Dimensions } from "react-native";
 import React from "react";
 import KycTab from "../../components/KycTab";
 import TopLogo from "../../images/TopLogo.png";
 import { AntDesign, Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
+import { useDispatch } from 'react-redux';
 
-// Get device width for responsive designs
-const { width } = Dimensions.get('window');
+const AddressSelect = ({ navigation, route }) => {
+  const dispatch = useDispatch();
+  
+  const handleLocationSelect = () => {
+    navigation.navigate("AddressConfirm", {
+      onConfirm: (locationData) => {
+        route.params?.onAddressSelected?.(locationData); // Pass back address proof
+        navigation.goBack();
+      }
+    });
+  };
+  
+  const handleBillUpload = () => {
+    navigation.navigate("Camera", {
+      purpose: 'address_proof',
+      onCapture: (image) => {
+        const addressProof = {
+          type: 'bill',
+          uri: image.uri
+        };
+        route.params?.onAddressSelected?.(addressProof); // Pass back address proof
+        navigation.goBack();
+      }
+    });
+  };
 
-const AddressSelect = ({ navigation }) => {
   return (
     <View className="flex-1 bg-[#181e25] pt-0 relative">
       <StatusBar style="light" />
@@ -49,40 +72,39 @@ const AddressSelect = ({ navigation }) => {
             Sélectionnez une option qui prouve votre localisation.
           </Text>
           
-                <View className="space-y-3">
-                {/* Navigation for Plan de localisation */}
-                <TouchableOpacity 
-                    onPress={() => navigation.navigate('AddressConfirm')}
-                    activeOpacity={0.7}  // Optional: adds a slight opacity effect on press
-                >
-                    <View className="flex-row items-center bg-gray-200 rounded-lg p-3">
-                    <Image
-                        source={require("../../images/Localisation.png")} // Placeholder image
-                        className="w-[80%] mx-auto"
-                        style={{ height: width * 0.45 }} // Responsive height based on width
-                        resizeMode="contain" // Ensure the image scales correctly
-                    />
-                    </View>
-                    <Text className="text-gray-700 text-center">Plan de localisation</Text>
-                </TouchableOpacity>
+          <View className="space-y-3">
+            {/* Navigation for Location Plan */}
+            <TouchableOpacity 
+              onPress={handleLocationSelect}
+              activeOpacity={0.7}
+            >
+              <View className="flex-row items-center bg-gray-200 rounded-lg p-3">
+                <Image
+                  source={require("../../images/Localisation.png")}
+                  className="w-[80%] mx-auto"
+                  style={{ height: Dimensions.get('window').width * 0.45 }}
+                  resizeMode="contain"
+                />
+              </View>
+              <Text className="text-gray-700 text-center">Plan de localisation</Text>
+            </TouchableOpacity>
 
-                {/* Navigation for Facture d'eau / électricité */}
-                <TouchableOpacity 
-                    onPress={() => navigation.navigate('Camera')} 
-                    activeOpacity={0.7}  // Optional: adds a slight opacity effect on press
-                >
-                    <View className="flex-row items-center bg-gray-200 rounded-lg p-3">
-                    <Image
-                        source={require("../../images/Facture.png")} // Placeholder image
-                        className="w-[80%] mx-auto"
-                        style={{ height: width * 0.45 }} // Responsive height based on width
-                        resizeMode="contain" // Ensure the image scales correctly
-                    />
-                    </View>
-                    <Text className="text-gray-700 text-center">Facture d'eau / électricité (Optional)</Text>
-                </TouchableOpacity>
-                </View>
-
+            {/* Navigation for Utility Bill Upload */}
+            <TouchableOpacity 
+              onPress={handleBillUpload}
+              activeOpacity={0.7}
+            >
+              <View className="flex-row items-center bg-gray-200 rounded-lg p-3">
+                <Image
+                  source={require("../../images/Facture.png")}
+                  className="w-[80%] mx-auto"
+                  style={{ height: Dimensions.get('window').width * 0.45 }}
+                  resizeMode="contain"
+                />
+              </View>
+              <Text className="text-gray-700 text-center">Facture d'eau / électricité (Optionnel)</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </ScrollView>
 

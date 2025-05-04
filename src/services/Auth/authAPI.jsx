@@ -1,8 +1,4 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import { API_URL } from './config'; // ajuste le chemin si le fichier est ailleurs
-
-const API_BASE_URL = API_URL;
-
 
 // Constants for endpoints
 const AUTH_ENDPOINTS = {
@@ -28,7 +24,7 @@ const TAG_TYPES = {
 export const authApi = createApi({
   reducerPath: 'authApi',
   baseQuery: fetchBaseQuery({ 
-    baseUrl: `${API_BASE_URL}`,
+    baseUrl: process.env.REACT_APP_API_BASE_URL,
     prepareHeaders: (headers, { getState }) => {
       const token = getState().auth.accessToken;
       if (token) {

@@ -121,7 +121,7 @@ const ChangePassword = () => {
       } else if (result.status === 404 || result.code === 404) {
         Toast.show({
           type: 'error',
-          text1: 'User not found',
+          text1: t('User not found'),
           text2: 'Utilisateur non trouvé',
         });
       } else {
@@ -133,24 +133,14 @@ const ChangePassword = () => {
       }
     } catch (err) {
       console.error('UpdatePassword error:', err);
-     // Check if this is an incorrect old password error
-       if (err.data?.message?.toLowerCase().includes('old password') || 
-       err.data?.message?.toLowerCase().includes('incorrect password')) {
-        Toast.show({
-          type: 'error',
-          text1: 'Incorrect Password',
-          text2: 'The old password you entered is incorrect.',
-        });
-      } else {
-        Toast.show({
-          type: 'error',
-          text1: 'Something went wrong',
-          text2: err.data?.message || 'There was an issue updating your password.',
-        });
-      }
-      } finally {
+      Toast.show({
+        type: 'error',
+        text1: t('Something went wrong'),
+        text2: t('There was an issue updating your password.'),
+      });
+    } finally {
       setIsLoading(false);
-      }
+    }
   };
 
   return (

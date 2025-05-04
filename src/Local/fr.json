@@ -1,4 +1,11 @@
 {
+    "available_balance": "Solde disponible",
+    "wallet_id_label": "Matricule du portefeuille destinataire",
+    "wallet_id_placeholder": "Entrez le matricule du portefeuille",
+    "amount_label": "Montant à transférer (FCFA)",
+    "description_label": "Description (optionnel)",
+    "description_placeholder": "Ex: Transfert pour achat",
+    "submit_button": "Effectuer le transfert",
     "security": "Sécurité",
     "biometrics": "Biométriques",
     "unlock_app": "Déverrouillez l’appli en utilisant votre visage {\n} ou votre empreinte",
@@ -134,7 +141,7 @@
       "phone": "+237 600 00 00 00",
       "bonus": "Bonus de 5,00 CAD gratuit",
       "bonus_description": "Vous recevrez 5,00 CAD et votre ami recevra 5,00 CAD lors de son premier transfert. Des exigences d’envoi minimales peuvent s’appliquer. Sous réserve de conditions.",
-      "bonus_code": "Votre code:",
+      "bonus_code": "Votre code: ANDRE237",
       "invite_friends": "INVITER VOS AMIS",
       "balance": "Mon solde",
       "history": "Historique",
@@ -148,39 +155,31 @@
       "app_version": "Sendo App V1.0.1",
        "reload_profile": "🔄 Recharger"
     },
-      "guest_login": {
-        "title": "Accès Invité",
-        "welcome": "Continuer en tant qu'invité",
-        "description": "Explorez nos services sans créer de compte. Vous pourrez vous inscrire plus tard.",
-        "referral_placeholder": "Code de parrainage (optionnel)",
-        "continue_as_guest": "Continuer en tant qu'invité"
-      },
-      "referral": {
-        "title": "Inviter des Amis",
-        "description": "Partagez votre code de parrainage avec des amis et vous recevrez tous les deux un bonus après leur premier transfert valide.",
-        "your_code": "Votre Code de Parrainage",
-        "bonus_amount": "Montant du Bonus",
-        "how_it_works": "Comment ça marche :",
-        "step1": "Partagez votre code unique avec des amis",
-        "step2": "Ils s'inscrivent en utilisant votre code",
-        "step3": "Vous recevez tous les deux un bonus après leur premier transfert",
-        "share_button": "Partager l'Invitation",
-        "link_copied": "Lien Copié !",
-        "share_message": "Rejoignez-moi sur Sendo ! Utilisez mon code de parrainage :"
-      },
-      "errors": {
-        "invalid_referral": "Code de parrainage invalide",
-        "already_used": "Ce code a déjà été utilisé",
-        "kyc_required": "Veuillez compléter la vérification de votre profil pour utiliser le parrainage"
-      },
     "guest_login": {
     "title": "Accès Invité",
     "welcome": "Continuer en tant qu'invité",
     "description": "Explorez nos services sans créer de compte. Vous pourrez vous inscrire plus tard.",
     "referral_placeholder": "Code de parrainage (optionnel)",
     "continue_as_guest": "Continuer en tant qu'invité"
+  },
+  "referral": {
+    "title": "Inviter des Amis",
+    "description": "Partagez votre code de parrainage avec des amis et vous recevrez tous les deux un bonus après leur premier transfert valide.",
+    "your_code": "Votre Code de Parrainage",
+    "bonus_amount": "Montant du Bonus",
+    "how_it_works": "Comment ça marche :",
+    "step1": "Partagez votre code unique avec des amis",
+    "step2": "Ils s'inscrivent en utilisant votre code",
+    "step3": "Vous recevez tous les deux un bonus après leur premier transfert",
+    "share_button": "Partager l'Invitation",
+    "link_copied": "Lien Copié !",
+    "share_message": "Rejoignez-moi sur Sendo ! Utilisez mon code de parrainage :"
+  },
+  "errors": {
+    "invalid_referral": "Code de parrainage invalide",
+    "already_used": "Ce code a déjà été utilisé",
+    "kyc_required": "Veuillez compléter la vérification de votre profil pour utiliser le parrainage"
   }
- 
   
       
       

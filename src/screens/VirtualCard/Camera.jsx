@@ -4,37 +4,57 @@ import { StatusBar } from "expo-status-bar";
 import { AntDesign, Feather, Ionicons } from "@expo/vector-icons";
 import { CameraView, useCameraPermissions } from "expo-camera";
 
-const Camera = ({ navigation }) => {
+const Camera = ({ navigation, route }) => {
   const [permission, requestPermission] = useCameraPermissions();
   const [picture, setPicture] = useState(null);
-  const [flash, setflash] = useState(false);
+  const [flash, setFlash] = useState(false);
   const [face, setFace] = useState(false);
   const { height } = Dimensions.get("screen");
   const cameraRef = useRef();
+  const { purpose, onCapture } = route.params || {};
 
-  //   ========= the function takes picture
   const takePicture = async () => {
     if (cameraRef.current) {
-      const option = { quality: 1, base64: true };
+      const option = { quality: 0.8, base64: true };
       const newPicture = await cameraRef.current.takePictureAsync(option);
       setPicture(newPicture);
     }
   };
 
-  //   ========= Submit function
-
-  const HandleSubmit = () => {
-    // =====upload function
-    navigation.navigate("KycResume");
+  const handleSubmit = () => {
+    if (picture && onCapture) {
+      onCapture(picture);
+    } else {
+      navigation.goBack();
+    }
   };
+
+  const getTitle = () => {
+    switch (purpose) {
+      case 'selfie':
+        return "Prenez un selfie avec votre pièce d'identité";
+      case 'niu':
+        return "Prenez une photo de votre document NIU";
+      case 'address_proof':
+        return "Prenez une photo de votre justificatif de domicile";
+      default:
+        return "Prenez une photo";
+    }
+  };
+
   return (
     <View className="bg-[#181e25] flex-1 py-11 px-5">
-      {/* the top navigation with a back arrow and a right menu button */}
+      {/* the top navigation with a back arrow */}
       <View className="py-4">
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <AntDesign name="arrowleft" size={24} color="white" />
         </TouchableOpacity>
       </View>
+
+      {/* Camera title */}
+      <Text className="text-white text-lg font-bold mb-4 text-center">
+        {getTitle()}
+      </Text>
 
       {/* Camera setup */}
       <View
@@ -61,7 +81,7 @@ const Camera = ({ navigation }) => {
               className={`absolute right-5 top-5 z-20 ${
                 flash ? "bg-[#7ddd7d]" : "bg-[#181e25]"
               }  rounded-full p-3`}
-              onPress={() => setflash((prev) => !prev)}
+              onPress={() => setFlash((prev) => !prev)}
             >
               <Ionicons name="flashlight-outline" size={24} color="white" />
             </TouchableOpacity>
@@ -88,7 +108,7 @@ const Camera = ({ navigation }) => {
       </View>
 
       <Text className="text-white text-center mt-3">
-        Positionner votre visage dans le cadre
+        Positionner votre document dans le cadre
       </Text>
 
       {/* button to take a picture */}
@@ -116,7 +136,7 @@ const Camera = ({ navigation }) => {
 
           <TouchableOpacity
             className="items-center justify-center"
-            onPress={() => HandleSubmit()}
+            onPress={handleSubmit}
           >
             <AntDesign name="check" size={45} color="#7ddd7d" />
             <Text className="text-white">Accepter</Text>

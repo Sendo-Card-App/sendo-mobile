@@ -77,7 +77,7 @@ const Account = () => {
       setOriginalData(profileData);
     }
   }, [userProfile]);
-
+  
   const handleVerifyOtp = async (code) => {
     try {
       if (isSecondPhone) {
