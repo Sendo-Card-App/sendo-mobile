@@ -39,6 +39,7 @@ const Signup = () => {
   const [selectedCountry, setSelectedCountry] = useState({ code: "+237", flag: "🇨🇲" });
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showReferralCode, setShowReferralCode] = useState(false); // New state for referral code visibility
 
   const [signupDetails, setSignupDetails] = useState({
     firstName: "",
@@ -47,6 +48,7 @@ const Signup = () => {
     password: "",
     phone: "",
     address: "",
+    referralCode: "",
   });
 
   const [validationErrors, setValidationErrors] = useState({
@@ -56,6 +58,7 @@ const Signup = () => {
     password: "",
     phone: "",
     address: "",
+    referralCode: "",
   });
 
   const isValidPhone = (phone) => {
@@ -108,6 +111,7 @@ const Signup = () => {
       password: signupDetails.password,
       phone: `${selectedCountry.code}${signupDetails.phone}`,
       address: signupDetails.address,
+      referralCode: signupDetails.referralCode,
     };
 
     if (
@@ -199,6 +203,13 @@ const Signup = () => {
     closeModal();
   };
 
+  const toggleReferralCode = () => {
+    setShowReferralCode(!showReferralCode);
+    if (!showReferralCode) {
+      setSignupDetails(prev => ({ ...prev, referralCode: "" }));
+    }
+  };
+
   return (
     <KeyboardAvoidinWrapper>
       <SafeAreaView className="bg-[#181e25] flex-1 items-center justify-center">
@@ -228,12 +239,10 @@ const Signup = () => {
               paddingHorizontal: 20,
               textAlign: 'center',
               fontSize: 16,
-              // Shadow for iOS
               shadowColor: '#fff',
               shadowOffset: { width: 0, height: 2 },
               shadowOpacity: 10,
               shadowRadius: 1,
-              // Shadow for Android
               elevation: 6,
               borderColor: validationErrors.email ? '#fff' : 'transparent',
               borderWidth: validationErrors.email ? 1 : 0,
@@ -256,12 +265,10 @@ const Signup = () => {
               paddingHorizontal: 20,
               textAlign: 'center',
               fontSize: 16,
-              // Shadow for iOS
               shadowColor: '#fff',
               shadowOffset: { width: 0, height: 2 },
               shadowOpacity: 10,
               shadowRadius: 1,
-              // Shadow for Android
               elevation: 6,
               borderColor: validationErrors.email ? '#fff' : 'transparent',
               borderWidth: validationErrors.email ? 1 : 0,
@@ -271,35 +278,33 @@ const Signup = () => {
             <Text className="text-red-500 text-xs mb-2 text-center">{validationErrors.lastName}</Text>
           )}
 
-            <TextInput
-                    placeholder={t("signup.email")}
-                    value={signupDetails.email}
-                    onChangeText={text => handleChange("email", text)}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    style={{
-                      backgroundColor: '#fff',
-                      borderRadius: 30,
-                      paddingVertical: 16,
-                      paddingHorizontal: 20,
-                      textAlign: 'center',
-                      fontSize: 16,
-                      // Shadow for iOS
-                      shadowColor: '#fff',
-                      shadowOffset: { width: 0, height: 2 },
-                      shadowOpacity: 10,
-                      shadowRadius: 1,
-                      // Shadow for Android
-                      elevation: 6,
-                      borderColor: validationErrors.email ? '#fff' : 'transparent',
-                      borderWidth: validationErrors.email ? 1 : 0,
-                    }}
-                  />
-                  {validationErrors.email ? (
-                    <Text style={{ color: '#f00', fontSize: 12, marginTop: 9, textAlign: 'center' }}>
-                      {validationErrors.email}
-                    </Text>
-                  ) : null}
+          <TextInput
+            placeholder={t("signup.email")}
+            value={signupDetails.email}
+            onChangeText={text => handleChange("email", text)}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            style={{
+              backgroundColor: '#fff',
+              borderRadius: 30,
+              paddingVertical: 16,
+              paddingHorizontal: 20,
+              textAlign: 'center',
+              fontSize: 16,
+              shadowColor: '#fff',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 10,
+              shadowRadius: 1,
+              elevation: 6,
+              borderColor: validationErrors.email ? '#fff' : 'transparent',
+              borderWidth: validationErrors.email ? 1 : 0,
+            }}
+          />
+          {validationErrors.email ? (
+            <Text style={{ color: '#f00', fontSize: 12, marginTop: 9, textAlign: 'center' }}>
+              {validationErrors.email}
+            </Text>
+          ) : null}
 
           {/* Phone */}
           <View className="relative mb-5 mt-5 flex-row bg-white rounded-3xl overflow-hidden items-center">
@@ -319,12 +324,10 @@ const Signup = () => {
                 paddingHorizontal: 20,
                 textAlign: 'center',
                 fontSize: 16,
-                // Shadow for iOS
                 shadowColor: '#fff',
                 shadowOffset: { width: 0, height: 2 },
                 shadowOpacity: 10,
                 shadowRadius: 1,
-                // Shadow for Android
                 elevation: 6,
                 borderColor: validationErrors.email ? '#fff' : 'transparent',
                 borderWidth: validationErrors.email ? 1 : 0,
@@ -344,7 +347,6 @@ const Signup = () => {
                 renderItem={({ item }) => (
                   <TouchableOpacity
                     className="p-4 border-b border-gray-200"
-                    
                     onPress={() => selectCountry(item)}
                   >
                     <Text className="text-lg">{item.flag} {item.name} ({item.callingCode})</Text>
@@ -370,12 +372,10 @@ const Signup = () => {
               paddingHorizontal: 20,
               textAlign: 'center',
               fontSize: 16,
-              // Shadow for iOS
               shadowColor: '#fff',
               shadowOffset: { width: 0, height: 2 },
               shadowOpacity: 10,
               shadowRadius: 1,
-              // Shadow for Android
               elevation: 6,
               borderColor: validationErrors.email ? '#fff' : 'transparent',
               borderWidth: validationErrors.email ? 1 : 0,
@@ -384,6 +384,39 @@ const Signup = () => {
           {validationErrors.address && (
             <Text className="text-red-500 text-xs mb-2 text-center">{validationErrors.address}</Text>
           )}
+
+           {/* Referral Code Toggle */}
+            <TouchableOpacity 
+              onPress={toggleReferralCode}
+              className="mb-2"
+            >
+              <Text className="text-center text-blue-500">
+                {showReferralCode ? t("signup.referralHide") : t("signup.referralToggle")}
+              </Text>
+            </TouchableOpacity>
+
+            {/* Referral Code (Conditional) */}
+            {showReferralCode && (
+              <TextInput
+                placeholder={t("signup.referralPlaceholder")}
+                value={signupDetails.referralCode}
+                onChangeText={(text) => handleChange("referralCode", text)}
+                className="border-[#fff] bg-[#ffffff] rounded-3xl mb-5 py-5 text-center"
+                style={{
+                  backgroundColor: '#fff',
+                  borderRadius: 30,
+                  paddingVertical: 16,
+                  paddingHorizontal: 20,
+                  textAlign: 'center',
+                  fontSize: 16,
+                  shadowColor: '#fff',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 10,
+                  shadowRadius: 1,
+                  elevation: 6,
+                }}
+              />
+            )}
 
           {/* Password */}
           <View className="relative mb-8">
@@ -400,12 +433,10 @@ const Signup = () => {
                 paddingHorizontal: 20,
                 textAlign: 'center',
                 fontSize: 16,
-                // Shadow for iOS
                 shadowColor: '#fff',
                 shadowOffset: { width: 0, height: 2 },
                 shadowOpacity: 10,
                 shadowRadius: 1,
-                // Shadow for Android
                 elevation: 6,
                 borderColor: validationErrors.email ? '#fff' : 'transparent',
                 borderWidth: validationErrors.email ? 1 : 0,
@@ -431,18 +462,15 @@ const Signup = () => {
             disabled={isLoading}
             className={`border-[#7ddd7d] border-2 bg-[#7ddd7d] rounded-3xl p-4 items-center justify-center ${isLoading ? "opacity-60" : ""}`}
             style={{
-             
               borderRadius: 30,
               paddingVertical: 16,
               paddingHorizontal: 20,
               textAlign: 'center',
               fontSize: 16,
-              // Shadow for iOS
               shadowColor: '#fff',
               shadowOffset: { width: 0, height: 2 },
               shadowOpacity: 10,
               shadowRadius: 1,
-              // Shadow for Android
               elevation: 6,
               borderColor: validationErrors.email ? '#fff' : 'transparent',
               borderWidth: validationErrors.email ? 1 : 0,

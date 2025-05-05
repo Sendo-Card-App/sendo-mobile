@@ -5,6 +5,7 @@ import TopLogo from "../../images/TopLogo.png";
 import { AntDesign, Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 import { useDispatch } from 'react-redux';
+import { setAddressProof } from '../../features/Kyc/kycReducer';
 
 const AddressSelect = ({ navigation, route }) => {
   const dispatch = useDispatch();
@@ -12,8 +13,13 @@ const AddressSelect = ({ navigation, route }) => {
   const handleLocationSelect = () => {
     navigation.navigate("AddressConfirm", {
       onConfirm: (locationData) => {
-        route.params?.onAddressSelected?.(locationData); // Pass back address proof
-        navigation.goBack();
+        dispatch(setAddressProof({
+          type: 'location',
+          uri: locationData.uri,
+          name: `address_${Date.now()}.jpg`,
+          coordinates: locationData.coordinates
+        }));
+        navigation.navigate("KycResume");
       }
     });
   };
@@ -22,12 +28,12 @@ const AddressSelect = ({ navigation, route }) => {
     navigation.navigate("Camera", {
       purpose: 'address_proof',
       onCapture: (image) => {
-        const addressProof = {
+        dispatch(setAddressProof({
           type: 'bill',
-          uri: image.uri
-        };
-        route.params?.onAddressSelected?.(addressProof); // Pass back address proof
-        navigation.goBack();
+          uri: image.uri,
+          name: `bill_${Date.now()}.jpg`
+        }));
+        navigation.navigate("KycResume");
       }
     });
   };
@@ -36,7 +42,7 @@ const AddressSelect = ({ navigation, route }) => {
     <View className="flex-1 bg-[#181e25] pt-0 relative">
       <StatusBar style="light" />
       
-      {/* Header with Logo and Navigation */}
+      {/* Header */}
       <View className="relative h-32">
         <View className="absolute -top-12 left-0 right-0 items-center justify-center">
           <Image source={TopLogo} className="h-36 w-40" resizeMode="contain" />
@@ -52,28 +58,26 @@ const AddressSelect = ({ navigation, route }) => {
         </View>
       </View>
 
-      {/* Title Section */}
+      {/* Title */}
       <View className="border border-dashed border-gray-300 my-1" />
       <Text className="text-center text-white text-2xl my-3">
-        Vérification de l'identité
+        Justificatif de domicile
       </Text>
 
       {/* Main Content */}
       <ScrollView className="flex-1 pb-3 bg-white rounded-t-3xl">
         <View className="px-6 py-4">
-          {/* Top Tab */}
           <KycTab isActive="5" />
 
           <View className="border-b border-gray-200 my-4" />
 
-          {/* Location Verification Section */}
           <Text className="text-lg font-bold text-gray-800 mb-3 text-center">Où habitez-vous ?</Text>
           <Text className="text-gray-600 mb-4 text-center">
             Sélectionnez une option qui prouve votre localisation.
           </Text>
           
           <View className="space-y-3">
-            {/* Navigation for Location Plan */}
+            {/* Location Option */}
             <TouchableOpacity 
               onPress={handleLocationSelect}
               activeOpacity={0.7}
@@ -89,7 +93,7 @@ const AddressSelect = ({ navigation, route }) => {
               <Text className="text-gray-700 text-center">Plan de localisation</Text>
             </TouchableOpacity>
 
-            {/* Navigation for Utility Bill Upload */}
+            {/* Utility Bill Option */}
             <TouchableOpacity 
               onPress={handleBillUpload}
               activeOpacity={0.7}
@@ -102,7 +106,7 @@ const AddressSelect = ({ navigation, route }) => {
                   resizeMode="contain"
                 />
               </View>
-              <Text className="text-gray-700 text-center">Facture d'eau / électricité (Optionnel)</Text>
+              <Text className="text-gray-700 text-center">Facture d'eau/électricité</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -112,7 +116,7 @@ const AddressSelect = ({ navigation, route }) => {
       <View className="py-4 flex-row justify-center items-center gap-2">
         <Ionicons name="shield-checkmark" size={18} color="orange" />
         <Text className="text-sm text-white">
-          Ne partagez pas vos informations personnelles…
+          Ne partagez pas vos informations personnelles
         </Text>
       </View>
     </View>

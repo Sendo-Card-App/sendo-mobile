@@ -1,157 +1,173 @@
-import {
-  View,
-  Text,
-  Image,
-  TouchableOpacity,
-  ScrollView,
-  Platform,
-} from "react-native";
+import { View, Text, TouchableOpacity, Image, ScrollView, Dimensions } from "react-native";
 import React, { useState } from "react";
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
 import * as ImagePicker from 'expo-image-picker';
 import Toast from "react-native-toast-message";
 import TopLogo from "../../images/TopLogo.png";
-import { AntDesign, Ionicons } from "@expo/vector-icons";
+import { AntDesign, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 import KycTab from "../../components/KycTab";
 
 const AddressConfirm = ({ navigation, route }) => {
-  const [address, setAddress] = useState("");
   const [selectedDoc, setSelectedDoc] = useState(null);
   const [coordinates, setCoordinates] = useState(null);
 
-  const handleConfirm = () => {
+  const handlePickDocument = async () => {
+    try {
+      // First try to pick from gallery
+      const galleryResult = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      });
+
+      if (!galleryResult.canceled) {
+        const asset = galleryResult.assets[0];
+        const fileInfo = await FileSystem.getInfoAsync(asset.uri);
+        const fileSizeMB = fileInfo.size / (1024 * 1024);
+
+        if (fileSizeMB > 5) {
+          Toast.show({
+            type: "error",
+            text1: "Fichier trop volumineux",
+            text2: "L'image ne doit pas dépasser 5 Mo",
+          });
+          return;
+        }
+
+        setSelectedDoc({
+          name: `address_proof_${Date.now()}.jpg`,
+          uri: asset.uri,
+          mimeType: 'image/jpeg',
+          type: 'image'
+        });
+        return;
+      }
+
+      // If user canceled image picker, try document picker
+      const docResult = await DocumentPicker.getDocumentAsync({
+        type: ['image/*', 'application/pdf'],
+        copyToCacheDirectory: true
+      });
+
+      if (docResult.type === 'success') {
+        const fileInfo = await FileSystem.getInfoAsync(docResult.uri);
+        const fileSizeMB = fileInfo.size / (1024 * 1024);
+
+        if (fileSizeMB > 5) {
+          Toast.show({
+            type: "error",
+            text1: "Fichier trop volumineux",
+            text2: "Le document ne doit pas dépasser 5 Mo",
+          });
+          return;
+        }
+
+        setSelectedDoc({
+          name: docResult.name,
+          uri: docResult.uri,
+          mimeType: docResult.mimeType || 'application/octet-stream',
+          type: docResult.mimeType?.includes('image') ? 'image' : 'document'
+        });
+      }
+    } catch (err) {
+      console.error("Document selection error:", err);
+      Toast.show({
+        type: "error",
+        text1: "Erreur",
+        text2: "Impossible de sélectionner le document"
+      });
+    }
+  };
+
+  const handleConfirm = async () => {
     if (!selectedDoc) {
       Toast.show({
         type: "error",
         text1: "Erreur",
-        text2: "Veuillez téléverser un document avant de confirmer.",
+        text2: "Veuillez sélectionner un document avant de confirmer",
       });
       return;
     }
-  
-    // Vérifier que c'est bien une image ou un PDF/doc
-    const allowedTypes = [
-      "image/jpeg",
-      "image/jpg",
-      "image/png",
-      "application/pdf",
-      "application/msword",
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    ];
-  
-    if (!allowedTypes.includes(selectedDoc.mimeType)) {
-      Toast.show({
-        type: "error",
-        text1: "Type de fichier non autorisé",
-        text2: "Seules les images (.jpg, .png) ou documents (.pdf, .doc) sont acceptés.",
-      });
-      return;
-    }
-  
-    const locationData = {
-      document: {
-        name: selectedDoc.name,
-        uri: selectedDoc.uri,
-        mimeType: selectedDoc.mimeType,
-      }
-    };
-  
-    route.params?.onConfirm?.(locationData);
-    navigation.goBack();
-  };
-  
 
-  const handlePickDocument = async () => {
     try {
-      // Action Sheet custom fallback
-      const options = Platform.select({
-        ios: ["Image", "Document", "Annuler"],
-        android: ["Image", "Document", "Annuler"]
-      });
+      // Create the location data object
+      const locationData = {
+        document: {
+          name: selectedDoc.name,
+          uri: selectedDoc.uri,
+          mimeType: selectedDoc.mimeType,
+          type: selectedDoc.type
+        },
+        coordinates // Optional if using location
+      };
 
-      const cancelIndex = 2;
-
-      const selected = await new Promise((resolve) => {
-        Toast.show({
-          type: 'info',
-          text1: 'Sélection de fichier',
-          text2: 'Veuillez choisir le type de fichier dans la boîte de dialogue native.'
-        });
-
-        setTimeout(() => {
-          resolve("Image"); // fallback if platform alert isn't available
-        }, 500);
-      });
-
-      // Manuel workaround
-      if (selected === "Image") {
-        const result = await ImagePicker.launchImageLibraryAsync({
-          mediaTypes: ImagePicker.MediaTypeOptions.Images,
-          quality: 1,
-        });
-
-        if (!result.canceled) {
-          const asset = result.assets[0];
-          const fileInfo = await FileSystem.getInfoAsync(asset.uri);
-          const fileSizeMB = fileInfo.size / (1024 * 1024);
-
-          if (fileSizeMB > 5) {
-            Toast.show({
-              type: "error",
-              text1: "Fichier trop volumineux",
-              text2: "L'image ne doit pas dépasser 5 Mo.",
-            });
-            return;
-          }
-
-          setSelectedDoc({
-            name: asset.uri.split("/").pop(),
-            uri: asset.uri,
-            mimeType: "image/jpeg",
-          });
-
-          Toast.show({
-            type: "success",
-            text1: "Image sélectionnée",
-          });
-        }
-      } else if (selected === "Document") {
-        const result = await DocumentPicker.getDocumentAsync({
-          type: "*/*",
-          copyToCacheDirectory: true,
-          multiple: false,
-        });
-
-        if (result.type === 'success') {
-          const fileInfo = await FileSystem.getInfoAsync(result.uri);
-          const fileSizeMB = fileInfo.size / (1024 * 1024);
-
-          if (fileSizeMB > 5) {
-            Toast.show({
-              type: "error",
-              text1: "Fichier trop volumineux",
-              text2: "Le document ne doit pas dépasser 5 Mo.",
-            });
-            return;
-          }
-
-          setSelectedDoc(result);
-
-          Toast.show({
-            type: "success",
-            text1: "Document sélectionné",
-          });
-        }
+      // Check if the onConfirm callback exists and is a function
+      if (route.params?.onConfirm && typeof route.params.onConfirm === 'function') {
+        await route.params.onConfirm(locationData);
+      } else {
+        console.warn("No onConfirm callback provided");
       }
-    } catch (err) {
-      console.error("Erreur lors du choix du fichier:", err);
+
+      // Navigate back
+      navigation.goBack();
+      
+      // Show success message
+      Toast.show({
+        type: "success",
+        text1: "Succès",
+        text2: "Document d'adresse confirmé"
+      });
+    } catch (error) {
+      console.error("Confirmation error:", error);
       Toast.show({
         type: "error",
         text1: "Erreur",
-        text2: "Une erreur est survenue lors de la sélection du fichier.",
+        text2: "Échec de la confirmation du document"
       });
+    }
+  };
+
+  const renderDocumentPreview = () => {
+    if (!selectedDoc) return null;
+
+    if (selectedDoc.type === 'image') {
+      return (
+        <View className="relative mb-4">
+          <Image
+            source={{ uri: selectedDoc.uri }}
+            className="h-64 w-full rounded-lg"
+            resizeMode="contain"
+          />
+          <View className="absolute top-2 right-2 bg-white rounded-full p-1">
+            <TouchableOpacity onPress={() => setSelectedDoc(null)}>
+              <MaterialIcons name="cancel" size={24} color="red" />
+            </TouchableOpacity>
+          </View>
+          <Text className="text-center text-gray-600 mt-1">{selectedDoc.name}</Text>
+        </View>
+      );
+    } else {
+      return (
+        <View className="bg-gray-100 p-4 rounded-lg mb-4 flex-row items-center justify-between">
+          <View className="flex-row items-center">
+            <Ionicons name="document" size={32} color="#3b82f6" />
+            <View className="ml-3">
+              <Text className="font-medium text-gray-800" numberOfLines={1}>
+                {selectedDoc.name}
+              </Text>
+              <Text className="text-xs text-gray-500">
+                {selectedDoc.mimeType}
+              </Text>
+            </View>
+          </View>
+          <TouchableOpacity onPress={() => setSelectedDoc(null)}>
+            <MaterialIcons name="cancel" size={24} color="red" />
+          </TouchableOpacity>
+        </View>
+      );
     }
   };
 
@@ -175,57 +191,77 @@ const AddressConfirm = ({ navigation, route }) => {
         </View>
       </View>
 
+      {/* Title */}
       <View className="border border-dashed border-gray-300 my-1" />
       <Text className="text-center text-white text-2xl my-3">
-        Vérification de l'identité
+        Confirmation d'adresse
       </Text>
 
+      {/* Main Content */}
       <ScrollView className="flex-1 pb-3 bg-white rounded-t-3xl">
         <View className="px-6 py-4">
           <KycTab isActive="5" />
 
           <View className="mb-6">
             <Text className="text-lg font-bold text-gray-800 mb-3 text-center">
-              Où résidez-vous?
+              Justificatif de domicile
             </Text>
 
-            <View>
+            {/* Document Preview */}
+            {renderDocumentPreview()}
+
+            {/* Upload Button */}
+            {!selectedDoc && (
               <TouchableOpacity
                 onPress={handlePickDocument}
-                className="h-64 rounded-lg overflow-hidden border border-gray-200 bg-gray-100 items-center justify-center"
+                className="h-40 border-2 border-dashed border-gray-300 rounded-lg items-center justify-center"
               >
-                <Ionicons name="document" size={50} color="gray" />
-                <Text className="text-gray-500 mt-2">
-                  Cliquez ici pour téléverser un document ou une image
-                </Text>
-              </TouchableOpacity>
-
-              {selectedDoc && (
-                <View className="mt-2 px-4 py-2 bg-green-100 rounded-lg flex-row items-center justify-between">
-                  <Ionicons name="checkmark-done-circle-outline" size={20} color="green" />
-                  <Text className="text-green-700 ml-2 flex-1">{selectedDoc.name}</Text>
+                <View className="items-center">
+                  <Ionicons name="cloud-upload" size={48} color="#7ddd7d" />
+                  <Text className="text-gray-700 font-medium mt-2">
+                    Sélectionner un document
+                  </Text>
+                  <Text className="text-gray-500 text-sm">
+                    (Image ou PDF)
+                  </Text>
                 </View>
-              )}
-            </View>
+              </TouchableOpacity>
+            )}
 
-            <Text className="text-gray-500 text-sm mt-2 italic text-center">
-              Vous pourriez avoir besoin de téléverser votre localisation.
-            </Text>
+            {/* Accepted Documents Info */}
+            <View className="mt-4 bg-blue-50 p-3 rounded-lg">
+              <Text className="font-medium text-blue-800">Documents acceptés:</Text>
+              <Text className="text-gray-600 text-sm mt-1">
+                • Facture d'eau ou d'électricité (moins de 3 mois)
+              </Text>
+              <Text className="text-gray-600 text-sm">
+                • Contrat de bail en cours de validité
+              </Text>
+              <Text className="text-gray-600 text-sm">
+                • Avis d'imposition ou de taxe foncière
+              </Text>
+              <Text className="text-gray-600 text-sm">
+                • Taille maximale: 5 Mo
+              </Text>
+            </View>
           </View>
 
+          {/* Confirm Button */}
           <TouchableOpacity
-            className="bg-[#7ddd7d] py-4 rounded-lg mt-4"
+            className={`py-4 rounded-lg mt-4 ${selectedDoc ? 'bg-[#7ddd7d]' : 'bg-gray-400'}`}
             onPress={handleConfirm}
+            disabled={!selectedDoc}
           >
-            <Text className="text-white font-bold text-center">CONFIRMER</Text>
+            <Text className="text-white font-bold text-center">CONFIRMER LE DOCUMENT</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
 
+      {/* Footer */}
       <View className="py-4 flex-row justify-center items-center gap-2">
         <Ionicons name="shield-checkmark" size={18} color="orange" />
         <Text className="text-sm text-white">
-          Ne partagez pas vos informations personnelles…
+          Ne partagez pas vos informations personnelles
         </Text>
       </View>
 

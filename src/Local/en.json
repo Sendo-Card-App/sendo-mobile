@@ -67,7 +67,10 @@
           "successMessage": "Account created successfully!",
           "defaultError": "Registration failed. Please try again.",
           "emailUsed": "This email is already registered",
-          "phoneUsed": "This phone number is already registered"
+          "phoneUsed": "This phone number is already registered",
+          "referralToggle": "Have a referral code?",
+          "referralHide": "Hide referral code",
+          "referralPlaceholder": "Referral code (optional)"
         },
       
 
@@ -139,9 +142,9 @@
       "title": "André",
       "email": "randré24cand@gmail.com",
       "phone": "+237 600 00 00 00",
-      "bonus": "Bonus of 5.00 CAD free",
-      "bonus_description": "You will receive 5.00 CAD and your friend will receive 5.00 CAD when they make their first transfer. Minimum sending requirements may apply. Subject to conditions.",
-      "bonus_code": "Your code: ANDRE237",
+      "bonus": "Bonus of 1.00 CAD free",
+      "bonus_description": "You will receive 1.00 CAD and your friend will receive 1.00 CAD when they make their first transfer. Minimum sending requirements may apply. Subject to conditions.",
+      "bonus_code": "Your code:",
       "invite_friends": "INVITE YOUR FRIENDS",
       "balance": "My Balance",
       "history": "History",
@@ -152,7 +155,14 @@
       "support": "Support",
       "about_us": "About Us",
       "logout": "Logout",
-      "app_version": "Sendo App V1.0.1"
+      "app_version": "Sendo App V1.0.1",
+      "app_name": "Sendo",
+  "referral": {
+    "share_message": "Hey! Join me on Sendo using my referral code {{code}} and we both get a bonus!\n\nDownload the app here:\niOS: {{iosLink}}\nAndroid: {{androidLink}}\n\nUse my code when signing up!",
+    "share_title": "Join Sendo with my referral code",
+    "no_code_error": "No referral code available",
+    "share_error": "Failed to share referral code"
+  }
     },
     "guest_login": {
     "title": "Guest Access",

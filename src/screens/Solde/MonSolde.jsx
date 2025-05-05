@@ -23,7 +23,7 @@ const MonSolde = () => {
    });
 
   const isLoading = isProfileLoading || isBalanceLoading;
-
+  
   // Handle API errors
   useEffect(() => {
     if (balanceError) {
