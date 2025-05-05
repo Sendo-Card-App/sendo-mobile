@@ -68,7 +68,10 @@
         "successMessage": "Compte créé avec succès!",
         "defaultError": "Échec de l'inscription. Veuillez réessayer.",
         "emailUsed": "Cet email est déjà enregistré",
-        "phoneUsed": "Ce numéro de téléphone est déjà enregistré"
+        "phoneUsed": "Ce numéro de téléphone est déjà enregistré",
+        "referralToggle": "Vous avez un code de parrainage?",
+        "referralHide": "Masquer le code",
+        "referralPlaceholder": "Code de parrainage (optionnel)"
       },
       "signIn": {
         "title": "Connexion",
@@ -139,9 +142,9 @@
       "title": "André",
       "email": "randré24cand@gmail.com",
       "phone": "+237 600 00 00 00",
-      "bonus": "Bonus de 5,00 CAD gratuit",
-      "bonus_description": "Vous recevrez 5,00 CAD et votre ami recevra 5,00 CAD lors de son premier transfert. Des exigences d’envoi minimales peuvent s’appliquer. Sous réserve de conditions.",
-      "bonus_code": "Votre code: ANDRE237",
+      "bonus": "Bonus de 1,00 CAD gratuit",
+      "bonus_description": "Vous recevrez 1,00 CAD et votre ami recevra 1,00 CAD lors de son premier transfert. Des exigences d’envoi minimales peuvent s’appliquer. Sous réserve de conditions.",
+      "bonus_code": "Votre code:",
       "invite_friends": "INVITER VOS AMIS",
       "balance": "Mon solde",
       "history": "Historique",
@@ -153,7 +156,14 @@
       "about_us": "À propos de nous",
       "logout": "Déconnexion",
       "app_version": "Sendo App V1.0.1",
-       "reload_profile": "🔄 Recharger"
+       "reload_profile": "🔄 Recharger",
+        "app_name": "Sendo",
+        "referral": {
+          "share_message": "Salut! Rejoins-moi sur Sendo avec mon code de parrainage {{code}} et nous aurons tous les deux un bonus!\n\nTélécharge l'application ici:\niOS: {{iosLink}}\nAndroid: {{androidLink}}\n\nUtilise mon code lors de l'inscription!",
+          "share_title": "Rejoins Sendo avec mon code de parrainage",
+          "no_code_error": "Aucun code de parrainage disponible",
+          "share_error": "Échec du partage du code de parrainage"
+        }
     },
     "guest_login": {
     "title": "Accès Invité",

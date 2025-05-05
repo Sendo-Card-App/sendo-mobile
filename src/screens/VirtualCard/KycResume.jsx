@@ -1,32 +1,32 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Image, FlatList } from "react-native";
-import { useSelector } from 'react-redux';
-import { useSubmitKYCMutation, useSendSelfieMutation } from '../../services/Kyc/kycApi';
+import { View, Text, TouchableOpacity, Image, FlatList, Alert } from "react-native";
+import { useSelector, useDispatch } from 'react-redux';
+import { useSubmitKYCMutation } from '../../services/Kyc/kycApi';
 import { useNavigation } from '@react-navigation/native';
 import Toast from 'react-native-toast-message';
 import { StatusBar } from "expo-status-bar";
 import Loader from "../../components/Loader";
 import TopLogo from "../../images/TopLogo.png";
 import { AntDesign, Entypo, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { selectIsKYCComplete, selectAllDocuments, setSubmissionStatus } from '../../features/Kyc/kycReducer';
 
 const KycResume = ({ navigation }) => {
-  const [submitKYC, { isLoading: isSubmittingKYC }] = useSubmitKYCMutation();
-  const [sendSelfie, { isLoading: isSendingSelfie }] = useSendSelfieMutation();
-  const { personalDetails, selfie, identityDocument, niuDocument, addressProof } = useSelector(state => state.kyc);
+  const dispatch = useDispatch();
+  const [submitKYC] = useSubmitKYCMutation();
+  const { personalDetails, selfie, identityDocument, niuDocument, addressProof, submissionStatus } = useSelector(state => state.kyc);
+  const isKYCComplete = useSelector(selectIsKYCComplete);
+  const allDocuments = useSelector(selectAllDocuments);
   
   const Data = [
     { id: "1", name: "Détails personnels", route: "PersonalDetail", completed: !!personalDetails.profession && !!personalDetails.region },
-    { id: "2", name: "Selﬁe", route: "KycSelfie", completed: !!selfie },
+    { id: "2", name: "Selfie", route: "KycSelfie", completed: !!selfie },
     { id: "3", name: "Pièce d'identité", route: "IdentityCard", completed: !!identityDocument.front && (identityDocument.type !== 'cni' || !!identityDocument.back) },
     { id: "4", name: "NIU (Contribuable)", route: "NIU", completed: !!niuDocument },
     { id: "5", name: "Adresse", route: "Addresse", completed: !!addressProof },
   ];
 
-  const allStepsCompleted = Data.every(item => item.completed);
-  const isLoading = isSubmittingKYC || isSendingSelfie;
-
   const handleSubmit = async () => {
-    if (!allStepsCompleted) {
+    if (!isKYCComplete) {
       Toast.show({
         type: 'error',
         text1: 'Incomplet',
@@ -34,106 +34,75 @@ const KycResume = ({ navigation }) => {
       });
       return;
     }
-  
+
+    dispatch(setSubmissionStatus('loading'));
+    
     try {
-      // First send the selfie to the specific endpoint
-      if (selfie?.uri) {
-        const selfieFormData = new FormData();
-        
-        // Match exactly what the backend expects
-        selfieFormData.append('picture', {
-          uri: selfie.uri,
-          name: `selfie_${Date.now()}.jpg`, 
-          type: 'image/jpeg'
-        });
-  
-        // Send selfie with proper error handling
-        const selfieResponse = await sendSelfie(selfieFormData).unwrap();
-        
-        if (!selfieResponse || selfieResponse.status !== 201) {
-          throw new Error(selfieResponse?.message || 'Échec de l\'envoi du selfie');
-        }
-      } else {
-        throw new Error('Aucun selfie fourni');
-      }
-  
-      // Then submit the rest of KYC documents
-      const kycFormData = new FormData();
+      const formData = new FormData();
       
       // Add personal details
-      kycFormData.append('profession', personalDetails.profession || '');
-      kycFormData.append('region', personalDetails.region || '');
-      kycFormData.append('city', personalDetails.city || '');
-      kycFormData.append('district', personalDetails.district || '');
-  
-      // Add other documents (excluding selfie)
-      const processDocument = (doc, fieldName) => {
-        if (doc?.uri) {
-          kycFormData.append('documents', {
-            uri: doc.uri,
-            name: `${fieldName}.jpg`,
-            type: 'image/jpeg'
-          });
-        }
-      };
-  
-      processDocument(identityDocument.front, 'identity_front');
-      if (identityDocument.type === 'cni') {
-        processDocument(identityDocument.back, 'identity_back');
-      }
-      processDocument(niuDocument, 'niu_document');
-      processDocument(addressProof, 'address_proof');
-  
-      // Submit KYC
-      const kycResponse = await submitKYC(kycFormData).unwrap();
-  
-      // Handle success
-      Toast.show({
-        type: 'success',
-        text1: 'KYC complet',
-        text2: kycResponse.message || 'Votre KYC a été soumis avec succès'
+      formData.append('profession', personalDetails.profession);
+      formData.append('region', personalDetails.region);
+      formData.append('city', personalDetails.city);
+      formData.append('district', personalDetails.district);
+
+      // Add all documents
+      allDocuments.forEach(doc => {
+        formData.append(doc.documentType.toLowerCase(), {
+          uri: doc.uri,
+          name: doc.name || `document_${Date.now()}.jpg`,
+          type: doc.type || 'image/jpeg'
+        });
       });
+
+      const response = await submitKYC(formData).unwrap();
       
-      navigation.navigate('Success', { 
-        message: 'Votre KYC a été soumis avec succès',
-        nextScreen: 'Home' 
-      });
-  
+      if (response.status === 201) {
+        Toast.show({
+          type: 'success',
+          text1: 'Succès',
+          text2: response.message || 'KYC soumis avec succès'
+        });
+        navigation.navigate('Success', {
+          message: 'Votre KYC a été soumis avec succès',
+          nextScreen: 'Home'
+        });
+      }
     } catch (error) {
       console.error('KYC submission error:', error);
-      
       let errorMessage = 'Échec de la soumission du KYC';
-      if (error.status === 400) {
-        errorMessage = error.data?.message || 'Données manquantes ou invalides';
-      } else if (error.status === 500) {
-        errorMessage = 'Erreur serveur. Veuillez réessayer plus tard.';
-      } else if (error.message) {
-        errorMessage = error.message;
+      
+      if (error.data?.errors) {
+        errorMessage = error.data.errors.map(err => err.msg).join('\n');
+      } else if (error.data?.message) {
+        errorMessage = error.data.message;
       }
       
       Toast.show({
         type: 'error',
         text1: 'Erreur',
-        text2: errorMessage
+        text2: errorMessage,
+        visibilityTime: 5000
       });
+    } finally {
+      dispatch(setSubmissionStatus('idle'));
     }
   };
 
-  // ... rest of your component remains the same ...
-  const KycOption = (props) => (
+  const KycOption = ({ id, name, route, completed }) => (
     <TouchableOpacity
-      className={`py-2 px-4 my-2 rounded-2xl flex-row items-center gap-3 ${props.completed ? 'bg-green-100' : 'bg-[#ededed]'}`}
-      onPress={() => navigation.navigate(props.route)}
+      className={`py-2 px-4 my-2 rounded-2xl flex-row items-center gap-3 ${completed ? 'bg-green-100' : 'bg-[#ededed]'}`}
+      onPress={() => navigation.navigate(route)}
     >
       <MaterialCommunityIcons 
-        name={props.completed ? "check-circle" : "progress-clock"} 
+        name={completed ? "check-circle" : "progress-clock"} 
         size={24} 
-        color={props.completed ? "green" : "black"} 
+        color={completed ? "green" : "black"} 
       />
       <View className="flex-1">
-        <Text className="text-gray-800 font-bold">{props.name}</Text>
+        <Text className="text-gray-800 font-bold">{name}</Text>
         <Text className="text-sm">
-          {props.completed ? 'Complété' : 'En attente d\'informations'}
+          {completed ? 'Complété' : 'En attente'}
         </Text>
       </View>
       <Entypo name="chevron-small-right" size={24} color="gray" />
@@ -142,7 +111,7 @@ const KycResume = ({ navigation }) => {
 
   return (
     <View className="bg-[#181e25] flex-1 pt-0 relative">
-      {/* Header and logo */}
+      {/* Header */}
       <View className="absolute -top-12 left-0 right-0 items-center justify-center">
         <Image source={TopLogo} className="h-36 w-40" resizeMode="contain" />
       </View>
@@ -157,13 +126,13 @@ const KycResume = ({ navigation }) => {
       </View>
 
       <View className="border border-dashed border-gray-300 my-1" />
-      <Text className="text-center text-white text-2xl my-3">Vériﬁcation de l'identité</Text>
+      <Text className="text-center text-white text-2xl my-3">Vérification de l'identité</Text>
 
       <View className="flex-1 gap-6 py-3 bg-white px-8 rounded-t-3xl">
         <View className="my-5">
           <Text className="text-center text-gray-800 text-lg font-bold">Résumé de votre KYC</Text>
           <Text className="text-center text-gray-400 text-sm mt-5">
-            Vous pouvez démarrer votre processus de vériﬁcation à partir de n'importe quelle étape
+            Complétez toutes les étapes pour finaliser votre vérification
           </Text>
         </View>
 
@@ -174,11 +143,11 @@ const KycResume = ({ navigation }) => {
         />
         
         <TouchableOpacity 
-          className={`mt-auto py-3 rounded-full mb-8 ${allStepsCompleted ? 'bg-[#7ddd7d]' : 'bg-gray-400'}`}
+          className={`mt-auto py-3 rounded-full mb-8 ${isKYCComplete ? 'bg-[#7ddd7d]' : 'bg-gray-400'}`}
           onPress={handleSubmit}
-          disabled={!allStepsCompleted || isLoading}
+          disabled={!isKYCComplete || submissionStatus === 'loading'}
         >
-          {isLoading ? (
+          {submissionStatus === 'loading' ? (
             <View className="flex-row justify-center items-center">
               <Loader size="small" color="white" />
             </View>
@@ -190,7 +159,7 @@ const KycResume = ({ navigation }) => {
 
       <View className="py-4 flex-row justify-center items-center gap-2">
         <Ionicons name="shield-checkmark" size={18} color="orange" />
-        <Text className="text-sm text-white">Ne partagez pas vos informations personnelles…</Text>
+        <Text className="text-sm text-white">Ne partagez pas vos informations personnelles</Text>
       </View>
 
       <StatusBar style="light" />

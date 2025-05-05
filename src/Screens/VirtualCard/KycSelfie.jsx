@@ -12,11 +12,15 @@ const KycSelfie = ({ navigation }) => {
   const { width } = Dimensions.get("screen");
   const dispatch = useDispatch();
   
-  const handleNext = () => {
-    navigation.navigate("Camera", { 
+  const handleTakeSelfie = () => {
+    navigation.navigate("Camera", {
       purpose: 'selfie',
       onCapture: (image) => {
-        dispatch(setSelfie(image));
+        dispatch(setSelfie({
+          uri: image.uri,
+          type: 'image/jpeg',
+          name: `selfie_${Date.now()}.jpg`
+        }));
         navigation.navigate("KycResume");
       }
     });
@@ -89,7 +93,7 @@ const KycSelfie = ({ navigation }) => {
         {/* ============ submit button */}
         <TouchableOpacity
           className="mb-2 mt-auto bg-[#7ddd7d] py-3 rounded-full w-[85%] mx-auto"
-          onPress={handleNext}
+          onPress={handleTakeSelfie}
         >
           <Text className="text-xl text-center font-bold ">SUIVANT</Text>
         </TouchableOpacity>

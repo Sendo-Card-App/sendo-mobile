@@ -19,7 +19,8 @@ import {
 import { useTranslation } from "react-i18next";
 import { useGetUserProfileQuery, useLogoutMutation } from "../services/Auth/authAPI";
 import Loader from "./Loader";
-import { getData, removeData } from "../services/storage";
+import { Share } from 'react-native';
+import { getData, removeData, storeData } from "../services/storage";
 import Toast from "react-native-toast-message";
 
 const DrawerComponent = ({ navigation }) => {
@@ -28,116 +29,194 @@ const DrawerComponent = ({ navigation }) => {
 
   const [authChecked, setAuthChecked] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(true);
+  const [stored,setStored] = useState('');
   const [authData, setAuthData] = useState(null);
 
   const {
     data: userProfile,
+    isLoading: isProfileFetching,
     isLoading: isProfileLoading,
-    isFetching: isProfileFetching,
     refetch: refetchProfile,
   } = useGetUserProfileQuery();
 
   const [logout, { isLoading: isLoggingOut }] = useLogoutMutation();
-   
-  console.log(userProfile)
+  const isLoading = isProfileLoading || isProfileFetching;
+
   // Load stored auth data once on mount
   useEffect(() => {
-    (async () => {
+    const loadAuthData = async () => {
       const data = await getData('@authData');
       setAuthData(data);
       setIsAuthenticated(!!data);
       setAuthChecked(true);
-    })();
+    };
+    loadAuthData();
   }, []);
 
-  // Pull-to-refresh header
-  const handleRefresh = useCallback(() => {
-    setAuthChecked(false);
-    (async () => {
-      const data = await getData('@authData');
-      setAuthData(data);
-      setIsAuthenticated(!!data);
-      setAuthChecked(true);
-      refetchProfile();
-    })();
-  }, [refetchProfile]);
+  useEffect(() => {
+    const backupAuthData = async () => {
+      if (!authData) return; // Don't backup if no data
+      
+      try {
+       
+        await storeData('Stored', authData); // Now using the imported storeData function
+       
+      } catch (error) {
+       
+      }
+    };
+  
+    backupAuthData();
+  }, [authData]);
 
   const handleLogout = async () => {
     try {
-      const stored = authData || (await getData('@authData'));
-      if (!stored?.deviceId) {
-        throw new Error('Device ID not found');
+      const currentAuthData = authData || (await getData('@authData'));
+  
+      if (!currentAuthData?.deviceId) {
+        // Check backup storage as last resort
+        const backupData = await getData('Stored');
+    
+        if (!backupData?.deviceId) {
+          throw new Error('Device ID not found in any storage');
+        }
       }
-      const deviceId = stored.deviceId;
-
-      // Clear before calling API
+  
+      const deviceId = currentAuthData.deviceId;
+  
+      // Clear all auth data
       await removeData('@authData');
-
+      await removeData('Stored'); 
+      setAuthData(null);
+  
       // Call logout mutation
-      const response = await logout({ deviceId }).unwrap();
-      if (response.status === 204 || response) {
-        Toast.show({
-          type: 'success',
-          text1: 'Success',
-          text2: 'Logged out successfully',
-        });
-        navigation2.reset({
-          index: 0,
-          routes: [{ name: 'Auth' }],
-        });
-      } else {
-        throw new Error('Logout failed');
-      }
+      await logout({ deviceId }).unwrap();
+  
+      // Show success message
+      Toast.show({
+        type: 'success',
+        text1: 'Success',
+        text2: 'Logged out successfully',
+      });
+  
+      // Close the drawer before navigating
+      navigation.closeDrawer();
+  
+      // Reset navigation stack and navigate to Auth
+      navigation2.reset({
+        index: 0,
+        routes: [{ name: 'Auth' }],
+      });
+  
     } catch (err) {
       console.error('Logout error:', err);
+      
+      let errorMessage = 'Logged out locally (server unavailable)';
+      if (err.message) {
+        errorMessage = err.message;
+      } else if (err.data?.message) {
+        errorMessage = err.data.message;
+      }
+  
       Toast.show({
         type: 'error',
         text1: 'Error',
-        text2: err.message || 'Logged out locally (server unavailable)',
+        text2: errorMessage,
+      });
+  
+      // Still close drawer and navigate to auth screen even if server logout failed
+      navigation.closeDrawer();
+      navigation2.reset({
+        index: 0,
+        routes: [{ name: 'Auth' }],
       });
     }
   };
 
-  if (!authChecked || isProfileLoading || isLoggingOut) {
+  if ( isProfileLoading || isLoggingOut) {
     return (
       <SafeAreaView className="flex-1 justify-center items-center">
         <Loader />
       </SafeAreaView>
     );
   }
-  if (!isAuthenticated) return null;
+  const shareReferralCode = () => {
+    if (!userProfile?.data?.referralCode) {
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'No referral code available',
+      });
+      return;
+    }
+  
+    // Customize these values according to your app
+    const appName = t('Sendo'); 
+    const appStoreLink = 'https://apps.apple.com/...'; 
+    const playStoreLink = 'https://play.google.com/...'; 
+    
+    const message = `Hey! Join me on ${appName} using my referral code ${userProfile.data.referralCode} and we both get a bonus!
+  
+  Download the app here:
+  iOS: ${appStoreLink}
+  Android: ${playStoreLink}
+  
+  Use my code when signing up!`;
+  
+    Share.share({
+      message: message,
+      title: `Join ${appName} with my referral code`,
+    })
+    .then(result => {
+      if (result.action === Share.sharedAction) {
+        // Track successful shares if needed
+        //console.log('Shared successfully');
+      }
+    })
+    .catch(error => {
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: error.message || 'Failed to share referral code',
+      });
+    });
+  };
+  
 
   return (
     <SafeAreaView className="flex-1">
       {/* Header */}
-      <View
-        style={{ backgroundColor: '#7ddd7d', padding: 10 }}
-        refreshControl={
-          <RefreshControl
-            refreshing={isProfileFetching}
-            onRefresh={handleRefresh}
-          />
-        }
-      >
-        <View className="flex-row justify-between items-center">
-          <Text className="text-white font-bold text-xl">
-            {userProfile?.data?.firstname} {userProfile?.data?.lastname}
-          </Text>
-          <TouchableOpacity onPress={() => navigation.closeDrawer()}>
-            <AntDesign name="arrowleft" size={24} color="white" />
-          </TouchableOpacity>
-        </View>
-        <View className="mt-2 bg-gray-800 px-4 py-3 rounded-md flex-row justify-between items-center">
-          <View>
-            <Text className="text-white">{userProfile?.data?.email}</Text>
-            <Text className="text-white">{userProfile?.data?.phone}</Text>
+      <View style={{ backgroundColor: '#7ddd7d', padding: 10 }}>
+        {isLoading ? (
+          <View className="flex-row justify-between items-center py-4">
+            <Loader/>
+            <TouchableOpacity onPress={() => navigation.closeDrawer()}>
+              <AntDesign name="arrowleft" size={24} color="white" />
+            </TouchableOpacity>
           </View>
-          {userProfile?.data?.isVerifiedEmail && (
-            <Text className="text-green-600 bg-green-100 px-2 py-1 rounded-full">
-              ✅ Verified
-            </Text>
-          )}
-        </View>
+        ) : (
+          <>
+            <View className="flex-row justify-between items-center mt-10">
+              <Text className="text-white font-bold text-xl">
+                {userProfile?.data?.firstname} {userProfile?.data?.lastname}
+              </Text>
+              <TouchableOpacity onPress={() => navigation.closeDrawer()}>
+                <AntDesign name="arrowleft" size={24} color="white" />
+              </TouchableOpacity>
+            </View>
+            <View className="mt-2 bg-gray-800 px-4 py-3 rounded-md flex-row justify-between items-center">
+              <View>
+                <Text className="text-white">{userProfile?.data?.email}</Text>
+                <Text className="text-white">{userProfile?.data?.phone}</Text>
+              </View>
+              {userProfile?.data?.isVerifiedEmail && (
+                <Text className="text-green-600 bg-green-100 px-2 py-1 rounded-full">
+                  ✅ Verified
+                </Text>
+              )}
+            </View>
+          </>
+        )}
       </View>
 
       {/* Body */}
@@ -147,13 +226,15 @@ const DrawerComponent = ({ navigation }) => {
           <Text className="text-xs text-gray-500 my-2">
             {t('drawer.bonus_description')}
           </Text>
-          <Text className="text-sm text-gray-500">{t('drawer.bonus_code')}</Text>
+          <Text className="text-sm text-gray-500">{t('drawer.bonus_code')} {userProfile?.data?.referralCode}</Text>
+          <TouchableOpacity onPress={shareReferralCode}>
           <View className="flex-row items-center mt-2">
             <EvilIcons name="share-google" size={24} color="#7ddd7d" />
             <Text className="text-[#7ddd7d] font-bold">
               {t('drawer.invite_friends')}
             </Text>
           </View>
+          </TouchableOpacity>
         </View>
 
         <ScrollView

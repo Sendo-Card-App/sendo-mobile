@@ -59,7 +59,6 @@ const Account = () => {
   const [tempValue, setTempValue] = useState("");
   const [isSecondPhone, setIsSecondPhone] = useState(false);
 
-
   useEffect(() => {
     if (userProfile) {
       const profileData = {
@@ -77,6 +76,8 @@ const Account = () => {
       setOriginalData(profileData);
     }
   }, [userProfile]);
+    
+
   
   const handleVerifyOtp = async (code) => {
     try {
@@ -131,42 +132,44 @@ const Account = () => {
     }
   
     try {
-      let payloadToSend;
+      const formDataToSend = new FormData();
+      
+      // Append all fields to FormData
+      formDataToSend.append("firstname", firstname);
+      formDataToSend.append("lastname", lastname);
+      formDataToSend.append("phone", phone);
+      formDataToSend.append("email", email);
+      formDataToSend.append("profession", profession);
+      formDataToSend.append("region", region);
+      formDataToSend.append("city", city);
+      formDataToSend.append("district", district);
   
-      if (picture) {
-        const formDataToSend = new FormData();
-        formDataToSend.append("firstname", firstname);
-        formDataToSend.append("lastname", lastname);
-        formDataToSend.append("phone", phone);
-        formDataToSend.append("email", email);
-        formDataToSend.append("profession", profession);
-        formDataToSend.append("region", region);
-        formDataToSend.append("city", city);
-        formDataToSend.append("district", district);
+      // Only append picture if it exists and has changed
+      if (picture && picture.uri) {
+        // Extract file extension from URI
+        const fileExtension = picture.uri.split('.').pop();
+        const fileName = `profile_${Date.now()}.${fileExtension}`;
+        
         formDataToSend.append("picture", {
           uri: picture.uri,
-          name: picture.name,
-          type: picture.type,
+          name: fileName,
+          type: `image/${fileExtension === 'jpg' ? 'jpeg' : fileExtension}`,
         });
-  
-        payloadToSend = formDataToSend;
-      } else {
-        payloadToSend = {
-          firstname,
-          lastname,
-          phone,
-          email,
-          profession,
-          region,
-          city,
-          district,
-          picture,
-        };
+      } else if (originalData.picture === null && picture === null) {
+        // Handle case where picture was removed
+        formDataToSend.append("picture", null);
       }
   
+      // Prepare headers
+      const headers = {
+        'Content-Type': 'multipart/form-data',
+      };
+  
+      // Make the API call
       await updateProfile({
         userId: userProfile.data.id,
-        formData: payloadToSend,
+        formData: formDataToSend,
+        headers,
       }).unwrap();
   
       Toast.show({
@@ -192,7 +195,7 @@ const Account = () => {
     try {
       const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
       const cameraPermissionResult = await ImagePicker.requestCameraPermissionsAsync();
-
+  
       if (permissionResult.status !== "granted" || cameraPermissionResult.status !== "granted") {
         Toast.show({
           type: "error",
@@ -201,19 +204,23 @@ const Account = () => {
         });
         return;
       }
-
+  
       const pickerResult = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        quality: 1,
-        base64: false,
+        quality: 0.8,  // Slightly reduced quality for smaller file size
+        allowsEditing: true,
+        aspect: [1, 1],  // Square aspect ratio
       });
-
-      if (pickerResult.cancelled) return;
-
-      const { uri } = pickerResult.assets?.[0] || pickerResult;
-
-      const fileInfo = await fetch(uri);
+  
+      if (pickerResult.canceled) return;
+  
+      const selectedAsset = pickerResult.assets?.[0];
+      if (!selectedAsset) return;
+  
+      // Get file info
+      const fileInfo = await fetch(selectedAsset.uri);
       const blob = await fileInfo.blob();
+      
       if (blob.size > MAX_FILE_SIZE) {
         Toast.show({
           type: "error",
@@ -222,13 +229,17 @@ const Account = () => {
         });
         return;
       }
-
+  
+      // Extract file extension
+      const uriParts = selectedAsset.uri.split('.');
+      const fileExtension = uriParts[uriParts.length - 1].toLowerCase();
+  
       setFormData((prev) => ({
         ...prev,
         picture: {
-          uri,
-          name: "profile.jpg",
-          type: "image/jpeg",
+          uri: selectedAsset.uri,
+          name: `profile_${Date.now()}.${fileExtension}`,
+          type: `image/${fileExtension === 'jpg' ? 'jpeg' : fileExtension}`,
         },
       }));
     } catch (err) {
