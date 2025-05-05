@@ -1,194 +1,203 @@
 {
-    "available_balance": "Solde disponible",
-    "wallet_id_label": "Matricule du portefeuille destinataire",
-    "wallet_id_placeholder": "Entrez le matricule du portefeuille",
-    "amount_label": "Montant à transférer (FCFA)",
-    "description_label": "Description (optionnel)",
-    "description_placeholder": "Ex: Transfert pour achat",
-    "submit_button": "Effectuer le transfert",
-    "security": "Sécurité",
-    "biometrics": "Biométriques",
-    "unlock_app": "Déverrouillez l’appli en utilisant votre visage {\n} ou votre empreinte",
-    "biometric_not_available": "L'authentification biométrique n'est pas disponible",
-    "Weak": "Faible",
-  "Medium": "Moyen",
-  "Strong": "Fort",
-  "authenticate_to_toggle_biometrics": "Veuillez vous authentifier pour activer/désactiver la biométrie",
-    "notifications": "Notiﬁcations",
-    "ensure_notifications": "Assurez-vous d’avoir activé les notiﬁcations dans {\n} les paramètres de votre appareil",
-    "switch_on": "Activé",
-    "switch_off": "Désactivé",
-    "change_password": "Créer un nouveau Mot de Passe",
-  "choose_language": "Choisir la Langue",
-  "old_password": "Ancien Mot de Passe",
-  "new_password": "Nouveau Mot de Passe",
-  "confirm_new_password": "Confirmer le Nouveau Mot de Passe",
-  "submit": "Soumettre",
-  "password_requirements": "Le mot de passe doit comporter au moins 8 caractères contenant une majuscule, une minuscule, un chiffre et au moins un caractère spécial (@!#$%^*)",
-    "name": "André",
-    "bonus": "Bonus de 5,00 CAD gratuit",
-    "bonusDetails": "Vous recevrez 5,00 CAD et votre ami recevra 5,00 CAD lors de son premier transfert. Des exigences d’envoi minimales peuvent s’appliquer. Sous réserve de conditions.",
-    "yourCode": "Votre code: ANDRE237",
-    "inviteFriends": "INVITER VOS AMIS",
-    "myBalance": "Mon solde",
-    "history": "Historique",
-    "historyDetails": "Listing chronologique de vos transactions",
-    "payBills": "Payer les factures",
-    "payBillDetails": "Payer des factures tels que les pass mobiles, internet et bouquets Tv",
-    "account": "Compte",
-    "accountDetails": "Gérez vos informations personnelles",
-    "payment": "Paiement",
-    "paymentDetails": "Gérez vos méthodes de paiement",
-    "settings": "Paramètres",
-    "settingsDetails": "Options & sécurité",
-    "support": "Support",
-    "supportDetails": "Service client, aide et contacts",
-    "aboutUs": "À propos de nous",
-    "aboutUsDetails": "Mentions légales et conditions d'utilisation",
-    "logout": "Déconnexion",
-    "appVersion": "Sendo App V1.0.1",
-      "signup": {
-        "title": "Créer un compte",
-        "title1": "Mon Compte",
-        "firstName": "Prénom",
-        "lastName": "Nom",
-        "name": "Nom Complet",
-        "email": "Adresse email",
-        "phone": "Numéro de téléphone",
-        "address": "Adresse",
-        "password": "Mot de passe",
-        "buttonText": "S'INSCRIRE",
-        "save": "Enregistrer",
-        "alreadyHaveAccount": "Vous avez déjà un compte?",
-        "signIn": "SE CONNECTER",
-        "fieldRequired": "Ce champ est obligatoire",
-        "invalidEmail": "Adresse email invalide",
-        "invalidPhone": "Format de numéro de téléphone invalide",
-        "invalidPassword": "Le mot de passe doit contenir au moins 8 caractères",
-        "successMessage": "Compte créé avec succès!",
-        "defaultError": "Échec de l'inscription. Veuillez réessayer.",
-        "emailUsed": "Cet email est déjà enregistré",
-        "phoneUsed": "Ce numéro de téléphone est déjà enregistré"
-      },
-      "signIn": {
+  "available_balance": "Solde disponible",
+  "wallet_id_label": "Matricule du portefeuille destinataire",
+  "wallet_id_placeholder": "Entrez le matricule du portefeuille",
+  "amount_label": "Montant à transférer (FCFA)",
+  "description_label": "Description (optionnel)",
+  "description_placeholder": "Ex: Transfert pour achat",
+  "submit_button": "Effectuer le transfert",
+  "security": "Sécurité",
+  "biometrics": "Biométriques",
+  "unlock_app": "Déverrouillez l’appli en utilisant votre visage {\n} ou votre empreinte",
+  "biometric_not_available": "L'authentification biométrique n'est pas disponible",
+  "Weak": "Faible",
+"Medium": "Moyen",
+"Strong": "Fort",
+"authenticate_to_toggle_biometrics": "Veuillez vous authentifier pour activer/désactiver la biométrie",
+  "notifications": "Notiﬁcations",
+  "ensure_notifications": "Assurez-vous d’avoir activé les notiﬁcations dans {\n} les paramètres de votre appareil",
+  "switch_on": "Activé",
+  "switch_off": "Désactivé",
+  "change_password": "Créer un nouveau Mot de Passe",
+"choose_language": "Choisir la Langue",
+"old_password": "Ancien Mot de Passe",
+"new_password": "Nouveau Mot de Passe",
+"confirm_new_password": "Confirmer le Nouveau Mot de Passe",
+"submit": "Soumettre",
+"password_requirements": "Le mot de passe doit comporter au moins 8 caractères contenant une majuscule, une minuscule, un chiffre et au moins un caractère spécial (@!#$%^*)",
+  "name": "André",
+  "bonus": "Bonus de 5,00 CAD gratuit",
+  "bonusDetails": "Vous recevrez 5,00 CAD et votre ami recevra 5,00 CAD lors de son premier transfert. Des exigences d’envoi minimales peuvent s’appliquer. Sous réserve de conditions.",
+  "yourCode": "Votre code: ANDRE237",
+  "inviteFriends": "INVITER VOS AMIS",
+  "myBalance": "Mon solde",
+  "history": "Historique",
+  "historyDetails": "Listing chronologique de vos transactions",
+  "payBills": "Payer les factures",
+  "payBillDetails": "Payer des factures tels que les pass mobiles, internet et bouquets Tv",
+  "account": "Compte",
+  "accountDetails": "Gérez vos informations personnelles",
+  "payment": "Paiement",
+  "paymentDetails": "Gérez vos méthodes de paiement",
+  "settings": "Paramètres",
+  "settingsDetails": "Options & sécurité",
+  "support": "Support",
+  "supportDetails": "Service client, aide et contacts",
+  "aboutUs": "À propos de nous",
+  "aboutUsDetails": "Mentions légales et conditions d'utilisation",
+  "logout": "Déconnexion",
+  "appVersion": "Sendo App V1.0.1",
+    "signup": {
+      "title": "Créer un compte",
+      "title1": "Mon Compte",
+      "firstName": "Prénom",
+      "lastName": "Nom",
+      "name": "Nom Complet",
+      "email": "Adresse email",
+      "phone": "Numéro de téléphone",
+      "address": "Adresse",
+      "password": "Mot de passe",
+      "buttonText": "S'INSCRIRE",
+      "save": "Enregistrer",
+      "alreadyHaveAccount": "Vous avez déjà un compte?",
+      "signIn": "SE CONNECTER",
+      "fieldRequired": "Ce champ est obligatoire",
+      "invalidEmail": "Adresse email invalide",
+      "invalidPhone": "Format de numéro de téléphone invalide",
+      "invalidPassword": "Le mot de passe doit contenir au moins 8 caractères",
+      "successMessage": "Compte créé avec succès!",
+      "defaultError": "Échec de l'inscription. Veuillez réessayer.",
+      "emailUsed": "Cet email est déjà enregistré",
+      "phoneUsed": "Ce numéro de téléphone est déjà enregistré",
+      "referralToggle": "Vous avez un code de parrainage?",
+      "referralHide": "Masquer le code",
+      "referralPlaceholder": "Code de parrainage (optionnel)"
+    },
+    "signIn": {
+      "title": "Connexion",
+      "email": "Adresse Email",
+      "password": "Mot de passe",
+      "next": "Suivant",
+      "forgotPassword": "Mot de passe oublié",
+      "loginWith": "CONNEXION AVEC EMAIL/NOM D'UTILISATEUR",
+      "orSignInWith": "Ou connectez-vous avec",
+      "dontHaveAccount": "Vous n'avez pas de compte ?",
+      "signUp": "S'INSCRIRE",
+      "guestUser": "Se connecter en tant qu'utilisateur invité",
+      "login": "Connexion",
+      "success": "Connexion réussie !",
+    "error": "Erreur"
+  },
+  
+    "otpVerification": {
+      "enterCode": "Entrez le code à 6 chiffres envoyé au",
+      "codeExpiresIn": "Le code expire dans",
+      "secondsLeft": "secondes restantes",
+      "resendOtp": "Renvoyer le code",
+      "waitToResend": "Attendez pour renvoyer",
+      "verify": "Vérifier",
+      "verificationSuccess": "Vérification réussie !",
+      "verificationFailed": "Échec de la vérification. Veuillez réessayer.",
+      "otpResent": "Un nouveau code a été envoyé",
+      "resendFailed": "Échec de l'envoi du code. Veuillez réessayer.",
+      "incompleteCode": "Veuillez entrer le code complet à 6 chiffres"
+    },
+    "error": "Erreur",
+    "success": "Succès",
+  
+      "log": {
         "title": "Connexion",
-        "email": "Adresse Email",
-        "password": "Mot de passe",
+        "phoneNumber": "Numéro de téléphone",
         "next": "Suivant",
-        "forgotPassword": "Mot de passe oublié",
-        "loginWith": "CONNEXION AVEC EMAIL/NOM D'UTILISATEUR",
+        "forgetPassword": "Mot de passe oublié",
+        "loginWithPhone": "CONNEXION AVEC NUMÉRO DE TÉLÉPHONE",
         "orSignInWith": "Ou connectez-vous avec",
         "dontHaveAccount": "Vous n'avez pas de compte ?",
         "signUp": "S'INSCRIRE",
         "guestUser": "Se connecter en tant qu'utilisateur invité",
-        "login": "Connexion",
-        "success": "Connexion réussie !",
-      "error": "Erreur"
-    },
-    
-      "otpVerification": {
-        "enterCode": "Entrez le code à 6 chiffres envoyé au",
-        "codeExpiresIn": "Le code expire dans",
-        "secondsLeft": "secondes restantes",
-        "resendOtp": "Renvoyer le code",
-        "waitToResend": "Attendez pour renvoyer",
-        "verify": "Vérifier",
-        "verificationSuccess": "Vérification réussie !",
-        "verificationFailed": "Échec de la vérification. Veuillez réessayer.",
-        "otpResent": "Un nouveau code a été envoyé",
-        "resendFailed": "Échec de l'envoi du code. Veuillez réessayer.",
-        "incompleteCode": "Veuillez entrer le code complet à 6 chiffres"
+        "error": "Erreur",
+        "enterPhoneNumber": "Veuillez entrer votre numéro de téléphone.",
+        "close": "Fermer"
       },
-      "error": "Erreur",
-      "success": "Succès",
-    
-        "log": {
-          "title": "Connexion",
-          "phoneNumber": "Numéro de téléphone",
-          "next": "Suivant",
-          "forgetPassword": "Mot de passe oublié",
-          "loginWithPhone": "CONNEXION AVEC NUMÉRO DE TÉLÉPHONE",
-          "orSignInWith": "Ou connectez-vous avec",
-          "dontHaveAccount": "Vous n'avez pas de compte ?",
-          "signUp": "S'INSCRIRE",
-          "guestUser": "Se connecter en tant qu'utilisateur invité",
-          "error": "Erreur",
-          "enterPhoneNumber": "Veuillez entrer votre numéro de téléphone.",
-          "close": "Fermer"
-        },
-        "account1": {
-    "title": "Mon Compte",
-    "labels": {
-      "name": "Nom",
-      "phone": "Numéro de téléphone",
-      "email": "Adresse email"
-    },
-    "placeholders": {
-      "firstName": "Prénom",
-      "lastName": "Nom"
-    },
-    "actions": {
-      "save": "Enregistrer",
-      "retry": "Réessayer"
-    },
-    "errors": {
-      "loading": "Erreur lors du chargement du profil"
-    }
+      "account1": {
+  "title": "Mon Compte",
+  "labels": {
+    "name": "Nom",
+    "phone": "Numéro de téléphone",
+    "email": "Adresse email"
   },
-    "drawer": {
-      "title": "André",
-      "email": "randré24cand@gmail.com",
-      "phone": "+237 600 00 00 00",
-      "bonus": "Bonus de 5,00 CAD gratuit",
-      "bonus_description": "Vous recevrez 5,00 CAD et votre ami recevra 5,00 CAD lors de son premier transfert. Des exigences d’envoi minimales peuvent s’appliquer. Sous réserve de conditions.",
-      "bonus_code": "Votre code: ANDRE237",
-      "invite_friends": "INVITER VOS AMIS",
-      "balance": "Mon solde",
-      "history": "Historique",
-      "pay_bills": "Payer les factures",
-      "account": "Compte",
-      "payment": "Paiement",
-      "settings": "Paramètres",
-      "support": "Support",
-      "about_us": "À propos de nous",
-      "logout": "Déconnexion",
-      "app_version": "Sendo App V1.0.1",
-       "reload_profile": "🔄 Recharger"
-    },
-    "guest_login": {
-    "title": "Accès Invité",
-    "welcome": "Continuer en tant qu'invité",
-    "description": "Explorez nos services sans créer de compte. Vous pourrez vous inscrire plus tard.",
-    "referral_placeholder": "Code de parrainage (optionnel)",
-    "continue_as_guest": "Continuer en tant qu'invité"
+  "placeholders": {
+    "firstName": "Prénom",
+    "lastName": "Nom"
   },
-  "referral": {
-    "title": "Inviter des Amis",
-    "description": "Partagez votre code de parrainage avec des amis et vous recevrez tous les deux un bonus après leur premier transfert valide.",
-    "your_code": "Votre Code de Parrainage",
-    "bonus_amount": "Montant du Bonus",
-    "how_it_works": "Comment ça marche :",
-    "step1": "Partagez votre code unique avec des amis",
-    "step2": "Ils s'inscrivent en utilisant votre code",
-    "step3": "Vous recevez tous les deux un bonus après leur premier transfert",
-    "share_button": "Partager l'Invitation",
-    "link_copied": "Lien Copié !",
-    "share_message": "Rejoignez-moi sur Sendo ! Utilisez mon code de parrainage :"
+  "actions": {
+    "save": "Enregistrer",
+    "retry": "Réessayer"
   },
   "errors": {
-    "invalid_referral": "Code de parrainage invalide",
-    "already_used": "Ce code a déjà été utilisé",
-    "kyc_required": "Veuillez compléter la vérification de votre profil pour utiliser le parrainage"
+    "loading": "Erreur lors du chargement du profil"
   }
-  
-      
-      
+},
+  "drawer": {
+    "title": "André",
+    "email": "randré24cand@gmail.com",
+    "phone": "+237 600 00 00 00",
+    "bonus": "Bonus de 1,00 CAD gratuit",
+    "bonus_description": "Vous recevrez 1,00 CAD et votre ami recevra 1,00 CAD lors de son premier transfert. Des exigences d’envoi minimales peuvent s’appliquer. Sous réserve de conditions.",
+    "bonus_code": "Votre code:",
+    "invite_friends": "INVITER VOS AMIS",
+    "balance": "Mon solde",
+    "history": "Historique",
+    "pay_bills": "Payer les factures",
+    "account": "Compte",
+    "payment": "Paiement",
+    "settings": "Paramètres",
+    "support": "Support",
+    "about_us": "À propos de nous",
+    "logout": "Déconnexion",
+    "app_version": "Sendo App V1.0.1",
+     "reload_profile": "🔄 Recharger",
+      "app_name": "Sendo",
+      "referral": {
+        "share_message": "Salut! Rejoins-moi sur Sendo avec mon code de parrainage {{code}} et nous aurons tous les deux un bonus!\n\nTélécharge l'application ici:\niOS: {{iosLink}}\nAndroid: {{androidLink}}\n\nUtilise mon code lors de l'inscription!",
+        "share_title": "Rejoins Sendo avec mon code de parrainage",
+        "no_code_error": "Aucun code de parrainage disponible",
+        "share_error": "Échec du partage du code de parrainage"
+      }
+  },
+  "guest_login": {
+  "title": "Accès Invité",
+  "welcome": "Continuer en tant qu'invité",
+  "description": "Explorez nos services sans créer de compte. Vous pourrez vous inscrire plus tard.",
+  "referral_placeholder": "Code de parrainage (optionnel)",
+  "continue_as_guest": "Continuer en tant qu'invité"
+},
+"referral": {
+  "title": "Inviter des Amis",
+  "description": "Partagez votre code de parrainage avec des amis et vous recevrez tous les deux un bonus après leur premier transfert valide.",
+  "your_code": "Votre Code de Parrainage",
+  "bonus_amount": "Montant du Bonus",
+  "how_it_works": "Comment ça marche :",
+  "step1": "Partagez votre code unique avec des amis",
+  "step2": "Ils s'inscrivent en utilisant votre code",
+  "step3": "Vous recevez tous les deux un bonus après leur premier transfert",
+  "share_button": "Partager l'Invitation",
+  "link_copied": "Lien Copié !",
+  "share_message": "Rejoignez-moi sur Sendo ! Utilisez mon code de parrainage :"
+},
+"errors": {
+  "invalid_referral": "Code de parrainage invalide",
+  "already_used": "Ce code a déjà été utilisé",
+  "kyc_required": "Veuillez compléter la vérification de votre profil pour utiliser le parrainage"
+}
 
     
     
-    
+
   
   
   
-  }
-  
+
+
+
+}

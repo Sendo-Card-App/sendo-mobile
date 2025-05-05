@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { View, Text, TouchableOpacity, Image, ScrollView, TextInput, Modal } from "react-native";
 import { useDispatch, useSelector } from 'react-redux';
+import KycTab from "../../components/KycTab";
 import { updatePersonalDetails } from '../../features/Kyc/kycReducer';
 import TopLogo from "../../images/TopLogo.png";
 import { AntDesign, Ionicons } from "@expo/vector-icons";
@@ -21,31 +22,17 @@ const PersonalDetail = ({ navigation }) => {
   const [currentSelection, setCurrentSelection] = useState([]);
   const [currentCategory, setCurrentCategory] = useState("");
 
-  const regions = ['Île-de-France', 'Provence-Alpes-Côte d\'Azur', 'Nouvelle-Aquitaine', 'Auvergne-Rhône-Alpes'];
-  const cities = ['Paris', 'Marseille', 'Lyon', 'Nice'];
-  const districts = ['Le Marais', 'Montmartre', 'Vieux Port', 'Corderie'];
-  const professions = ['Ingénieur', 'Médecin', 'Artiste', 'Enseignant'];
-  
+  const regions = ['Littoral', 'Centre', 'Sud', 'Nord'];
+  const cities = ['Douala', 'Yaoundé', 'Kribi', 'Garoua'];
+  const districts = ['Bonanjo', 'Bastos', 'Akwa', 'Makepe'];
+  const professions = ['Ingénieur', 'Médecin', 'Enseignant', 'Commerçant'];
 
   const handleInputChange = (name, value) => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSelect = (option) => {
-    switch (currentCategory) {
-      case "region":
-        handleInputChange('region', option);
-        break;
-      case "city":
-        handleInputChange('city', option);
-        break;
-      case "district":
-        handleInputChange('district', option);
-        break;
-      case "profession":
-        handleInputChange('profession', option);
-        break;
-    }
+    handleInputChange(currentCategory, option);
     setToggleDropdown(false);
   };
 
@@ -57,11 +44,12 @@ const PersonalDetail = ({ navigation }) => {
 
   const handleSubmit = () => {
     // Basic validation
-    if (!formData.profession ||  !formData.region || !formData.city || !formData.district) {
+    if ( !formData.profession ||  !formData.region || !formData.city || !formData.district) {
       Alert.alert("Erreur", "Veuillez remplir tous les champs obligatoires");
       return;
     }
 
+  
 
     dispatch(updatePersonalDetails(formData));
     navigation.navigate("KycResume");
@@ -69,68 +57,62 @@ const PersonalDetail = ({ navigation }) => {
 
   return (
     <View className="flex-1 bg-[#181e25]">
-      {/* Navigation Header */}
+      {/* Header */}
       <View className="border-b border-dashed border-white flex-row justify-between py-4 mt-10 mx-5">
         <View className="absolute -top-12 left-0 right-0 items-center justify-center">
-          <Image source={TopLogo} className=" h-36 w-40 " resizeMode="contain" />
+          <Image source={TopLogo} className="h-36 w-40" resizeMode="contain" />
         </View>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <AntDesign name="arrowleft" size={24} color="white" />
         </TouchableOpacity>
-
         <TouchableOpacity onPress={() => navigation.openDrawer()} className="ml-auto">
           <Ionicons name="menu-outline" size={24} color="white" />
         </TouchableOpacity>
       </View>
       
-      {/* the middle heading */}
+      {/* Title */}
       <View className="border border-dashed border-gray-300 my-1" />
       <Text className="text-center text-white text-2xl my-3">
-        Vérification de l'identité
+        Détails personnels
       </Text>
 
       {/* Main Content */}
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
-        {/* Personal Details Section */}
         <View className="bg-white rounded-t-3xl p-4 mx-5 mb-4">
-<<<<<<< Updated upstream
-          <Text className="font-bold text-gray-800 mb-2 text-center">Détails personnels</Text>
-          <Text className="text-xs text-gray-600 mb-3 text-center">Indiquez votre nom tel qu'il figure sur votre acte de naissance.</Text>
-          
-=======
           <KycTab isActive="1" />
           <Text className="font-bold text-gray-800 mb-2 text-center">Informations personnelles</Text>
           <Text className="text-xs text-gray-600 mb-3 text-center">
             Renseignez vos informations telles qu'elles apparaissent sur vos documents officiels.
           </Text>
->>>>>>> Stashed changes
           
           <View className="border border-dashed border-gray-300 my-2" />
 
-          {/* Region Selection */}
-          <Text className="font-bold text-gray-600 mt-4 mb-2 text-xs">Où habitez-vous?</Text>
+          {/* Region */}
+          <Text className="font-bold text-gray-600 mt-4 mb-2 text-xs">Région</Text>
           <TouchableOpacity 
             className="border border-gray-300 rounded-lg p-4 mb-2"
             onPress={() => openModal("region", regions)}>
             <Text className="text-gray-800">{formData.region || 'Sélectionnez votre région'}</Text>
           </TouchableOpacity>
 
-          {/* City Selection */}
+          {/* City */}
+          <Text className="font-bold text-gray-600 mt-4 mb-2 text-xs">Ville</Text>
           <TouchableOpacity
             className="border border-gray-300 rounded-lg p-4 mb-2"
             onPress={() => openModal("city", cities)}>
-            <Text className="text-gray-800">{formData.city || 'Sélectionnez une ville'}</Text>
+            <Text className="text-gray-800">{formData.city || 'Sélectionnez votre ville'}</Text>
           </TouchableOpacity>
           
-          {/* district Selection */}
+          {/* District */}
+          <Text className="font-bold text-gray-600 mt-4 mb-2 text-xs">Quartier</Text>
           <TouchableOpacity
             className="border border-gray-300 rounded-lg p-4 mb-2"
             onPress={() => openModal("district", districts)}>
-            <Text className="text-gray-800">{formData.district || 'Sélectionnez un quartier'}</Text>
+            <Text className="text-gray-800">{formData.district || 'Sélectionnez votre quartier'}</Text>
           </TouchableOpacity>
 
-          {/* Profession Selection */}
-          <Text className="font-bold sm text-gray-600 mt-4 text-xs ">Sélectionnez l'option qui vous correspond le mieux</Text>
+          {/* Profession */}
+          <Text className="font-bold text-gray-600 mt-4 mb-2 text-xs">Profession</Text>
           <TouchableOpacity
             className="border border-gray-300 rounded-lg p-4 mb-2"
             onPress={() => openModal("profession", professions)}>
@@ -139,25 +121,18 @@ const PersonalDetail = ({ navigation }) => {
           
           <View className="border border-dashed border-gray-300 my-2" />
 
-          {/* Affiliation Question
-          <Text className="font-bold text-gray-600 mt-4 text-xs">Affiliation</Text>
-          <TouchableOpacity
-            className="border border-gray-300 rounded-lg p-4 mb-2"
-            onPress={() => openModal("affilliation", Affilliation)}>
-            <Text className="text-gray-800">{formData.affiliation || 'Sélectionnez une affiliation'}</Text>
-          </TouchableOpacity> */}
-          
-          <Text className="font-bold mt-4 text-center">Pourquoi cette question ?</Text>
-          <Text className="text-gray-600 mb-4 text-center">Il s'agit d'une exigence réglementaire. La réglementation nationale et sous-régionale exige que toutes les institutions financières identifient convenablement tous les clients.</Text>
+          <Text className="text-gray-600 mb-4 text-center">
+            Ces informations sont requises pour compléter votre profil et sont traitées de manière confidentielle.
+          </Text>
 
           <TouchableOpacity 
             className="bg-[#7ddd7d] py-3 rounded-full mt-4"
             onPress={handleSubmit}>
-            <Text className="text-xl text-center font-bold">SUIVANT</Text>
+            <Text className="text-xl text-center font-bold">ENREGISTRER</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Modal for Options */}
+        {/* Dropdown Modal */}
         <Modal
           animationType="slide"
           transparent={true}
@@ -192,7 +167,7 @@ const PersonalDetail = ({ navigation }) => {
       <View className="py-4 flex-row justify-center items-center gap-2">
         <Ionicons name="shield-checkmark" size={18} color="orange" />
         <Text className="text-sm text-white">
-          Ne partagez pas vos informations personnelles…
+          Ne partagez pas vos informations personnelles
         </Text>
       </View>
     </View>
