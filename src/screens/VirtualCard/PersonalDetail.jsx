@@ -1,19 +1,20 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, Image, ScrollView, TextInput, StatusBar, Modal } from "react-native";
+import { View, Text, TouchableOpacity, Image, ScrollView, TextInput, Modal } from "react-native";
 import { useDispatch, useSelector } from 'react-redux';
 import { updatePersonalDetails } from '../../features/Kyc/kycReducer';
 import TopLogo from "../../images/TopLogo.png";
 import { AntDesign, Ionicons } from "@expo/vector-icons";
+import { StatusBar } from "expo-status-bar";
 
 const PersonalDetail = ({ navigation }) => {
   const dispatch = useDispatch();
   const personalDetails = useSelector(state => state.kyc.personalDetails);
   
   const [formData, setFormData] = useState({
-    profession: personalDetails.profession,
-    region: personalDetails.region,
-    city: personalDetails.city,
-    district: personalDetails.district,
+    profession: personalDetails.profession || '',
+    region: personalDetails.region || '',
+    city: personalDetails.city || '',
+    district: personalDetails.district || '',
   });
 
   const [toggleDropdown, setToggleDropdown] = useState(false);
@@ -55,6 +56,13 @@ const PersonalDetail = ({ navigation }) => {
   };
 
   const handleSubmit = () => {
+    // Basic validation
+    if (!formData.profession ||  !formData.region || !formData.city || !formData.district) {
+      Alert.alert("Erreur", "Veuillez remplir tous les champs obligatoires");
+      return;
+    }
+
+
     dispatch(updatePersonalDetails(formData));
     navigation.navigate("KycResume");
   };
@@ -85,9 +93,17 @@ const PersonalDetail = ({ navigation }) => {
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
         {/* Personal Details Section */}
         <View className="bg-white rounded-t-3xl p-4 mx-5 mb-4">
+<<<<<<< Updated upstream
           <Text className="font-bold text-gray-800 mb-2 text-center">Détails personnels</Text>
           <Text className="text-xs text-gray-600 mb-3 text-center">Indiquez votre nom tel qu'il figure sur votre acte de naissance.</Text>
           
+=======
+          <KycTab isActive="1" />
+          <Text className="font-bold text-gray-800 mb-2 text-center">Informations personnelles</Text>
+          <Text className="text-xs text-gray-600 mb-3 text-center">
+            Renseignez vos informations telles qu'elles apparaissent sur vos documents officiels.
+          </Text>
+>>>>>>> Stashed changes
           
           <View className="border border-dashed border-gray-300 my-2" />
 

@@ -30,6 +30,38 @@ const IdentityCard = ({ navigation }) => {
     });
   };
 
+<<<<<<< Updated upstream
+=======
+  const handleBackCapture = () => {
+    navigation.navigate("Camera", { 
+      purpose: 'id_back',
+      onCapture: (image) => {
+        dispatch(setIdentityDocumentBack({
+          uri: image.uri,
+          type: 'image/jpeg',
+          name: `id_back_${Date.now()}.jpg`
+        }));
+      }
+    });
+  };
+
+  const handleDocumentTypeChange = (type) => {
+    dispatch(setIdentityDocumentType(type));
+    dispatch(setIdentityDocumentFront(null));
+    if (type === IDENTITY_TYPES.CNI) {
+      dispatch(setIdentityDocumentBack(null));
+    }
+  };
+
+  const handleRemoveFront = () => {
+    dispatch(setIdentityDocumentFront(null));
+  };
+
+  const handleRemoveBack = () => {
+    dispatch(setIdentityDocumentBack(null));
+  };
+
+>>>>>>> Stashed changes
   return (
     <View className="flex-1 bg-[#181e25] pt-0 relative">
       <StatusBar style="light" />
@@ -59,7 +91,10 @@ const IdentityCard = ({ navigation }) => {
       {/* Main Content */}
       <ScrollView className="flex-1 pb-3 bg-white rounded-t-3xl">
         <View className="px-6 py-4">
+<<<<<<< Updated upstream
           {/* Top Tab */}
+=======
+>>>>>>> Stashed changes
           <KycTab isActive="3" />
 
           {/* Document Selection Section */}

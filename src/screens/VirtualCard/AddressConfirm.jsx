@@ -15,11 +15,16 @@ import TopLogo from "../../images/TopLogo.png";
 import { AntDesign, Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 import KycTab from "../../components/KycTab";
+import { useDispatch } from 'react-redux';
+import { setAddressProof } from '../../features/Kyc/kycReducer';
 
 const AddressConfirm = ({ navigation, route }) => {
+<<<<<<< Updated upstream
   const [address, setAddress] = useState("");
+=======
+  const dispatch = useDispatch();
+>>>>>>> Stashed changes
   const [selectedDoc, setSelectedDoc] = useState(null);
-  const [coordinates, setCoordinates] = useState(null);
 
   const handleConfirm = () => {
     if (!selectedDoc) {
@@ -30,6 +35,7 @@ const AddressConfirm = ({ navigation, route }) => {
       });
       return;
     }
+<<<<<<< Updated upstream
   
     // Vérifier que c'est bien une image ou un PDF/doc
     const allowedTypes = [
@@ -42,11 +48,25 @@ const AddressConfirm = ({ navigation, route }) => {
     ];
   
     if (!allowedTypes.includes(selectedDoc.mimeType)) {
+=======
+
+    try {
+      // Dispatch the address proof to Redux store
+      dispatch(setAddressProof({
+        type: 'document',
+        uri: selectedDoc.uri,
+        name: selectedDoc.name,
+        mimeType: selectedDoc.mimeType
+      }));
+
+      // Show success message
+>>>>>>> Stashed changes
       Toast.show({
         type: "error",
         text1: "Type de fichier non autorisé",
         text2: "Seules les images (.jpg, .png) ou documents (.pdf, .doc) sont acceptés.",
       });
+<<<<<<< Updated upstream
       return;
     }
   
@@ -147,6 +167,14 @@ const AddressConfirm = ({ navigation, route }) => {
       }
     } catch (err) {
       console.error("Erreur lors du choix du fichier:", err);
+=======
+
+      // Navigate back to KycResume
+      navigation.navigate("KycResume");
+      
+    } catch (error) {
+      console.error("Confirmation error:", error);
+>>>>>>> Stashed changes
       Toast.show({
         type: "error",
         text1: "Erreur",

@@ -29,7 +29,7 @@ const Camera = ({ navigation, route }) => {
     }
   };
 
-  const getTitle = () => {
+  const getGuideText = () => {
     switch (purpose) {
       case 'selfie':
         return "Prenez un selfie avec votre pièce d'identité";
@@ -53,7 +53,7 @@ const Camera = ({ navigation, route }) => {
 
       {/* Camera title */}
       <Text className="text-white text-lg font-bold mb-4 text-center">
-        {getTitle()}
+        {getGuideText()}
       </Text>
 
       {/* Camera setup */}

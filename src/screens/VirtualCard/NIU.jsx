@@ -41,9 +41,15 @@ const NIU = ({ navigation }) => {
         Vérification de l'identité
       </Text>
 
+<<<<<<< Updated upstream
       {/* Form Section */}
       <View className="flex-1 pb-3 overflow-hidden bg-white rounded-t-3xl items-center">
         {/* Document Upload Instruction */}
+=======
+      {/* Main Content */}
+      <View className="flex-1 pb-3 bg-white rounded-t-3xl items-center">
+        <KycTab isActive="4" />
+>>>>>>> Stashed changes
         <Text className="font-bold text-gray-800 mt-3">N° Contribuable</Text>
         <Text className="text-center text-gray-400 text-sm">
           Téléchargez votre document de contribuable
@@ -68,7 +74,11 @@ const NIU = ({ navigation }) => {
           className="mb-2 mt-auto bg-[#7ddd7d] py-3 rounded-full w-[85%] mx-auto"
           onPress={handleNext}
         >
+<<<<<<< Updated upstream
           <Text className="text-xl text-center font-bold ">SUIVANT</Text>
+=======
+          <Text className="text-xl text-center font-bold">PRENDRE UNE PHOTO</Text>
+>>>>>>> Stashed changes
         </TouchableOpacity>
       </View>
 

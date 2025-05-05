@@ -1,6 +1,11 @@
 import React from 'react';
+<<<<<<< Updated upstream
 import { View, Text, TouchableOpacity, Image, FlatList } from "react-native";
 import { useSelector } from 'react-redux';
+=======
+import { View, Text, TouchableOpacity, Image, FlatList, Alert } from "react-native";
+import { useSelector, useDispatch } from 'react-redux';
+>>>>>>> Stashed changes
 import { useSubmitKYCMutation, useSendSelfieMutation } from '../../services/Kyc/kycApi';
 import { useNavigation } from '@react-navigation/native';
 import Toast from 'react-native-toast-message';
@@ -8,6 +13,7 @@ import { StatusBar } from "expo-status-bar";
 import Loader from "../../components/Loader";
 import TopLogo from "../../images/TopLogo.png";
 import { AntDesign, Entypo, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+<<<<<<< Updated upstream
 
 const KycResume = ({ navigation }) => {
   const [submitKYC, { isLoading: isSubmittingKYC }] = useSubmitKYCMutation();
@@ -18,12 +24,48 @@ const KycResume = ({ navigation }) => {
     { id: "1", name: "Détails personnels", route: "PersonalDetail", completed: !!personalDetails.profession && !!personalDetails.region },
     { id: "2", name: "Selﬁe", route: "KycSelfie", completed: !!selfie },
     { id: "3", name: "Pièce d'identité", route: "IdentityCard", completed: !!identityDocument.front && (identityDocument.type !== 'cni' || !!identityDocument.back) },
+=======
+import { selectIsKYCComplete, selectAllDocuments, setSubmissionStatus } from '../../features/Kyc/kycReducer';
+import * as ImageManipulator from 'expo-image-manipulator';
+
+const KycResume = ({ navigation }) => {
+  const dispatch = useDispatch();
+  const [submitKYC] = useSubmitKYCMutation();
+  const [sendSelfie] = useSendSelfieMutation(); 
+  const { personalDetails, selfie, identityDocument, niuDocument, addressProof, submissionStatus } = useSelector(state => state.kyc);
+  const isKYCComplete = useSelector(selectIsKYCComplete);
+  
+  const Data = [
+    { id: "1", name: "Détails personnels", route: "PersonalDetail", 
+      completed: !!personalDetails.profession && !!personalDetails.region && !!personalDetails.city && !!personalDetails.district },
+    { id: "2", name: "Selfie", route: "KycSelfie", completed: !!selfie },
+    { id: "3", name: "Pièce d'identité", route: "IdentityCard", 
+      completed: !!identityDocument.front && (identityDocument.type !== 'cni' || !!identityDocument.back) },
+>>>>>>> Stashed changes
     { id: "4", name: "NIU (Contribuable)", route: "NIU", completed: !!niuDocument },
-    { id: "5", name: "Adresse", route: "Addresse", completed: !!addressProof },
+    { id: "5", name: "Justificatif de domicile", route: "Addresse", completed: !!addressProof },
   ];
 
+<<<<<<< Updated upstream
   const allStepsCompleted = Data.every(item => item.completed);
   const isLoading = isSubmittingKYC || isSendingSelfie;
+=======
+  console.log(submissionStatus)
+ 
+  const compressImage = async (uri) => {
+    try {
+      const result = await ImageManipulator.manipulateAsync(
+        uri,
+        [{ resize: { width: 800 } }],
+        { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
+      );
+      return result.uri;
+    } catch (error) {
+      console.error('Image compression failed:', error);
+      return uri; // Fallback to original if compression fails
+    }
+  };
+>>>>>>> Stashed changes
 
   const handleSubmit = async () => {
     if (!allStepsCompleted) {
@@ -35,6 +77,7 @@ const KycResume = ({ navigation }) => {
       return;
     }
   
+<<<<<<< Updated upstream
     try {
       // First send the selfie to the specific endpoint
       if (selfie?.uri) {
@@ -80,6 +123,67 @@ const KycResume = ({ navigation }) => {
       processDocument(identityDocument.front, 'identity_front');
       if (identityDocument.type === 'cni') {
         processDocument(identityDocument.back, 'identity_back');
+=======
+    dispatch(setSubmissionStatus('loading'));
+  
+    try {
+      // Create form data
+      const formData = new FormData();
+      
+      // Add personal details
+      formData.append('profession', personalDetails.profession);
+      formData.append('region', personalDetails.region);
+      formData.append('city', personalDetails.city);
+      formData.append('district', personalDetails.district);
+  
+      // Upload selfie separately if it exists
+      if (selfie) {
+        const compressedSelfieUri = await compressImage(selfie.uri);
+        const selfieFormData = new FormData();
+        selfieFormData.append('picture', {
+          uri: compressedSelfieUri,
+          name: `picture_${Date.now()}.jpg`,
+          type: 'image/jpeg'
+        });
+        await sendSelfie(selfieFormData).unwrap();
+      }
+  
+      // Helper function to add compressed documents with type
+      const addDocumentWithType = async (doc, type) => {
+        if (!doc) return;
+        const compressedUri = await compressImage(doc.uri);
+        formData.append('documents', {
+          uri: compressedUri,
+          name: `${type.toLowerCase()}_${Date.now()}.jpg`,
+          type: 'image/jpeg'
+        });
+        formData.append('types', type);
+      };
+  
+      // Add mandatory documents with their types
+      await Promise.all([
+        addDocumentWithType(identityDocument.front, 'ID_PROOF'),
+        identityDocument.type === 'cni' && addDocumentWithType(identityDocument.back, 'ID_PROOF'),
+        addDocumentWithType(niuDocument, 'NIU_PROOF'),
+        addDocumentWithType(addressProof, 'ADDRESS_PROOF')
+      ]);
+  
+      // Submit KYC with timeout
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Request timeout')), 30000) // 30s timeout
+      );
+  
+      const response = await Promise.race([
+        submitKYC(formData).unwrap(),
+        timeoutPromise
+      ]);
+  
+      if (response.status === 201) {
+        navigation.navigate('Success', {
+          message: 'Votre KYC a été soumis avec succès',
+          nextScreen: 'Main'
+        });
+>>>>>>> Stashed changes
       }
       processDocument(niuDocument, 'niu_document');
       processDocument(addressProof, 'address_proof');
@@ -101,6 +205,7 @@ const KycResume = ({ navigation }) => {
   
     } catch (error) {
       console.error('KYC submission error:', error);
+<<<<<<< Updated upstream
       
       let errorMessage = 'Échec de la soumission du KYC';
       if (error.status === 400) {
@@ -109,8 +214,24 @@ const KycResume = ({ navigation }) => {
         errorMessage = 'Erreur serveur. Veuillez réessayer plus tard.';
       } else if (error.message) {
         errorMessage = error.message;
+=======
+      let errorMessage = 'Échec de la soumission du KYC';
+  
+      if (error.message === 'Request timeout') {
+        errorMessage = "La requête a pris trop de temps. Veuillez vérifier votre connexion et réessayer.";
+      } else if (error?.data?.message?.includes('Aucun fichier fourni')) {
+        errorMessage = `Documents requis: ${error.data.data.required.mandatoryTypes.join(', ')}`;
+      } else if (error?.data?.code) {
+        const errorCodes = {
+          'ERR_MISSING': 'Veuillez remplir tous les champs obligatoires',
+          'ERR_FORMAT': 'Le format de certaines données est incorrect',
+          'ERR_UPLOAD': 'Échec du téléchargement des documents',
+          'ERR_TECH': 'Une erreur technique est survenue'
+        };
+        errorMessage = errorCodes[error.data.code] || errorMessage;
+>>>>>>> Stashed changes
       }
-      
+  
       Toast.show({
         type: 'error',
         text1: 'Erreur',
@@ -118,6 +239,7 @@ const KycResume = ({ navigation }) => {
       });
     }
   };
+  
 
   // ... rest of your component remains the same ...
   const KycOption = (props) => (
