@@ -24,11 +24,13 @@ const TAG_TYPES = {
 export const authApi = createApi({
   reducerPath: 'authApi',
   baseQuery: fetchBaseQuery({ 
-    baseUrl: process.env.REACT_APP_API_BASE_URL, // Use environment variable here
+    baseUrl: process.env.EXPO_PUBLIC_API_BASE_URL, 
     prepareHeaders: (headers, { getState }) => {
       const token = getState().auth.accessToken;
       if (token) {
         headers.set('Authorization', `Bearer ${token}`);
+        headers.set('Content-Type', 'application/json');
+        headers.set('Accept', 'application/json');
       }
       return headers;
     },
@@ -150,7 +152,7 @@ export { AUTH_ENDPOINTS, TAG_TYPES };
 export const { 
   useRegisterMutation,
   useVerifyOtpMutation,
-  useSendOtpMutation,  // Ensure you export it here
+  useSendOtpMutation, 
   useResendOtpMutation,
   useLoginWithPhoneMutation,
   useLoginWithEmailMutation,

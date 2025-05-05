@@ -1,13 +1,28 @@
 module.exports = function (api) {
   api.cache(true);
+  
   return {
     presets: [
-      ["babel-preset-expo", { jsxImportSource: "nativewind" }],
-      "nativewind/babel",
+      ["babel-preset-expo", { 
+        jsxImportSource: "nativewind", 
+        lazyImports: true 
+      }]
     ],
     plugins: [
-      // Plugin pour charger les variables d'environnement du fichier .env
-      "module:react-native-dotenv",
-    ],
+      // Configuration simplifiée de react-native-dotenv
+      ["module:react-native-dotenv"], 
+      
+      // Nativewind en PRESET (solution temporaire)
+      // "nativewind/babel" ← COMMENTÉ
+      
+      // module-resolver
+      [
+        "module-resolver",
+        {
+          root: ["./src"],
+          alias: { "@": "./src" }
+        }
+      ]
+    ]
   };
 };
