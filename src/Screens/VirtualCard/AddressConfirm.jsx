@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, Image, ScrollView, Dimensions } from "react-native";
+import { View, Text, TouchableOpacity, Image, ScrollView } from "react-native";
 import React, { useState } from "react";
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
@@ -8,10 +8,14 @@ import TopLogo from "../../images/TopLogo.png";
 import { AntDesign, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 import KycTab from "../../components/KycTab";
+import { useDispatch } from 'react-redux';
+import { setAddressProof } from '../../features/Kyc/kycReducer';
+import { useTranslation } from 'react-i18next';
 
 const AddressConfirm = ({ navigation, route }) => {
+  const { t } = useTranslation();
+  const dispatch = useDispatch();
   const [selectedDoc, setSelectedDoc] = useState(null);
-  const [coordinates, setCoordinates] = useState(null);
 
   const handlePickDocument = async () => {
     try {
@@ -93,33 +97,21 @@ const AddressConfirm = ({ navigation, route }) => {
     }
 
     try {
-      // Create the location data object
-      const locationData = {
-        document: {
-          name: selectedDoc.name,
-          uri: selectedDoc.uri,
-          mimeType: selectedDoc.mimeType,
-          type: selectedDoc.type
-        },
-        coordinates // Optional if using location
-      };
+      dispatch(setAddressProof({
+        type: 'document',
+        uri: selectedDoc.uri,
+        name: selectedDoc.name,
+        mimeType: selectedDoc.mimeType
+      }));
 
-      // Check if the onConfirm callback exists and is a function
-      if (route.params?.onConfirm && typeof route.params.onConfirm === 'function') {
-        await route.params.onConfirm(locationData);
-      } else {
-        console.warn("No onConfirm callback provided");
-      }
-
-      // Navigate back
-      navigation.goBack();
-      
-      // Show success message
       Toast.show({
         type: "success",
         text1: "Succès",
         text2: "Document d'adresse confirmé"
       });
+
+      navigation.navigate("KycResume");
+      
     } catch (error) {
       console.error("Confirmation error:", error);
       Toast.show({
@@ -174,7 +166,7 @@ const AddressConfirm = ({ navigation, route }) => {
   return (
     <View className="flex-1 bg-[#181e25] pt-0 relative">
       <StatusBar style="light" />
-      
+
       {/* Header */}
       <View className="relative h-32">
         <View className="absolute -top-12 left-0 right-0 items-center justify-center">
@@ -194,7 +186,7 @@ const AddressConfirm = ({ navigation, route }) => {
       {/* Title */}
       <View className="border border-dashed border-gray-300 my-1" />
       <Text className="text-center text-white text-2xl my-3">
-        Confirmation d'adresse
+        {t('addressConfirm.title')}
       </Text>
 
       {/* Main Content */}
@@ -204,7 +196,7 @@ const AddressConfirm = ({ navigation, route }) => {
 
           <View className="mb-6">
             <Text className="text-lg font-bold text-gray-800 mb-3 text-center">
-              Justificatif de domicile
+              {t('addressConfirm.documentProof')}
             </Text>
 
             {/* Document Preview */}
@@ -219,10 +211,10 @@ const AddressConfirm = ({ navigation, route }) => {
                 <View className="items-center">
                   <Ionicons name="cloud-upload" size={48} color="#7ddd7d" />
                   <Text className="text-gray-700 font-medium mt-2">
-                    Sélectionner un document
+                    {t('addressConfirm.selectDocument')}
                   </Text>
                   <Text className="text-gray-500 text-sm">
-                    (Image ou PDF)
+                    {t('addressConfirm.documentTypes')}
                   </Text>
                 </View>
               </TouchableOpacity>
@@ -230,19 +222,14 @@ const AddressConfirm = ({ navigation, route }) => {
 
             {/* Accepted Documents Info */}
             <View className="mt-4 bg-blue-50 p-3 rounded-lg">
-              <Text className="font-medium text-blue-800">Documents acceptés:</Text>
-              <Text className="text-gray-600 text-sm mt-1">
-                • Facture d'eau ou d'électricité (moins de 3 mois)
+              <Text className="font-medium text-blue-800">
+                {t('addressConfirm.acceptedDocuments')}
               </Text>
-              <Text className="text-gray-600 text-sm">
-                • Contrat de bail en cours de validité
-              </Text>
-              <Text className="text-gray-600 text-sm">
-                • Avis d'imposition ou de taxe foncière
-              </Text>
-              <Text className="text-gray-600 text-sm">
-                • Taille maximale: 5 Mo
-              </Text>
+              {t('addressConfirm.documentsList', { returnObjects: true }).map((item, index) => (
+                <Text key={index} className="text-gray-600 text-sm mt-1">
+                  {item}
+                </Text>
+              ))}
             </View>
           </View>
 
@@ -252,7 +239,9 @@ const AddressConfirm = ({ navigation, route }) => {
             onPress={handleConfirm}
             disabled={!selectedDoc}
           >
-            <Text className="text-white font-bold text-center">CONFIRMER LE DOCUMENT</Text>
+            <Text className="text-white font-bold text-center">
+              {t('addressConfirm.confirmButton')}
+            </Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -261,7 +250,7 @@ const AddressConfirm = ({ navigation, route }) => {
       <View className="py-4 flex-row justify-center items-center gap-2">
         <Ionicons name="shield-checkmark" size={18} color="orange" />
         <Text className="text-sm text-white">
-          Ne partagez pas vos informations personnelles
+          {t('addressConfirm.securityNotice')}
         </Text>
       </View>
 

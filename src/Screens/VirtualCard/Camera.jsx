@@ -3,6 +3,7 @@ import React, { useRef, useState } from "react";
 import { StatusBar } from "expo-status-bar";
 import { AntDesign, Feather, Ionicons } from "@expo/vector-icons";
 import { CameraView, useCameraPermissions } from "expo-camera";
+import { useTranslation } from 'react-i18next';
 
 const Camera = ({ navigation, route }) => {
   const [permission, requestPermission] = useCameraPermissions();
@@ -12,6 +13,7 @@ const Camera = ({ navigation, route }) => {
   const { height } = Dimensions.get("screen");
   const cameraRef = useRef();
   const { purpose, onCapture } = route.params || {};
+  const { t } = useTranslation();
 
   const takePicture = async () => {
     if (cameraRef.current) {
@@ -32,69 +34,55 @@ const Camera = ({ navigation, route }) => {
   const getTitle = () => {
     switch (purpose) {
       case 'selfie':
-        return "Prenez un selfie avec votre pièce d'identité";
-      case 'id_front':
-        return "Prenez une photo du recto de votre pièce";
-      case 'id_back':
-        return "Prenez une photo du verso de votre pièce";
+        return t('camera.selfie_guide');
       case 'niu':
-        return "Prenez une photo de votre document NIU";
+        return t('camera.niu_guide');
       case 'address_proof':
-        return "Prenez une photo de votre justificatif";
+        return t('camera.address_guide');
       default:
-        return "Prenez une photo";
+        return t('camera.default_guide');
     }
   };
 
-  if (!permission) {
-    return (
-      <View className="flex-1 justify-center items-center bg-[#181e25]">
-        <Text className="text-white">Demande d'autorisation...</Text>
-      </View>
-    );
-  }
-
-  if (!permission.granted) {
-    return (
-      <View className="flex-1 justify-center items-center bg-[#181e25] p-4">
-        <Text className="text-white text-center mb-4">
-          Nous avons besoin de votre permission pour utiliser la caméra
-        </Text>
-        <TouchableOpacity
-          onPress={requestPermission}
-          className="bg-[#7ddd7d] px-6 py-3 rounded-lg"
-        >
-          <Text className="text-white">Autoriser la caméra</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
   return (
     <View className="bg-[#181e25] flex-1 py-11 px-5">
-      {/* Navigation */}
+      {/* the top navigation with a back arrow */}
       <View className="py-4">
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <AntDesign name="arrowleft" size={24} color="white" />
         </TouchableOpacity>
       </View>
 
-      {/* Title */}
+      {/* Camera title */}
       <Text className="text-white text-lg font-bold mb-4 text-center">
         {getTitle()}
       </Text>
 
-      {/* Camera Preview */}
+      {/* Camera setup */}
       <View
         className="bg-white rounded-3xl overflow-hidden items-center justify-center"
         style={{ height: height / 1.8 }}
       >
-        {!picture ? (
+        {!permission ? (
+          <AntDesign name="loading1" size={24} color="black" />
+        ) : !permission.granted ? (
+          <View className="flex-1 justify-center items-center">
+            <Text className="mb-4">
+              {t('camera.permission_request')}
+            </Text>
+            <TouchableOpacity
+              onPress={requestPermission}
+              className="bg-[#7ddd7d] px-4 py-2 rounded-lg"
+            >
+              <Text>{t('camera.grant_permission')}</Text>
+            </TouchableOpacity>
+          </View>
+        ) : !picture ? (
           <>
             <TouchableOpacity
               className={`absolute right-5 top-5 z-20 ${
                 flash ? "bg-[#7ddd7d]" : "bg-[#181e25]"
-              } rounded-full p-3`}
+              }  rounded-full p-3`}
               onPress={() => setFlash((prev) => !prev)}
             >
               <Ionicons name="flashlight-outline" size={24} color="white" />
@@ -103,12 +91,11 @@ const Camera = ({ navigation, route }) => {
             <TouchableOpacity
               className={`absolute right-5 top-20 z-20 ${
                 face ? "bg-[#7ddd7d]" : "bg-[#181e25]"
-              } rounded-full p-3`}
+              }  rounded-full p-3`}
               onPress={() => setFace((prev) => !prev)}
             >
               <Ionicons name="camera-reverse" size={24} color="white" />
             </TouchableOpacity>
-            
             <CameraView
               facing={face ? "front" : "back"}
               style={{ flex: 1, width: "100%" }}
@@ -123,10 +110,10 @@ const Camera = ({ navigation, route }) => {
       </View>
 
       <Text className="text-white text-center mt-3">
-        Positionnez votre document dans le cadre
+        {t('camera.position_hint')}
       </Text>
 
-      {/* Controls */}
+      {/* button to take a picture */}
       {!picture ? (
         <View className="mt-auto">
           <TouchableOpacity
@@ -136,7 +123,7 @@ const Camera = ({ navigation, route }) => {
             <Ionicons name="camera-outline" size={40} color="white" />
           </TouchableOpacity>
           <Text className="text-white text-center mt-3">
-            Appuyez pour prendre la photo
+            {t('camera.capture_hint')}
           </Text>
         </View>
       ) : (
@@ -146,7 +133,7 @@ const Camera = ({ navigation, route }) => {
             onPress={() => setPicture(null)}
           >
             <Feather name="x" size={45} color="red" />
-            <Text className="text-white">Annuler</Text>
+            <Text className="text-white">{t('camera.cancel')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -154,7 +141,7 @@ const Camera = ({ navigation, route }) => {
             onPress={handleSubmit}
           >
             <AntDesign name="check" size={45} color="#7ddd7d" />
-            <Text className="text-white">Valider</Text>
+            <Text className="text-white">{t('camera.accept')}</Text>
           </TouchableOpacity>
         </View>
       )}

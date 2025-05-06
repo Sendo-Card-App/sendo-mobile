@@ -12,29 +12,27 @@ import { useGetBalanceQuery, useTransferFundsMutation } from '../../services/Wal
 import { useGetUserProfileQuery } from '../../services/Auth/authAPI';
 import Toast from 'react-native-toast-message';
 import { useTranslation } from 'react-i18next';
+import Loader from "../../components/Loader";
 
 const WalletTransfer = ({ navigation }) => {
   const { t } = useTranslation();
   const [amount, setAmount] = useState('0.0');
   const [walletId, setWalletId] = useState('');
   const [description, setDescription] = useState('');
-  const [userWalletId, setUserWalletId] = useState(''); // Store user's matricule
+  const [userWalletId, setUserWalletId] = useState('');
 
-  // First get the user profile to get the userId
   const { data: userProfile, isLoading: isProfileLoading } = useGetUserProfileQuery();
   const userId = userProfile?.data?.id;
   
-  // Then get the balance using the userId
   const { 
     data: balanceData, 
     isLoading: isBalanceLoading,
     error: balanceError,
     isError: isBalanceError
   } = useGetBalanceQuery(userId, {
-    skip: !userId // Skip the query if userId is not available
+    skip: !userId
   });
 
-  // Extract user's wallet matricule when balance data is available
   useEffect(() => {
     if (userProfile?.data?.wallet.matricule) {
       setUserWalletId(userProfile.data.wallet.matricule);
@@ -83,16 +81,15 @@ const WalletTransfer = ({ navigation }) => {
     }
 
     try {
-      // Include both fromWallet (user's matricule) and toWallet (recipient)
       await transferFunds({
-        fromWallet: userWalletId, // User's own wallet matricule
-        toWallet: walletId,     // Recipient's wallet ID
+        fromWallet: userWalletId,
+        toWallet: walletId,
         amount: transferAmount,
         transfer_description: description
       }).unwrap();
       navigation.navigate('Success', {
         message: 'Transfert effectué avec succès!',
-        nextScreen: 'Main' // or whatever screen you want to navigate to after
+        nextScreen: 'Main'
       });
     } catch (error) {
       let errorMessage = 'Une erreur est survenue. Veuillez réessayer.';
@@ -123,7 +120,7 @@ const WalletTransfer = ({ navigation }) => {
       <View style={{ flex: 1, paddingHorizontal: 20 }}>
         {/* Balance Display */}
         <View style={{ backgroundColor: '#F1F1F1', borderRadius: 10, padding: 15, marginBottom: 20, marginTop: 20 }}>
-          <Text style={{ fontSize: 16, color: '#666' }}>{t('available_balance')}</Text>
+          <Text style={{ fontSize: 16, color: '#666' }}>{t('wallet_transfer.available_balance')}</Text>
           {isLoading ? (
             <ActivityIndicator size="small" color="#0D1C6A" />
           ) : isBalanceError ? (
@@ -135,7 +132,7 @@ const WalletTransfer = ({ navigation }) => {
               </Text>
               {userWalletId ? (
                 <Text style={{ fontSize: 14, color: '#666', marginTop: 5 }}>
-                  Votre matricule: {userWalletId}
+                  {t('wallet_transfer.your_matricule')}: {userWalletId}
                 </Text>
               ) : null}
             </>
@@ -143,29 +140,29 @@ const WalletTransfer = ({ navigation }) => {
         </View>
 
         {/* Recipient Wallet ID */}
-        <Text style={{ fontSize: 16, color: '#666', marginBottom: 5 }}>Matricule du destinataire</Text>
+        <Text style={{ fontSize: 16, color: '#666', marginBottom: 5 }}>{t('wallet_transfer.recipient_id')}</Text>
         <TextInput
           style={styles.input}
-          placeholder="Entrez le matricule du portefeuille"
+          placeholder={t('wallet_transfer.recipient_placeholder')}
           value={walletId}
           onChangeText={setWalletId}
         />
 
         {/* Amount Input */}
-        <Text style={{ fontSize: 16, color: '#666', marginBottom: 5 }}>Montant (FCFA)</Text>
+        <Text style={{ fontSize: 16, color: '#666', marginBottom: 5 }}>{t('wallet_transfer.amount')}</Text>
         <TextInput
           style={styles.input}
           keyboardType="numeric"
-          placeholder="0.0"
+          placeholder={t('wallet_transfer.amount_placeholder')}
           value={amount}
           onChangeText={setAmount}
         />
 
         {/* Description */}
-        <Text style={{ fontSize: 16, color: '#666', marginBottom: 5 }}>Description (optionnel)</Text>
+        <Text style={{ fontSize: 16, color: '#666', marginBottom: 5 }}>{t('wallet_transfer.description')}</Text>
         <TextInput
           style={[styles.input, { height: 100, textAlignVertical: 'top' }]}
-          placeholder="Ex: Transfert pour achat"
+          placeholder={t('wallet_transfer.description_placeholder')}
           multiline
           value={description}
           onChangeText={setDescription}
@@ -178,9 +175,9 @@ const WalletTransfer = ({ navigation }) => {
           disabled={isTransferring || isLoading || !userWalletId}
         >
           {isTransferring ? (
-            <ActivityIndicator color="#fff" />
+            <Loader color="#fff" />
           ) : (
-            <Text style={styles.buttonText}>Effectuer le transfert</Text>
+            <Text style={styles.buttonText}>{t('wallet_transfer.transfer_button')}</Text>
           )}
         </TouchableOpacity>
       </View>

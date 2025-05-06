@@ -5,21 +5,17 @@ import TopLogo from "../../images/TopLogo.png";
 import { AntDesign, Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 import { useDispatch } from 'react-redux';
-import { setAddressProof } from '../../features/Kyc/kycReducer';
+import { useTranslation } from 'react-i18next';
 
 const AddressSelect = ({ navigation, route }) => {
   const dispatch = useDispatch();
+  const { t } = useTranslation();
   
   const handleLocationSelect = () => {
     navigation.navigate("AddressConfirm", {
       onConfirm: (locationData) => {
-        dispatch(setAddressProof({
-          type: 'location',
-          uri: locationData.uri,
-          name: `address_${Date.now()}.jpg`,
-          coordinates: locationData.coordinates
-        }));
-        navigation.navigate("KycResume");
+        route.params?.onAddressSelected?.(locationData);
+        navigation.goBack();
       }
     });
   };
@@ -28,12 +24,12 @@ const AddressSelect = ({ navigation, route }) => {
     navigation.navigate("Camera", {
       purpose: 'address_proof',
       onCapture: (image) => {
-        dispatch(setAddressProof({
+        const addressProof = {
           type: 'bill',
-          uri: image.uri,
-          name: `bill_${Date.now()}.jpg`
-        }));
-        navigation.navigate("KycResume");
+          uri: image.uri
+        };
+        route.params?.onAddressSelected?.(addressProof);
+        navigation.goBack();
       }
     });
   };
@@ -42,7 +38,7 @@ const AddressSelect = ({ navigation, route }) => {
     <View className="flex-1 bg-[#181e25] pt-0 relative">
       <StatusBar style="light" />
       
-      {/* Header */}
+      {/* Header with Logo and Navigation */}
       <View className="relative h-32">
         <View className="absolute -top-12 left-0 right-0 items-center justify-center">
           <Image source={TopLogo} className="h-36 w-40" resizeMode="contain" />
@@ -58,26 +54,30 @@ const AddressSelect = ({ navigation, route }) => {
         </View>
       </View>
 
-      {/* Title */}
+      {/* Title Section */}
       <View className="border border-dashed border-gray-300 my-1" />
       <Text className="text-center text-white text-2xl my-3">
-        Justificatif de domicile
+        {t('address_verification.identity_verification')}
       </Text>
 
       {/* Main Content */}
       <ScrollView className="flex-1 pb-3 bg-white rounded-t-3xl">
         <View className="px-6 py-4">
+          {/* Top Tab */}
           <KycTab isActive="5" />
 
           <View className="border-b border-gray-200 my-4" />
 
-          <Text className="text-lg font-bold text-gray-800 mb-3 text-center">Où habitez-vous ?</Text>
+          {/* Location Verification Section */}
+          <Text className="text-lg font-bold text-gray-800 mb-3 text-center">
+            {t('address_verification.where_live')}
+          </Text>
           <Text className="text-gray-600 mb-4 text-center">
-            Sélectionnez une option qui prouve votre localisation.
+            {t('address_verification.proof_location')}
           </Text>
           
           <View className="space-y-3">
-            {/* Location Option */}
+            {/* Navigation for Location Plan */}
             <TouchableOpacity 
               onPress={handleLocationSelect}
               activeOpacity={0.7}
@@ -90,10 +90,12 @@ const AddressSelect = ({ navigation, route }) => {
                   resizeMode="contain"
                 />
               </View>
-              <Text className="text-gray-700 text-center">Plan de localisation</Text>
+              <Text className="text-gray-700 text-center">
+                {t('address_verification.location_map')}
+              </Text>
             </TouchableOpacity>
 
-            {/* Utility Bill Option */}
+            {/* Navigation for Utility Bill Upload */}
             <TouchableOpacity 
               onPress={handleBillUpload}
               activeOpacity={0.7}
@@ -106,7 +108,9 @@ const AddressSelect = ({ navigation, route }) => {
                   resizeMode="contain"
                 />
               </View>
-              <Text className="text-gray-700 text-center">Facture d'eau/électricité</Text>
+              <Text className="text-gray-700 text-center">
+                {t('address_verification.utility_bill')}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -116,7 +120,7 @@ const AddressSelect = ({ navigation, route }) => {
       <View className="py-4 flex-row justify-center items-center gap-2">
         <Ionicons name="shield-checkmark" size={18} color="orange" />
         <Text className="text-sm text-white">
-          Ne partagez pas vos informations personnelles
+          {t('address_verification.privacy_notice')}
         </Text>
       </View>
     </View>
