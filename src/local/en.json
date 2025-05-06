@@ -1,205 +1,440 @@
 {
 
-      "available_balance": "Available balance",
-      "wallet_id_label": "Recipient wallet ID",
-      "wallet_id_placeholder": "Enter recipient wallet ID",
-      "amount_label": "Amount to transfer (FCFA)",
-      "description_label": "Description (optional)",
-      "description_placeholder": "Ex: Transfer for purchase",
-      "submit_button": "Submit Transfer",
-    "security": "Security",
-    "biometrics": "Biometrics",
-    "biometric_not_available": "Biometric authentication is not available",
-  "authenticate_to_toggle_biometrics": "Please authenticate to toggle biometric setting",
-    "unlock_app": "Unlock the app using your face {\n} or your fingerprint",
-    "notifications": "Notifications",
-    "ensure_notifications": "Make sure you have enabled notifications in the settings of your device",
-    "switch_on": "On",
-    "switch_off": "Off",
-    "change_password": " Create a new password",
-    "choose_language": "Choose Language",
-    "old_password": "Old Password",
-    "new_password": "New Password",
-    "confirm_new_password": "Confirm New Password",
-    "password_requirements": "The password must be at least 8 characters long and contain an uppercase letter, a lowercase letter, a number, and at least one special character (@!#$%^*)",
-    "submit": "Submit",
-      "name": "André",
-      "bonus": "Free CAD 5.00 Bonus",
-      "bonusDetails": "You will receive CAD 5.00 and your friend will receive CAD 5.00 on their first transfer. Minimum sending requirements may apply. Subject to conditions.",
-      "yourCode": "Your code: ANDRE237",
-      "inviteFriends": "INVITE YOUR FRIENDS",
-      "myBalance": "My Balance",
-      "history": "History",
-      "historyDetails": "Chronological listing of your transactions",
-      "payBills": "Pay Bills",
-      "payBillDetails": "Pay bills such as mobile passes, internet, and TV bouquets",
-      "account": "Account",
-      "accountDetails": "Manage your personal information",
-      "payment": "Payment",
-      "paymentDetails": "Manage your payment methods",
-      "settings": "Settings",
-      "settingsDetails": "Options & security",
-      "support": "Support",
-      "supportDetails": "Customer service, help, and contacts",
-      "aboutUs": "About Us",
-      "aboutUsDetails": "Legal notices and terms of use",
-      "logout": "Logout",
-      "appVersion": "Sendo App V1.0.1",
+  "available_balance": "Available balance",
+  "wallet_id_label": "Recipient wallet ID",
+  "wallet_id_placeholder": "Enter recipient wallet ID",
+  "amount_label": "Amount to transfer (FCFA)",
+  "description_label": "Description (optional)",
+  "description_placeholder": "Ex: Transfer for purchase",
+  "submit_button": "Submit Transfer",
+"security": "Security",
+"biometrics": "Biometrics",
+"biometric_not_available": "Biometric authentication is not available",
+"authenticate_to_toggle_biometrics": "Please authenticate to toggle biometric setting",
+"unlock_app": "Unlock the app using your face {\n} or your fingerprint",
+"notifications": "Notifications",
+"ensure_notifications": "Make sure you have enabled notifications in the settings of your device",
+"switch_on": "On",
+"switch_off": "Off",
+"change_password": " Create a new password",
+"choose_language": "Choose Language",
+"old_password": "Old Password",
+"new_password": "New Password",
+"confirm_new_password": "Confirm New Password",
+"password_requirements": "The password must be at least 8 characters long and contain an uppercase letter, a lowercase letter, a number, and at least one special character (@!#$%^*)",
+"submit": "Submit",
+  "name": "André",
+  "bonus": "Free CAD 5.00 Bonus",
+  "bonusDetails": "You will receive CAD 5.00 and your friend will receive CAD 5.00 on their first transfer. Minimum sending requirements may apply. Subject to conditions.",
+  "yourCode": "Your code: ANDRE237",
+  "inviteFriends": "INVITE YOUR FRIENDS",
+  "myBalance": "My Balance",
+  "history": "History",
+  "historyDetails": "Chronological listing of your transactions",
+  "payBills": "Pay Bills",
+  "payBillDetails": "Pay bills such as mobile passes, internet, and TV bouquets",
+  "account": "Account",
+  "accountDetails": "Manage your personal information",
+  "payment": "Payment",
+  "paymentDetails": "Manage your payment methods",
+  "settings": "Settings",
+  "settingsDetails": "Options & security",
+  "support": "Support",
+  "supportDetails": "Customer service, help, and contacts",
+  "aboutUs": "About Us",
+  "aboutUsDetails": "Legal notices and terms of use",
+  "logout": "Logout",
+  "appVersion": "Sendo App V1.0.1",
 
-        "signup": {
-          "title": "Create Account",
-          "firstName": "First Name",
-          "name": "Full Name",
-          "title1": "My Account",
-          "lastName": "Last Name",
-          "email": "Email Address",
-          "phone": "Phone Number",
-          "address": "Address",
-          "password": "Password",
-          "buttonText": "SIGN UP",
-          "save": "Update",
-          "alreadyHaveAccount": "Already have an account?",
-          "signIn": "SIGN IN",
-          "fieldRequired": "This field is required",
-          "invalidEmail": "Invalid email address",
-          "invalidPhone": "Invalid phone number format",
-          "invalidPassword": "Password must be at least 8 characters",
-          "successMessage": "Account created successfully!",
-          "defaultError": "Registration failed. Please try again.",
-          "emailUsed": "This email is already registered",
-          "phoneUsed": "This phone number is already registered",
-          "referralToggle": "Have a referral code?",
-          "referralHide": "Hide referral code",
-          "referralPlaceholder": "Referral code (optional)"
-        },
-      
-
-        "signIn": {
-          "title": "Sign In",
-          "email": "Email Address",
-          "password": "Password",
-          "next": "Next",
-          "forgotPassword": "Forget Password",
-          "loginWith": "LOGIN WITH EMAIL/USERNAME",
-          "orSignInWith": "Or Sign in with",
-          "dontHaveAccount": "Don't have an account?",
-          "signUp": "SIGN UP",
-          "guestUser": "Login as a guest user",
-          "login": "Login",
-          "success": "Login successful!",
-        "error": "Error"
-      },
-      
-        "otpVerification": {
-          "enterCode": "Enter the 6-digit code sent to",
-          "codeExpiresIn": "Code expires in",
-          "secondsLeft": "seconds left",
-          "resendOtp": "Resend OTP",
-          "waitToResend": "Wait to resend",
-          "verify": "Verify",
-          "verificationSuccess": "Verification successful!",
-          "verificationFailed": "Verification failed. Please try again.",
-          "otpResent": "New OTP has been sent",
-          "resendFailed": "Failed to resend OTP. Please try again.",
-          "incompleteCode": "Please enter the complete 6-digit code"
-        },
-        "error": "Error",
-        "success": "Success",
-          "log": {
-            "title": "Log In",
-            "phoneNumber": "Phone Number",
-            "next": "Next",
-            "forgetPassword": "Forget Password",
-            "loginWithPhone": "LOGIN WITH PHONE NUMBER",
-            "orSignInWith": "Or Sign in with",
-            "dontHaveAccount": "Don't have an account?",
-            "signUp": "SIGN UP",
-            "guestUser": "Login as a guest user",
-            "error": "Error",
-            "enterPhoneNumber": "Please enter your phone number.",
-            "close": "Close"
-          },
-          "account1": {
-    "title": "My Account",
-    "labels": {
-      "name": "Name",
+    "signup": {
+      "title": "Create Account",
+      "firstName": "First Name",
+      "name": "Full Name",
+      "title1": "My Account",
+      "lastName": "Last Name",
+      "email": "Email Address",
       "phone": "Phone Number",
-      "email": "Email Address"
+      "address": "Address",
+      "password": "Password",
+      "buttonText": "SIGN UP",
+      "save": "Update",
+      "alreadyHaveAccount": "Already have an account?",
+      "signIn": "SIGN IN",
+      "fieldRequired": "This field is required",
+      "invalidEmail": "Invalid email address",
+      "invalidPhone": "Invalid phone number format",
+      "invalidPassword": "Password must be at least 8 characters",
+      "successMessage": "Account created successfully!",
+      "defaultError": "Registration failed. Please try again.",
+      "emailUsed": "This email is already registered",
+      "phoneUsed": "This phone number is already registered"
     },
-    "placeholders": {
-      "firstName": "First name",
-      "lastName": "Last name"
-    },
-    "actions": {
-      "save": "Save",
-      "retry": "Retry"
-    },
-    "errors": {
-      "loading": "Error loading profile"
-    }
-  },
-  "drawer": {
-      "title": "André",
-      "email": "randré24cand@gmail.com",
-      "phone": "+237 600 00 00 00",
-      "bonus": "Bonus of 1.00 CAD free",
-      "bonus_description": "You will receive 1.00 CAD and your friend will receive 1.00 CAD when they make their first transfer. Minimum sending requirements may apply. Subject to conditions.",
-      "bonus_code": "Your code:",
-      "invite_friends": "INVITE YOUR FRIENDS",
-      "balance": "My Balance",
-      "history": "History",
-      "pay_bills": "Pay Bills",
-      "account": "Account",
-      "payment": "Payment",
-      "settings": "Settings",
-      "support": "Support",
-      "about_us": "About Us",
-      "logout": "Logout",
-      "app_version": "Sendo App V1.0.1",
-      "app_name": "Sendo",
-  "referral": {
-    "share_message": "Hey! Join me on Sendo using my referral code {{code}} and we both get a bonus!\n\nDownload the app here:\niOS: {{iosLink}}\nAndroid: {{androidLink}}\n\nUse my code when signing up!",
-    "share_title": "Join Sendo with my referral code",
-    "no_code_error": "No referral code available",
-    "share_error": "Failed to share referral code"
-  }
-    },
-    "guest_login": {
-    "title": "Guest Access",
-    "welcome": "Continue as Guest",
-    "description": "Explore our services without creating an account. You can always register later.",
-    "referral_placeholder": "Enter referral code (optional)",
-    "continue_as_guest": "Continue as Guest"
-  },
-  "referral": {
-    "title": "Invite Friends",
-    "description": "Share your referral code with friends and both of you will receive a bonus when they make their first valid transfer.",
-    "your_code": "Your Referral Code",
-    "bonus_amount": "Bonus Amount",
-    "how_it_works": "How it works:",
-    "step1": "Share your unique code with friends",
-    "step2": "They sign up using your code",
-    "step3": "You both get a bonus after their first transfer",
-    "share_button": "Share Invitation",
-    "link_copied": "Link Copied!",
-    "share_message": "Join me on Sendo! Use my referral code:"
-  },
-  "errors": {
-    "invalid_referral": "Invalid referral code",
-    "already_used": "This code has already been used",
-    "kyc_required": "Please complete your profile verification to use referrals"
-  }
   
-  
-    
+
+    "signIn": {
+      "title": "Sign In",
+      "email": "Email Address",
+      "password": "Password",
+      "next": "Next",
+      "forgotPassword": "Forget Password",
+      "loginWith": "LOGIN WITH EMAIL/USERNAME",
+      "orSignInWith": "Or Sign in with",
+      "dontHaveAccount": "Don't have an account?",
+      "signUp": "SIGN UP",
+      "guestUser": "Login as a guest user",
+      "login": "Login",
+      "success": "Login successful!",
+    "error": "Error"
+  },
 
   
-        
-        
-      
-      
-      
+    "otpVerification": {
+      "enterCode": "Enter the 6-digit code sent to",
+      "codeExpiresIn": "Code expires in",
+      "secondsLeft": "seconds left",
+      "resendOtp": "Resend OTP",
+      "waitToResend": "Wait to resend",
+      "verify": "Verify",
+      "verificationSuccess": "Verification successful!",
+      "verificationFailed": "Verification failed. Please try again.",
+      "otpResent": "New OTP has been sent",
+      "resendFailed": "Failed to resend OTP. Please try again.",
+      "incompleteCode": "Please enter the complete 6-digit code"
+    },
+    "error": "Error",
+    "success": "Success",
+      "log": {
+        "title": "Log In",
+        "phoneNumber": "Phone Number",
+        "next": "Next",
+        "forgetPassword": "Forget Password",
+        "loginWithPhone": "LOGIN WITH PHONE NUMBER",
+        "orSignInWith": "Or Sign in with",
+        "dontHaveAccount": "Don't have an account?",
+        "signUp": "SIGN UP",
+        "guestUser": "Login as a guest user",
+        "error": "Error",
+        "enterPhoneNumber": "Please enter your phone number.",
+        "close": "Close"
+      },
+      "account1": {
+"title": "My Account",
+"labels": {
+  "name": "Name",
+  "phone": "Phone Number",
+  "email": "Email Address"
+},
+"placeholders": {
+  "firstName": "First name",
+  "lastName": "Last name"
+},
+"actions": {
+  "save": "Save",
+  "retry": "Retry"
+},
+"errors": {
+  "loading": "Error loading profile"
+}
+},
+
+"drawer": {
+"title": "André",
+"email": "randré24cand@gmail.com",
+"phone": "+237 600 00 00 00",
+"bonus": "Bonus of 1.00 CAD free",
+"bonus_description": "You will receive 1.00 CAD and your friend will receive 1.00 CAD when they make their first transfer. Minimum sending requirements may apply. Subject to conditions.",
+"bonus_code": "Your code:",
+"invite_friends": "INVITE YOUR FRIENDS",
+"balance": "My Balance",
+"history": "History",
+"pay_bills": "Pay Bills",
+"account": "Account",
+"payment": "Payment",
+"settings": "Settings",
+"support": "Support",
+"about_us": "About Us",
+"logout": "Logout",
+"app_version": "Sendo App V1.0.1",
+"app_name": "Sendo",
+"referral": {
+"share_message": "Hey! Join me on Sendo using my referral code {{code}} and we both get a bonus!\n\nDownload the app here:\niOS: {{iosLink}}\nAndroid: {{androidLink}}\n\nUse my code when signing up!",
+"share_title": "Join Sendo with my referral code",
+"no_code_error": "No referral code available",
+"share_error": "Failed to share referral code"
+}
+},
+"guest_login": {
+"title": "Guest Access",
+"welcome": "Continue as Guest",
+"description": "Explore our services without creating an account. You can always register later.",
+"referral_placeholder": "Enter referral code (optional)",
+"continue_as_guest": "Continue as Guest"
+},
+"referral": {
+"title": "Invite Friends",
+"description": "Share your referral code with friends and both of you will receive a bonus when they make their first valid transfer.",
+"your_code": "Your Referral Code",
+"bonus_amount": "Bonus Amount",
+"how_it_works": "How it works:",
+"step1": "Share your unique code with friends",
+"step2": "They sign up using your code",
+"step3": "You both get a bonus after their first transfer",
+"share_button": "Share Invitation",
+"link_copied": "Link Copied!",
+"share_message": "Join me on Sendo! Use my referral code:"
+},
+"errors": {
+"invalid_referral": "Invalid referral code",
+"already_used": "This code has already been used",
+"kyc_required": "Please complete your profile verification to use referrals"
+},
+"wallet_transfer": {
+"title": "Wallet Transfer",
+"available_balance": "Available Balance",
+"recipient_id": "Recipient's Matricule",
+"recipient_placeholder": "Enter wallet matricule",
+"amount": "Amount (FCFA)",
+"amount_placeholder": "0.0",
+"description": "Description (optional)",
+"description_placeholder": "Ex: Transfer for purchase",
+"your_matricule": "Your matricule",
+"transfer_button": "Make Transfer"
+},
+"select_method": {
+"withdrawal_limit": "📊 Withdrawal limit",
+"send_to_mobile": "Send money to your MOMO or OM accounts",
+"transfer_to_mobile": "Transfer to Mobile...",
+"transfer_fee": "2.5% transfer fee",
+"send_to_friends": "Send money to your Sendo friends",
+"sendo_transfer": "Sendo - Sendo Trans...",
+"no_fee": "0% fee"
+},
+"method": {
+"withdrawal_limit": "📊 Deposit limit",
+"send_to_mobile": "Recharge your account via  MOMO or OM Money",
+"transfer_to_mobile": " Mobile Money",
+"transfer_fee": "No Fee",
+"send_to_friends": "Recharge your Account Via BANK",
+"sendo_transfer": "Bank Transfer",
+"no_fee": "No Fee"
+},
+"wallet_balance": {
+"title": "Balance",
+"recharge": "Top Up",
+"withdraw": "Withdraw",
+"transfer": "Transfer",
+"referral_balance": "Referral Balance",
+"referral_terms": "You will receive 5.00 CAD and your friend will receive 5.00 CAD on their first transfer. Minimum sending requirements may apply.",
+"terms_conditions": "Subject to conditions.",
+"share_referral": "SHARE YOUR REFERRAL CODE"
+},
+"bank_deposit": {
+"title": "Bank Deposit Recharge",
+"amount": "Amount:",
+"amount_placeholder": "Enter amount",
+"receipt": "Deposit receipt:",
+"select_file": "Choose a file",
+"take_photo": "Take a photo",
+"selected_file": "Selected file",
+"submit": "Submit request",
+"account_number": "Account Number",
+"account_placeholder": "Enter account number",
+"bank_name": "Bank Name",
+"bank_placeholder": "Enter bank name",
+"reference": "Transaction Reference",
+"reference_placeholder": "Enter transaction reference"
+},
+"support2": {
+"help_available": "Help is available through the following channels:",
+"faq": "FAQ",
+"faq_description": "Frequently asked questions",
+"email": "Email supportsendo@sf-e.ca",
+"email_description": "For a faster response",
+"phone": "Call 581 907 2096",
+"phone_description": "24/7",
+"contact_instructions": "If you can't reach us by phone, please email us at supportsendo@sf-e.ca",
+"account_deletion": "If you wish to request deletion of your account information, please email us at supportsendo@sf-e.ca"
+},
+"address_verification": {
+"identity_verification": "Identity Verification",
+"where_live": "Where do you live?",
+"proof_location": "Select an option to prove your location",
+"location_map": "Location Map",
+"utility_bill": "Water/Electricity Bill (Optional)",
+"privacy_notice": "Do not share your personal information...",
+
+"security_message": "To enhance your security and streamline our Know Your Customer (KYC) process, SENDO requires access to your device's background location. Rest assured, this information is solely used for identity verification purposes and is treated with the utmost confidentiality."
+},
+"addressConfirm": {
+"title": "Address Confirmation",
+"documentProof": "Proof of Address",
+"selectDocument": "Select a document",
+"documentTypes": "(Image or PDF)",
+"acceptedDocuments": "Accepted documents:",
+"documentsList": [
+  "• Water or electricity bill (less than 3 months old)",
+  "• Current lease agreement",
+  "• Tax notice or property tax",
+  "• Maximum size: 5 MB"
+],
+"confirmButton": "CONFIRM DOCUMENT",
+"securityNotice": "Do not share your personal information"
+},
+"camera": {
+"selfie_guide": "Take a selfie with your ID",
+"niu_guide": "Take a photo of your NIU document",
+"address_guide": "Take a photo of your proof of address",
+"default_guide": "Take a photo",
+"position_hint": "Position your document in the frame",
+"capture_hint": "Tap here to take a photo",
+"cancel": "Cancel",
+"accept": "Accept",
+"permission_request": "We need your permission to show the camera",
+"grant_permission": "Grant permission"
+},
+"niu": {
+"title": "Unique Identification Number",
+"taxNumber": "Taxpayer Number",
+"uploadInstruction": "Upload your taxpayer document",
+"description": "The unique identification number is a combination of letters and numbers assigned to taxpayers. This number is essential to identify the user as a taxpayer.",
+"takePhotoButton": "TAKE A PHOTO",
+"securityNotice": "Do not share your personal information"
+},
+"personalDetail": {
+"title": "Personal Details",
+"header": "Personal Information",
+"subheader": "Provide your information as it appears on your official documents.",
+"region": "Region",
+"selectRegion": "Select your region",
+"city": "City",
+"selectCity": "Select your city",
+"district": "District",
+"selectDistrict": "Select your district",
+"profession": "Profession",
+"selectProfession": "Select your profession",
+"confidentialNotice": "This information is required to complete your profile and is treated confidentially.",
+"saveButton": "SAVE",
+"closeButton": "Close",
+"securityNotice": "Do not share your personal information"
+},
+"identity_card": {
+"title": "Identity Document",
+"document_type": "Document Type",
+"front_side": "Front Side",
+"back_side": "Back Side",
+"take_photo_front": "Take a photo of the front",
+"take_photo_back": "Take a photo of the back",
+"next_button": "NEXT",
+"privacy_notice": "Do not share your personal information",
+"document_types": {
+  "CNI": "National ID",
+  "PASSPORT": "Passport",
+  "DRIVING_LICENSE": "Driver's License"
+}
+},
+"verifyIdentity": {
+"title": "Identity Verification",
+"heading": "We want to know you better",
+"description": "We verify your identity to protect our community. This will only take a few minutes. To learn more, visit",
+"blogLink": " our blog",
+"nextButton": "NEXT",
+"securityNotice": "Do not share your personal information..."
+},
+"payment2": {
+"no_payment_method": "No payment method is currently linked to your account. Add a new payment method for your transfers.",
+"add_card": "ADD A CARD",
+"connect_bank": "Connect a bank account",
+"connect_description": "Connect your bank account to start a transfer",
+"create_virtual": "CREATE A VIRTUAL CARD",
+"manage_virtual": "MANAGE MY VIRTUAL CARD",
+"get_visa": "GET A VISA CARD",
+"bonus_balance": "Bonus balance",
+"referral_terms": "You will receive 5.00 CAD and your friend will receive 5.00 CAD on their first transfer. Minimum sending requirements may apply.",
+"terms_conditions": "Subject to conditions.",
+"share_referral": "SHARE YOUR REFERRAL CODE",
+"generate_code": "GEN"
+},
+"kycSelfie": {
+"title": "Identity Verification",
+"selfie": "Selfie",
+"instruction": "Take a photo of yourself with your ID card",
+"howToTitle": "How to take a photo with your ID card?",
+"tips": [
+  "• Take the photo in a well-lit room",
+  "• Hold the document next to your face",
+  "• Make sure your face and ID card are clearly visible"
+],
+"takeSelfieButton": "TAKE A SELFIE",
+"securityNotice": "Do not share your personal information"
+},
+"kyc_resume": {
+"identity_verification": "Identity Verification",
+"kyc_summary": "Your KYC Summary",
+"completion_hint": "Complete all steps to finalize your verification",
+"personal_details": "Personal Details",
+"selfie": "Selfie",
+"id_document": "ID Document",
+"niu_document": "NIU (Taxpayer)",
+"address_proof": "Proof of Address",
+"completed": "Completed",
+"pending": "Pending",
+"submit": "SUBMIT",
+"privacy_notice": "Do not share your personal information"
+},
+"manageVirtualCard": {
+"title": "Manage my virtual card",
+"balance": "Balance:",
+"cardNumber": "7433 0001 4302 7995",
+"cvv": "CVV: 432",
+"cardHolder": "CARD HOLDER",
+"expires": "Expires : 03/27",
+"rechargeButton": "Recharge",
+"transactionHistory": "Transaction history",
+"hide": "Hide",
+"showAllTransfers": "SHOW ALL TRANSFERS"
+},
+"identityVerification": {
+"title": "Identity Verification",
+"uploadInstruction": "Upload your taxpayer document",
+"uploadDescription": "Upload or take a photo of your taxpayer document",
+"uploadButton": "Click here to import NIU document",
+"orSeparator": "------ Or ------",
+"cameraButton": "Open camera to take a photo",
+"finishButton": "COMPLETE",
+"privacyNotice": "Do not share your personal information..."
+},
+"bankCard": {
+"title": "Bank Card",
+"secureMessage": "Secured with bank-level encryption",
+"cardName": "Your name as it appears on the card",
+"cardNumber": "Card number",
+"expiryDate": "Expiration date",
+"cvv": "CVV",
+"deliveryInfo": [
+  "• Delivered to your institution within 4 business days after payment",
+  "• Make your payment from any bank",
+  "• Quote valid for 72 hours"
+],
+"securityNotice": "We securely store your card so you don't have to enter your details each time, but you can delete it at any time. We will notify you by email of relevant changes to our payment policy.",
+"validateButton": "Validate",
+"privacyNotice": "Do not share your personal information..."
+},
+"virtual_card": {
+"card_price": "Card price:",
+"total": "Total:",
+"create_now": "CREATE NOW"
+}
+
+
+
+
+
+
     
     
-  }
   
+  
+  
+
+
+}

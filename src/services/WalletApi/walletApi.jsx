@@ -4,6 +4,7 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 const WALLET_ENDPOINTS = {
   BALANCE: '/wallet/balance/',
   TRANSFER: '/wallet/transfer-funds',
+  RECHARGE: '/wallet/recharge',
   HISTORY: '/wallet/transactions',
 };
 
@@ -34,6 +35,18 @@ export const walletApi = createApi({
       },
       providesTags: [TAG_TYPES.WALLET],
     }),
+
+    rechargeWallet: builder.mutation({
+      query: (rechargeData) => ({
+        url: WALLET_ENDPOINTS.RECHARGE,
+        method: 'POST',
+        body: rechargeData,
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }),
+      invalidatesTags: [TAG_TYPES.WALLET, TAG_TYPES.TRANSACTIONS],
+    }),
     
     
     transferFunds: builder.mutation({
@@ -58,5 +71,6 @@ export const walletApi = createApi({
 export const {
   useGetBalanceQuery,
   useTransferFundsMutation,
+  useRechargeWalletMutation,
   useGetTransactionHistoryQuery,
 } = walletApi;

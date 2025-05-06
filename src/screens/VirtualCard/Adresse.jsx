@@ -6,19 +6,16 @@ import { AntDesign, Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 import { useDispatch } from 'react-redux';
 import { setAddressProof } from '../../features/Kyc/kycReducer';
+import { useTranslation } from 'react-i18next';
 
 const Addresse = ({ navigation }) => {
   const dispatch = useDispatch();
+  const { t } = useTranslation();
   
   const handleProceed = () => {
     navigation.navigate("AddressSelect", {
       onAddressSelected: (addressProof) => {
-        dispatch(setAddressProof({
-          type: addressProof.type,
-          uri: addressProof.uri,
-          name: `address_${Date.now()}.jpg`,
-          coordinates: addressProof.coordinates
-        }));
+        dispatch(setAddressProof(addressProof));
         navigation.navigate("KycResume");
       }
     });
@@ -26,8 +23,9 @@ const Addresse = ({ navigation }) => {
 
   return (
     <ImageBackground source={BG} style={{ flex: 1 }} resizeMode="cover">
+      {/* Main Content - Centering the Box */}
       <View className="flex-1 justify-center items-center">
-        <View className="bg-white bg-opacity-90 p-6 rounded-lg shadow-lg w-11/12 max-w-md">
+        <View className="bg-white bg-opacity-80 p-6 rounded-lg shadow-lg w-11/12 max-w-md">
           <Image
             source={require("../../images/Localisation.png")}
             style={{
@@ -38,24 +36,23 @@ const Addresse = ({ navigation }) => {
             resizeMode="contain"
           />
           <Text className="text-gray-700 text-center leading-5 mb-6">
-            Pour finaliser votre vérification, nous avons besoin de confirmer votre adresse. 
-            Vous pouvez soit partager votre localisation, soit télécharger un justificatif de domicile.
+            {t('address_verification.security_message')}
           </Text>
           
-          {/* Action Buttons */}
+          {/* Action Buttons - Kept in English as requested */}
           <View className="flex-row justify-between">
             <TouchableOpacity 
               onPress={() => navigation.goBack()}
               className="bg-gray-200 px-6 py-3 rounded-lg flex-1 mr-2"
             >
-              <Text className="text-gray-800 font-medium text-center">RETOUR</Text>
+              <Text className="text-gray-800 font-medium text-center">CANCEL</Text>
             </TouchableOpacity>
             
             <TouchableOpacity
               onPress={handleProceed}
-              className="bg-[#7ddd7d] px-6 py-3 rounded-lg flex-1 ml-2"
+              className="bg-green-500 px-6 py-3 rounded-lg flex-1 ml-2"
             >
-              <Text className="text-white font-medium text-center">CONTINUER</Text>
+              <Text className="text-white font-medium text-center">PROCEED</Text>
             </TouchableOpacity>
           </View>
         </View>
