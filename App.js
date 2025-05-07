@@ -48,6 +48,7 @@ import PaymentMethod from "./src/screens/Transfert/PaymentMethod";
 import Support from "./src/screens/Setting/Support";
 import Payment from "./src/screens/VirtualCard/Payment";
 import DrawerComponent from "./src/components/DrawerComponent";
+import NotificationComponent from "./src/components/NotificationComponent"
 import History from "./src/screens/Transfert/History";
 import Receipt from "./src/screens/Transfert/Receipt";
 import Account from "./src/screens/Profile/Account";
@@ -259,13 +260,24 @@ function RootNavigator() {
 // Drawer Navigator
 function DrawerNavigator() {
   return (
-    <Drawer.Navigator drawerContent={(props) => <DrawerComponent {...props} />}>
-      <Drawer.Screen name="MainStack" component={RootNavigator} options={{ headerShown: false }} />
-    </Drawer.Navigator>
+    <>
+      <Drawer.Navigator drawerContent={(props) => <DrawerComponent {...props} />}>
+        <Drawer.Screen 
+          name="MainStack" 
+          component={RootNavigator} 
+          options={{ headerShown: false }} 
+        />
+      </Drawer.Navigator>
+      {/* Floating notification (adjust positioning as needed)
+      <View style={{ position: 'absolute', top: 54, right: 70 }}>
+       // <NotificationComponent />
+      </View> */}
+    </>
   );
 }
 
 export default function App() {
+ 
   // Register for push notifications once on mount
   useEffect(() => {
     registerForPushNotificationsAsync().then((token) => {

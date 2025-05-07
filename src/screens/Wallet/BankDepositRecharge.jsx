@@ -26,16 +26,18 @@ const BankDepositRecharge = ({ navigation, route }) => {
     }));
   };
 
-  const validateForm = () => {
-    const { amount, transactionReference, bankName, accountNumber } = formData;
-    
-    return true;
-  };
-
   const handleSubmit = async () => {
-    if (!validateForm()) return;
-
     const { amount, transactionReference, bankName, accountNumber, methodType } = formData;
+
+    // Basic client-side validation
+    if (!amount || !transactionReference || !bankName || !accountNumber) {
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Please fill all fields'
+      });
+      return;
+    }
 
     setIsSubmitting(true);
     
@@ -64,11 +66,12 @@ const BankDepositRecharge = ({ navigation, route }) => {
       
       if (error.status === 400) {
         errorMessage = 'Insufficient balance';
+      } else if (error.status === 403) {
+        errorMessage = 'Missing KYC Documents';
       } else if (error.status === 404) {
         errorMessage = 'Wallet not found';
-      }else if (error.status === 403) {
-        errorMessage = 'Missing KYC Documents';
       }
+      
       Toast.show({
         type: 'error',
         text1: 'Error',
@@ -78,7 +81,6 @@ const BankDepositRecharge = ({ navigation, route }) => {
       setIsSubmitting(false);
     }
   };
-
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>

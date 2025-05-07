@@ -12,19 +12,38 @@ const TAG_TYPES = {
   WALLET: 'Wallet',
   TRANSACTIONS: 'Transactions',
 };
+// Endpoints requiring passcode
+const PASSCODE_REQUIRED_ENDPOINTS = [
+  '/wallet/balance/',
+  '/wallet/transfer-funds',
+  '/wallet/recharge'
+];
 
 export const walletApi = createApi({
   reducerPath: 'walletApi',
-  baseQuery: fetchBaseQuery({ 
-    baseUrl: process.env.REACT_APP_API_BASE_URL,
+  baseQuery: fetchBaseQuery({
+    baseUrl: process.env.EXPO_PUBLIC_API_URL,
     prepareHeaders: (headers, { getState }) => {
-      const token = getState().auth.accessToken;
-      if (token) {
-        headers.set('Authorization', `Bearer ${token}`);
+      const { accessToken, passcode } = getState().auth;
+      
+      headers.set('accept', '*/*');
+      headers.set('Content-Type', 'application/json');
+      
+      if (accessToken) {
+        headers.set('Authorization', `Bearer ${accessToken}`);
+      }
+     // Add passcode for sensitive endpoints
+      const requiresPasscode = PASSCODE_REQUIRED_ENDPOINTS.some(requiredEndpoint => 
+        endpoint.includes(requiredEndpoint)
+      );
+      
+      if (requiresPasscode && passcode) {
+        headers.set('X-Passcode', passcode);
       }
       return headers;
     },
   }),
+
   tagTypes: Object.values(TAG_TYPES),
   endpoints: (builder) => ({
     getBalance: builder.query({
@@ -41,11 +60,8 @@ export const walletApi = createApi({
         url: WALLET_ENDPOINTS.RECHARGE,
         method: 'POST',
         body: rechargeData,
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
       }),
-      invalidatesTags: [TAG_TYPES.WALLET, TAG_TYPES.TRANSACTIONS],
+      invalidatesTags: [TAG_TYPES.WALLET],
     }),
     
     
@@ -55,7 +71,7 @@ export const walletApi = createApi({
         method: 'POST',
         body: transferData,
       }),
-      invalidatesTags: [TAG_TYPES.WALLET, TAG_TYPES.TRANSACTIONS],
+      invalidatesTags: [TAG_TYPES.WALLET],
     }),
     
     getTransactionHistory: builder.query({

@@ -1,2 +1,2 @@
 // config.js
-export const API_URL = "http://217.65.146.204:3000/api";
+export const API_URL = "http://api.sf-e.ca/api";
