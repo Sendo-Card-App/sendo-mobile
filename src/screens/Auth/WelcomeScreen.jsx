@@ -22,23 +22,30 @@ const SplashScreen = ({ navigation }) => {
   // 5 dots (you can add more)
   
   useEffect(() => {
-    const checkAuthData = async () => {
-      try {
-        const authData = await getData('@authData');
-        if (authData?.accessToken) {
-          dispatch(loginSuccess(authData));
-          navigation.replace("Main");
-        } else {
-          navigation.replace("AUTH");
-        }
-      } catch (error) {
-        console.log("Error checking auth data:", error);
-        navigation.replace("Auth");
-      } finally {
-        setLoading(false); // stop loader once done
+    // In SplashScreen.js
+const checkAuthData = async () => {
+  try {
+    const authData = await getData('@authData');
+    const hasPasscode = await getData('@passcode'); // Check if passcode exists
+    
+    if (authData?.accessToken) {
+      dispatch(loginSuccess(authData));
+      
+      if (hasPasscode) {
+        navigation.replace("PinCode", { setup: false });
+      } else {
+        navigation.replace("PinCode", { setup: true });
       }
-    };
-  
+    } else {
+      navigation.replace("Auth");
+    }
+  } catch (error) {
+    console.log("Error checking auth data:", error);
+    navigation.replace("Auth");
+  } finally {
+    setLoading(false);
+  }
+};
     checkAuthData();
   }, []);
   

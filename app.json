@@ -13,7 +13,12 @@
       "backgroundColor": "#181e25"
     },
     "ios": {
-      "supportsTablet": true
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "Authentifiez-vous pour accéder à votre compte"
+      },
+      "supportsTablet": true,
+      "googleServicesFile": "./GoogleService-Info.plist",
+      "bundleIdentifier": "com.sfe.sendo"
     },
     "android": {
       "adaptiveIcon": {
@@ -23,11 +28,14 @@
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO",
-        "android.permission.INTERNET"
+        "android.permission.INTERNET",
+        "USE_BIOMETRIC", "USE_FINGERPRINT"
       ],
       "package": "com.sendo",
       "allowCleartextTraffic": true,
-      "useNextNotificationsApi": true
+      "useNextNotificationsApi": true,
+      "googleServicesFile": "./google-services.json"
+
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -45,7 +53,7 @@
     "extra": {
       "eas": {
         "projectId": "3c5e2368-a9f0-420d-aebf-8265754fe6a8",
-        "apiBaseUrl": "https://217.65.146.204:3000/api"
+       "API_URL": "http://api.sf-e.ca/api"
       }
     }
   }

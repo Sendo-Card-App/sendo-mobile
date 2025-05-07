@@ -218,12 +218,18 @@
     "transfer_fee": "Gratuit",
     "send_to_friends": "Recharge ton compte par BANQUE",
     "sendo_transfer": "Transfer Par Banque",
-    "no_fee": "Gratuit"
+    "no_fee": "Gratuit",
+    "make_transfer": "Effectuer le transfert",
+    "bank_name": "Nom de la banque",
+    "account_number": "Numéro de compte",
+    "account_name": "Nom du compte",
+    "full_iban": "IBAN complet",
+    "bic_swift": "BIC/SWIFT"
   },
   "wallet_balance": {
     "title": "Solde",
-    "recharge": "Recharger",
-    "withdraw": "Retrait",
+    "recharge": "Dépôt Sendo",
+    "withdraw": "Dépôt sur la carte",
     "transfer": "Transfert",
     "referral_balance": "Solde parrainage",
     "referral_terms": "Vous recevrez 5.00 CAD et votre ami recevra 5,00 CAD lors de son premier transfert. Des exigences d'envoi minimales peuvent s'appliquer.",

@@ -216,7 +216,13 @@
 "transfer_fee": "No Fee",
 "send_to_friends": "Recharge your Account Via BANK",
 "sendo_transfer": "Bank Transfer",
-"no_fee": "No Fee"
+"no_fee": "No Fee",
+"make_transfer": "Make Transfer",
+"bank_name": "Bank Name",
+"account_number": "Account Number",
+"account_name": "Account Name",
+"full_iban": "Full IBAN",
+"bic_swift": "BIC/SWIFT"
 },
 "wallet_balance": {
 "title": "Balance",

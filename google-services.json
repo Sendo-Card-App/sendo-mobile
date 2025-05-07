@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "45218785658",
+    "project_id": "sendo-60b20",
+    "storage_bucket": "sendo-60b20.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:45218785658:android:59543fbf50890ed7878ec3",
+        "android_client_info": {
+          "package_name": "com.sfe.sendo"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCeAJGbzPpSc-arOu3upSedSIZ2pV0homE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
