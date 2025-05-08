@@ -12,6 +12,7 @@ import KeyboardAvoidinWrapper from "../../components/KeyboardAvoidinWrapper";
 import { useDispatch } from "react-redux";
 import { AntDesign } from '@expo/vector-icons';
 import { useVerifyOtpMutation, useResendOtpMutation } from "../../services/Auth/authAPI";
+import { sendPushNotification, sendPushTokenToBackend, registerForPushNotificationsAsync  } from '../../services/notificationService';
 import { verifyOtpSuccess } from "../../features/Auth/authSlice";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import Loader from "../../components/Loader";
@@ -60,17 +61,41 @@ const OtpVerification = ({ route, onVerify, onResend, onClose }) => {
 
   const handleVerifyOtp = async (codeToVerify = otp) => {
     if (codeToVerify.length !== 6 || isVerifying) return;
-
+  
     setIsVerifying(true);
     try {
       const response = await verifyOtp({ phone, code: codeToVerify }).unwrap();
-
+  
       if (response.status === 200) {
+        // Send success notification
+        try {
+          // Get the push token from the notification service
+          const pushToken = await registerForPushNotificationsAsync();
+          
+          if (pushToken) {
+            // Send to backend with specific type
+            await sendPushTokenToBackend(
+              pushToken,
+              "Account Verified",
+              "Your account has been successfully verified!",
+              "SUCCESS_ACCOUNT_VERIFIED"
+            );
+            
+            // Local notification
+            await sendPushNotification(
+              "Verification Successful",
+              "Your account is now verified!"
+            );
+          }
+        } catch (notificationError) {
+          console.warn("Notification failed silently:", notificationError);
+        }
+  
         Toast.show({
           type: 'success',
           text1: response.message || 'OTP verified successfully',
         });
-
+  
         if (isForgotPasswordFlow) {
           navigation.navigate("ResetPassword", {
             phone,

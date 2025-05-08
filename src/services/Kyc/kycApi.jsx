@@ -10,7 +10,7 @@ const KYC_ENDPOINTS = {
 export const kycApi = createApi({
   reducerPath: 'kycApi',
   baseQuery: fetchBaseQuery({ 
-    baseUrl: process.env.EXPO_PUBLIC_API_BASE_URL,
+    baseUrl: process.env.EXPO_PUBLIC_API_URL,
     prepareHeaders: (headers, { getState }) => {
       const token = getState().auth.accessToken;
       if (token) headers.set('Authorization', `Bearer ${token}`);

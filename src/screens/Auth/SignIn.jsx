@@ -41,7 +41,7 @@ const SignIn = () => {
          const authData = await getData('@authData');
          if (authData?.accessToken) {
            dispatch(loginSuccess(authData));
-           navigation.replace("Main");
+           navigation.replace("PinCode");
          } else {
            navigation.replace("AUTH");
          }
@@ -102,7 +102,7 @@ const SignIn = () => {
         dispatch(loginSuccess(authData));
   
         // Navigate to main page after successful login
-        navigation.navigate("Main");
+        navigation.navigate("PinCode");
   
         Toast.show({
           type: 'success',

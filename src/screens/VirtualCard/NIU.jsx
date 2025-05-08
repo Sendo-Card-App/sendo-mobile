@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, Image, Dimensions } from "react-native";
+import { View, Text, Image, TouchableOpacity, Dimensions } from "react-native";
 import React from "react";
 import { AntDesign, Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
@@ -6,8 +6,10 @@ import TopLogo from "../../images/TopLogo.png";
 import { useDispatch } from 'react-redux';
 import KycTab from "../../components/KycTab";
 import { setNiuDocument } from '../../features/Kyc/kycReducer';
+import { useTranslation } from 'react-i18next';
 
 const NIU = ({ navigation }) => {
+  const { t } = useTranslation();
   const { width } = Dimensions.get("screen");
   const dispatch = useDispatch();
   
@@ -43,16 +45,15 @@ const NIU = ({ navigation }) => {
       {/* Title */}
       <View className="border border-dashed border-gray-300 my-1" />
       <Text className="text-center text-white text-2xl my-3">
-        Numéro d'Identification Unique
+        {t('niu.title')}
       </Text>
 
       {/* Main Content */}
       <View className="flex-1 pb-3 bg-white rounded-t-3xl items-center">
-        {/* ========= Top tab */}
-                <KycTab isActive="4" />
-        <Text className="font-bold text-gray-800 mt-3">N° Contribuable</Text>
+        <KycTab isActive="4" />
+        <Text className="font-bold text-gray-800 mt-3">{t('niu.taxNumber')}</Text>
         <Text className="text-center text-gray-400 text-sm">
-          Téléchargez votre document de contribuable
+          {t('niu.uploadInstruction')}
         </Text>
 
         <Image
@@ -64,9 +65,7 @@ const NIU = ({ navigation }) => {
 
         <View className="w-[89%] mx-auto px-8">
           <Text className="text-gray-400 my-1">
-            Le numéro d'identification unique est une combinaison de lettres et de 
-            chiffres attribuée aux contribuables. Ce numéro est essentiel pour identifier 
-            l'utilisateur en tant que contribuable.
+            {t('niu.description')}
           </Text>
         </View>
 
@@ -74,7 +73,9 @@ const NIU = ({ navigation }) => {
           className="mb-2 mt-auto bg-[#7ddd7d] py-3 rounded-full w-[85%] mx-auto"
           onPress={handleNext}
         >
-          <Text className="text-xl text-center font-bold">SUIVANT</Text>
+          <Text className="text-xl text-center font-bold">
+            {t('niu.takePhotoButton')}
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -82,7 +83,7 @@ const NIU = ({ navigation }) => {
       <View className="py-4 flex-row justify-center items-center gap-2">
         <Ionicons name="shield-checkmark" size={18} color="orange" />
         <Text className="text-sm text-white">
-          Ne partagez pas vos informations personnelles
+          {t('niu.securityNotice')}
         </Text>
       </View>
 

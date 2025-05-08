@@ -9,6 +9,8 @@ const AUTH_ENDPOINTS = {
   LOGIN: '/auth/login',
   FORGOT_PASSWORD: '/auth/forgot-password',
   RESET_PASSWORD: '/auth/reset-password',
+  CREATE_PASSCODE: '/users/send-passcode',
+  VERIFY_PASSCODE: '/users/send-passcode',
   MY_PROFILE: '/users/me',
   USER_PROFILE: '/users',
   LOGOUT: '/auth/logout',
@@ -21,16 +23,22 @@ const TAG_TYPES = {
   PROFILE: 'Profile',
 };
 
+// Endpoints requiring passcode
+const PASSCODE_REQUIRED_ENDPOINTS = [
+  '/users/update-password',
+  '/users/second-phone',
+  '/users/' 
+];
+
 export const authApi = createApi({
   reducerPath: 'authApi',
-  baseQuery: fetchBaseQuery({ 
-    baseUrl: process.env.EXPO_PUBLIC_API_BASE_URL,
+  baseQuery: fetchBaseQuery({
+    baseUrl: process.env.EXPO_PUBLIC_API_URL,
     prepareHeaders: (headers, { getState }) => {
-      const token = getState().auth.accessToken;
-      if (token) {
-        headers.set('Authorization', `Bearer ${token}`);
-        headers.set('Content-Type', 'application/json');
-        headers.set('Accept', 'application/json');
+      const { accessToken } = getState().auth;
+      headers.set('Content-Type', 'application/json');
+      if (accessToken) {
+        headers.set('Authorization', `Bearer ${accessToken}`);
       }
       return headers;
     },
@@ -136,6 +144,32 @@ export const authApi = createApi({
       invalidatesTags: [TAG_TYPES.AUTH],
     }),
 
+    // PIN Code Endpoints
+   
+       createPasscode: builder.mutation({
+      query: ({ passcode, isSetup }) => {
+        const headers = new Headers();
+        headers.set('Content-Type', 'application/json');
+
+        if (isSetup) {
+          // No session - Create new passcode (body only)
+          return {
+            url: AUTH_ENDPOINTS.CREATE_PASSCODE,
+            method: 'POST',
+            body: { passcode }
+          };
+        } else {
+          // With session - Verify passcode (header only)
+          headers.set('X-Passcode', passcode);
+          return {
+            url: AUTH_ENDPOINTS.CREATE_PASSCODE, // Same endpoint
+            method: 'POST',
+            headers
+          };
+        }
+      },
+      invalidatesTags: ['Auth'],
+    }),
     updatePassword: builder.mutation({
       query: ({ userId, oldPassword, newPassword }) => ({
         url: `/users/update-password/${userId}`,
@@ -169,6 +203,14 @@ export const authApi = createApi({
       },
       invalidatesTags: [TAG_TYPES.PROFILE],
     }),
+     
+    verifyPasscode: builder.mutation({
+      query: (passcode) => ({
+        url: '/auth/login-passcode',
+        method: 'POST',
+        body: { passcode: parseInt(passcode) },
+      }),
+    }),
     
 
     // Logout
@@ -191,6 +233,8 @@ export const {
   useRegisterMutation,
   useVerifyOtpMutation,
   useSendOtpMutation,
+  useVerifyPasscodeMutation,
+  useCreatePasscodeMutation,
   useResendOtpMutation,
   useAddSecondPhoneMutation,
   useSendSecondPhoneOtpMutation,

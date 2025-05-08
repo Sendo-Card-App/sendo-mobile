@@ -9,7 +9,7 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 const Success = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const { message = 'Transaction effectuée avec succès', nextScreen = 'Main' } = route.params || {};
+  const { message = 'Transaction effectuée avec succès', nextScreen = 'Home' } = route.params || {};
 
   return (
     <View className="bg-[#181e25] flex-1 pt-0 relative">

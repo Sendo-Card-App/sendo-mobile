@@ -22,10 +22,12 @@ import Home from "./src/screens/Home/Home";
 import WelcomeScreen from "./src/screens/Auth/WelcomeScreen";
 import PinCode from "./src/screens/Auth/PinCode";
 import AddBeneficiary from "./src/screens/Solde/AddBeneficiary";
-import SelectMethod from "./src/screens/Solde/SelectMethod";
+import SelectMethod from "./src/screens/Wallet/SelectMethod";
+import BankDepositRecharge from "./src/screens/Wallet/BankDepositRecharge";
 import AddContact from "./src/screens/Solde/AddContact";
-import TransfertFund from "./src/screens/Solde/TransfertFund";
-import WalletTransfer from "./src/screens/Solde/WalletTransfer";
+import TransfertFund from "./src/screens/Wallet/TransfertFund";
+import WalletTransfer from "./src/screens/Wallet/WalletTransfer";
+import MethodType from "./src/screens/Wallet/MethodType";
 import LogIn from "./src/screens/Auth/LogIn";
 import SignIn from "./src/screens/Auth/SignIn";
 import Signup from "./src/screens/Auth/Signup";
@@ -46,6 +48,7 @@ import PaymentMethod from "./src/screens/Transfert/PaymentMethod";
 import Support from "./src/screens/Setting/Support";
 import Payment from "./src/screens/VirtualCard/Payment";
 import DrawerComponent from "./src/components/DrawerComponent";
+import NotificationComponent from "./src/components/NotificationComponent"
 import History from "./src/screens/Transfert/History";
 import Receipt from "./src/screens/Transfert/Receipt";
 import Account from "./src/screens/Profile/Account";
@@ -63,7 +66,6 @@ import IdentityCard from "./src/screens/VirtualCard/IdentityCard";
 import IdentityVerification from "./src/screens/VirtualCard/IdentityVerification";
 import AddressSelect from "./src/screens/VirtualCard/AddressSelect";
 import AddressConfirm from "./src/screens/VirtualCard/AddressConfirm";
-import DocumentCaptureFlow from "./src/screens/VirtualCard/DocumentCaptureFlow";
 import Address from "./src/screens/Transfert/Address";
 import Camera from "./src/screens/VirtualCard/Camera";
 import ChangePassword from "./src/screens/Setting/ChangePassword";
@@ -214,7 +216,9 @@ function MainStack() {
       <Stack.Screen name="BankCard1" component={BankCard1} options={{ headerShown: false }} />
       <Stack.Screen name="AddBeneficiary" component={AddBeneficiary} options={{ headerTitle: " Envoyez Gratuitement de l'argent" }} />
       <Stack.Screen name="SelectMethod" component={SelectMethod} options={{ headerTitle: "Sélectionner une méthode" }} />
+      <Stack.Screen name="BankDepositRecharge" component={BankDepositRecharge} options={{headerTitle:" Rechargement par dépôt bancaire"}} />
       <Stack.Screen name="TransfertFund" component={TransfertFund} options={{ headerTitle: "Transférer des fonds" }} />
+      <Stack.Screen name="MethodType" component={MethodType} options={{headerTitle:"Sélectionner une méthode" }} />
       <Stack.Screen name="WalletTransfer" component={WalletTransfer} options={{ headerTitle: "Transfert de portefeuille" }} />
       <Stack.Screen name="AddContact" component={AddContact} options={{ headerTitle: "Ajouter un contact" }} />
       <Stack.Screen name="ConﬁrmeTheTransfer" component={ConﬁrmeTheTransfer} options={{ headerShown: false }} />
@@ -227,7 +231,6 @@ function MainStack() {
       <Stack.Screen name="MonSolde" component={MonSolde} options={{ headerTitle: "Mon Solde" }} />
       <Stack.Screen name="CreateVirtualCard" component={CreateVirtualCard} options={{ headerTitle: "Créer une carte virtuelle" }} />
       <Stack.Screen name="VerifyIdentity" component={VerifyIdentity} options={{ headerShown: false }} />
-      <Stack.Screen name="DocumentCaptureFlow" component={DocumentCaptureFlow} options={{ headerShown: false }} />
       <Stack.Screen name="ManageVirtualCard" component={ManageVirtualCard} options={{ headerShown: false }} />
       <Stack.Screen name="KycResume" component={KycResume} options={{ headerShown: false }} />
       <Stack.Screen name="KycSelfie" component={KycSelfie} options={{ headerShown: false }} />
@@ -257,13 +260,24 @@ function RootNavigator() {
 // Drawer Navigator
 function DrawerNavigator() {
   return (
-    <Drawer.Navigator drawerContent={(props) => <DrawerComponent {...props} />}>
-      <Drawer.Screen name="MainStack" component={RootNavigator} options={{ headerShown: false }} />
-    </Drawer.Navigator>
+    <>
+      <Drawer.Navigator drawerContent={(props) => <DrawerComponent {...props} />}>
+        <Drawer.Screen 
+          name="MainStack" 
+          component={RootNavigator} 
+          options={{ headerShown: false }} 
+        />
+      </Drawer.Navigator>
+      {/* Floating notification (adjust positioning as needed)
+      <View style={{ position: 'absolute', top: 54, right: 70 }}>
+       // <NotificationComponent />
+      </View> */}
+    </>
   );
 }
 
 export default function App() {
+ 
   // Register for push notifications once on mount
   useEffect(() => {
     registerForPushNotificationsAsync().then((token) => {

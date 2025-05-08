@@ -1,99 +1,172 @@
 import { View, Text, TouchableOpacity, ActivityIndicator, Alert } from "react-native";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useGetBalanceQuery } from "../../services/WalletApi/walletApi";
 import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
+import { useTranslation } from 'react-i18next';
 
 const MonSolde = () => {
   const navigation = useNavigation();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { t } = useTranslation();
   
   // First get the user profile to get the userId
   const { data: userProfile, isLoading: isProfileLoading, error: profileError } = useGetUserProfileQuery();
   const userId = userProfile?.data.id;
-  
+ 
   // Then get the balance using the userId
   const { 
-     data: balanceData, 
-     isLoading: isBalanceLoading,
-     error: balanceError,
-     isError: isBalanceError
-   } = useGetBalanceQuery(userId, {
-     skip: !userId // Skip the query if userId is not available
-   });
+    data: balanceData, 
+    isLoading: isBalanceLoading,
+    error: balanceError,
+    isError: isBalanceError,
+    refetch: refetchBalance
+  } = useGetBalanceQuery(userId, {
+    skip: !userId // Skip the query if userId is not available
+  });
 
   const isLoading = isProfileLoading || isBalanceLoading;
   
+ // console.log(userProfile)
   // Handle API errors
   useEffect(() => {
     if (balanceError) {
-      if (balanceError.status === 404) {
-        Alert.alert('Erreur', 'Utilisateur non trouvé');
-      } else if (balanceError.status === 500) {
-        Alert.alert('Erreur', 'Erreur serveur. Veuillez réessayer plus tard.');
+      //console.log('Balance error details:', balanceError); // Debug the full error
+      if (balanceError.status === 401) {
+        Alert.alert('Erreur', 'Authentification requise (passcode manquant)');
+      } else if (balanceError.status === 403) {
+        Alert.alert('Erreur', 'Passcode incorrect');
+      } else if (balanceError.status === 404) {
+        Alert.alert('Erreur', 'Portefeuille non trouvé');
       } else {
-        Alert.alert('Erreur', 'Une erreur est survenue lors de la récupération du solde');
+        Alert.alert('Erreur', balanceError.data?.message || 'Erreur inconnue');
       }
     }
   }, [balanceError]);
 
   return (
-    <View className="flex-1 p-5">
-      <Text className="mt-4 mb-5">Solde</Text>
+    <View style={{ flex: 1, padding: 20 }}>
+      <Text style={{ marginTop: 16,fontSize: 24,fontWeight: 'bold', marginBottom: 20 }}>{t('wallet_balance.title')}</Text>
 
       {isLoading ? (
         <ActivityIndicator color="#0D1C6A" />
       ) : isBalanceError ? (
-        <Text className="text-red-500">Erreur de chargement du solde</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Text style={{ color: 'red', marginRight: 8 }}>Erreur de chargement du solde</Text>
+          <TouchableOpacity onPress={refetchBalance}>
+            <Ionicons name="refresh" size={20} color="#0D1C6A" />
+          </TouchableOpacity>
+        </View>
       ) : (
-        <Text className="text-xl font-bold">
+        <Text style={{ fontSize: 32, fontWeight: 'bold' }}>
           {balanceData?.data.balance || "0.00"} {balanceData?.data.currency || "XAF"}
         </Text>
       )}
 
-      {/* Rest of your component remains the same */}
-      <View className="flex-row justify-between px-4 mt-10">
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 16, marginTop: 40 }}>
+        <View>
         <TouchableOpacity
-          className="bg-[#7ddd7d] w-20 h-20 rounded-full items-center justify-center shadow-sm shadow-black mx-2"
-          onPress={() => navigation.navigate("PaymentMethod")}
+          style={{ 
+            backgroundColor: '#7ddd7d', 
+            width: 70, 
+            height: 70, 
+            borderRadius: 40, 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.2,
+            shadowRadius: 2,
+            elevation: 2,
+            marginHorizontal: 8
+          }}
+          onPress={() => navigation.navigate("MethodType")}
         >
           <Ionicons name="add-circle-outline" size={28} color="white" />
-          <Text className="text-center text-white text-xs font-bold mt-1">Recharger</Text>
         </TouchableOpacity>
-
+        <Text style={{ textAlign: 'center', color: 'black', fontSize: 12, fontWeight: 'bold', marginTop: 4 }}>
+            {t('wallet_balance.recharge')}
+          </Text>
+          </View>
+          <View>
         <TouchableOpacity
-          className="bg-[#5dade2] w-20 h-20 rounded-full items-center justify-center shadow-sm shadow-black mx-2"
+          style={{ 
+            backgroundColor: '#5dade2', 
+            width: 70, 
+            height: 70, 
+            borderRadius: 40, 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.2,
+            shadowRadius: 2,
+            elevation: 2,
+            marginHorizontal: 8
+          }}
           onPress={() => navigation.navigate("Withdrawal")}
         >
           <Ionicons name="remove-circle-outline" size={28} color="white" />
-          <Text className="text-center text-white text-xs font-bold mt-1">Retrait</Text>
+         
         </TouchableOpacity>
+        <Text style={{ textAlign: 'center', color: 'black', fontSize: 12, fontWeight: 'bold', marginTop: 4 }}>
+            {t('wallet_balance.withdraw')}
+          </Text>
+          </View>
 
+          <View>
         <TouchableOpacity
-          className="bg-[#f39c12] w-20 h-20 rounded-full items-center justify-center shadow-sm shadow-black mx-2"
+          style={{ 
+            backgroundColor: '#f39c12', 
+            width: 70, 
+            height: 70, 
+            borderRadius: 40, 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.2,
+            shadowRadius: 2,
+            elevation: 2,
+            marginHorizontal: 8
+          }}
           onPress={() => navigation.navigate("SelectMethod")}
         >
           <Ionicons name="swap-horizontal-outline" size={28} color="white" />
-          <Text className="text-center text-white text-xs font-bold mt-1">Transfert</Text>
+          
         </TouchableOpacity>
+        <Text style={{ textAlign: 'center', color: 'black', fontSize: 12, fontWeight: 'bold', marginTop: 4 }}>
+            {t('wallet_balance.transfer')}
+          </Text>
+      </View>
       </View>
 
-      <Text className="font-extrabold text-gray-800 border-b border-t border-gray-400 pt-6 pb-1 border-dashed text-lg">
-        Solde parrainage
+      <Text style={{ 
+        fontWeight: '800', 
+        color: '#374151', 
+        borderBottomWidth: 1, 
+        borderTopWidth: 1, 
+        borderColor: '#9CA3AF', 
+        paddingTop: 24, 
+        paddingBottom: 4, 
+        borderStyle: 'dashed', 
+        fontSize: 18 
+      }}>
+        {t('wallet_balance.referral_balance')}
       </Text>
 
-      <Text className="font-extrabold text-gray-800 mt-2 text-lg">
+      <Text style={{ fontWeight: '800', color: '#374151', marginTop: 8, fontSize: 18 }}>
         0,00 CAD
       </Text>
 
-      <Text className="text-sm text-gray-400">
-        Vous recevrez 5.00 CAD et votre ami recevra 5,00 CAD lors de son premier
-        transfert. Des exigences d’envoi minimales peuvent s’appliquer.
-        <Text className="underline"> Sous réserve de conditions.</Text>
+      <Text style={{ fontSize: 14, color: '#9CA3AF' }}>
+        {t('wallet_balance.referral_terms')}
+        <Text style={{ textDecorationLine: 'underline' }}> {t('wallet_balance.terms_conditions')}</Text>
       </Text>
 
-      <Text className="text-[#7ddd7d] font-bold text-sm my-4">
-        PARTAGEZ VOTRE CODE DE PARRAINAGE
+      <Text style={{ color: '#7ddd7d', fontWeight: 'bold', fontSize: 14, marginVertical: 16 }}>
+        {t('wallet_balance.share_referral')}
       </Text>
     </View>
   );

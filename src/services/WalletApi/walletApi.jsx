@@ -2,8 +2,9 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
 // Constants for endpoints
 const WALLET_ENDPOINTS = {
-  BALANCE: '/wallet/balance/',
+  BALANCE: '/wallet/balance',
   TRANSFER: '/wallet/transfer-funds',
+  RECHARGE: '/wallet/recharge',
   HISTORY: '/wallet/transactions',
 };
 
@@ -12,39 +13,75 @@ const TAG_TYPES = {
   TRANSACTIONS: 'Transactions',
 };
 
+// Endpoints requiring passcode
+const PASSCODE_REQUIRED_ENDPOINTS = [
+  WALLET_ENDPOINTS.BALANCE,
+  WALLET_ENDPOINTS.TRANSFER,
+  WALLET_ENDPOINTS.RECHARGE
+];
+
 export const walletApi = createApi({
   reducerPath: 'walletApi',
-  baseQuery: fetchBaseQuery({ 
-    baseUrl: process.env.EXPO_PUBLIC_API_BASE_URL,
-    prepareHeaders: (headers, { getState }) => {
-      const token = getState().auth.accessToken;
-      if (token) {
-        headers.set('Authorization', `Bearer ${token}`);
+  baseQuery: fetchBaseQuery({
+    baseUrl: process.env.EXPO_PUBLIC_API_URL,
+    prepareHeaders: (headers, { getState, endpoint }) => {
+      const { accessToken } = getState().auth;
+      const { passcode } = getState().passcode
+      console.log('Current endpoint:', endpoint); // Debug which endpoint is being called
+      console.log('Passcode available:', passcode);
+      // Set default headers
+      headers.set('Accept', 'application/json');
+      headers.set('Content-Type', 'application/json');
+      
+      if (accessToken) {
+        headers.set('Authorization', `Bearer ${accessToken}`);
       }
+
+      if (passcode) {
+        headers.set('X-Passcode', passcode);
+      }
+
+      // Check if endpoint requires passcode
+      /*const requiresPasscode = PASSCODE_REQUIRED_ENDPOINTS.some(path => 
+        endpoint.startsWith(path)
+      );
+
+      if (requiresPasscode) {
+        if (!passcode) {
+          console.error('Passcode required but not available for endpoint:', endpoint);
+        } else {
+          headers.set('X-Passcode', passcode);
+        }
+      }*/
+
       return headers;
     },
   }),
   tagTypes: Object.values(TAG_TYPES),
   endpoints: (builder) => ({
     getBalance: builder.query({
-      query: (userId) => `/wallet/balance/${userId}`,
-      transformResponse: (response) => {
-       // console.log('Raw API Response:', response);
-        return response;
-      },
+      query: (userId) => `${WALLET_ENDPOINTS.BALANCE}/${userId}`,
       providesTags: [TAG_TYPES.WALLET],
     }),
-    
-    
+
+    rechargeWallet: builder.mutation({
+      query: (rechargeData) => ({
+        url: WALLET_ENDPOINTS.RECHARGE,
+        method: 'POST',
+        body: rechargeData,
+      }),
+      invalidatesTags: [TAG_TYPES.WALLET],
+    }),
+
     transferFunds: builder.mutation({
       query: (transferData) => ({
         url: WALLET_ENDPOINTS.TRANSFER,
         method: 'POST',
         body: transferData,
       }),
-      invalidatesTags: [TAG_TYPES.WALLET, TAG_TYPES.TRANSACTIONS],
+      invalidatesTags: [TAG_TYPES.WALLET],
     }),
-    
+
     getTransactionHistory: builder.query({
       query: ({ limit = 10, offset = 0 }) => ({
         url: WALLET_ENDPOINTS.HISTORY,
@@ -57,6 +94,7 @@ export const walletApi = createApi({
 
 export const {
   useGetBalanceQuery,
+  useRechargeWalletMutation,
   useTransferFundsMutation,
   useGetTransactionHistoryQuery,
 } = walletApi;

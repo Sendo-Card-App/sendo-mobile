@@ -5,10 +5,12 @@ import { authApi } from '../services/Auth/authAPI';
 import { kycApi } from '../services/Kyc/kycApi';
 import { walletApi } from '../services/WalletApi/walletApi';
 import kycReducer from '../features/Kyc/kycReducer'; // Updated path (note capital K in Kyc)
+import passcodeReducer from '../features/Auth/passcodeSlice';
 
 export const store = configureStore({
   reducer: {
     auth: authReducer,
+    passcode: passcodeReducer,
     [authApi.reducerPath]: authApi.reducer,
     kyc: kycReducer,
     [kycApi.reducerPath]: kycApi.reducer,

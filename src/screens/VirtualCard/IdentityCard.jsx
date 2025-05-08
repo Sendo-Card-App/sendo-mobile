@@ -7,11 +7,13 @@ import { useDispatch, useSelector } from 'react-redux';
 import KycTab from "../../components/KycTab";
 import { setIdentityDocumentType, setIdentityDocumentFront, setIdentityDocumentBack } from '../../features/Kyc/kycReducer';
 import { IDENTITY_TYPES } from '../../features/Kyc/kycReducer';
+import { useTranslation } from 'react-i18next';
 
 const IdentityCard = ({ navigation }) => {
   const { width } = Dimensions.get("screen");
   const dispatch = useDispatch();
   const { identityDocument } = useSelector(state => state.kyc);
+  const { t } = useTranslation();
   
   const handleFrontCapture = () => {
     navigation.navigate("Camera", { 
@@ -40,7 +42,6 @@ const IdentityCard = ({ navigation }) => {
   };
 
   const handleDocumentTypeChange = (type) => {
-    // Clear both front and back when changing document type
     dispatch(setIdentityDocumentType(type));
     dispatch(setIdentityDocumentFront(null));
     if (type === IDENTITY_TYPES.CNI) {
@@ -77,17 +78,16 @@ const IdentityCard = ({ navigation }) => {
       {/* Title */}
       <View className="border border-dashed border-gray-300 my-1" />
       <Text className="text-center text-white text-2xl my-3">
-        Pièce d'identité
+        {t('identity_card.title')}
       </Text>
 
       {/* Main Content */}
       <ScrollView className="flex-1 pb-3 bg-white rounded-t-3xl" contentContainerStyle={{ paddingBottom: 20 }}>
         <View className="px-6 py-4">
-          {/* Top tab */}
           <KycTab isActive="3" />
 
           {/* Document Type Selection */}
-          <Text className="font-bold text-gray-800 mb-3">Type de document</Text>
+          <Text className="font-bold text-gray-800 mb-3">{t('identity_card.document_type')}</Text>
           <View className="flex-row justify-between mb-6">
             {Object.values(IDENTITY_TYPES).map(type => (
               <TouchableOpacity
@@ -96,15 +96,14 @@ const IdentityCard = ({ navigation }) => {
                 onPress={() => handleDocumentTypeChange(type)}
               >
                 <Text className={identityDocument.type === type ? 'text-white' : 'text-gray-800'}>
-                  {type === IDENTITY_TYPES.CNI ? 'CNI' : 
-                   type === IDENTITY_TYPES.PASSPORT ? 'Passeport' : 'Permis'}
+                  {t(`identity_card.document_types.${type}`)}
                 </Text>
               </TouchableOpacity>
             ))}
           </View>
 
           {/* Front Side */}
-          <Text className="font-bold text-gray-800 mb-1">Recto</Text>
+          <Text className="font-bold text-gray-800 mb-1">{t('identity_card.front_side')}</Text>
           {identityDocument.front ? (
             <View className="relative mb-4">
               <View className="h-48 w-full rounded-lg overflow-hidden">
@@ -133,14 +132,14 @@ const IdentityCard = ({ navigation }) => {
               onPress={handleFrontCapture}
             >
               <Ionicons name="camera" size={40} color="gray" />
-              <Text className="text-gray-500 mt-2">Prendre une photo du recto</Text>
+              <Text className="text-gray-500 mt-2">{t('identity_card.take_photo_front')}</Text>
             </TouchableOpacity>
           )}
 
           {/* Back Side (only for CNI) */}
           {identityDocument.type === IDENTITY_TYPES.CNI && (
             <>
-              <Text className="font-bold text-gray-800 mb-1">Verso</Text>
+              <Text className="font-bold text-gray-800 mb-1">{t('identity_card.back_side')}</Text>
               {identityDocument.back ? (
                 <View className="relative mb-4">
                   <View className="h-48 w-full rounded-lg overflow-hidden">
@@ -169,7 +168,7 @@ const IdentityCard = ({ navigation }) => {
                   onPress={handleBackCapture}
                 >
                   <Ionicons name="camera" size={40} color="gray" />
-                  <Text className="text-gray-500 mt-2">Prendre une photo du verso</Text>
+                  <Text className="text-gray-500 mt-2">{t('identity_card.take_photo_back')}</Text>
                 </TouchableOpacity>
               )}
             </>
@@ -181,7 +180,7 @@ const IdentityCard = ({ navigation }) => {
             onPress={() => navigation.navigate("KycResume")}
             disabled={!identityDocument.front || (identityDocument.type === IDENTITY_TYPES.CNI && !identityDocument.back)}
           >
-            <Text className="text-xl text-center font-bold">SUIVANT</Text>
+            <Text className="text-xl text-center font-bold">{t('identity_card.next_button')}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -190,7 +189,7 @@ const IdentityCard = ({ navigation }) => {
       <View className="py-4 flex-row justify-center items-center gap-2">
         <Ionicons name="shield-checkmark" size={18} color="orange" />
         <Text className="text-sm text-white">
-          Ne partagez pas vos informations personnelles
+          {t('identity_card.privacy_notice')}
         </Text>
       </View>
 
