@@ -28,11 +28,11 @@ const MonSolde = () => {
 
   const isLoading = isProfileLoading || isBalanceLoading;
   
- // console.log(userProfile)
+      //console.log(userProfile)
   // Handle API errors
   useEffect(() => {
     if (balanceError) {
-      //console.log('Balance error details:', balanceError); // Debug the full error
+      console.log('Balance error details:', balanceError); // Debug the full error
       if (balanceError.status === 401) {
         Alert.alert('Erreur', 'Authentification requise (passcode manquant)');
       } else if (balanceError.status === 403) {

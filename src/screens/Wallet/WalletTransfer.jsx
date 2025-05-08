@@ -89,7 +89,7 @@ const WalletTransfer = ({ navigation }) => {
       }).unwrap();
       navigation.navigate('Success', {
         message: 'Transfert effectué avec succès!',
-        nextScreen: 'Main'
+        nextScreen: 'MonSolde'
       });
     } catch (error) {
       let errorMessage = 'Une erreur est survenue. Veuillez réessayer.';

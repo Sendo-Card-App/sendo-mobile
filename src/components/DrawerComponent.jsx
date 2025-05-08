@@ -16,6 +16,9 @@ import {
   Ionicons,
   MaterialCommunityIcons,
 } from "@expo/vector-icons";
+import PinVerificationModal from './PinVerificationModal'; // Import your modal component
+import { useSelector, useDispatch } from 'react-redux';
+import { incrementAttempt, resetAttempts, lockPasscode } from '../features/Auth/passcodeSlice';
 import { useTranslation } from "react-i18next";
 import { useGetUserProfileQuery, useLogoutMutation } from "../services/Auth/authAPI";
 import Loader from "./Loader";
@@ -31,6 +34,11 @@ const DrawerComponent = ({ navigation }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(true);
   const [stored,setStored] = useState('');
   const [authData, setAuthData] = useState(null);
+  
+  const [showPinModal, setShowPinModal] = useState(false);
+  const dispatch = useDispatch();
+  const { passcode, attempts, lockedUntil } = useSelector(state => state.passcode);
+  const isLocked = lockedUntil && new Date(lockedUntil) > new Date()
 
   const {
     data: userProfile,
@@ -68,6 +76,46 @@ const DrawerComponent = ({ navigation }) => {
   
     backupAuthData();
   }, [authData]);
+
+  
+  const handleBalancePress = () => {
+    if (isLocked) {
+      Toast.show({
+        type: 'error',
+        text1: 'Account Locked',
+        text2: 'Too many failed attempts. Please try again later.',
+      });
+      return;
+    }
+    setShowPinModal(true);
+  };
+  const handlePinVerify = (enteredPin) => {
+    if (enteredPin === passcode) {
+      // Correct PIN
+      dispatch(resetAttempts());
+      setShowPinModal(false);
+      navigation2.navigate("MonSolde");
+    } else {
+      // Incorrect PIN
+      dispatch(incrementAttempt());
+      
+      if (attempts + 1 >= 3) {
+        dispatch(lockPasscode());
+        setShowPinModal(false);
+        Toast.show({
+          type: 'error',
+          text1: 'Account Locked',
+          text2: 'Too many failed attempts. Please try again later.',
+        });
+      } else {
+        Toast.show({
+          type: 'error',
+          text1: 'Incorrect PIN',
+          text2: `You have ${3 - (attempts + 1)} attempts remaining`,
+        });
+      }
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -248,14 +296,23 @@ const DrawerComponent = ({ navigation }) => {
           }
         >
           <TouchableOpacity
-            className="flex-row gap-2 my-2 items-center mb-5"
-            onPress={() => navigation2.navigate("MonSolde")}
-          >
-            <AntDesign name="wallet" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
-            <View>
-              <Text className="font-bold text-gray-500">{t('drawer.balance')}</Text>
-            </View>
-          </TouchableOpacity>
+        className="flex-row gap-2 my-2 items-center mb-5"
+        onPress={handleBalancePress}
+      >
+        <AntDesign name="wallet" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
+        <View>
+          <Text className="font-bold text-gray-500">{t('drawer.balance')}</Text>
+        </View>
+      </TouchableOpacity>
+
+      {/* Add the PinVerificationModal */}
+      <PinVerificationModal
+        visible={showPinModal}
+        onClose={() => setShowPinModal(false)}
+        onVerify={handlePinVerify}
+        title="Enter Your PIN"
+        subtitle="Please enter your 4-digit PIN to view your balance"
+      />
 
           <TouchableOpacity
             className="flex-row gap-2 my-2 mb-5"
