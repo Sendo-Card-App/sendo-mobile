@@ -28,16 +28,19 @@ const MonSolde = () => {
 
   const isLoading = isProfileLoading || isBalanceLoading;
   
-  console.log(userId)
+ // console.log(userProfile)
   // Handle API errors
   useEffect(() => {
     if (balanceError) {
-      if (balanceError.status === 404) {
+      //console.log('Balance error details:', balanceError); // Debug the full error
+      if (balanceError.status === 401) {
+        Alert.alert('Erreur', 'Authentification requise (passcode manquant)');
+      } else if (balanceError.status === 403) {
+        Alert.alert('Erreur', 'Passcode incorrect');
+      } else if (balanceError.status === 404) {
         Alert.alert('Erreur', 'Portefeuille non trouvé');
-      } else if (balanceError.status === 500) {
-        Alert.alert('Erreur', 'Erreur serveur. Veuillez réessayer plus tard.');
       } else {
-        Alert.alert('Erreur', 'Une erreur est survenue lors de la récupération du solde');
+        Alert.alert('Erreur', balanceError.data?.message || 'Erreur inconnue');
       }
     }
   }, [balanceError]);

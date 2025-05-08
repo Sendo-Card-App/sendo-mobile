@@ -5,6 +5,8 @@ import { Ionicons, AntDesign } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
 import Loader from "../../components/Loader";
 import { useRechargeWalletMutation } from '../../services/WalletApi/walletApi';
+import PinVerificationModal from '../../components/PinVerificationModal';
+import { useVerifyPasscodeMutation } from '../../services/Auth/authAPI'; // Import the new hook
 
 const BankDepositRecharge = ({ navigation, route }) => {
   const { methodType = "BANK_TRANSFER" } = route.params || {};
@@ -16,8 +18,10 @@ const BankDepositRecharge = ({ navigation, route }) => {
     methodType: methodType
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPinModal, setShowPinModal] = useState(false);
   const { t } = useTranslation();
   const [rechargeWallet] = useRechargeWalletMutation();
+  const [verifyPasscode] = useVerifyPasscodeMutation(); // Use the new hook
 
   const handleChange = (name, value) => {
     setFormData(prev => ({
@@ -29,7 +33,6 @@ const BankDepositRecharge = ({ navigation, route }) => {
   const handleSubmit = async () => {
     const { amount, transactionReference, bankName, accountNumber, methodType } = formData;
 
-    // Basic client-side validation
     if (!amount || !transactionReference || !bankName || !accountNumber) {
       Toast.show({
         type: 'error',
@@ -39,15 +42,33 @@ const BankDepositRecharge = ({ navigation, route }) => {
       return;
     }
 
-    setIsSubmitting(true);
-    
+    setShowPinModal(true);
+  };
+
+  const handlePinVerified = async (pin) => {
     try {
+      // Verify PIN using the API mutation
+      const verificationResponse = await verifyPasscode(pin).unwrap();
+      
+      if (!verificationResponse) {
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: 'Invalid PIN'
+        });
+        return;
+      }
+
+      setIsSubmitting(true);
+      setShowPinModal(false);
+      
       const rechargeData = {
         method: methodType,
-        amount: Number(amount),
-        transactionReference,
-        bankName,
-        accountNumber
+        amount: Number(formData.amount),
+        transactionReference: formData.transactionReference,
+        bankName: formData.bankName,
+        accountNumber: formData.accountNumber,
+        pin
       };
 
       const response = await rechargeWallet(rechargeData).unwrap();
@@ -61,8 +82,8 @@ const BankDepositRecharge = ({ navigation, route }) => {
         navigation.goBack();
       }
     } catch (error) {
-      console.error('Recharge error:', error);
-      let errorMessage = 'Error during recharge';
+      console.error('Transaction error:', error);
+      let errorMessage = 'Error during transaction';
       
       if (error.status === 400) {
         errorMessage = 'Insufficient balance';
@@ -70,6 +91,8 @@ const BankDepositRecharge = ({ navigation, route }) => {
         errorMessage = 'Missing KYC Documents';
       } else if (error.status === 404) {
         errorMessage = 'Wallet not found';
+      } else if (error.data?.message) {
+        errorMessage = error.data.message;
       }
       
       Toast.show({
@@ -160,6 +183,13 @@ const BankDepositRecharge = ({ navigation, route }) => {
           <Text style={styles.submitButtonText}>{t('bank_deposit.submit')}</Text>
         )}
       </TouchableOpacity>
+      <PinVerificationModal
+        visible={showPinModal}
+        onClose={() => setShowPinModal(false)}
+        onVerify={handlePinVerified}
+        title="Confirm Transaction"
+        subtitle="Enter your PIN to confirm the bank deposit"
+      />
     </ScrollView>
   );
 };

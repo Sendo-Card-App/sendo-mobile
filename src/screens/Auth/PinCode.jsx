@@ -16,9 +16,11 @@ const PinCode = ({ navigation, route }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [biometricAvailable, setBiometricAvailable] = useState(false);
   
-  const isSetup = route.params?.setup || false;
+
   const dispatch = useDispatch();
   const [createPasscode] = useCreatePasscodeMutation();
+  const accessToken = useSelector(state => state.auth.accessToken);
+  const isSetup = route.params?.setup ?? !accessToken;
   //const { passcode: currentPasscode, biometricEnabled } = useSelector(state => state.passcode);
   const currentPasscode = useSelector(state => state.passcode?.passcode);
   const biometricEnabled = useSelector(state => state.passcode?.biometricEnabled);
@@ -44,31 +46,17 @@ const PinCode = ({ navigation, route }) => {
   }, []);
 
   // Handle biometric authentication
-  const handleBiometricAuth = async () => {
-    if (!biometricAvailable) return;
-    
-    try {
-      setIsLoading(true);
-      const result = await LocalAuthentication.authenticateAsync({
-        promptMessage: 'Authentifiez-vous pour continuer',
-        disableDeviceFallback: true,
-      });
-      
-      if (result.success) {
-        navigation.navigate('Main');
-      } else {
-        Alert.alert(
-          'Échec de l\'authentification',
-          'Veuillez utiliser votre code PIN',
-          [{ text: 'OK' }]
-        );
-      }
-    } catch (error) {
-      console.error('Biometric error:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+ const handleBiometricAuth = async () => {
+  try {
+    const { success } = await LocalAuthentication.authenticateAsync({
+      promptMessage: 'Vérification biométrique requise',
+      fallbackLabel: 'Utiliser le code PIN'
+    });
+    if (success) navigation.navigate('Main');
+  } catch (err) {
+    setError('Échec de l\'authentification biométrique');
+  }
+};
 
   // Handle PIN input
   useEffect(() => {
@@ -87,64 +75,64 @@ const PinCode = ({ navigation, route }) => {
     }
   };
 
-  
-const handleComplete = async (enteredPin) => {
-  setIsLoading(true);
-  try {
-    const result = await createPasscode({ 
-      passcode: enteredPin,
-      isSetup // This tells the API whether to use body or header
-    }).unwrap();
+     // In your PinCode component
+    const handleComplete = async (enteredPin) => {
+      setIsLoading(true);
+      try {
+        const result = await createPasscode({ 
+          passcode: enteredPin,
+          isSetup // This tells the API whether to use body or header
+        }).unwrap();
 
-    if (result.status === 200) {
-      if (isSetup) {
-        // Only store locally if we're setting up
-        dispatch(setLocalPasscode(enteredPin));
-      }
-      navigation.navigate('Main');
-    } else if (result.status === 400) {
-      const errorMessage = isSetup 
-        ? 'Erreur de validation' 
-        : 'Code PIN incorrect';
-      setError(errorMessage);
-      
-      if (!isSetup) {
-        const newAttempts = attempts + 1;
-        setAttempts(newAttempts);
-        
-        if (newAttempts >= 3) {
-          setLocked(true);
-          Alert.alert(
-            'Compte bloqué',
-            'Trop de tentatives. Veuillez vous reconnecter.',
-            [{ text: 'OK', onPress: () => navigation.navigate('Auth') }]
-          );
+        if (result.status === 200) {
+          if (isSetup) {
+            // Only store locally if we're setting up
+            dispatch(setLocalPasscode(enteredPin));
+          }
+          navigation.navigate('Main');
+        } else if (result.status === 400) {
+          const errorMessage = isSetup 
+            ? 'Erreur de validation' 
+            : 'Code PIN incorrect';
+          setError(errorMessage);
+          
+          if (!isSetup) {
+            const newAttempts = attempts + 1;
+            setAttempts(newAttempts);
+            
+            if (newAttempts >= 3) {
+              setLocked(true);
+              Alert.alert(
+                'Compte bloqué',
+                'Trop de tentatives. Veuillez vous reconnecter.',
+                [{ text: 'OK', onPress: () => navigation.navigate('SignIn') }]
+              );
+            }
+          }
+        } else if (result.status === 500) {
+          setError('Erreur serveur');
         }
+      } catch (error) {
+        console.log("Error:", error);
+        setError('Une erreur est survenue');
+        if (!isSetup) {
+          const newAttempts = attempts + 1;
+          setAttempts(newAttempts);
+          
+          if (newAttempts >= 3) {
+            setLocked(true);
+            Alert.alert(
+              'Compte bloqué',
+              'Trop de tentatives. Veuillez vous reconnecter.',
+              [{ text: 'OK', onPress: () => navigation.navigate('Auth') }]
+            );
+          }
+        }
+      } finally {
+        setIsLoading(false);
       }
-    } else if (result.status === 500) {
-      setError('Erreur serveur');
-    }
-  } catch (error) {
-    console.log("Error:", error);
-    setError('Une erreur est survenue');
-    if (!isSetup) {
-      const newAttempts = attempts + 1;
-      setAttempts(newAttempts);
-      
-      if (newAttempts >= 3) {
-        setLocked(true);
-        Alert.alert(
-          'Compte bloqué',
-          'Trop de tentatives. Veuillez vous reconnecter.',
-          [{ text: 'OK', onPress: () => navigation.navigate('Auth') }]
-        );
-      }
-    }
-  } finally {
-    setIsLoading(false);
-  }
-};
-
+    };
+    
   // Toggle biometric authentication
   const toggleBiometricAuth = async () => {
     try {
@@ -292,7 +280,7 @@ const handleComplete = async (enteredPin) => {
                     key={index}
                     onPress={() => handlePress(item === 'del' ? 'del' : item)}
                     style={{
-                      width: 60,
+                      width: 80,
                       height: 60,
                       borderRadius: 30,
                       justifyContent: 'center',
@@ -312,11 +300,10 @@ const handleComplete = async (enteredPin) => {
             ))}
 
             <TouchableOpacity onPress={handleForgotPin} disabled={locked || isLoading}>
-              <Text style={{ color: locked ? '#ccc' : '#999', marginTop: 20 }}>
+              <Text style={{ color: locked ? '#ccc' : '#999', marginTop: 30 }}>
                 J'ai oublié mon code PIN ?
               </Text>
             </TouchableOpacity>
-            <Text style={{ color: '#999', marginTop: 10 }}>Sendo v1.o.0</Text>
           </View>
         </View>
       </SafeAreaView>

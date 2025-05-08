@@ -193,7 +193,7 @@
 "wallet_transfer": {
     "title": "Transfert de Portefeuille",
     "available_balance": "Solde disponible",
-    "recipient_id": "Matricule du destinataire",
+    "recipient_id": "Numéro de compte",
     "recipient_placeholder": "Entrez le matricule du portefeuille",
     "amount": "Montant (FCFA)",
     "amount_placeholder": "0.0",
