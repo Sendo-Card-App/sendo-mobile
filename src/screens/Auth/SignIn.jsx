@@ -41,7 +41,7 @@ const SignIn = () => {
          const authData = await getData('@authData');
          if (authData?.accessToken) {
            dispatch(loginSuccess(authData));
-           navigation.replace("PinCode");
+           navigation.replace("SignIn");
          } else {
            navigation.replace("AUTH");
          }

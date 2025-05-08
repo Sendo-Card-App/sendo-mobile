@@ -10,7 +10,6 @@ const AUTH_ENDPOINTS = {
   FORGOT_PASSWORD: '/auth/forgot-password',
   RESET_PASSWORD: '/auth/reset-password',
   CREATE_PASSCODE: '/users/send-passcode',
-  VERIFY_PASSCODE: '/users/send-passcode',
   MY_PROFILE: '/users/me',
   USER_PROFILE: '/users',
   LOGOUT: '/auth/logout',
@@ -145,31 +144,15 @@ export const authApi = createApi({
     }),
 
     // PIN Code Endpoints
-   
-       createPasscode: builder.mutation({
-      query: ({ passcode, isSetup }) => {
-        const headers = new Headers();
-        headers.set('Content-Type', 'application/json');
-
-        if (isSetup) {
-          // No session - Create new passcode (body only)
-          return {
-            url: AUTH_ENDPOINTS.CREATE_PASSCODE,
-            method: 'POST',
-            body: { passcode }
-          };
-        } else {
-          // With session - Verify passcode (header only)
-          headers.set('X-Passcode', passcode);
-          return {
-            url: AUTH_ENDPOINTS.CREATE_PASSCODE, // Same endpoint
-            method: 'POST',
-            headers
-          };
-        }
-      },
-      invalidatesTags: ['Auth'],
+    createPasscode: builder.mutation({
+      query: ({ passcode }) => ({
+        url: AUTH_ENDPOINTS.CREATE_PASSCODE,
+        method: 'POST',
+        body: { passcode },
+      }),
+      invalidatesTags: [TAG_TYPES.AUTH],
     }),
+    
     updatePassword: builder.mutation({
       query: ({ userId, oldPassword, newPassword }) => ({
         url: `/users/update-password/${userId}`,

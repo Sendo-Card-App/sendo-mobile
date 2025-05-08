@@ -2,43 +2,48 @@ import React, { useState, useEffect } from 'react';
 import { StatusBar, Platform, View, Text, TouchableOpacity, Image, SafeAreaView, Alert } from 'react-native';
 import { useCreatePasscodeMutation } from '../../services/Auth/authAPI';
 import { useSelector, useDispatch } from 'react-redux';
-import { setPasscode as setLocalPasscode, toggleBiometric } from '../../features/Auth/passcodeSlice';
+import { setPasscode, incrementAttempt, resetAttempts, lockPasscode, toggleBiometric, clearPasscode } from '../../features/Auth/passcodeSlice';
 import { getData } from '../../services/storage';
 import Loader from "../../components/Loader";
 import * as LocalAuthentication from 'expo-local-authentication';
 
 const PinCode = ({ navigation, route }) => {
   const [pin, setPin] = useState('');
-  const [attempts, setAttempts] = useState(0);
-  const [locked, setLocked] = useState(false);
   const [error, setError] = useState(null);
-  const user = useSelector(state => state.auth)
-  console.log('user state', user)
   const [userName, setUserName] = useState('UTILISATEUR');
   const [isLoading, setIsLoading] = useState(false);
   const [biometricAvailable, setBiometricAvailable] = useState(false);
   
-
   const dispatch = useDispatch();
   const [createPasscode] = useCreatePasscodeMutation();
+  
+  // Get state from Redux
+  const {
+    passcode: currentPasscode,
+    attempts,
+    lockedUntil,
+    biometricEnabled
+  } = useSelector(state => state.passcode);
+  
   const accessToken = useSelector(state => state.auth.accessToken);
-  const isSetup = route.params?.setup ?? !accessToken;
-  //const { passcode: currentPasscode, biometricEnabled } = useSelector(state => state.passcode);
-  const currentPasscode = useSelector(state => state.passcode?.passcode);
-  const biometricEnabled = useSelector(state => state.passcode?.biometricEnabled);
-
+  const isSetup = route.params?.setup ?? !currentPasscode; // Changed to check if passcode exists
+  const isLocked = lockedUntil && new Date(lockedUntil) > new Date();
+  
   // Load user data and check biometric availability
   useEffect(() => {
     const initialize = async () => {
       try {
         const userData = await getData('userData');
-        if (userData?.name) {
-          setUserName(userData.name);
-        }
+        if (userData?.name) setUserName(userData.name);
 
         const hasHardware = await LocalAuthentication.hasHardwareAsync();
         const isEnrolled = await LocalAuthentication.isEnrolledAsync();
         setBiometricAvailable(hasHardware && isEnrolled);
+        
+        // Reset attempts if lock time has passed
+        if (lockedUntil && new Date(lockedUntil) <= new Date()) {
+          dispatch(resetAttempts());
+        }
       } catch (error) {
         console.error('Initialization error:', error);
       }
@@ -48,17 +53,17 @@ const PinCode = ({ navigation, route }) => {
   }, []);
 
   // Handle biometric authentication
- const handleBiometricAuth = async () => {
-  try {
-    const { success } = await LocalAuthentication.authenticateAsync({
-      promptMessage: 'Vérification biométrique requise',
-      fallbackLabel: 'Utiliser le code PIN'
-    });
-    if (success) navigation.navigate('Main');
-  } catch (err) {
-    setError('Échec de l\'authentification biométrique');
-  }
-};
+  const handleBiometricAuth = async () => {
+    try {
+      const { success } = await LocalAuthentication.authenticateAsync({
+        promptMessage: 'Vérification biométrique requise',
+        fallbackLabel: 'Utiliser le code PIN'
+      });
+      if (success) navigation.navigate('Main');
+    } catch (err) {
+      setError('Échec de l\'authentification biométrique');
+    }
+  };
 
   // Handle PIN input
   useEffect(() => {
@@ -68,7 +73,8 @@ const PinCode = ({ navigation, route }) => {
   }, [pin]);
 
   const handlePress = (value) => {
-    if (locked) return;
+    if (isLocked) return;
+    setError(null);
     
     if (value === 'del') {
       setPin(pin.slice(0, -1));
@@ -77,63 +83,54 @@ const PinCode = ({ navigation, route }) => {
     }
   };
 
-     // In your PinCode component
-    const handleComplete = async (enteredPin) => {
-      setIsLoading(true);
-      try {
-        const result = await createPasscode({ 
-          passcode: enteredPin,
-          isSetup // This tells the API whether to use body or header
-        }).unwrap();
-
-        if (result.status === 200) {
-          if (isSetup) {
-            // Only store locally if we're setting up
-            dispatch(setLocalPasscode(enteredPin));
-          }
+  const handleComplete = async (enteredPin) => {
+    setIsLoading(true);
+    try {
+      // Si un code PIN existe déjà 
+      if (currentPasscode) {
+        if (enteredPin === currentPasscode) {
+          dispatch(resetAttempts());
           navigation.navigate('Main');
-        } else if (result.status === 400) {
-          const errorMessage = isSetup 
-            ? 'Erreur de validation' 
-            : 'Code PIN incorrect';
-          setError(errorMessage);
-          
-          if (!isSetup) {
-            const newAttempts = attempts + 1;
-            setAttempts(newAttempts);
-            
-            if (newAttempts >= 3) {
-              setLocked(true);
-              Alert.alert(
-                'Compte bloqué',
-                'Trop de tentatives. Veuillez vous reconnecter.',
-                [{ text: 'OK', onPress: () => navigation.navigate('SignIn') }]
-              );
-            }
-          }
-        } else if (result.status === 500) {
-          setError('Erreur serveur');
-        }
-      } catch (error) {
-        console.log("Error:", error);
-        setError('Une erreur est survenue');
-        if (!isSetup) {
-          const newAttempts = attempts + 1;
-          setAttempts(newAttempts);
-          
-          if (newAttempts >= 3) {
-            setLocked(true);
+        } else {
+          dispatch(incrementAttempt());
+          setError('Code PIN incorrect');
+  
+          if (attempts + 1 >= 3) {
+            dispatch(lockPasscode());
+            dispatch(clearPasscode()); // Supprime le PIN
             Alert.alert(
               'Compte bloqué',
               'Trop de tentatives. Veuillez vous reconnecter.',
-              [{ text: 'OK', onPress: () => navigation.navigate('Auth') }]
+              [
+                { 
+                  text: 'OK', 
+                  onPress: () => navigation.navigate('SignIn') 
+                }
+              ]
             );
           }
         }
-      } finally {
-        setIsLoading(false);
+      } else {
+        // Sinon => Création du PIN
+        const result = await createPasscode({ 
+          passcode: enteredPin
+        }).unwrap();
+  
+        if (result.status === 200) {
+          dispatch(setPasscode(enteredPin));
+          navigation.navigate('Main');
+        } else {
+          setError('Erreur de validation');
+        }
       }
-    };
+    } catch (error) {
+      console.log("Error:", error);
+      setError('Une erreur est survenue');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
     
   // Toggle biometric authentication
   const toggleBiometricAuth = async () => {
@@ -203,9 +200,7 @@ const PinCode = ({ navigation, route }) => {
   ];
 
   return (
-    <>
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#fff', paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 }}>
-          {/* Add the Loader component at the top level */}
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff', paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 }}>
       {isLoading && (
         <View style={{
           position: 'absolute',
@@ -221,96 +216,94 @@ const PinCode = ({ navigation, route }) => {
           <Loader />
         </View>
       )}
-        <View style={{ padding: 20, flex: 1, justifyContent: 'space-between' }}>
-          <View style={{ alignItems: 'center' }}>           
-            <Image
-              source={require('../../images/LogoSendo.png')}
+      
+      <View style={{ padding: 20, flex: 1, justifyContent: 'space-between' }}>
+        <View style={{ alignItems: 'center' }}>           
+          <Image
+            source={require('../../images/LogoSendo.png')}
+            style={{
+              width: 100,
+              height: 100,
+              alignSelf: 'center',
+              marginVertical: 30,
+              borderRadius: 50,
+            }}
+          />
+
+          <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#0D1C6A' }}>
+            Salut, {userName.toUpperCase()}
+          </Text>
+          <Text style={{ fontSize: 16, color: '#0D1C6A', marginTop: 10 }}>
+            {isSetup ? 'Définissez votre code PIN' : 'Entrez votre code PIN pour déverrouiller l\'application'}
+          </Text>
+
+          {renderDots()}
+          
+          {error && (
+            <Text style={{ color: 'red', marginTop: 10 }}>{error}</Text>
+          )}
+          
+          {isLocked && (
+            <Text style={{ color: 'red', marginTop: 10 }}>
+              Trop de tentatives. Compte bloqué.
+            </Text>
+          )}
+        </View>
+
+        <View style={{ alignItems: 'center' }}>
+          {!isSetup && biometricAvailable && (
+            <TouchableOpacity 
+              onPress={handleBiometricAuth}
+              disabled={isLocked || isLoading}
               style={{
-                width: 100,
-                height: 100,
-                alignSelf: 'center',
-                marginVertical: 30,
-                borderRadius: 50,
+                marginBottom: 20,
+                padding: 10,
+                borderRadius: 20,
+                backgroundColor: '#F1F1F1',
+                flexDirection: 'row',
+                alignItems: 'center',
               }}
-            />
-
-            <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#0D1C6A' }}>
-              Salut, {userName.toUpperCase()}
-            </Text>
-            <Text style={{ fontSize: 16, color: '#0D1C6A', marginTop: 10 }}>
-              {isSetup ? 'Définissez votre code PIN' : 'Entrez votre code PIN pour déverrouiller l\'application'}
-            </Text>
-
-            {renderDots()}
-            
-            {error && (
-              <Text style={{ color: 'red', marginTop: 10 }}>{error}</Text>
-            )}
-            
-            {locked && (
-              <Text style={{ color: 'red', marginTop: 10 }}>
-                Trop de tentatives. Compte bloqué.
-              </Text>
-            )}
-          </View>
-
-          <View style={{ alignItems: 'center' }}>
-            {/* Biometric authentication button */}
-            {!isSetup && biometricAvailable && (
-              <TouchableOpacity 
-                onPress={handleBiometricAuth}
-                disabled={locked || isLoading}
-                style={{
-                  marginBottom: 20,
-                  padding: 10,
-                  borderRadius: 20,
-                  backgroundColor: '#F1F1F1',
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                }}
-              >
-                <Text style={{ color: '#0D1C6A', marginLeft: 5 }}>
-                  {Platform.OS === 'ios' ? 'Utiliser Face ID' : 'Utiliser empreinte digitale'}
-                </Text>
-              </TouchableOpacity>
-            )}
-
-            {keypad.map((row, rowIndex) => (
-              <View key={rowIndex} style={{ flexDirection: 'row', marginVertical: 10 }}>
-                {row.map((item, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    onPress={() => handlePress(item === 'del' ? 'del' : item)}
-                    style={{
-                      width: 80,
-                      height: 60,
-                      borderRadius: 30,
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      marginHorizontal: 10,
-                      backgroundColor: '#F1F1F1',
-                      opacity: locked ? 0.5 : 1,
-                    }}
-                    disabled={locked || isLoading}
-                  >
-                    <Text style={{ fontSize: 20, color: '#0D1C6A' }}>
-                      {item === 'del' ? '⌫' : item}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            ))}
-
-            <TouchableOpacity onPress={handleForgotPin} disabled={locked || isLoading}>
-              <Text style={{ color: locked ? '#ccc' : '#999', marginTop: 30 }}>
-                J'ai oublié mon code PIN ?
+            >
+              <Text style={{ color: '#0D1C6A', marginLeft: 5 }}>
+                {Platform.OS === 'ios' ? 'Utiliser Face ID' : 'Utiliser empreinte digitale'}
               </Text>
             </TouchableOpacity>
-          </View>
+          )}
+
+          {keypad.map((row, rowIndex) => (
+            <View key={rowIndex} style={{ flexDirection: 'row', marginVertical: 10 }}>
+              {row.map((item, index) => (
+                <TouchableOpacity
+                  key={index}
+                  onPress={() => handlePress(item === 'del' ? 'del' : item)}
+                  style={{
+                    width: 80,
+                    height: 60,
+                    borderRadius: 30,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    marginHorizontal: 10,
+                    backgroundColor: '#F1F1F1',
+                    opacity: isLocked ? 0.5 : 1,
+                  }}
+                  disabled={isLocked || isLoading}
+                >
+                  <Text style={{ fontSize: 20, color: '#0D1C6A' }}>
+                    {item === 'del' ? '⌫' : item}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          ))}
+
+          <TouchableOpacity onPress={handleForgotPin} disabled={isLocked || isLoading}>
+            <Text style={{ color: isLocked ? '#ccc' : '#999', marginTop: 30 }}>
+              J'ai oublié mon code PIN ?
+            </Text>
+          </TouchableOpacity>
         </View>
-      </SafeAreaView>
- 
-    </>
+      </View>
+    </SafeAreaView>
   );
 };
 

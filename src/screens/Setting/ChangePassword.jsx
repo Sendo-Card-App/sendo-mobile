@@ -11,6 +11,8 @@ import { sendPushNotification,
 import Toast from 'react-native-toast-message';
 import Loader from '../../components/Loader';
 import { Ionicons } from '@expo/vector-icons';
+import PinVerificationModal from '../../components/PinVerificationModal';
+import { useVerifyPasscodeMutation } from '../../services/Auth/authAPI';
 
 const ChangePassword = () => {
   const { t } = useTranslation();
@@ -21,9 +23,11 @@ const ChangePassword = () => {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showPinModal, setShowPinModal] = useState(false);
 
   const { data: profile, error: profileError } = useGetMyProfileQuery();
   const [updatePassword] = useUpdatePasswordMutation();
+  const [verifyPasscode] = useVerifyPasscodeMutation();
 
   const getPasswordStrength = (password) => {
     let strength = 0;
@@ -39,7 +43,88 @@ const ChangePassword = () => {
 
   const passwordStrength = getPasswordStrength(newPassword);
 
-  const handleSubmit = async () => {
+  const handlePasswordUpdate = async () => {
+    setIsLoading(true);
+    try {
+      const userId = profile?.data?.id;
+      const result = await updatePassword({
+        userId,
+        oldPassword,
+        newPassword,
+      }).unwrap();
+
+      if (result.status === 200 || result.code === 200) {
+        try {
+          const pushToken = await registerForPushNotificationsAsync();
+          if (pushToken) {
+            await sendPushTokenToBackend(
+              pushToken,
+              "Password Updated",
+              "Your password has been changed successfully",
+              "SUCCESS_MODIFY_PASSWORD"  
+            );
+          }
+          await sendPushNotification(
+            "Security Update",
+            "Your password has been changed successfully"
+          );
+        } catch (notificationError) {
+          console.warn("Notification failed silently:", notificationError);
+        }
+
+        Toast.show({
+          type: 'success',
+          text1: t('Password updated'),
+          text2: t('Your password has been successfully updated.'),
+        });
+        setOldPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+      } else {
+        Toast.show({
+          type: 'error',
+          text1: t('Update failed'),
+          text2: result?.message || t('Failed to update password.'),
+        });
+      }
+    } catch (err) {
+      console.error('UpdatePassword error:', err);
+      Toast.show({
+        type: 'error',
+        text1: t('Something went wrong'),
+        text2: t('There was an issue updating your password.'),
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handlePinVerified = async (pin) => {
+    try {
+      const verificationResponse = await verifyPasscode(pin).unwrap();
+      
+      if (!verificationResponse) {
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: 'Invalid PIN'
+        });
+        return;
+      }
+      
+      await handlePasswordUpdate();
+    } catch (error) {
+      Toast.show({
+        type: 'error',
+        text1: 'PIN Error',
+        text2: error.data?.message || 'Failed to verify PIN'
+      });
+    } finally {
+      setShowPinModal(false);
+    }
+  };
+
+  const handleSubmit = () => {
     if (!oldPassword || !newPassword || !confirmPassword) {
       Toast.show({
         type: 'error',
@@ -79,99 +164,7 @@ const ChangePassword = () => {
       return;
     }
 
-    if (profileError) {
-      Toast.show({
-        type: 'error',
-        text1: t('Error fetching profile'),
-        text2: t('Unable to fetch user profile.'),
-      });
-      return;
-    }
-
-    const userId = profile?.data?.id;
-    if (!userId) {
-      Toast.show({
-        type: 'error',
-        text1: t('Not authenticated'),
-        text2: t('User information not found. Please log in again.'),
-      });
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const result = await updatePassword({
-        userId,
-        oldPassword,
-        newPassword,
-      }).unwrap();
-
-      if (result.status === 200 || result.code === 200) {
-        // Send success notification
-        try {
-          const pushToken = await registerForPushNotificationsAsync();
-          if (pushToken) {
-            await sendPushTokenToBackend(
-              pushToken,
-              "Password Updated",
-              "Your password has been changed successfully",
-              "SUCCESS_MODIFY_PASSWORD"  
-            );
-          }
-          
-          // Local notification
-          await sendPushNotification(
-            "Security Update",
-            "Your password has been changed successfully"
-          );
-        } catch (notificationError) {
-          console.warn("Notification failed silently:", notificationError);
-        }
-
-        Toast.show({
-          type: 'success',
-          text1: t('Password updated'),
-          text2: t('Your password has been successfully updated.'),
-        });
-        setOldPassword('');
-        setNewPassword('');
-        setConfirmPassword('');
-      } else if (result.status === 500 || result.code === 500) {
-        Toast.show({
-          type: 'error',
-          text1: t('Server Error'),
-          text2: 'Erreur serveur',
-        });
-      } else if (result.status === 404 || result.code === 404) {
-        Toast.show({
-          type: 'error',
-          text1: t('User not found'),
-          text2: 'Utilisateur non trouvé',
-        });
-      } 
-      else if (result.status === 401 || result.code === 401) {
-        Toast.show({
-          type: 'error',
-          text1: 'passcode error',
-          text2: 'Erreur sur le passcode',
-        });
-      }else {
-        Toast.show({
-          type: 'error',
-          text1: t('Update failed'),
-          text2: result?.message || t('Failed to update password.'),
-        });
-      }
-    } catch (err) {
-      console.error('UpdatePassword error:', err);
-      Toast.show({
-        type: 'error',
-        text1: t('Something went wrong'),
-        text2: t('There was an issue updating your password.'),
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    setShowPinModal(true);
   };
 
   return (
@@ -326,6 +319,13 @@ const ChangePassword = () => {
           </Text>
         )}
       </TouchableOpacity>
+      <PinVerificationModal
+        visible={showPinModal}
+        onClose={() => setShowPinModal(false)}
+        onVerify={handlePinVerified}
+        title="Confirm Password Change"
+        subtitle="Enter your PIN to confirm the password change"
+      />
 
       <Toast />
     </View>

@@ -1,13 +1,13 @@
-// components/PinVerificationModal.js
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Modal, StyleSheet } from 'react-native';
+import React, { useEffect, useState, useCallback } from "react";
+import { View, Text, TouchableOpacity, Modal, StyleSheet, Toast } from 'react-native';
 
 const PinVerificationModal = ({ 
   visible, 
   onClose, 
   onVerify, 
   title = "Enter Your PIN",
-  subtitle = "Please enter your 4-digit PIN to confirm the transaction"
+  subtitle = "Please enter your 4-digit PIN to confirm the transaction",
+  isLocked = false
 }) => {
   const [pin, setPin] = useState('');
 
@@ -41,6 +41,32 @@ const PinVerificationModal = ({
       </View>
     );
   };
+
+  if (isLocked) {
+    return (
+      <Modal
+        visible={visible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={onClose}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Account Locked</Text>
+            <Text style={styles.modalSubtitle}>
+              Too many failed attempts. Please try again later.
+            </Text>
+            <TouchableOpacity
+              style={[styles.modalButton, styles.cancelButton]}
+              onPress={onClose}
+            >
+              <Text style={styles.cancelButtonText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    );
+  }
 
   return (
     <Modal

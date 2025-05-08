@@ -16,6 +16,7 @@ const passcodeSlice = createSlice({
       state.passcode = action.payload;
       state.attempts = 0;
       state.lastUsedAt = new Date().toISOString();
+      state.lockedUntil = null;
     },
     incrementAttempt: (state) => {
       state.attempts += 1;
@@ -33,6 +34,12 @@ const passcodeSlice = createSlice({
     lockPasscode: (state) => {
       state.lockedUntil = new Date(Date.now() + 15 * 60 * 1000).toISOString();
     },
+    clearPasscode: (state) => {
+      state.passcode = null;
+      state.attempts = 0;
+      state.lockedUntil = null;
+      state.biometricEnabled = false;
+    },
   },
 });
 
@@ -42,6 +49,7 @@ export const {
   resetAttempts, 
   toggleBiometric,
   lockPasscode,
+  clearPasscode,
 } = passcodeSlice.actions;
 
 export default passcodeSlice.reducer;
