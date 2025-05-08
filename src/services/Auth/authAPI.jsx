@@ -32,29 +32,14 @@ const PASSCODE_REQUIRED_ENDPOINTS = [
 
 export const authApi = createApi({
   reducerPath: 'authApi',
-  baseQuery: fetchBaseQuery({ 
+  baseQuery: fetchBaseQuery({
     baseUrl: process.env.EXPO_PUBLIC_API_URL,
-    prepareHeaders: (headers, { getState, endpoint }) => {
-      const { accessToken, passcode } = getState().auth;
-      
-      // Set default headers
-      headers.set('accept', 'application/json');
+    prepareHeaders: (headers, { getState }) => {
+      const { accessToken } = getState().auth;
       headers.set('Content-Type', 'application/json');
-      
-      // Add authorization if token exists
       if (accessToken) {
         headers.set('Authorization', `Bearer ${accessToken}`);
       }
-      
-      // Add passcode for sensitive endpoints
-      const requiresPasscode = PASSCODE_REQUIRED_ENDPOINTS.some(requiredEndpoint => 
-        endpoint.includes(requiredEndpoint)
-      );
-      
-      if (requiresPasscode && passcode) {
-        headers.set('X-Passcode', passcode);
-      }
-      
       return headers;
     },
   }),
@@ -161,30 +146,30 @@ export const authApi = createApi({
 
     // PIN Code Endpoints
    
-        createPasscode: builder.mutation({
-          query: ({ passcode, isSetup }) => {
-            // During setup (no session), send passcode in body
-            if (isSetup) {
-              return {
-                url: AUTH_ENDPOINTS.CREATE_PASSCODE,
-                method: 'POST',
-                body: { passcode },
-              };
-            }
-            // During verification (with session), send passcode in header
-            const headers = new Headers();
-            headers.set('X-Passcode', passcode);
-            return {
-              url: AUTH_ENDPOINTS.VERIFY_PASSCODE,
-              method: 'POST',
-              headers,
-            };
-          },
-          invalidatesTags: ['Auth'],
-        }),
+       createPasscode: builder.mutation({
+      query: ({ passcode, isSetup }) => {
+        const headers = new Headers();
+        headers.set('Content-Type', 'application/json');
 
-// You can remove verifyPasscode mutation since createPasscode now handles both
-
+        if (isSetup) {
+          // No session - Create new passcode (body only)
+          return {
+            url: AUTH_ENDPOINTS.CREATE_PASSCODE,
+            method: 'POST',
+            body: { passcode }
+          };
+        } else {
+          // With session - Verify passcode (header only)
+          headers.set('X-Passcode', passcode);
+          return {
+            url: AUTH_ENDPOINTS.CREATE_PASSCODE, // Same endpoint
+            method: 'POST',
+            headers
+          };
+        }
+      },
+      invalidatesTags: ['Auth'],
+    }),
     updatePassword: builder.mutation({
       query: ({ userId, oldPassword, newPassword }) => ({
         url: `/users/update-password/${userId}`,
@@ -218,7 +203,14 @@ export const authApi = createApi({
       },
       invalidatesTags: [TAG_TYPES.PROFILE],
     }),
-    
+     
+    verifyPasscode: builder.mutation({
+      query: (passcode) => ({
+        url: '/auth/login-passcode',
+        method: 'POST',
+        body: { passcode: parseInt(passcode) },
+      }),
+    }),
     
 
     // Logout
@@ -241,6 +233,7 @@ export const {
   useRegisterMutation,
   useVerifyOtpMutation,
   useSendOtpMutation,
+  useVerifyPasscodeMutation,
   useCreatePasscodeMutation,
   useResendOtpMutation,
   useAddSecondPhoneMutation,

@@ -26,28 +26,39 @@ export async function registerForPushNotificationsAsync() {
   return token;
 }
 
-export async function sendPushTokenToBackend(userId: string, token: string) {
+export async function sendPushNotification(title: string, body: string) {
+  await Notifications.scheduleNotificationAsync({
+    content: {
+      title,
+      body,
+      data: { type: 'general' },
+    },
+    trigger: { seconds: 1 },
+  });
+}
+
+export async function sendPushTokenToBackend(token: string, title: string, body: string, type: string) {
   try {
-    const response = await fetch(`${API_URL}/users/push-tokens`, {
+    const response = await fetch(`${API_URL}/notification/send`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        userId,
         token,
-        platform: Platform.OS,
-        deviceId: Device.osBuildId
+        title,
+        body,
+        type
       }),
     });
 
     if (!response.ok) {
-      throw new Error('Échec de l\'enregistrement du token');
+      throw new Error('Failed to send notification to backend');
     }
 
     return await response.json();
   } catch (error) {
-    console.error('Erreur lors de l\'envoi du token:', error);
+    console.error('Error sending notification to backend:', error);
     throw error;
   }
 }

@@ -5,6 +5,9 @@ import {
   useUpdatePasswordMutation,
   useGetMyProfileQuery,
 } from '../../services/Auth/authAPI';
+import { sendPushNotification,
+   sendPushTokenToBackend, 
+   registerForPushNotificationsAsync  } from '../../services/notificationService';
 import Toast from 'react-native-toast-message';
 import Loader from '../../components/Loader';
 import { Ionicons } from '@expo/vector-icons';
@@ -104,6 +107,27 @@ const ChangePassword = () => {
       }).unwrap();
 
       if (result.status === 200 || result.code === 200) {
+        // Send success notification
+        try {
+          const pushToken = await registerForPushNotificationsAsync();
+          if (pushToken) {
+            await sendPushTokenToBackend(
+              pushToken,
+              "Password Updated",
+              "Your password has been changed successfully",
+              "SUCCESS_MODIFY_PASSWORD"  
+            );
+          }
+          
+          // Local notification
+          await sendPushNotification(
+            "Security Update",
+            "Your password has been changed successfully"
+          );
+        } catch (notificationError) {
+          console.warn("Notification failed silently:", notificationError);
+        }
+
         Toast.show({
           type: 'success',
           text1: t('Password updated'),
@@ -124,7 +148,14 @@ const ChangePassword = () => {
           text1: t('User not found'),
           text2: 'Utilisateur non trouvé',
         });
-      } else {
+      } 
+      else if (result.status === 401 || result.code === 401) {
+        Toast.show({
+          type: 'error',
+          text1: 'passcode error',
+          text2: 'Erreur sur le passcode',
+        });
+      }else {
         Toast.show({
           type: 'error',
           text1: t('Update failed'),

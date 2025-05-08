@@ -29,7 +29,7 @@ const ManageVirtualCard = ({ navigation }) => {
         <View className="flex-1">
           <View className="flex-row justify-between border-b border-gray-400 py-2">
             <Text className="font-bold text-gray-600">André Djoumdjeu</Text>
-            <Text className="text-gray-800 font-extrabold">0,00 FCFA</Text>
+            <Text className="text-gray-800 font-extrabold">20,000 FCFA</Text>
           </View>
           <View className="flex-row justify-between px-2">
             <Text className="text-sm font-light">Eﬀectué</Text>
