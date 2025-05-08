@@ -1,9 +1,16 @@
-import { View, Text, FlatList, Image } from "react-native";
+import { View, Text, FlatList, Image, TouchableOpacity } from "react-native";
 import React from "react";
 import OrangeMoney from "../../images/om.png";
+import { useNavigation } from "@react-navigation/native";
+
 const HistoryCard = () => {
+  const navigation = useNavigation();
+
   return (
-    <View className="border p-4 mx-5 my-2 rounded-3xl border-gray-500">
+    <TouchableOpacity
+      onPress={() => navigation.navigate("Receipt")}
+      className="border p-4 mx-5 my-2 rounded-3xl border-gray-500"
+    >
       <View className="border-b border-gray-500 pb-2 flex-row gap-2">
         {/* image here */}
         <Image source={OrangeMoney} className="w-10 h-10" />
@@ -16,19 +23,20 @@ const HistoryCard = () => {
         <Text className="text-gray-600 text-lg font-bold">43 909,64 FCFA</Text>
         <Text className="text-gray-600 text-sm">21/12/2024 à 10:18</Text>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 };
+
 const History = () => {
   return (
     <FlatList
       ListHeaderComponent={() => (
-        <Text className="text-center pt-4 pb-5 font-bold text-xl text-gray-500">
+        <Text className="text-center pt-4 pb-5 font-bold text-xl text-gray-500 ">
           Mes transactions
         </Text>
       )}
       ListFooterComponent={() => <View className="py-2" />}
-      data={[1, 2, 3, 4, 5, 6]}
+      data={[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]}
       renderItem={() => <HistoryCard />}
     />
   );

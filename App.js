@@ -1,24 +1,36 @@
 import "./global.css";
-import { Colors } from './src/constants/colors';
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { NavigationContainer, useNavigation } from "@react-navigation/native";
+import React, { useEffect } from "react";
+import { Colors } from './src/constants/colors'; // Adjust the path as needed
+
+import { StyleSheet, View, Text, TouchableOpacity } from "react-native";
+import { Provider } from "react-redux";
+import { store } from "./src/store/store";
+import Toast from "react-native-toast-message";
+import './i18n';
+import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createDrawerNavigator } from "@react-navigation/drawer";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { Ionicons, AntDesign, MaterialIcons, FontAwesome } from "@expo/vector-icons";
-import './i18n';
-import Toast from 'react-native-toast-message';
-import { Provider } from "react-redux";
-import { store } from "./src/store/store";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Ionicons, AntDesign } from "@expo/vector-icons";
+
+import * as Notifications from "expo-notifications";
+import { registerForPushNotificationsAsync } from "./src/services/notificationService";
 
 // Screens & Components
 import Home from "./src/screens/Home/Home";
 import WelcomeScreen from "./src/screens/Auth/WelcomeScreen";
+import PinCode from "./src/screens/Auth/PinCode";
+import AddBeneficiary from "./src/screens/Solde/AddBeneficiary";
+import SelectMethod from "./src/screens/Solde/SelectMethod";
+import AddContact from "./src/screens/Solde/AddContact";
+import TransfertFund from "./src/screens/Solde/TransfertFund";
+import WalletTransfer from "./src/screens/Solde/WalletTransfer";
 import LogIn from "./src/screens/Auth/LogIn";
 import SignIn from "./src/screens/Auth/SignIn";
 import Signup from "./src/screens/Auth/Signup";
 import OtpVerification from "./src/screens/Auth/OtpVerification";
+import GuestLogin from "./src/screens/Auth/GuestLogin";
 import ResetPassword from "./src/screens/Auth/ResetPassword";
 import ForgetPassword from "./src/screens/Auth/ForgetPassword";
 import BeneficiarySelection from "./src/screens/Transfert/BeneficiarySelection";
@@ -34,7 +46,8 @@ import PaymentMethod from "./src/screens/Transfert/PaymentMethod";
 import Support from "./src/screens/Setting/Support";
 import Payment from "./src/screens/VirtualCard/Payment";
 import DrawerComponent from "./src/components/DrawerComponent";
-import History from "./src/screens/VirtualCard/History";
+import History from "./src/screens/Transfert/History";
+import Receipt from "./src/screens/Transfert/Receipt";
 import Account from "./src/screens/Profile/Account";
 import Settings from "./src/screens/Setting/Settings";
 import MonSolde from "./src/screens/Solde/MonSolde";
@@ -50,6 +63,7 @@ import IdentityCard from "./src/screens/VirtualCard/IdentityCard";
 import IdentityVerification from "./src/screens/VirtualCard/IdentityVerification";
 import AddressSelect from "./src/screens/VirtualCard/AddressSelect";
 import AddressConfirm from "./src/screens/VirtualCard/AddressConfirm";
+import DocumentCaptureFlow from "./src/screens/VirtualCard/DocumentCaptureFlow";
 import Address from "./src/screens/Transfert/Address";
 import Camera from "./src/screens/VirtualCard/Camera";
 import ChangePassword from "./src/screens/Setting/ChangePassword";
@@ -84,10 +98,10 @@ function CustomTabBar({ state, descriptors, navigation }) {
           case 'HomeTab':
             iconName = isFocused ? 'home' : 'home-outline';
             break;
-          case 'PaymentTab':
+          case 'ManageVirtualCardTab':
             iconName = isFocused ? 'card' : 'card-outline';
             break;
-          case 'ManageVirtualCardTab':
+          case 'TransferTab':
             iconName = isFocused ? 'swap-horizontal' : 'swap-horizontal-outline';
             break;
           case 'SettingsTab':
@@ -137,14 +151,14 @@ function MainTabs() {
         options={{ title: 'Home' }}
       />
       <Tab.Screen 
-        name="PaymentTab" 
-        component={Payment} 
+        name="ManageVirtualCardTab" 
+        component={ManageVirtualCard} 
         options={{ title: 'Cards' }}
       />
       <Tab.Screen 
-        name="ManageVirtualCardTab" 
-        component={ManageVirtualCard} 
-        options={{ title: 'Transactions' }}
+        name="TransferTab"
+        component={History} 
+        options={{ title: 'Transfer' }}
       />
       <Tab.Screen 
         name="SettingsTab" 
@@ -161,8 +175,10 @@ function AuthStack() {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Welcome" component={WelcomeScreen} />
       <Stack.Screen name="SignIn" component={SignIn} />
+      <Stack.Screen name="PinCode" component={PinCode} />
       <Stack.Screen name="LogIn" component={LogIn} />
       <Stack.Screen name="Signup" component={Signup} />
+      <Stack.Screen name="GuestLogin" component={GuestLogin} />
       <Stack.Screen name="OtpVerification" component={OtpVerification} />
       <Stack.Screen name="ForgetPassword" component={ForgetPassword} />
       <Stack.Screen name="ResetPassword" component={ResetPassword} />
@@ -196,14 +212,22 @@ function MainStack() {
       <Stack.Screen name="Curency" component={Curency} options={{ headerShown: false }} />
       <Stack.Screen name="BankCard" component={BankCard} options={{ headerShown: false }} />
       <Stack.Screen name="BankCard1" component={BankCard1} options={{ headerShown: false }} />
+      <Stack.Screen name="AddBeneficiary" component={AddBeneficiary} options={{ headerTitle: " Envoyez Gratuitement de l'argent" }} />
+      <Stack.Screen name="SelectMethod" component={SelectMethod} options={{ headerTitle: "Sélectionner une méthode" }} />
+      <Stack.Screen name="TransfertFund" component={TransfertFund} options={{ headerTitle: "Transférer des fonds" }} />
+      <Stack.Screen name="WalletTransfer" component={WalletTransfer} options={{ headerTitle: "Transfert de portefeuille" }} />
+      <Stack.Screen name="AddContact" component={AddContact} options={{ headerTitle: "Ajouter un contact" }} />
       <Stack.Screen name="ConﬁrmeTheTransfer" component={ConﬁrmeTheTransfer} options={{ headerShown: false }} />
       <Stack.Screen name="Success" component={Success} options={{ headerShown: false }} />
       <Stack.Screen name="Support" component={Support} />
+      <Stack.Screen name="Settings" component={Settings}/>
       <Stack.Screen name="Payment" component={Payment} />
-      <Stack.Screen name="History" component={History} />
+      <Stack.Screen name="History" component={History}  />
+      <Stack.Screen name="Receipt" component={Receipt} />
       <Stack.Screen name="MonSolde" component={MonSolde} options={{ headerTitle: "Mon Solde" }} />
       <Stack.Screen name="CreateVirtualCard" component={CreateVirtualCard} options={{ headerTitle: "Créer une carte virtuelle" }} />
       <Stack.Screen name="VerifyIdentity" component={VerifyIdentity} options={{ headerShown: false }} />
+      <Stack.Screen name="DocumentCaptureFlow" component={DocumentCaptureFlow} options={{ headerShown: false }} />
       <Stack.Screen name="ManageVirtualCard" component={ManageVirtualCard} options={{ headerShown: false }} />
       <Stack.Screen name="KycResume" component={KycResume} options={{ headerShown: false }} />
       <Stack.Screen name="KycSelfie" component={KycSelfie} options={{ headerShown: false }} />
@@ -240,6 +264,13 @@ function DrawerNavigator() {
 }
 
 export default function App() {
+  // Register for push notifications once on mount
+  useEffect(() => {
+    registerForPushNotificationsAsync().then((token) => {
+      console.log("Expo Push Token:", token);
+      // TODO: send token to your backend here if needed
+    });
+  }, []);
   return (
     <Provider store={store}>
       <NavigationContainer>
@@ -249,21 +280,16 @@ export default function App() {
     </Provider>
   );
 }
-
 const styles = StyleSheet.create({
   tabContainer: {
     flexDirection: 'row',
     height: 65,
-    backgroundColor: '#fff',
     borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
+    borderTopColor: Colors.borderTop,
     justifyContent: 'space-around',
     alignItems: 'center',
-   
-    backgroundColor: '#87CEEB', // Light blue background
-    borderTopLeftRadius: 40,
-    borderTopRightRadius: 40,
-    shadowColor: '#000',
+    backgroundColor: Colors.background2,
+    shadowColor: Colors.shadow,
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -274,10 +300,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: 8,
-   
   },
   tabLabel: {
     fontSize: 12,
     marginTop: 5,
+    color: Colors.text,
   },
 });

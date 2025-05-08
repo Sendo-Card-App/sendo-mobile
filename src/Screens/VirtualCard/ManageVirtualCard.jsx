@@ -38,7 +38,7 @@ const ManageVirtualCard = ({ navigation }) => {
     );
   };
   return (
-    <View className="bg-[#181e25] flex-1 pt-0 relative">
+    <View className="bg-[#7ddd7d] flex-1 pt-0 relative">
       {/* the top navigation with a back arrow and a right menu button */}
       <View className="border-b border-dashed border-white flex-row justify-between py-4 mt-10 items-center mx-5 pt-5">
         <Image source={ButtomLogo} className="h-11 w-40" />
@@ -54,7 +54,14 @@ const ManageVirtualCard = ({ navigation }) => {
 
       {/* the white formsection of the screen */}
       <View className="flex-1 gap-3 py-3 bg-white px-4 rounded-t-3xl">
-        <View className="w-4 h-4 bg-[#7ddd7d] rounded-full ml-auto"></View>
+        <View className="w-4 h-4 bg-[#7ddd7d] rounded-full ml-auto">
+              
+        </View>
+        <View className="flex-row items-center">
+          <Text className="text-black font-extralight mr-2">Solde:</Text>
+          <Text className="text-[#7ddd7d] bg-white text-center">786 000 XAF</Text>
+        </View>
+
         {/* Card */}
         <View className="relative">
           <Image
@@ -66,19 +73,13 @@ const ManageVirtualCard = ({ navigation }) => {
           <View className="absolute top-0 bottom-0 left-0 right-[50%] px-4 py-6">
             {/* part 1 */}
             <View className="flex-1 justify-center">
-              {/* section 1 */}
-
-              <Text className="text-white font-extralight">Solde</Text>
-              <Text className="text-[#7ddd7d] bg-white text-center mt-2">
-                786 000 XAF
-              </Text>
               {/* section 2 */}
               <View className="mt-2">
                 <Text className="text-white font-extralight text-sm">
-                  0000 0000 0000 0000
+                  7433 0001 4302 7995
                 </Text>
                 <Text className="text-white font-extralight text-xs">
-                  CVV: 000
+                  CVV: 432
                 </Text>
               </View>
             </View>
@@ -91,7 +92,7 @@ const ManageVirtualCard = ({ navigation }) => {
                 ANDRE DJOUMDJEU
               </Text>
               <Text className="font-extralight text-xs text-yellow-400 mt-3">
-                Expires : 00/00/00
+                Expires : 03/27
               </Text>
             </View>
           </View>
@@ -123,12 +124,12 @@ const ManageVirtualCard = ({ navigation }) => {
       </View>
 
       {/* the buttom message of the screen with a small shield icon */}
-      <View className="py-4 flex-row justify-center items-center gap-2">
+      {/* <View className="py-4 flex-row justify-center items-center gap-2">
         <Ionicons name="shield-checkmark" size={18} color="orange" />
         <Text className="text-sm text-white">
           Ne partagez pas vos informations personnelles…
         </Text>
-      </View>
+      </View> */}
 
       <StatusBar style="light" />
     </View>

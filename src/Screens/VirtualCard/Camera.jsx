@@ -4,64 +4,98 @@ import { StatusBar } from "expo-status-bar";
 import { AntDesign, Feather, Ionicons } from "@expo/vector-icons";
 import { CameraView, useCameraPermissions } from "expo-camera";
 
-const Camera = ({ navigation }) => {
+const Camera = ({ navigation, route }) => {
   const [permission, requestPermission] = useCameraPermissions();
   const [picture, setPicture] = useState(null);
-  const [flash, setflash] = useState(false);
+  const [flash, setFlash] = useState(false);
   const [face, setFace] = useState(false);
   const { height } = Dimensions.get("screen");
   const cameraRef = useRef();
+  const { purpose, onCapture } = route.params || {};
 
-  //   ========= the function takes picture
   const takePicture = async () => {
     if (cameraRef.current) {
-      const option = { quality: 1, base64: true };
+      const option = { quality: 0.8, base64: true };
       const newPicture = await cameraRef.current.takePictureAsync(option);
       setPicture(newPicture);
     }
   };
 
-  //   ========= Submit function
-
-  const HandleSubmit = () => {
-    // =====upload function
-    navigation.navigate("KycResume");
+  const handleSubmit = () => {
+    if (picture && onCapture) {
+      onCapture(picture);
+    } else {
+      navigation.goBack();
+    }
   };
+
+  const getTitle = () => {
+    switch (purpose) {
+      case 'selfie':
+        return "Prenez un selfie avec votre pièce d'identité";
+      case 'id_front':
+        return "Prenez une photo du recto de votre pièce";
+      case 'id_back':
+        return "Prenez une photo du verso de votre pièce";
+      case 'niu':
+        return "Prenez une photo de votre document NIU";
+      case 'address_proof':
+        return "Prenez une photo de votre justificatif";
+      default:
+        return "Prenez une photo";
+    }
+  };
+
+  if (!permission) {
+    return (
+      <View className="flex-1 justify-center items-center bg-[#181e25]">
+        <Text className="text-white">Demande d'autorisation...</Text>
+      </View>
+    );
+  }
+
+  if (!permission.granted) {
+    return (
+      <View className="flex-1 justify-center items-center bg-[#181e25] p-4">
+        <Text className="text-white text-center mb-4">
+          Nous avons besoin de votre permission pour utiliser la caméra
+        </Text>
+        <TouchableOpacity
+          onPress={requestPermission}
+          className="bg-[#7ddd7d] px-6 py-3 rounded-lg"
+        >
+          <Text className="text-white">Autoriser la caméra</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   return (
     <View className="bg-[#181e25] flex-1 py-11 px-5">
-      {/* the top navigation with a back arrow and a right menu button */}
+      {/* Navigation */}
       <View className="py-4">
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <AntDesign name="arrowleft" size={24} color="white" />
         </TouchableOpacity>
       </View>
 
-      {/* Camera setup */}
+      {/* Title */}
+      <Text className="text-white text-lg font-bold mb-4 text-center">
+        {getTitle()}
+      </Text>
+
+      {/* Camera Preview */}
       <View
         className="bg-white rounded-3xl overflow-hidden items-center justify-center"
         style={{ height: height / 1.8 }}
       >
-        {!permission ? (
-          <AntDesign name="loading1" size={24} color="black" />
-        ) : !permission.granted ? (
-          <View className="flex-1 justify-center items-center">
-            <Text className="mb-4">
-              We need your permission to show the camera
-            </Text>
-            <TouchableOpacity
-              onPress={requestPermission}
-              className="bg-[#7ddd7d] px-4 py-2 rounded-lg"
-            >
-              <Text>grant permission</Text>
-            </TouchableOpacity>
-          </View>
-        ) : !picture ? (
+        {!picture ? (
           <>
             <TouchableOpacity
               className={`absolute right-5 top-5 z-20 ${
                 flash ? "bg-[#7ddd7d]" : "bg-[#181e25]"
-              }  rounded-full p-3`}
-              onPress={() => setflash((prev) => !prev)}
+              } rounded-full p-3`}
+              onPress={() => setFlash((prev) => !prev)}
             >
               <Ionicons name="flashlight-outline" size={24} color="white" />
             </TouchableOpacity>
@@ -69,11 +103,12 @@ const Camera = ({ navigation }) => {
             <TouchableOpacity
               className={`absolute right-5 top-20 z-20 ${
                 face ? "bg-[#7ddd7d]" : "bg-[#181e25]"
-              }  rounded-full p-3`}
+              } rounded-full p-3`}
               onPress={() => setFace((prev) => !prev)}
             >
               <Ionicons name="camera-reverse" size={24} color="white" />
             </TouchableOpacity>
+            
             <CameraView
               facing={face ? "front" : "back"}
               style={{ flex: 1, width: "100%" }}
@@ -88,10 +123,10 @@ const Camera = ({ navigation }) => {
       </View>
 
       <Text className="text-white text-center mt-3">
-        Positionner votre visage dans le cadre
+        Positionnez votre document dans le cadre
       </Text>
 
-      {/* button to take a picture */}
+      {/* Controls */}
       {!picture ? (
         <View className="mt-auto">
           <TouchableOpacity
@@ -101,7 +136,7 @@ const Camera = ({ navigation }) => {
             <Ionicons name="camera-outline" size={40} color="white" />
           </TouchableOpacity>
           <Text className="text-white text-center mt-3">
-            Tapez ici pour prendre une photo
+            Appuyez pour prendre la photo
           </Text>
         </View>
       ) : (
@@ -111,15 +146,15 @@ const Camera = ({ navigation }) => {
             onPress={() => setPicture(null)}
           >
             <Feather name="x" size={45} color="red" />
-            <Text className="text-white">Annulez</Text>
+            <Text className="text-white">Annuler</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             className="items-center justify-center"
-            onPress={() => HandleSubmit()}
+            onPress={handleSubmit}
           >
             <AntDesign name="check" size={45} color="#7ddd7d" />
-            <Text className="text-white">Accepter</Text>
+            <Text className="text-white">Valider</Text>
           </TouchableOpacity>
         </View>
       )}

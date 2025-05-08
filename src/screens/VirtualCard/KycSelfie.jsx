@@ -5,9 +5,27 @@ import { AntDesign, Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 import IDShoot from "../../images/IDShoot.png";
 import KycTab from "../../components/KycTab";
+import { useDispatch } from 'react-redux';
+import { setSelfie } from '../../features/Kyc/kycReducer';
+
 const KycSelfie = ({ navigation }) => {
   const { width } = Dimensions.get("screen");
+  const dispatch = useDispatch();
   
+  const handleTakeSelfie = () => {
+    navigation.navigate("Camera", {
+      purpose: 'selfie',
+      onCapture: (image) => {
+        dispatch(setSelfie({
+          uri: image.uri,
+          type: 'image/jpeg',
+          name: `selfie_${Date.now()}.jpg`
+        }));
+        navigation.navigate("KycResume");
+      }
+    });
+  };
+
   return (
     <View className="bg-[#181e25] flex-1 pt-0 relative">
       {/* The top logo in center of the screen */}
@@ -30,18 +48,20 @@ const KycSelfie = ({ navigation }) => {
 
       {/* the middle heading */}
       <Text className="text-center text-white text-2xl my-3">
-        Vériﬁcation de l’identité
+        Vériﬁcation de l'identité
       </Text>
 
       {/* the white formsection of the screen */}
       <View className="flex-1 pb-3 overflow-hidden bg-white rounded-t-3xl items-center">
         {/* ========= Top tab */}
         <KycTab isActive="2" />
+        
         {/*==================== Headings */}
         <Text className="font-bold text-gray-800 mt-3">Selﬁe</Text>
         <Text className="text-center text-gray-400 text-sm">
-          Prenez une photo de vous et votre carte d’identité
+          Prenez une photo de vous et votre carte d'identité
         </Text>
+        
         {/* ==========image */}
         <Image
           source={IDShoot}
@@ -51,20 +71,21 @@ const KycSelfie = ({ navigation }) => {
         />
 
         <Text className="font-bold text-gray-800 my-3 text-center mx-6">
-          Comment prendre une photo de vous avec Votre carte d’identité ?
+          Comment prendre une photo de vous avec Votre carte d'identité ?
         </Text>
+        
         {/* =========== gray text */}
         <View className="w-[89%] mx-auto px-6">
           <Text className="text-gray-400 my-1">
             • Prenez la photo dans une pièce suﬃsamment éclairée.
           </Text>
           <Text className="text-gray-400 my-1">
-            • Tenez le document à côté de votre visage, comme dans l’image
+            • Tenez le document à côté de votre visage, comme dans l'image
             ci-dessus.
           </Text>
           <Text className="text-gray-400 my-1">
-            • Assurez-vous que votre visage et votre carte d’identité sont bien
-            visibles sur la photo. Rien sur la carte d’identité ne doit être
+            • Assurez-vous que votre visage et votre carte d'identité sont bien
+            visibles sur la photo. Rien sur la carte d'identité ne doit être
             couvert.
           </Text>
         </View>
@@ -72,7 +93,7 @@ const KycSelfie = ({ navigation }) => {
         {/* ============ submit button */}
         <TouchableOpacity
           className="mb-2 mt-auto bg-[#7ddd7d] py-3 rounded-full w-[85%] mx-auto"
-          onPress={() => navigation.navigate("Camera")}
+          onPress={handleTakeSelfie}
         >
           <Text className="text-xl text-center font-bold ">SUIVANT</Text>
         </TouchableOpacity>

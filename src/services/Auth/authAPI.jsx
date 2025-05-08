@@ -1,6 +1,6 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
-// Constantes pour les endpoints
+// Constants for endpoints
 const AUTH_ENDPOINTS = {
   REGISTER: '/auth/register',
   VERIFY_OTP: '/auth/otp/verify',
@@ -14,7 +14,7 @@ const AUTH_ENDPOINTS = {
   LOGOUT: '/auth/logout',
 };
 
-// Tags pour le cache
+// Cache tags
 const TAG_TYPES = {
   AUTH: 'Auth',
   SESSIONS: 'Sessions',
@@ -24,7 +24,7 @@ const TAG_TYPES = {
 export const authApi = createApi({
   reducerPath: 'authApi',
   baseQuery: fetchBaseQuery({ 
-    baseUrl: process.env.EXPO_PUBLIC_API_BASE_URL, 
+    baseUrl: process.env.EXPO_PUBLIC_API_BASE_URL,
     prepareHeaders: (headers, { getState }) => {
       const token = getState().auth.accessToken;
       if (token) {
@@ -37,17 +37,17 @@ export const authApi = createApi({
   }),
   tagTypes: Object.values(TAG_TYPES),
   endpoints: (builder) => ({
-    // Endpoint d'enregistrement
+    // Registration endpoint
     register: builder.mutation({
       query: (userData) => ({
         url: AUTH_ENDPOINTS.REGISTER,
         method: 'POST',
-        body: userData, // Assuming userData includes all necessary fields
+        body: userData,
       }),
       invalidatesTags: [TAG_TYPES.AUTH],
     }),
 
-    // Endpoints OTP
+    // OTP endpoints
     verifyOtp: builder.mutation({
       query: ({ phone, code }) => ({
         url: AUTH_ENDPOINTS.VERIFY_OTP,
@@ -57,7 +57,7 @@ export const authApi = createApi({
       invalidatesTags: [TAG_TYPES.AUTH],
     }),
 
-    sendOtp: builder.mutation({ // Add this mutation to send OTP
+    sendOtp: builder.mutation({
       query: (phone) => ({
         url: AUTH_ENDPOINTS.SEND_OTP,
         method: 'POST',
@@ -73,12 +73,38 @@ export const authApi = createApi({
       }),
     }),
 
-    // Endpoints de connexion
+    // In your authAPI endpoints
+      addSecondPhone: builder.mutation({
+        query: ({ phone }) => ({
+          url: '/users/second-phone',
+          method: 'POST',
+          body: { phone },
+        }),
+        invalidatesTags: [TAG_TYPES.PROFILE],
+      }),
+
+      sendSecondPhoneOtp: builder.mutation({
+        query: ({ phone }) => ({
+          url: '/users/second-phone/send-otp-code',
+          method: 'POST',
+          body: { phone },
+        }),
+      }),
+
+      verifySecondPhoneOtp: builder.mutation({
+        query: ({ phone, code }) => ({
+          url: '/users/second-phone/verify',
+          method: 'POST',
+          body: { phone, code },
+        }),
+      }),
+
+    // Login endpoints
     loginWithPhone: builder.mutation({
-      query: ({ phone}) => ({
+      query: ({ refreshToken,deviceId }) => ({
         url: AUTH_ENDPOINTS.REFRESH_TOKEN,
         method: 'POST',
-        body: { phone},
+        body: { refreshToken,deviceId },
       }),
       invalidatesTags: [TAG_TYPES.AUTH],
     }),
@@ -92,7 +118,7 @@ export const authApi = createApi({
       invalidatesTags: [TAG_TYPES.AUTH],
     }),
 
-    // Récupération de mot de passe
+    // Password recovery
     forgotPassword: builder.mutation({
       query: (email) => ({
         url: AUTH_ENDPOINTS.FORGOT_PASSWORD,
@@ -110,11 +136,19 @@ export const authApi = createApi({
       invalidatesTags: [TAG_TYPES.AUTH],
     }),
 
-    // Gestion du profil
+    updatePassword: builder.mutation({
+      query: ({ userId, oldPassword, newPassword }) => ({
+        url: `/users/update-password/${userId}`,
+        method: 'PUT',
+        body: { oldPassword, newPassword },
+      }),
+      invalidatesTags: [TAG_TYPES.AUTH],
+    }),
+
+    // Profile management
     getMyProfile: builder.query({
       query: () => AUTH_ENDPOINTS.MY_PROFILE,
       providesTags: [TAG_TYPES.PROFILE],
-      // ... logging
     }),
 
     getUserProfile: builder.query({
@@ -124,18 +158,22 @@ export const authApi = createApi({
     }),
     
     updateProfile: builder.mutation({
-      query: (formData) => ({
-        url: `${AUTH_ENDPOINTS.USER_PROFILE}/me`,
-        method: 'PATCH',
-        body: formData,
-        formData: true, // Important pour FormData
-      }),
+      query: ({ userId, formData }) => {
+        const isFormData = typeof formData.append === "function";
+        return {
+          url: `${AUTH_ENDPOINTS.USER_PROFILE}/${userId}`,
+          method: "PUT",
+          body: formData,
+          ...(isFormData && { formData: true }),
+        };
+      },
       invalidatesTags: [TAG_TYPES.PROFILE],
     }),
+    
 
-    // Déconnexion
+    // Logout
     logout: builder.mutation({
-      query: ({deviceId}) => ({
+      query: ({ deviceId }) => ({
         url: AUTH_ENDPOINTS.LOGOUT,
         method: 'POST',
         body: { deviceId },
@@ -145,19 +183,24 @@ export const authApi = createApi({
   }),
 });
 
-// Export des endpoints constants pour une utilisation ailleurs
+// Export constant endpoints for use elsewhere
 export { AUTH_ENDPOINTS, TAG_TYPES };
 
-// Export des hooks générés
+// Export generated hooks
 export const { 
   useRegisterMutation,
   useVerifyOtpMutation,
-  useSendOtpMutation, 
+  useSendOtpMutation,
   useResendOtpMutation,
+  useAddSecondPhoneMutation,
+  useSendSecondPhoneOtpMutation,
+  useVerifySecondPhoneOtpMutation,
   useLoginWithPhoneMutation,
   useLoginWithEmailMutation,
   useForgotPasswordMutation,
   useResetPasswordMutation,
+  useUpdatePasswordMutation,
+  useGetMyProfileQuery,
   useGetUserProfileQuery,
   useUpdateProfileMutation,
   useLogoutMutation,
