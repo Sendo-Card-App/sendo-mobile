@@ -191,7 +191,7 @@
 "wallet_transfer": {
 "title": "Wallet Transfer",
 "available_balance": "Available Balance",
-"recipient_id": "Recipient's Matricule",
+"recipient_id": "Amount Number",
 "recipient_placeholder": "Enter wallet matricule",
 "amount": "Amount (FCFA)",
 "amount_placeholder": "0.0",
@@ -213,6 +213,7 @@
 "withdrawal_limit": "📊 Deposit limit",
 "send_to_mobile": "Recharge your account via  MOMO or OM Money",
 "transfer_to_mobile": " Mobile Money",
+"simule": "Payment Simulator",
 "transfer_fee": "No Fee",
 "send_to_friends": "Recharge your Account Via BANK",
 "sendo_transfer": "Bank Transfer",

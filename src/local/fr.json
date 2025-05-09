@@ -199,7 +199,7 @@
     "amount_placeholder": "0.0",
     "description": "Description (optionnel)",
     "description_placeholder": "Ex: Transfert pour achat",
-    "your_matricule": "Votre matricule",
+    "your_matricule": "Numéro de compte",
     "transfer_button": "Effectuer le transfert"
   },
   "select_method": {
@@ -213,13 +213,14 @@
   },
   "method": {
     "withdrawal_limit": "📊 Limite de depot",
-    "send_to_mobile": "Recharge de l'argent sur ton comptes Sendo par MOMO ou OM",
+    "send_to_mobile": "Recharge de l'argent sur ton compte Sendo par MOMO ou OM",
     "transfer_to_mobile": "Mobile Money",
+    "simule": " Simulateur de paiement",
     "transfer_fee": "Gratuit",
     "send_to_friends": "Recharge ton compte par BANQUE",
-    "sendo_transfer": "Transfer Par Banque",
+    "sendo_transfer": "Dépôt Banque",
     "no_fee": "Gratuit",
-    "make_transfer": "Effectuer le transfert",
+    "make_transfer": "Recharger mon compte",
     "bank_name": "Nom de la banque",
     "account_number": "Numéro de compte",
     "account_name": "Nom du compte",

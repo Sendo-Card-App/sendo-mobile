@@ -1,10 +1,11 @@
 import { View, Text, TouchableOpacity, ActivityIndicator, Alert } from "react-native";
 import React, { useEffect, useState } from "react";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons ,AntDesign } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useGetBalanceQuery } from "../../services/WalletApi/walletApi";
 import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
 import { useTranslation } from 'react-i18next';
+import Toast from 'react-native-toast-message';
 
 const MonSolde = () => {
   const navigation = useNavigation();
@@ -28,22 +29,46 @@ const MonSolde = () => {
 
   const isLoading = isProfileLoading || isBalanceLoading;
   
-      //console.log(userProfile)
+     //console.log(userProfile)
   // Handle API errors
   useEffect(() => {
     if (balanceError) {
-      console.log('Balance error details:', balanceError); // Debug the full error
+      console.log('Balance error details:', balanceError);
+      
+      let errorMessage = 'An unknown error occurred';
+      
       if (balanceError.status === 401) {
-        Alert.alert('Erreur', 'Authentification requise (passcode manquant)');
+        errorMessage = 'Authentication required (missing passcode)';
       } else if (balanceError.status === 403) {
-        Alert.alert('Erreur', 'Passcode incorrect');
+        errorMessage = 'Missing KYC documents';
       } else if (balanceError.status === 404) {
-        Alert.alert('Erreur', 'Portefeuille non trouvé');
-      } else {
-        Alert.alert('Erreur', balanceError.data?.message || 'Erreur inconnue');
+        errorMessage = 'Wallet not found';
+      } else if (balanceError.data?.message) {
+        errorMessage = balanceError.data.message;
       }
+      
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: errorMessage,
+        position: 'top',
+        visibilityTime: 10000, // Display for 10 seconds (10000ms)
+        autoHide: true,
+      });
     }
   }, [balanceError]);
+   
+  // Handle successful balance fetch
+  useEffect(() => {
+    if (balanceData && !isBalanceLoading) {
+      Toast.show({
+        type: 'success',
+        text1: 'Success',
+        text2: 'Balance loaded successfully',
+        position: 'bottom',
+      });
+    }
+  }, [balanceData, isBalanceLoading]);
 
   return (
     <View style={{ flex: 1, padding: 20 }}>
@@ -53,7 +78,7 @@ const MonSolde = () => {
         <ActivityIndicator color="#0D1C6A" />
       ) : isBalanceError ? (
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <Text style={{ color: 'red', marginRight: 8 }}>Erreur de chargement du solde</Text>
+          <Text style={{ color: 'red', marginRight: 8 }}>Impossible d'afficher le solde</Text>
           <TouchableOpacity onPress={refetchBalance}>
             <Ionicons name="refresh" size={20} color="#0D1C6A" />
           </TouchableOpacity>
@@ -141,6 +166,22 @@ const MonSolde = () => {
           </Text>
       </View>
       </View>
+       <TouchableOpacity style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          backgroundColor: '#FFF',
+          borderRadius: 20,
+          padding: 15,
+          marginBottom: 20,
+          marginTop:30,
+          }}
+          onPress={() => navigation.navigate("PaymentSimulator")}
+          >
+         <AntDesign name="calculator" size={50} color="#999" style={{ marginRight: 5 }} />
+          <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#0D1C6A', marginLeft: 30, flex: 1 }}>
+              {t('method.simule')}
+          </Text>
+         </TouchableOpacity>
 
       <Text style={{ 
         fontWeight: '800', 

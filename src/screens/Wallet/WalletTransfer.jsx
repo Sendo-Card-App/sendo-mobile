@@ -32,7 +32,8 @@ const WalletTransfer = ({ navigation }) => {
   } = useGetBalanceQuery(userId, {
     skip: !userId
   });
-
+   
+  //console.log(balanceData)
   useEffect(() => {
     if (userProfile?.data?.wallet.matricule) {
       setUserWalletId(userProfile.data.wallet.matricule);

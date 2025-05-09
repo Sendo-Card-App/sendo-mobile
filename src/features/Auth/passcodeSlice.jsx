@@ -6,6 +6,7 @@ const initialState = {
   lastUsedAt: null,
   lockedUntil: null,
   biometricEnabled: false,
+  isNewUser: false,
 };
 
 const passcodeSlice = createSlice({
@@ -34,6 +35,9 @@ const passcodeSlice = createSlice({
     lockPasscode: (state) => {
       state.lockedUntil = new Date(Date.now() + 15 * 60 * 1000).toISOString();
     },
+    setIsNewUser: (state, action) => {
+      state.isNewUser = action.payload;
+    },
     clearPasscode: (state) => {
       state.passcode = null;
       state.attempts = 0;
@@ -45,6 +49,7 @@ const passcodeSlice = createSlice({
 
 export const { 
   setPasscode, 
+  setIsNewUser,
   incrementAttempt, 
   resetAttempts, 
   toggleBiometric,

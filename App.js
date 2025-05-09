@@ -28,6 +28,7 @@ import AddContact from "./src/screens/Solde/AddContact";
 import TransfertFund from "./src/screens/Wallet/TransfertFund";
 import WalletTransfer from "./src/screens/Wallet/WalletTransfer";
 import MethodType from "./src/screens/Wallet/MethodType";
+import PaymentSimulator from "./src/screens/Solde/PaymentSimulator";
 import LogIn from "./src/screens/Auth/LogIn";
 import SignIn from "./src/screens/Auth/SignIn";
 import Signup from "./src/screens/Auth/Signup";
@@ -218,6 +219,7 @@ function MainStack() {
       <Stack.Screen name="SelectMethod" component={SelectMethod} options={{ headerTitle: "Sélectionner une méthode" }} />
       <Stack.Screen name="BankDepositRecharge" component={BankDepositRecharge} options={{headerTitle:" Rechargement par dépôt bancaire"}} />
       <Stack.Screen name="TransfertFund" component={TransfertFund} options={{ headerTitle: "Transférer des fonds" }} />
+      <Stack.Screen name="PaymentSimulator" component={PaymentSimulator} options={{ headerTitle: " Simulateur de paiement" }} />
       <Stack.Screen name="MethodType" component={MethodType} options={{headerTitle:"Sélectionner une méthode" }} />
       <Stack.Screen name="WalletTransfer" component={WalletTransfer} options={{ headerTitle: "Transfert de portefeuille" }} />
       <Stack.Screen name="AddContact" component={AddContact} options={{ headerTitle: "Ajouter un contact" }} />
