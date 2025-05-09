@@ -17,6 +17,8 @@ import {
   loginSuccess,
   loginFailure,
 } from "../../features/Auth/authSlice";
+
+import { setIsNewUser } from '../../features/Auth/passcodeSlice';
 import { useLoginWithEmailMutation } from "../../services/Auth/authAPI";
 import { useTranslation } from "react-i18next";
 import Loader from "../../components/Loader";
@@ -101,8 +103,9 @@ const SignIn = () => {
         await storeData('@authData', authData);
         dispatch(loginSuccess(authData));
   
-        // Navigate to main page after successful login
-        navigation.navigate("PinCode");
+          dispatch(setIsNewUser(true)); // <-- THIS IS CRUCIAL
+  
+        navigation.navigate("PinCode", { setup: true }); 
   
         Toast.show({
           type: 'success',

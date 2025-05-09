@@ -58,6 +58,7 @@ const authSlice = createSlice({
       state.loading = false;
       state.error = action.payload;
     },
+       
 
     // OTP actions
     sendOtpStart(state) {

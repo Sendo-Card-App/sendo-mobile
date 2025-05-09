@@ -33,11 +33,21 @@ export const authApi = createApi({
   reducerPath: 'authApi',
   baseQuery: fetchBaseQuery({
     baseUrl: process.env.EXPO_PUBLIC_API_URL,
-    prepareHeaders: (headers, { getState }) => {
+    prepareHeaders: (headers, { getState, endpoint }) => {
       const { accessToken } = getState().auth;
-      headers.set('Content-Type', 'application/json');
+      const { passcode } = getState().passcode
+
+      console.log('Current endpoint:', endpoint); // Debug which endpoint is being called
+      console.log('Passcode available:', passcode);
+
+     headers.set('Accept', 'application/json');
+    headers.set('Content-Type', 'application/json');
+
       if (accessToken) {
         headers.set('Authorization', `Bearer ${accessToken}`);
+      }
+      if (passcode) {
+        headers.set('X-Passcode', passcode);
       }
       return headers;
     },

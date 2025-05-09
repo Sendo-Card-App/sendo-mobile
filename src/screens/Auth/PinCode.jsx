@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { StatusBar, Platform, View, Text, TouchableOpacity, Image, SafeAreaView, Alert } from 'react-native';
 import { useCreatePasscodeMutation } from '../../services/Auth/authAPI';
 import { useSelector, useDispatch } from 'react-redux';
-import { setPasscode, incrementAttempt, resetAttempts, lockPasscode, toggleBiometric, clearPasscode } from '../../features/Auth/passcodeSlice';
+import { setPasscode, incrementAttempt, resetAttempts, lockPasscode, toggleBiometric, clearPasscode,setIsNewUser } from '../../features/Auth/passcodeSlice';
 import { getData } from '../../services/storage';
+import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
 import Loader from "../../components/Loader";
 import * as LocalAuthentication from 'expo-local-authentication';
 
@@ -24,34 +25,18 @@ const PinCode = ({ navigation, route }) => {
     lockedUntil,
     biometricEnabled
   } = useSelector(state => state.passcode);
+    // Get user profile
+  const { 
+    data: userProfile, 
+    isLoading: isProfileLoading, 
+    error: profileError 
+  } = useGetUserProfileQuery();
   
   const accessToken = useSelector(state => state.auth.accessToken);
+  const isNewUser = useSelector((state) => state.auth.isNewUser);
   const isSetup = route.params?.setup ?? !currentPasscode; // Changed to check if passcode exists
   const isLocked = lockedUntil && new Date(lockedUntil) > new Date();
   
-  // Load user data and check biometric availability
-  useEffect(() => {
-    const initialize = async () => {
-      try {
-        const userData = await getData('userData');
-        if (userData?.name) setUserName(userData.name);
-
-        const hasHardware = await LocalAuthentication.hasHardwareAsync();
-        const isEnrolled = await LocalAuthentication.isEnrolledAsync();
-        setBiometricAvailable(hasHardware && isEnrolled);
-        
-        // Reset attempts if lock time has passed
-        if (lockedUntil && new Date(lockedUntil) <= new Date()) {
-          dispatch(resetAttempts());
-        }
-      } catch (error) {
-        console.error('Initialization error:', error);
-      }
-    };
-    
-    initialize();
-  }, []);
-
   // Handle biometric authentication
   const handleBiometricAuth = async () => {
     try {
@@ -118,6 +103,7 @@ const PinCode = ({ navigation, route }) => {
   
         if (result.status === 200) {
           dispatch(setPasscode(enteredPin));
+          dispatch(setIsNewUser(false));
           navigation.navigate('Main');
         } else {
           setError('Erreur de validation');
@@ -131,7 +117,22 @@ const PinCode = ({ navigation, route }) => {
     }
   };
   
-    
+  // Helper function for failed attempts
+  const handleFailedAttempt = () => {
+    dispatch(incrementAttempt());
+    setError('Incorrect PIN');
+  
+    if (attempts + 1 >= 3) {
+      dispatch(lockPasscode());
+      dispatch(clearPasscode());
+      Alert.alert(
+        'Account Locked',
+        'Too many attempts. Please sign in again.',
+        [{ text: 'OK', onPress: () => navigation.navigate('SignIn') }]
+      );
+    }
+  };
+      
   // Toggle biometric authentication
   const toggleBiometricAuth = async () => {
     try {
@@ -231,7 +232,7 @@ const PinCode = ({ navigation, route }) => {
           />
 
           <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#0D1C6A' }}>
-            Salut, {userName.toUpperCase()}
+            Salut, {userProfile?.data?.firstname}  {userProfile?.data?.lastname}
           </Text>
           <Text style={{ fontSize: 16, color: '#0D1C6A', marginTop: 10 }}>
             {isSetup ? 'Définissez votre code PIN' : 'Entrez votre code PIN pour déverrouiller l\'application'}

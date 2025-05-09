@@ -96,7 +96,7 @@ const IdentityCard = ({ navigation }) => {
                 onPress={() => handleDocumentTypeChange(type)}
               >
                 <Text className={identityDocument.type === type ? 'text-white' : 'text-gray-800'}>
-                  {t(`identity_card.document_types.${type}`)}
+                  {type}
                 </Text>
               </TouchableOpacity>
             ))}

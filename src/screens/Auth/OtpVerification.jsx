@@ -107,6 +107,7 @@ const OtpVerification = ({ route, onVerify, onResend, onClose }) => {
         }
       }
     } catch (err) {
+      console.log(err)
       const status = err?.status;
       if (status === 404) {
         Toast.show({
