@@ -12,21 +12,21 @@ import {
   StatusBar,
   Modal,
   FlatList,
-  ActivityIndicator,
-  StyleSheet
+  ActivityIndicator
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import KeyboardAvoidinWrapper from "../../components/KeyboardAvoidinWrapper";
-import OtpVerification from "./OtpVerification";
+import { OtpInput } from "react-native-otp-entry";
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
 import {
   useResendOtpMutation,
-  useVerifyOtpMutation
+  useVerifyOtpMutation,
+  useSendOtpMutation
 } from "../../services/Auth/authAPI";
 import { loginSuccess } from "../../features/Auth/authSlice";
 import Loader from "../../components/Loader";
-import { storeData } from "../../services/storage"; // Import local storage helper
+import { storeData } from "../../services/storage";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Toast from 'react-native-toast-message';
 
@@ -36,13 +36,19 @@ const Log = () => {
   const dispatch = useDispatch();
   const [verifyOtp] = useVerifyOtpMutation();
   const [resendOtp] = useResendOtpMutation();
+  const [sendOtp] = useSendOtpMutation();
 
   const [phone, setPhone] = useState("");
+  const [otp, setOtp] = useState("");
   const [isModalVisible, setModalVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [isResending, setIsResending] = useState(false);
   const [languageModalVisible, setLanguageModalVisible] = useState(false);
+  const [seconds, setSeconds] = useState(60);
 
   const [countries, setCountries] = useState([]);
+  const [fullPhoneNumber, setFullPhoneNumber] = useState(""); 
   const [countryModalVisible, setCountryModalVisible] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState({
     name: 'Cameroon',
@@ -69,6 +75,18 @@ const Log = () => {
     fetchCountries();
   }, []);
 
+  useEffect(() => {
+    if (phone && selectedCountry.code) {
+      setFullPhoneNumber(`${selectedCountry.code}${phone}`);
+    }
+  }, [phone, selectedCountry.code]);
+
+  // Timer for OTP resend
+  useEffect(() => {
+    const timer = seconds > 0 && setInterval(() => setSeconds(seconds - 1), 1000);
+    return () => clearInterval(timer);
+  }, [seconds]);
+
   const storeAuthData = async (authData) => {
     try {
       await AsyncStorage.setItem('@authData', JSON.stringify(authData));
@@ -85,9 +103,10 @@ const Log = () => {
 
     try {
       setIsLoading(true);
-      await resendOtp(`${selectedCountry.code}${phone}`).unwrap();
-      setModalVisible(true);
+      await resendOtp({ phone: fullPhoneNumber }).unwrap();
       Toast.show({ type: 'success', text1: 'OTP sent successfully' });
+      setModalVisible(true);
+      setSeconds(60); // Reset timer
     } catch (err) {
       Toast.show({ type: 'error', text1: err.data?.message || 'Failed to send OTP' });
     } finally {
@@ -95,76 +114,50 @@ const Log = () => {
     }
   };
 
-const handleVerifyOtp = async (code) => {
-  try {
-    setIsLoading(true);
+  const handleVerifyOtp = async (code) => {
+    if (code.length !== 6) return;
+    
+    setIsVerifying(true);
+    try {
+      const response = await verifyOtp({ phone: fullPhoneNumber, code }).unwrap();
+      
+      if (response.status === 200) {
+        const authData = {
+          user: response.data.user,
+          accessToken: response.data.accessToken,
+          isGuest: false
+        };
 
-    const response = await verifyOtp({ 
-      phone: `${selectedCountry.code}${phone}`, 
-      code 
-    });
-
-    const status = response?.status;
-
-    if (status === 200) {
-      const authData = {
-        user: response.data.user,
-        accessToken: response.data.accessToken,
-        isGuest: false
-      };
-
-      // Store data in local storage
-      await storeData('@authData', authData);
-
-      // Update Redux store
-      dispatch(loginSuccess(authData));
-
-      // Hide OTP modal
-      setModalVisible(false);
-
-      // Show success message
-      Toast.show({ type: 'success', text1: 'Login successful' });
-
-      // Navigate to main screen
-      navigation.navigate("Main");
-    } else if (status === 404) {
+        await storeData('@authData', authData);
+        dispatch(loginSuccess(authData));
+        
+        setModalVisible(false);
+        Toast.show({ type: 'success', text1: 'Login successful' });
+        navigation.navigate("Main");
+      }
+    } catch (err) {
+      console.log(err)
       Toast.show({
         type: 'error',
-        text1: 'Invalid or Expired Code',
-        text2: 'The OTP code is incorrect or expired. Please request a new one.',
+        text1: err?.data?.message || 'OTP verification failed',
       });
-    } else if (status === 500) {
-      Toast.show({
-        type: 'error',
-        text1: 'Server Error',
-        text2: 'An error occurred while verifying OTP. Please try again.',
-      });
-    } else {
-      Toast.show({
-        type: 'error',
-        text1: response?.data?.message || 'OTP verification failed',
-      });
+    } finally {
+      setIsVerifying(false);
     }
-  } catch (err) {
-    Toast.show({
-      type: 'error',
-      text1: err?.data?.message || 'Something went wrong during OTP verification.',
-    });
-  } finally {
-    setIsLoading(false);
-  }
-};
-
+  };
 
   const handleResendOtp = async () => {
+    if (seconds > 0) return;
+    
+    setIsResending(true);
     try {
-      setIsLoading(true);
-      await resendOtp(`${selectedCountry.code}${phone}`).unwrap();
+      await resendOtp({ phone: fullPhoneNumber }).unwrap();
+      setSeconds(60);
       Toast.show({ type: 'success', text1: 'OTP resent successfully' });
     } catch (err) {
       Toast.show({ type: 'error', text1: err.data?.message || 'Resend failed' });
     } finally {
-      setIsLoading(false);
+      setIsResending(false);
     }
   };
 
@@ -175,7 +168,6 @@ const handleVerifyOtp = async (code) => {
   const changeLanguage = (lang) => {
     i18n.changeLanguage(lang);
     setLanguageModalVisible(false);
-    Toast.show({ type: 'success', text1: `Language changed to ${lang}` });
   };
 
   const renderCountry = ({ item }) => (
@@ -184,20 +176,20 @@ const handleVerifyOtp = async (code) => {
         setSelectedCountry(item);
         setCountryModalVisible(false);
       }}
-      style={styles.countryItem}
+      className="flex-row items-center py-3 px-4 border-b border-gray-200"
     >
-      <Image source={{ uri: item.flag }} style={styles.flag} />
-      <Text>{`${item.name} (${item.code})`}</Text>
+      <Image source={{ uri: item.flag }} className="w-8 h-6 mr-3" />
+      <Text className="text-lg">{`${item.name} (${item.code})`}</Text>
     </TouchableOpacity>
   );
 
   return (
     <>
       <KeyboardAvoidinWrapper>
-        <SafeAreaView style={styles.safeArea}>
+        <SafeAreaView className="flex-1 bg-[#181e25] justify-center items-center">
           <StatusBar barStyle="light-content" backgroundColor="#181e25" />
 
-          <View style={styles.header}>
+          <View className="absolute top-14 w-full px-6 flex-row justify-between z-10">
             <TouchableOpacity onPress={() => navigation.goBack()}>
               <AntDesign name="arrowleft" size={24} color="white" />
             </TouchableOpacity>
@@ -208,26 +200,48 @@ const handleVerifyOtp = async (code) => {
           </View>
 
           {/* Language Modal */}
-          <Modal animationType="slide" transparent={true} visible={languageModalVisible}>
-            <View style={styles.modalContainer}>
-              <View style={styles.languageModal}>
-                <Text style={styles.languageTitle}>Select your language</Text>
-                <TouchableOpacity onPress={() => changeLanguage("en")}><Text style={styles.languageOption}>English</Text></TouchableOpacity>
-                <TouchableOpacity onPress={() => changeLanguage("fr")}><Text style={styles.languageOption}>Français</Text></TouchableOpacity>
-                <TouchableOpacity onPress={() => setLanguageModalVisible(false)}><Text style={styles.languageClose}>Close</Text></TouchableOpacity>
+          <Modal animationType="slide" transparent visible={languageModalVisible}>
+            <View className="flex-1 justify-center items-center bg-black/50">
+              <View className="w-4/5 bg-white rounded-xl p-6">
+                <Text className="text-xl font-bold mb-4 text-center">Select your language</Text>
+                <TouchableOpacity 
+                  onPress={() => changeLanguage("en")}
+                  className="py-3 border-b border-gray-200"
+                >
+                  <Text className="text-lg text-center">English</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  onPress={() => changeLanguage("fr")}
+                  className="py-3 border-b border-gray-200"
+                >
+                  <Text className="text-lg text-center">Français</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  onPress={() => setLanguageModalVisible(false)}
+                  className="mt-4"
+                >
+                  <Text className="text-red-500 text-lg text-center">Close</Text>
+                </TouchableOpacity>
               </View>
             </View>
           </Modal>
 
           {/* Logo */}
-          <Image source={require("../../images/LogoSendo.png")} style={styles.logo} />
+          <Image 
+            source={require("../../images/LogoSendo.png")} 
+            className="w-24 h-24 mb-8" 
+          />
 
-          <View style={styles.form}>
-            <Text style={styles.title}>{t("log.title")}</Text>
+          {/* Login Form */}
+          <View className="w-4/5 bg-[#f1f1f1] rounded-3xl p-6 items-center">
+            <Text className="text-2xl font-bold mb-6">{t("log.title")}</Text>
 
-            <TouchableOpacity style={styles.countrySelector} onPress={() => setCountryModalVisible(true)}>
-              <Image source={{ uri: selectedCountry.flag }} style={styles.flag} />
-              <Text style={styles.countryCode}>{selectedCountry.code}</Text>
+            <TouchableOpacity 
+              onPress={() => setCountryModalVisible(true)}
+              className="flex-row items-center bg-white w-full py-3 px-4 rounded-2xl mb-4"
+            >
+              <Image source={{ uri: selectedCountry.flag }} className="w-8 h-6 mr-3" />
+              <Text className="font-bold text-lg">{selectedCountry.code}</Text>
             </TouchableOpacity>
 
             <TextInput
@@ -235,49 +249,129 @@ const handleVerifyOtp = async (code) => {
               onChangeText={setPhone}
               value={phone}
               keyboardType="phone-pad"
-              style={styles.phoneInput}
+              className="bg-white w-full py-4 px-6 rounded-2xl text-center text-lg mb-6"
               maxLength={10}
             />
 
-            <TouchableOpacity disabled={isLoading} onPress={handleNext} style={styles.nextButton}>
-              {isLoading ? <Loader /> : <Text style={styles.nextText}>{t("log.next")}</Text>}
+            <TouchableOpacity 
+              onPress={handleNext}
+              disabled={isLoading}
+              className={`w-full py-4 rounded-2xl items-center ${isLoading ? 'bg-gray-400' : 'bg-[#7ddd7d]'}`}
+            >
+              {isLoading ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <Text className="text-white font-bold text-lg">{t("log.next")}</Text>
+              )}
             </TouchableOpacity>
 
-            <TouchableOpacity onPress={() => navigation.navigate('ForgetPassword')}>
-              <Text style={styles.forgotText}>{t("log.forgetPassword")}</Text>
+            <TouchableOpacity 
+              onPress={() => navigation.navigate('ForgetPassword')}
+              className="self-end mt-3"
+            >
+              <Text className="text-gray-600">{t("log.forgetPassword")}</Text>
             </TouchableOpacity>
           </View>
 
-          <Text style={styles.otherText}>{t("signIn.dontHaveAccount")}</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
-            <Text style={styles.signupBtn}>{t("signIn.signUp")}</Text>
+          <Text className="text-white mt-8">{t("signIn.dontHaveAccount")}</Text>
+          
+          <TouchableOpacity 
+            onPress={() => navigation.navigate('Signup')}
+            className="border-2 border-[#7ddd7d] rounded-2xl px-10 py-2 mt-3"
+          >
+            <Text className="text-[#7ddd7d] font-medium">{t("signIn.signUp")}</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={handleGuestLogin}>
-            <Text style={styles.guestBtn}>{t("signIn.guestUser")}</Text>
+          
+          <TouchableOpacity 
+            onPress={handleGuestLogin}
+            className="mt-4"
+          >
+            <Text className="text-[#7ddd7d] underline">{t("signIn.guestUser")}</Text>
           </TouchableOpacity>
 
+          {/* Country Selection Modal */}
           <Modal visible={countryModalVisible} animationType="slide">
-            <SafeAreaView style={styles.countryModal}>
+            <SafeAreaView className="flex-1 bg-white">
               {countries.length === 0 ? (
-                <ActivityIndicator style={styles.loader} />
+                <View className="flex-1 justify-center items-center">
+                  <ActivityIndicator size="large" color="#7ddd7d" />
+                </View>
               ) : (
                 <FlatList
                   data={countries}
                   keyExtractor={(item, index) => index.toString()}
                   renderItem={renderCountry}
-                  contentContainerStyle={styles.countryList}
+                  contentContainerStyle={{ paddingVertical: 20 }}
                 />
               )}
             </SafeAreaView>
           </Modal>
 
-          <Modal animationType="slide" transparent={true} visible={isModalVisible}>
-            <OtpVerification
-              phone={`${selectedCountry.code}${phone}`}
-              onVerify={handleVerifyOtp}
-              onResend={handleResendOtp}
-              onClose={() => setModalVisible(false)}
-            />
+          {/* OTP Verification Modal */}
+          <Modal 
+            animationType="slide" 
+            transparent 
+            visible={isModalVisible}
+            onRequestClose={() => setModalVisible(false)}
+          >
+            <View className="flex-1 bg-black/50 justify-center items-center">
+              <View className="w-5/6 bg-white rounded-2xl p-6">
+                <TouchableOpacity 
+                  onPress={() => setModalVisible(false)}
+                  className="self-end mb-2"
+                >
+                  <AntDesign name="close" size={24} color="#333" />
+                </TouchableOpacity>
+
+                <Text className="text-2xl font-bold text-center mb-1">Enter Verification Code</Text>
+                <Text className="text-gray-600 text-center mb-6">
+                  We've sent a 6-digit code to {fullPhoneNumber}
+                </Text>
+
+                <OtpInput
+                  numberOfDigits={6}
+                  onTextChange={setOtp}
+                  focusColor="#7ddd7d"
+                  theme={{
+                    containerStyle: { marginVertical: 20 },
+                    pinCodeContainerStyle: { 
+                      height: 50, 
+                      width: 40,
+                      borderWidth: 1,
+                      borderColor: '#ddd',
+                      borderRadius: 8
+                    },
+                    pinCodeTextStyle: { fontSize: 20 }
+                  }}
+                />
+
+                <TouchableOpacity
+                  onPress={() => handleVerifyOtp(otp)}
+                  disabled={otp.length !== 6 || isVerifying}
+                  className={`w-full py-4 rounded-xl items-center justify-center mt-4 ${otp.length === 6 ? 'bg-[#7ddd7d]' : 'bg-gray-300'}`}
+                >
+                  {isVerifying ? (
+                    <ActivityIndicator color="white" />
+                  ) : (
+                    <Text className="text-white font-bold text-lg">Verify</Text>
+                  )}
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={handleResendOtp}
+                  disabled={seconds > 0 || isResending}
+                  className="mt-6 items-center"
+                >
+                  {isResending ? (
+                    <ActivityIndicator color="#7ddd7d" />
+                  ) : (
+                    <Text className={`text-lg ${seconds > 0 ? 'text-gray-400' : 'text-[#7ddd7d] font-bold'}`}>
+                      {seconds > 0 ? `Resend in ${seconds}s` : 'Resend Code'}
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
           </Modal>
         </SafeAreaView>
       </KeyboardAvoidinWrapper>
@@ -285,138 +379,5 @@ const handleVerifyOtp = async (code) => {
     </>
   );
 };
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: "#181e25",
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  logo: {
-    width: 100,
-    height: 100,
-    marginBottom: 20
-  },
-  header: {
-    position: 'absolute',
-    top: 50,
-    width: '100%',
-    paddingHorizontal: 20,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    zIndex: 10
-  },
-  modalContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  languageModal: {
-    width: '80%',
-    backgroundColor: 'white',
-    borderRadius: 10,
-    padding: 20
-  },
-  languageTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 10 },
-  languageOption: { fontSize: 16, textAlign: 'center', marginVertical: 5 },
-  languageClose: { textAlign: 'center', color: 'red', marginTop: 15 },
-  form: {
-    width: '80%',
-    backgroundColor: '#f1f1f1',
-    borderRadius: 30,
-    padding: 20,
-    alignItems: 'center'
-  },
-  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20 },
-  countrySelector: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    borderRadius: 20,
-    marginBottom: 10
-  },
-  flag: { width: 30, height: 20, marginRight: 10 },
-  countryCode: { fontWeight: 'bold' , borderRadius: 30,
-    paddingVertical: 3,
-    paddingHorizontal: 10,
-    textAlign: 'center',
-    fontSize: 16,
-    // Shadow for iOS
-    shadowColor: '#fff',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 10,
-    shadowRadius: 1,},
-  phoneInput: {
-    backgroundColor: '#fff',
-    width: '100%',
-    borderRadius: 30,
-    textAlign: 'center',
-    paddingVertical: 12,
-    marginBottom: 20,
-    borderRadius: 30,
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    textAlign: 'center',
-    fontSize: 16,
-    // Shadow for iOS
-    shadowColor: '#fff',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 10,
-    shadowRadius: 1,
-  },
-  nextButton: {
-    backgroundColor: '#7ddd7d',
-    borderRadius: 30,
-    width: '100%',
-    padding: 15,
-    alignItems: 'center',
-    borderRadius: 30,
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    textAlign: 'center',
-    fontSize: 16,
-    // Shadow for iOS
-    shadowColor: '#fff',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 10,
-    shadowRadius: 1,
-  },
-  nextText: { fontWeight: 'bold', fontSize: 16 },
-  forgotText: { color: 'black', marginTop: 10, alignSelf: 'flex-end' },
-  otherText: { color: '#fff', marginTop: 20 },
-  signupBtn: {
-    borderColor: '#7ddd7d',
-    borderWidth: 2,
-    borderRadius: 30,
-    color: '#7ddd7d',
-    paddingVertical: 10,
-    paddingHorizontal: 30,
-    marginTop: 10,
-    textAlign: 'center'
-  },
-  guestBtn: {
-    color: '#7ddd7d',
-    textDecorationLine: 'underline',
-    marginTop: 10,
-    textAlign: 'center'
-  },
-  countryItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12
-  },
-  countryModal: {
-    flex: 1
-  },
-  loader: {
-    marginTop: 100
-  },
-  countryList: {
-    padding: 20
-  }
-});
 
 export default Log;

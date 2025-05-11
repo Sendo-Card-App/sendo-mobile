@@ -1,9 +1,19 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, SafeAreaView, StatusBar, Image } from 'react-native';
-import { AntDesign } from '@expo/vector-icons';
+import React, { useState, useEffect } from 'react';
+import { 
+  View, 
+  Text, 
+  TextInput, 
+  TouchableOpacity, 
+  SafeAreaView, 
+  StatusBar, 
+  Image,
+  ScrollView
+} from 'react-native';
+import { useSelector } from 'react-redux';
+import { AntDesign, MaterialIcons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from "@react-navigation/native";
 import Toast from 'react-native-toast-message';
-import { useResetPasswordMutation } from "../../services/Auth/authAPI";
+import { useResetPasswordMutation, useGetUserProfileQuery  } from "../../services/Auth/authAPI";
 import Loader from "../../components/Loader";
 
 const ResetPassword = () => {
@@ -13,7 +23,21 @@ const ResetPassword = () => {
   
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [resetPassword, { isLoading }] = useResetPasswordMutation();
+  const accessToken = useSelector((state) => state.auth.accessToken);
+  const { data: userProfile, isLoading: isProfileLoading, error: profileError } = useGetUserProfileQuery();
+     
+console.log('my profile',userProfile)
+  console.log('Access Token:', accessToken);
+   
+  useEffect(() => {
+  if (userProfile) {
+    console.log('User Profile:', userProfile);
+    // Token is in the headers, not typically in the response body
+  }
+}, [userProfile]);
 
   const handleSubmit = async () => {
     if (!newPassword || !confirmPassword) {
@@ -74,61 +98,106 @@ const ResetPassword = () => {
     navigation.goBack();
   };
 
+  const toggleNewPasswordVisibility = () => {
+    setShowNewPassword(!showNewPassword);
+  };
+
+  const toggleConfirmPasswordVisibility = () => {
+    setShowConfirmPassword(!showConfirmPassword);
+  };
+
   return (
-    <SafeAreaView className="bg-[#181e25] flex-1 items-center justify-center">
+    <SafeAreaView className="bg-[#181e25] flex-1">
       <StatusBar style="light" backgroundColor="#181e25" />
 
-      <TouchableOpacity
-        className="absolute z-10 top-5 left-5"
-        onPress={handleBack}
+      <ScrollView 
+        contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
+        keyboardShouldPersistTaps="handled"
       >
-        <AntDesign name="arrowleft" size={24} color="white" />
-      </TouchableOpacity>
-
-      <Image
-        source={require("../../images/LogoSendo.png")}
-        className="mt-3 mb-3 w-28 h-28"
-      />
-
-      <View className="w-[85%] bg-[#f1f1f1] rounded-3xl p-5">
-        <Text className="text-2xl font-bold text-center mb-5">
-          Reset Password
-        </Text>
-
-        <Text className="text-center mb-5">
-          {email ? `Reset password for ${email}` : `Reset password for ${phone}`}
-        </Text>
-
-        <TextInput
-          placeholder="New Password"
-          value={newPassword}
-          onChangeText={setNewPassword}
-          secureTextEntry
-          className="bg-white rounded-3xl py-4 px-5 mb-4"
-        />
-
-        <TextInput
-          placeholder="Confirm New Password"
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-          secureTextEntry
-          className="bg-white rounded-3xl py-4 px-5 mb-5"
-        />
-
         <TouchableOpacity
-          onPress={handleSubmit}
-          disabled={isLoading}
-          className="bg-[#7ddd7d] rounded-3xl p-4 items-center justify-center"
+          className="absolute z-10 top-5 left-5"
+          onPress={handleBack}
         >
-          {isLoading ? (
-            <Loader />
-          ) : (
-            <Text className="font-bold text-white">
+          <AntDesign name="arrowleft" size={24} color="white" />
+        </TouchableOpacity>
+
+        <View className="items-center justify-center py-8">
+          <Image
+            source={require("../../images/LogoSendo.png")}
+            className="w-28 h-28 mb-6"
+          />
+
+          <View className="w-[85%] bg-[#f1f1f1] rounded-3xl p-5">
+            <Text className="text-2xl font-bold text-center mb-5">
               Reset Password
             </Text>
-          )}
-        </TouchableOpacity>
-      </View>
+
+            <Text className="text-center mb-5">
+              {email ? `Reset password for ${email}` : `Reset password for ${phone}`}
+            </Text>
+
+            <View className="mb-4">
+              <Text className="text-gray-700 font-bold mb-2">New Password</Text>
+              <View className="relative">
+                <TextInput
+                  placeholder="Enter new password"
+                  value={newPassword}
+                  onChangeText={setNewPassword}
+                  secureTextEntry={!showNewPassword}
+                  className="bg-white rounded-3xl py-4 px-5 pr-12"
+                />
+                <TouchableOpacity 
+                  className="absolute right-3 top-4"
+                  onPress={toggleNewPasswordVisibility}
+                >
+                  <MaterialIcons 
+                    name={showNewPassword ? "visibility-off" : "visibility"} 
+                    size={24} 
+                    color="#777" 
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <View className="mb-5">
+              <Text className="text-gray-700 font-bold mb-2">Confirm Password</Text>
+              <View className="relative">
+                <TextInput
+                  placeholder="Confirm new password"
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  secureTextEntry={!showConfirmPassword}
+                  className="bg-white rounded-3xl py-4 px-5 pr-12"
+                />
+                <TouchableOpacity 
+                  className="absolute right-3 top-4"
+                  onPress={toggleConfirmPasswordVisibility}
+                >
+                  <MaterialIcons 
+                    name={showConfirmPassword ? "visibility-off" : "visibility"} 
+                    size={24} 
+                    color="#777" 
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <TouchableOpacity
+              onPress={handleSubmit}
+              disabled={isLoading}
+              className="bg-[#7ddd7d] rounded-3xl p-4 items-center justify-center"
+            >
+              {isLoading ? (
+                <Loader />
+              ) : (
+                <Text className="font-bold text-white">
+                  Reset Password
+                </Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 };
