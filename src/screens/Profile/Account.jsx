@@ -12,6 +12,7 @@ import {
 import { AntDesign, EvilIcons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import Avatar from "../../images/Avatar.png";
+import AddSecondPhoneModal from '../../components/AddSecondPhoneModal'; 
 import KeyboardAvoidinWrapper from "../../components/KeyboardAvoidinWrapper";
 import {
   useGetUserProfileQuery,
@@ -40,6 +41,8 @@ const Account = () => {
   const [addSecondPhone] = useAddSecondPhoneMutation();
   const [sendSecondPhoneOtp] = useSendSecondPhoneOtpMutation();
   const [verifySecondPhoneOtp] = useVerifySecondPhoneOtpMutation();
+  const [showSecondPhoneModal, setShowSecondPhoneModal] = useState(false);
+  const [secondPhoneNumber, setSecondPhoneNumber] = useState('');
 
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
@@ -279,10 +282,50 @@ const Account = () => {
   };
 
   const handleAddSecondPhone = () => {
-    setIsSecondPhone(true);
-    setOtpTarget("phone");
-    setTempValue("");
-    setShowOtpModal(true);
+    setShowSecondPhoneModal(true);
+  };
+
+  const handleSendSecondPhoneOtp = async (phone) => {
+    try {
+      await sendSecondPhoneOtp({ phone }).unwrap();
+      setSecondPhoneNumber(phone);
+      Toast.show({
+        type: 'success',
+        text1: 'OTP Sent',
+        text2: `OTP sent to ${phone}`,
+      });
+    } catch (err) {
+      console.error('OTP send error:', err);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: err?.data?.message || 'Failed to send OTP',
+      });
+      throw err;
+    }
+  };
+
+  const handleVerifySecondPhoneOtp = async ({ phone, code }) => {
+    try {
+      await verifySecondPhoneOtp({ phone, code }).unwrap();
+      await addSecondPhone({ phone }).unwrap();
+      
+      Toast.show({
+        type: 'success',
+        text1: 'Success',
+        text2: 'Second phone number added successfully',
+      });
+      
+      refetch(); // Refresh profile data
+    } catch (err) {
+      console.error('Verification error:', err);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: err?.data?.message || 'Failed to verify OTP',
+      });
+      throw err;
+    }
   };
 
   return (
@@ -338,31 +381,51 @@ const Account = () => {
               )}
             </View>
 
-            {/* Phone Number */}
-            <View className="mb-6">
-              <Text className="text-gray-700 font-bold mb-2">Phone Number</Text>
-              {isEditing ? (
-                <>
-                  <TextInput
-                    value={formData.phone}
-                    onChangeText={(text) => handleFieldChange("phone", text)}
-                    keyboardType="phone-pad"
-                    placeholder="Phone Number"
-                    className="bg-white rounded-xl p-3 mb-2"
-                  />
-                  <TouchableOpacity
-                    onPress={handleAddSecondPhone}
-                    className="bg-blue-500 p-2 rounded-lg items-center"
-                  >
-                    <Text className="text-white">Add Second Phone</Text>
-                  </TouchableOpacity>
-                </>
-              ) : (
-                <Text className="text-lg bg-white rounded-xl p-3">
-                  {userProfile?.data?.phone || "Loading..."}
-                </Text>
-              )}
-            </View>
+             {/* Phone Number Section */}
+              <View className="mb-6">
+                <Text className="text-gray-700 font-bold mb-2">Phone Number</Text>
+                {isEditing ? (
+                  <>
+                    <TextInput
+                      value={formData.phone}
+                      onChangeText={(text) => handleFieldChange("phone", text)}
+                      keyboardType="phone-pad"
+                      placeholder="Phone Number"
+                      className="bg-white rounded-xl p-3 mb-2"
+                    />
+                    <TouchableOpacity
+                      onPress={handleAddSecondPhone}
+                      className="bg-blue-500 p-2 rounded-lg items-center"
+                    >
+                      <Text className="text-white">Add Second Phone</Text>
+                    </TouchableOpacity>
+                    
+                    {/* Display second phone if exists */}
+                    {userProfile?.data?.second_phone && (
+                      <View className="mt-2">
+                        <Text className="text-gray-700 font-bold mb-2">Second Phone</Text>
+                        <Text className="text-lg bg-white rounded-xl p-3">
+                          {userProfile.data.second_phone}
+                        </Text>
+                      </View>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <Text className="text-lg bg-white rounded-xl p-3">
+                      {userProfile?.data?.phone || "Loading..."}
+                    </Text>
+                    {userProfile?.data?.second_phone && (
+                      <>
+                        <Text className="text-gray-700 font-bold mb-2 mt-2">Second Phone</Text>
+                        <Text className="text-lg bg-white rounded-xl p-3">
+                          {userProfile.data.second_phone}
+                        </Text>
+                      </>
+                    )}
+                  </>
+                )}
+              </View>
 
             {/* Email */}
             <View className="mb-6">
@@ -461,6 +524,18 @@ const Account = () => {
           </View>
         </View>
       </KeyboardAvoidinWrapper>
+
+      {/* Second Phone Modal */}
+      <AddSecondPhoneModal
+        visible={showSecondPhoneModal}
+        onClose={() => {
+          setShowSecondPhoneModal(false);
+          setSecondPhoneNumber('');
+        }}
+        onSendOtp={handleSendSecondPhoneOtp}
+        onVerifyOtp={handleVerifySecondPhoneOtp}
+        isLoading={isLoading} // You might want separate loading states
+      />
 
       {/* OTP Verification Modal */}
       <OtpVerificationModal

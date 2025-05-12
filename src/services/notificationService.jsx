@@ -1,7 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import { Alert, Platform } from 'react-native';
-import { API_URL } from './Auth/config';
+import { EXPO_PUBLIC_API_URL } from './Auth/config';
 
 export async function registerForPushNotificationsAsync() {
   if (!Device.isDevice) {
@@ -39,7 +39,7 @@ export async function sendPushNotification(title: string, body: string) {
 
 export async function sendPushTokenToBackend(token: string, title: string, body: string, type: string) {
   try {
-    const response = await fetch(`${API_URL}/notification/send`, {
+    const response = await fetch(`${EXPO_PUBLIC_API_URL}/notification/send`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

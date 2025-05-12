@@ -14,7 +14,7 @@ import {
 import { AntDesign, MaterialIcons } from "@expo/vector-icons";
 import Toast from 'react-native-toast-message';
 import Loader from "../../components/Loader";
-import { useSimulatePaymentMutation } from '../../services/Pay/paymentSimulatorAPI'; // Adjust path as needed
+import { useSimulatePaymentMutation } from '../../services/WalletApi/walletApi'; // Adjust path as needed
 
 const PaymentSimulator = () => {
   const [amount, setAmount] = useState('100');
@@ -191,7 +191,7 @@ const PaymentSimulator = () => {
             {isLoading ? (
               <Loader color="#fff" />
             ) : (
-              <Text style={styles.simulateButtonText}>Simuler le paiement</Text>
+              <Text style={styles.simulateButtonText}>Estimateur de paiement</Text>
             )}
           </TouchableOpacity>
         </View>

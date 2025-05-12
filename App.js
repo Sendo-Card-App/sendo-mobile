@@ -7,6 +7,7 @@ import { Provider } from "react-redux";
 import { store } from "./src/store/store";
 import Toast from "react-native-toast-message";
 import './i18n';
+import NetworkProvider from './src/services/NetworkProvider';
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createDrawerNavigator } from "@react-navigation/drawer";
@@ -219,7 +220,7 @@ function MainStack() {
       <Stack.Screen name="SelectMethod" component={SelectMethod} options={{ headerTitle: "Sélectionner une méthode" }} />
       <Stack.Screen name="BankDepositRecharge" component={BankDepositRecharge} options={{headerTitle:" Rechargement par dépôt bancaire"}} />
       <Stack.Screen name="TransfertFund" component={TransfertFund} options={{ headerTitle: "Transférer des fonds" }} />
-      <Stack.Screen name="PaymentSimulator" component={PaymentSimulator} options={{ headerTitle: " Simulateur de paiement" }} />
+      <Stack.Screen name="PaymentSimulator" component={PaymentSimulator} options={{ headerTitle: " Estimateur de paiement enligne" }} />
       <Stack.Screen name="MethodType" component={MethodType} options={{headerTitle:"Sélectionner une méthode" }} />
       <Stack.Screen name="WalletTransfer" component={WalletTransfer} options={{ headerTitle: "Transfert de portefeuille" }} />
       <Stack.Screen name="AddContact" component={AddContact} options={{ headerTitle: "Ajouter un contact" }} />
@@ -289,10 +290,12 @@ export default function App() {
   }, []);
   return (
     <Provider store={store}>
-      <NavigationContainer>
-        <DrawerNavigator />
-        <Toast />
-      </NavigationContainer>
+      <NetworkProvider>
+        <NavigationContainer>
+          <DrawerNavigator />
+          <Toast />
+        </NavigationContainer>
+      </NetworkProvider>
     </Provider>
   );
 }

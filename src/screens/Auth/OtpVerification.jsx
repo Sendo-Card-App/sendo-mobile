@@ -11,14 +11,14 @@ import { OtpInput } from "react-native-otp-entry";
 import KeyboardAvoidinWrapper from "../../components/KeyboardAvoidinWrapper";
 import { useDispatch } from "react-redux";
 import { AntDesign } from '@expo/vector-icons';
-import { useVerifyOtpMutation, useResendOtpMutation } from "../../services/Auth/authAPI";
+import { useVerifyOtpMutation, useResendOtpMutation, useSendOtpMutation  } from "../../services/Auth/authAPI";
 import { sendPushNotification, sendPushTokenToBackend, registerForPushNotificationsAsync  } from '../../services/notificationService';
 import { verifyOtpSuccess } from "../../features/Auth/authSlice";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import Loader from "../../components/Loader";
 import Toast from "react-native-toast-message";
 
-const OTP_TIMER_DURATION = 300;
+const OTP_TIMER_DURATION = 100;
 
 const OtpVerification = ({ route, onVerify, onResend, onClose }) => {
   const dispatch = useDispatch();
@@ -26,6 +26,7 @@ const OtpVerification = ({ route, onVerify, onResend, onClose }) => {
   const componentRoute = useRoute();
   const [verifyOtp] = useVerifyOtpMutation();
   const [resendOtp] = useResendOtpMutation();
+  const [sendOtp] = useSendOtpMutation();
 
   const phone = route?.params?.phone || componentRoute?.params?.phone;
   const initialCode = route?.params?.code || componentRoute?.params?.code;
@@ -58,6 +59,27 @@ const OtpVerification = ({ route, onVerify, onResend, onClose }) => {
     const seconds = timeInSeconds % 60;
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   };
+  
+  useEffect(() => {
+    const sendInitialOtp = async () => {
+      if (phone) {
+        try {
+          await resendOtp({ phone }).unwrap();
+          Toast.show({
+            type: 'success',
+            text1: 'OTP sent successfully',
+          });
+        } catch (err) {
+          Toast.show({
+            type: 'error',
+            text1: err?.data?.message || 'Failed to send OTP',
+          });
+        }
+      }
+    };
+
+    sendInitialOtp();
+  }, [phone]);
 
   const handleVerifyOtp = async (codeToVerify = otp) => {
     if (codeToVerify.length !== 6 || isVerifying) return;
@@ -218,21 +240,36 @@ const OtpVerification = ({ route, onVerify, onResend, onClose }) => {
   );
 
   if (onClose) {
-    return (
-      <Modal animationType="slide" transparent visible={true} onRequestClose={onClose}>
-        <View className="flex-1 bg-[#181e25] bg-opacity-50 justify-center items-center">
-          <TouchableOpacity className="absolute z-10 top-5 left-5" onPress={handleBack}>
-            <AntDesign name="arrowleft" size={24} color="white" />
-          </TouchableOpacity>
-          <View className="w-9/12 bg-white p-6 rounded-xl items-center">
-            {renderOtpScreen()}
-            <TouchableOpacity onPress={onClose} className="mt-4">
-              <Text className="text-red-500">Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-    );
+   return (
+  <Modal animationType="slide" transparent visible={true} onRequestClose={onClose}>
+    <View className="flex-1 bg-[#181e25] bg-opacity-50 justify-center items-center">
+      <TouchableOpacity 
+        className="absolute z-10 top-5 left-5" 
+        onPress={handleBack}
+      >
+        <AntDesign name="arrowleft" size={24} color="white" />
+      </TouchableOpacity>
+      
+      <View className="w-9/12 bg-white p-6 rounded-xl items-center">
+        {/* Phone Number Display */}
+        <Text className="mb-4 text-gray-600">
+          Code sent to {phone}
+        </Text>
+        
+        {/* OTP Input and Controls */}
+        {renderOtpScreen()}
+        
+        {/* Cancel Button */}
+        <TouchableOpacity 
+          onPress={onClose} 
+          className="mt-4"
+        >
+          <Text className="text-red-500">Cancel</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  </Modal>
+);
   }
 
   return (
