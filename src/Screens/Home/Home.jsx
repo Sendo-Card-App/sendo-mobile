@@ -12,7 +12,7 @@ import {
 import React, { useState } from "react";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons, Entypo } from "@expo/vector-icons";
+import { Ionicons, Entypo,  MaterialIcons  } from "@expo/vector-icons";
 import ButtomLogo from "../../images/ButtomLogo.png";
 import CarteVirtuelle from "../../images/CarteVirtuelle.png";
 import HomeImage2 from "../../images/HomeImage2.png";
@@ -55,9 +55,22 @@ const Home = () => {
                 resizeMode="contain"
                 className="h-[50px] w-[150px]"
               />
-              <TouchableOpacity onPress={() => navigation.openDrawer()}>
-                <Ionicons name="menu-outline" size={24} color="black" />
-              </TouchableOpacity>
+              <View className="flex-row items-center gap-4">
+                {/* Notification Icon with Badge */}
+                <TouchableOpacity 
+                  onPress={() => navigation.navigate("NotificationComponent")}
+                  className="relative"
+                >
+                  <MaterialIcons name="notifications" size={24} color="black" />
+                  <View className="absolute -top-1 -right-1 bg-red-500 rounded-full w-4 h-4 items-center justify-center">
+                    <Text className="text-white text-xs">3</Text>
+                  </View>
+                </TouchableOpacity>
+                
+                <TouchableOpacity onPress={() => navigation.openDrawer()}>
+                  <Ionicons name="menu-outline" size={24} color="black" />
+                </TouchableOpacity>
+              </View>
             </View>
 
             <View className="py-5 pl-4">

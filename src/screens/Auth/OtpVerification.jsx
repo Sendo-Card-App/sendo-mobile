@@ -11,14 +11,18 @@ import { OtpInput } from "react-native-otp-entry";
 import KeyboardAvoidinWrapper from "../../components/KeyboardAvoidinWrapper";
 import { useDispatch } from "react-redux";
 import { AntDesign } from '@expo/vector-icons';
-import { useVerifyOtpMutation, useResendOtpMutation } from "../../services/Auth/authAPI";
-import { sendPushNotification, sendPushTokenToBackend, registerForPushNotificationsAsync  } from '../../services/notificationService';
+import { useVerifyOtpMutation, useResendOtpMutation, useSendOtpMutation  } from "../../services/Auth/authAPI";
+import { 
+  sendPushNotification,
+  sendPushTokenToBackend,
+  registerForPushNotificationsAsync
+} from '../../services/notificationService';
 import { verifyOtpSuccess } from "../../features/Auth/authSlice";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import Loader from "../../components/Loader";
 import Toast from "react-native-toast-message";
 
-const OTP_TIMER_DURATION = 300;
+const OTP_TIMER_DURATION = 100;
 
 const OtpVerification = ({ route, onVerify, onResend, onClose }) => {
   const dispatch = useDispatch();
@@ -26,6 +30,7 @@ const OtpVerification = ({ route, onVerify, onResend, onClose }) => {
   const componentRoute = useRoute();
   const [verifyOtp] = useVerifyOtpMutation();
   const [resendOtp] = useResendOtpMutation();
+  const [sendOtp] = useSendOtpMutation();
 
   const phone = route?.params?.phone || componentRoute?.params?.phone;
   const initialCode = route?.params?.code || componentRoute?.params?.code;
@@ -58,79 +63,134 @@ const OtpVerification = ({ route, onVerify, onResend, onClose }) => {
     const seconds = timeInSeconds % 60;
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   };
-
-  const handleVerifyOtp = async (codeToVerify = otp) => {
-    if (codeToVerify.length !== 6 || isVerifying) return;
   
-    setIsVerifying(true);
-    try {
-      const response = await verifyOtp({ phone, code: codeToVerify }).unwrap();
-  
-      if (response.status === 200) {
-        // Send success notification
+  useEffect(() => {
+    const sendInitialOtp = async () => {
+      if (phone) {
         try {
-          // Get the push token from the notification service
-          const pushToken = await registerForPushNotificationsAsync();
-          
-          if (pushToken) {
-            // Send to backend with specific type
-            await sendPushTokenToBackend(
-              pushToken,
-              "Account Verified",
-              "Your account has been successfully verified!",
-              "SUCCESS_ACCOUNT_VERIFIED"
-            );
-            
-            // Local notification
-            await sendPushNotification(
-              "Verification Successful",
-              "Your account is now verified!"
-            );
-          }
-        } catch (notificationError) {
-          console.warn("Notification failed silently:", notificationError);
-        }
-  
-        Toast.show({
-          type: 'success',
-          text1: response.message || 'OTP verified successfully',
-        });
-  
-        if (isForgotPasswordFlow) {
-          navigation.navigate("ResetPassword", {
-            phone,
-            verificationToken: response.data?.token,
+          await resendOtp({ phone }).unwrap();
+          Toast.show({
+            type: 'success',
+            text1: 'OTP sent successfully',
           });
-        } else {
-          dispatch(verifyOtpSuccess(response));
-          onVerify ? onVerify(response) : navigation.navigate("Auth");
+        } catch (err) {
+          Toast.show({
+            type: 'error',
+            text1: err?.data?.message || 'Failed to send OTP',
+          });
         }
       }
-    } catch (err) {
-      console.log(err)
-      const status = err?.status;
-      if (status === 404) {
+    };
+
+    sendInitialOtp();
+  }, [phone]);
+
+ const handleVerifyOtp = async (codeToVerify = otp) => {
+  if (codeToVerify.length !== 6 || isVerifying) return;
+
+  setIsVerifying(true);
+  try {
+    const response = await verifyOtp({ phone, code: codeToVerify }).unwrap();
+
+    if (response.status === 200) {
+      // Enhanced notification handling
+      try {
+        const notificationPromises = [];
+        
+        // 1. Register for push notifications if not already done
+        const pushToken = await getStoredPushToken() || await registerForPushNotificationsAsync();
+        
+        if (pushToken) {
+          // Format notification content
+          const notificationDetails = `Account Verification Details:
+          - Phone: ${phone}
+          - Time: ${new Date().toLocaleString()}
+          - Status: Successfully Verified`;
+
+          // Send to backend
+          notificationPromises.push(
+            sendPushTokenToBackend(
+              "Account Verified",
+              notificationDetails,
+              "SUCCESS_ACCOUNT_VERIFIED"
+            )
+          );
+        }
+
+        // Always send local notification
+        notificationPromises.push(
+          sendPushNotification(
+            "Verification Successful", 
+            "Your account is now verified!"
+          )
+        );
+
+        await Promise.all(notificationPromises);
+      } catch (notificationError) {
+        console.warn("Notification subsystem failed:", notificationError);
+        // Fallback to simple toast if notifications fail
         Toast.show({
-          type: 'error',
-          text1: 'Invalid or Expired Code',
-          text2: 'The OTP code is incorrect or expired. Please request a new one.',
-        });
-      } else if (status === 500) {
-        Toast.show({
-          type: 'error',
-          text1: 'Server Error',
-          text2: 'An error occurred while verifying OTP. Please try again.',
-        });
-      } else {
-        Toast.show({
-          type: 'error',
-          text1: err?.data?.message || 'OTP verification failed',
+          type: 'info',
+          text1: 'Verification complete',
+          text2: 'Your account is now verified',
         });
       }
-    } finally {
-      setIsVerifying(false);
+
+      // Show success message
+      Toast.show({
+        type: 'success',
+        text1: response.message || 'OTP verified successfully',
+        visibilityTime: 3000
+      });
+
+      // Navigate after a slight delay
+      setTimeout(() => {
+        navigation.navigate("Auth");
+      }, 500);
     }
-  };
+  } catch (err) {
+    console.error('OTP Verification Error:', err);
+    
+    // Enhanced error handling
+    const status = err?.status;
+    const errorMessage = err?.data?.message || 'OTP verification failed';
+    
+    const errorResponses = {
+      400: {
+        text1: 'Invalid Request',
+        text2: 'The verification code format is invalid'
+      },
+      404: {
+        text1: 'Invalid or Expired Code',
+        text2: 'The OTP code is incorrect or expired. Please request a new one.'
+      },
+      429: {
+        text1: 'Too Many Attempts',
+        text2: 'Please wait before trying again'
+      },
+      500: {
+        text1: 'Server Error',
+        text2: 'An error occurred while verifying OTP. Please try again.'
+      },
+      default: {
+        text1: 'Verification Failed',
+        text2: errorMessage
+      }
+    };
+
+    Toast.show({
+      type: 'error',
+      ...(errorResponses[status] || errorResponses.default),
+    });
+
+    // Reset OTP field on certain errors
+    if ([404, 429].includes(status)) {
+      setOtp('');
+    }
+  } finally {
+    setIsVerifying(false);
+  }
+};
 
   const handleResendOtp = async () => {
     if (seconds > 0) return;
@@ -218,21 +278,36 @@ const OtpVerification = ({ route, onVerify, onResend, onClose }) => {
   );
 
   if (onClose) {
-    return (
-      <Modal animationType="slide" transparent visible={true} onRequestClose={onClose}>
-        <View className="flex-1 bg-[#181e25] bg-opacity-50 justify-center items-center">
-          <TouchableOpacity className="absolute z-10 top-5 left-5" onPress={handleBack}>
-            <AntDesign name="arrowleft" size={24} color="white" />
-          </TouchableOpacity>
-          <View className="w-9/12 bg-white p-6 rounded-xl items-center">
-            {renderOtpScreen()}
-            <TouchableOpacity onPress={onClose} className="mt-4">
-              <Text className="text-red-500">Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-    );
+   return (
+  <Modal animationType="slide" transparent visible={true} onRequestClose={onClose}>
+    <View className="flex-1 bg-[#181e25] bg-opacity-50 justify-center items-center">
+      <TouchableOpacity 
+        className="absolute z-10 top-5 left-5" 
+        onPress={handleBack}
+      >
+        <AntDesign name="arrowleft" size={24} color="white" />
+      </TouchableOpacity>
+      
+      <View className="w-9/12 bg-white p-6 rounded-xl items-center">
+        {/* Phone Number Display */}
+        <Text className="mb-4 text-gray-600">
+          Code sent to {phone}
+        </Text>
+        
+        {/* OTP Input and Controls */}
+        {renderOtpScreen()}
+        
+        {/* Cancel Button */}
+        <TouchableOpacity 
+          onPress={onClose} 
+          className="mt-4"
+        >
+          <Text className="text-red-500">Cancel</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  </Modal>
+);
   }
 
   return (

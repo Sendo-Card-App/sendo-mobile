@@ -89,6 +89,23 @@ export const walletApi = createApi({
       }),
       providesTags: [TAG_TYPES.TRANSACTIONS],
     }),
+
+    getWalletDetails: builder.query({
+      query: (walletId) => ({
+        url: `/wallet/${walletId}`,
+        method: 'GET',
+      }),
+      providesTags: [TAG_TYPES.WALLET],
+    }),
+    
+    simulatePayment: builder.mutation({
+      query: ({ amount, currency }) => ({
+        url: '/users/try-simulation-payment',
+        method: 'POST',
+        body: { amount, currency },
+      }),
+      providesTags: [TAG_TYPES.WALLET],
+    }),
   }),
 });
 
@@ -97,4 +114,6 @@ export const {
   useRechargeWalletMutation,
   useTransferFundsMutation,
   useGetTransactionHistoryQuery,
+  useSimulatePaymentMutation,
+  useGetWalletDetailsQuery,
 } = walletApi;

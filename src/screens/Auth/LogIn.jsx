@@ -12,37 +12,31 @@ import {
   StatusBar,
   Modal,
   FlatList,
-  ActivityIndicator,
-  StyleSheet
+  ActivityIndicator
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import KeyboardAvoidinWrapper from "../../components/KeyboardAvoidinWrapper";
-import OtpVerification from "./OtpVerification";
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
-import {
-  useResendOtpMutation,
-  useVerifyOtpMutation
-} from "../../services/Auth/authAPI";
 import { loginSuccess } from "../../features/Auth/authSlice";
 import Loader from "../../components/Loader";
-import { storeData } from "../../services/storage"; // Import local storage helper
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { storeData } from "../../services/storage";
 import Toast from 'react-native-toast-message';
+import { useLoginWithPhoneMutation } from "../../services/Auth/authAPI";
 
 const Log = () => {
   const { t, i18n } = useTranslation();
   const navigation = useNavigation();
   const dispatch = useDispatch();
-  const [verifyOtp] = useVerifyOtpMutation();
-  const [resendOtp] = useResendOtpMutation();
+  const [loginWithPhone, { isLoading }] = useLoginWithPhoneMutation();
 
   const [phone, setPhone] = useState("");
-  const [isModalVisible, setModalVisible] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [password, setPassword] = useState("");
   const [languageModalVisible, setLanguageModalVisible] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const [countries, setCountries] = useState([]);
+  const [fullPhoneNumber, setFullPhoneNumber] = useState(""); 
   const [countryModalVisible, setCountryModalVisible] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState({
     name: 'Cameroon',
@@ -69,102 +63,49 @@ const Log = () => {
     fetchCountries();
   }, []);
 
-  const storeAuthData = async (authData) => {
-    try {
-      await AsyncStorage.setItem('@authData', JSON.stringify(authData));
-    } catch (error) {
-      Toast.show({ type: 'error', text1: 'Error saving login data' });
+  useEffect(() => {
+    if (phone && selectedCountry.code) {
+      setFullPhoneNumber(`${selectedCountry.code}${phone}`);
     }
-  };
+  }, [phone, selectedCountry.code]);
 
-  const handleNext = async () => {
-    if (!phone) {
-      Toast.show({ type: 'error', text1: 'Enter a valid phone number' });
+  const handleLogin = async () => {
+    if (!phone || !password) {
+      Toast.show({ type: 'error', text1: 'Phone and password are required' });
       return;
     }
 
     try {
-      setIsLoading(true);
-      await resendOtp(`${selectedCountry.code}${phone}`).unwrap();
-      setModalVisible(true);
-      Toast.show({ type: 'success', text1: 'OTP sent successfully' });
-    } catch (err) {
-      Toast.show({ type: 'error', text1: err.data?.message || 'Failed to send OTP' });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      const response = await loginWithPhone({
+        phone: fullPhoneNumber,
+        password
+      }).unwrap();
 
-const handleVerifyOtp = async (code) => {
-  try {
-    setIsLoading(true);
+      if (response.status === 200) {
+        const { accessToken, deviceId } = response.data;
+        
+        // Store the authentication data
+        await storeData('authData', {
+          accessToken,
+          deviceId,
+          phone: fullPhoneNumber
+        });
 
-    const response = await verifyOtp({ 
-      phone: `${selectedCountry.code}${phone}`, 
-      code 
-    });
+        dispatch(loginSuccess({
+          accessToken,
+          deviceId,
+          phone: fullPhoneNumber
+        }));
 
-    const status = response?.status;
-
-    if (status === 200) {
-      const authData = {
-        user: response.data.user,
-        accessToken: response.data.accessToken,
-        isGuest: false
-      };
-
-      // Store data in local storage
-      await storeData('@authData', authData);
-
-      // Update Redux store
-      dispatch(loginSuccess(authData));
-
-      // Hide OTP modal
-      setModalVisible(false);
-
-      // Show success message
-      Toast.show({ type: 'success', text1: 'Login successful' });
-
-      // Navigate to main screen
-      navigation.navigate("Main");
-    } else if (status === 404) {
+        Toast.show({ type: 'success', text1: response.message });
+        navigation.navigate("PinCode");
+      }
+    } catch (error) {
+      console.error('Login error:', error);
       Toast.show({
         type: 'error',
-        text1: 'Invalid or Expired Code',
-        text2: 'The OTP code is incorrect or expired. Please request a new one.',
+        text1: error.data?.message || 'Login failed',
       });
-    } else if (status === 500) {
-      Toast.show({
-        type: 'error',
-        text1: 'Server Error',
-        text2: 'An error occurred while verifying OTP. Please try again.',
-      });
-    } else {
-      Toast.show({
-        type: 'error',
-        text1: response?.data?.message || 'OTP verification failed',
-      });
-    }
-  } catch (err) {
-    Toast.show({
-      type: 'error',
-      text1: err?.data?.message || 'Something went wrong during OTP verification.',
-    });
-  } finally {
-    setIsLoading(false);
-  }
-};
-
-
-  const handleResendOtp = async () => {
-    try {
-      setIsLoading(true);
-      await resendOtp(`${selectedCountry.code}${phone}`).unwrap();
-      Toast.show({ type: 'success', text1: 'OTP resent successfully' });
-    } catch (err) {
-      Toast.show({ type: 'error', text1: err.data?.message || 'Resend failed' });
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -175,7 +116,6 @@ const handleVerifyOtp = async (code) => {
   const changeLanguage = (lang) => {
     i18n.changeLanguage(lang);
     setLanguageModalVisible(false);
-    Toast.show({ type: 'success', text1: `Language changed to ${lang}` });
   };
 
   const renderCountry = ({ item }) => (
@@ -184,20 +124,20 @@ const handleVerifyOtp = async (code) => {
         setSelectedCountry(item);
         setCountryModalVisible(false);
       }}
-      style={styles.countryItem}
+      className="flex-row items-center py-3 px-4 border-b border-gray-200"
     >
-      <Image source={{ uri: item.flag }} style={styles.flag} />
-      <Text>{`${item.name} (${item.code})`}</Text>
+      <Image source={{ uri: item.flag }} className="w-8 h-6 mr-3" />
+      <Text className="text-lg">{`${item.name} (${item.code})`}</Text>
     </TouchableOpacity>
   );
 
   return (
     <>
       <KeyboardAvoidinWrapper>
-        <SafeAreaView style={styles.safeArea}>
+        <SafeAreaView className="flex-1 bg-[#181e25] justify-center items-center">
           <StatusBar barStyle="light-content" backgroundColor="#181e25" />
 
-          <View style={styles.header}>
+          <View className="absolute top-14 w-full px-6 flex-row justify-between z-10">
             <TouchableOpacity onPress={() => navigation.goBack()}>
               <AntDesign name="arrowleft" size={24} color="white" />
             </TouchableOpacity>
@@ -208,76 +148,130 @@ const handleVerifyOtp = async (code) => {
           </View>
 
           {/* Language Modal */}
-          <Modal animationType="slide" transparent={true} visible={languageModalVisible}>
-            <View style={styles.modalContainer}>
-              <View style={styles.languageModal}>
-                <Text style={styles.languageTitle}>Select your language</Text>
-                <TouchableOpacity onPress={() => changeLanguage("en")}><Text style={styles.languageOption}>English</Text></TouchableOpacity>
-                <TouchableOpacity onPress={() => changeLanguage("fr")}><Text style={styles.languageOption}>Français</Text></TouchableOpacity>
-                <TouchableOpacity onPress={() => setLanguageModalVisible(false)}><Text style={styles.languageClose}>Close</Text></TouchableOpacity>
+          <Modal animationType="slide" transparent visible={languageModalVisible}>
+            <View className="flex-1 justify-center items-center bg-black/50">
+              <View className="w-4/5 bg-white rounded-xl p-6">
+                <Text className="text-xl font-bold mb-4 text-center">Select your language</Text>
+                <TouchableOpacity 
+                  onPress={() => changeLanguage("en")}
+                  className="py-3 border-b border-gray-200"
+                >
+                  <Text className="text-lg text-center">English</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  onPress={() => changeLanguage("fr")}
+                  className="py-3 border-b border-gray-200"
+                >
+                  <Text className="text-lg text-center">Français</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  onPress={() => setLanguageModalVisible(false)}
+                  className="mt-4"
+                >
+                  <Text className="text-red-500 text-lg text-center">Close</Text>
+                </TouchableOpacity>
               </View>
             </View>
           </Modal>
 
           {/* Logo */}
-          <Image source={require("../../images/LogoSendo.png")} style={styles.logo} />
+          <Image 
+            source={require("../../images/LogoSendo.png")} 
+            className="w-24 h-24 mb-8" 
+          />
 
-          <View style={styles.form}>
-            <Text style={styles.title}>{t("log.title")}</Text>
+          {/* Login Form */}
+          <View className="w-4/5 bg-[#f1f1f1] rounded-3xl p-6 items-center">
+            <Text className="text-2xl font-bold mb-6">{t("log.title")}</Text>
 
-            <TouchableOpacity style={styles.countrySelector} onPress={() => setCountryModalVisible(true)}>
-              <Image source={{ uri: selectedCountry.flag }} style={styles.flag} />
-              <Text style={styles.countryCode}>{selectedCountry.code}</Text>
+            {/* Combined Country Code and Phone Input */}
+            <View className="flex-row w-full mb-4">
+              <TouchableOpacity 
+                onPress={() => setCountryModalVisible(true)}
+                className="flex-row items-center bg-white py-3 px-4 rounded-l-2xl border-r border-gray-200"
+              >
+                <Image source={{ uri: selectedCountry.flag }} className="w-8 h-6 mr-2" />
+                <Text className="font-bold text-lg">{selectedCountry.code}</Text>
+              </TouchableOpacity>
+              
+              <TextInput
+                placeholder={t("signup.phone")}
+                onChangeText={setPhone}
+                value={phone}
+                keyboardType="phone-pad"
+                className="flex-1 bg-white py-4 px-6 rounded-r-2xl text-lg"
+                maxLength={10}
+              />
+            </View>
+
+            <View className="relative w-full mb-6">
+              <TextInput
+                placeholder={t("signIn.password")}
+                onChangeText={setPassword}
+                value={password}
+                secureTextEntry={!showPassword}
+                className="bg-white w-full py-4 px-6 rounded-2xl text-center text-lg"
+              />
+              <TouchableOpacity
+                onPress={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-4"
+              >
+                <Icon name={showPassword ? "eye-off" : "eye"} size={20} color="gray" />
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity 
+              onPress={handleLogin}
+              disabled={isLoading}
+              className={`w-full py-4 rounded-2xl items-center ${isLoading ? 'bg-[#7ddd7d]' : 'bg-[#7ddd7d]'}`}
+            >
+              {isLoading ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <Text className="text-white font-bold text-lg">{t("log.login")}</Text>
+              )}
             </TouchableOpacity>
 
-            <TextInput
-              placeholder={t("signup.phone")}
-              onChangeText={setPhone}
-              value={phone}
-              keyboardType="phone-pad"
-              style={styles.phoneInput}
-              maxLength={10}
-            />
-
-            <TouchableOpacity disabled={isLoading} onPress={handleNext} style={styles.nextButton}>
-              {isLoading ? <Loader /> : <Text style={styles.nextText}>{t("log.next")}</Text>}
-            </TouchableOpacity>
-
-            <TouchableOpacity onPress={() => navigation.navigate('ForgetPassword')}>
-              <Text style={styles.forgotText}>{t("log.forgetPassword")}</Text>
+            <TouchableOpacity 
+              onPress={() => navigation.navigate('ForgetPassword')}
+              className="self-end mt-3"
+            >
+              <Text className="text-gray-600">{t("log.forgetPassword")}</Text>
             </TouchableOpacity>
           </View>
 
-          <Text style={styles.otherText}>{t("signIn.dontHaveAccount")}</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
-            <Text style={styles.signupBtn}>{t("signIn.signUp")}</Text>
+          <Text className="text-white mt-8">{t("signIn.dontHaveAccount")}</Text>
+          
+          <TouchableOpacity 
+            onPress={() => navigation.navigate('Signup')}
+            className="border-2 border-[#7ddd7d] rounded-2xl px-10 py-2 mt-3"
+          >
+            <Text className="text-[#7ddd7d] font-medium">{t("signIn.signUp")}</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={handleGuestLogin}>
-            <Text style={styles.guestBtn}>{t("signIn.guestUser")}</Text>
+          
+          <TouchableOpacity 
+            onPress={handleGuestLogin}
+            className="mt-4"
+          >
+            <Text className="text-[#7ddd7d] underline">{t("signIn.guestUser")}</Text>
           </TouchableOpacity>
 
+          {/* Country Selection Modal */}
           <Modal visible={countryModalVisible} animationType="slide">
-            <SafeAreaView style={styles.countryModal}>
+            <SafeAreaView className="flex-1 bg-white">
               {countries.length === 0 ? (
-                <ActivityIndicator style={styles.loader} />
+                <View className="flex-1 justify-center items-center">
+                  <ActivityIndicator size="large" color="#7ddd7d" />
+                </View>
               ) : (
                 <FlatList
                   data={countries}
                   keyExtractor={(item, index) => index.toString()}
                   renderItem={renderCountry}
-                  contentContainerStyle={styles.countryList}
+                  contentContainerStyle={{ paddingVertical: 20 }}
                 />
               )}
             </SafeAreaView>
-          </Modal>
-
-          <Modal animationType="slide" transparent={true} visible={isModalVisible}>
-            <OtpVerification
-              phone={`${selectedCountry.code}${phone}`}
-              onVerify={handleVerifyOtp}
-              onResend={handleResendOtp}
-              onClose={() => setModalVisible(false)}
-            />
           </Modal>
         </SafeAreaView>
       </KeyboardAvoidinWrapper>
@@ -285,138 +279,5 @@ const handleVerifyOtp = async (code) => {
     </>
   );
 };
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: "#181e25",
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  logo: {
-    width: 100,
-    height: 100,
-    marginBottom: 20
-  },
-  header: {
-    position: 'absolute',
-    top: 50,
-    width: '100%',
-    paddingHorizontal: 20,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    zIndex: 10
-  },
-  modalContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  languageModal: {
-    width: '80%',
-    backgroundColor: 'white',
-    borderRadius: 10,
-    padding: 20
-  },
-  languageTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 10 },
-  languageOption: { fontSize: 16, textAlign: 'center', marginVertical: 5 },
-  languageClose: { textAlign: 'center', color: 'red', marginTop: 15 },
-  form: {
-    width: '80%',
-    backgroundColor: '#f1f1f1',
-    borderRadius: 30,
-    padding: 20,
-    alignItems: 'center'
-  },
-  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20 },
-  countrySelector: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    borderRadius: 20,
-    marginBottom: 10
-  },
-  flag: { width: 30, height: 20, marginRight: 10 },
-  countryCode: { fontWeight: 'bold' , borderRadius: 30,
-    paddingVertical: 3,
-    paddingHorizontal: 10,
-    textAlign: 'center',
-    fontSize: 16,
-    // Shadow for iOS
-    shadowColor: '#fff',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 10,
-    shadowRadius: 1,},
-  phoneInput: {
-    backgroundColor: '#fff',
-    width: '100%',
-    borderRadius: 30,
-    textAlign: 'center',
-    paddingVertical: 12,
-    marginBottom: 20,
-    borderRadius: 30,
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    textAlign: 'center',
-    fontSize: 16,
-    // Shadow for iOS
-    shadowColor: '#fff',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 10,
-    shadowRadius: 1,
-  },
-  nextButton: {
-    backgroundColor: '#7ddd7d',
-    borderRadius: 30,
-    width: '100%',
-    padding: 15,
-    alignItems: 'center',
-    borderRadius: 30,
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    textAlign: 'center',
-    fontSize: 16,
-    // Shadow for iOS
-    shadowColor: '#fff',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 10,
-    shadowRadius: 1,
-  },
-  nextText: { fontWeight: 'bold', fontSize: 16 },
-  forgotText: { color: 'black', marginTop: 10, alignSelf: 'flex-end' },
-  otherText: { color: '#fff', marginTop: 20 },
-  signupBtn: {
-    borderColor: '#7ddd7d',
-    borderWidth: 2,
-    borderRadius: 30,
-    color: '#7ddd7d',
-    paddingVertical: 10,
-    paddingHorizontal: 30,
-    marginTop: 10,
-    textAlign: 'center'
-  },
-  guestBtn: {
-    color: '#7ddd7d',
-    textDecorationLine: 'underline',
-    marginTop: 10,
-    textAlign: 'center'
-  },
-  countryItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12
-  },
-  countryModal: {
-    flex: 1
-  },
-  loader: {
-    marginTop: 100
-  },
-  countryList: {
-    padding: 20
-  }
-});
 
 export default Log;

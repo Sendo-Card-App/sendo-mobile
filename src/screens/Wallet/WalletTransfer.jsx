@@ -8,7 +8,12 @@ import {
   StatusBar,
   ActivityIndicator
 } from 'react-native';
-import { useGetBalanceQuery, useTransferFundsMutation } from '../../services/WalletApi/walletApi';
+import { 
+  sendPushNotification,
+  sendPushTokenToBackend,
+  registerForPushNotificationsAsync
+} from '../../services/notificationService';
+import { useGetBalanceQuery, useTransferFundsMutation, useGetWalletDetailsQuery } from '../../services/WalletApi/walletApi';
 import { useGetUserProfileQuery } from '../../services/Auth/authAPI';
 import Toast from 'react-native-toast-message';
 import { useTranslation } from 'react-i18next';
@@ -20,6 +25,17 @@ const WalletTransfer = ({ navigation }) => {
   const [walletId, setWalletId] = useState('');
   const [description, setDescription] = useState('');
   const [userWalletId, setUserWalletId] = useState('');
+   const [recipientName, setRecipientName] = useState('');
+  const [debouncedWalletId, setDebouncedWalletId] = useState(''); // Added missing state declaration
+  
+   // Debounce walletId input to prevent rapid API calls
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedWalletId(walletId);
+    }, 500); // 500ms delay
+
+    return () => clearTimeout(timer);
+  }, [walletId]);
 
   const { data: userProfile, isLoading: isProfileLoading } = useGetUserProfileQuery();
   const userId = userProfile?.data?.id;
@@ -32,14 +48,38 @@ const WalletTransfer = ({ navigation }) => {
   } = useGetBalanceQuery(userId, {
     skip: !userId
   });
-   
-  //console.log(balanceData)
-  useEffect(() => {
-    if (userProfile?.data?.wallet.matricule) {
-      setUserWalletId(userProfile.data.wallet.matricule);
-    }
-  }, [userProfile]);
- 
+
+ const { 
+    data: recipientData, 
+    isLoading: isRecipientLoading,
+    isError: isRecipientError,
+    error: recipientError,
+    refetch: refetchRecipient
+  } = useGetWalletDetailsQuery(debouncedWalletId, {
+    skip: !debouncedWalletId,
+  });
+  
+
+useEffect(() => {
+  if (recipientData?.data?.user) {
+    const { firstname, lastname } = recipientData.data.user;
+    setRecipientName(`${firstname} ${lastname}`);
+  } else if (isRecipientError) {
+    setRecipientName(t('wallet_transfer.recipient_not_found'));
+  } else if (!debouncedWalletId) {
+    setRecipientName('');
+  }
+}, [recipientData, isRecipientError, debouncedWalletId, t]);
+
+useEffect(() => {
+  const walletId = userProfile?.data?.wallet?.matricule || 
+                  userProfile?.data?.walletId;
+  if (walletId) {
+    setUserWalletId(walletId);
+  } else {
+    console.warn('No wallet ID found in profile:', userProfile?.data);
+  }
+}, [userProfile]);
 
   const [transferFunds, { isLoading: isTransferring }] = useTransferFundsMutation();
 
@@ -81,17 +121,52 @@ const WalletTransfer = ({ navigation }) => {
       return;
     }
 
+     try {
+    // Process the transfer
+    await transferFunds({
+      fromWallet: userWalletId,
+      toWallet: walletId,
+      amount: transferAmount,
+      transfer_description: description
+    }).unwrap();
+
+    // Prepare notification content
+    const notificationContent = {
+      title: "Transfer Successful",
+      body: `You sent ${transferAmount} FCFA to ${recipientName || walletId}`,
+      type: "TRANSFER_SUCCESS"
+    };
+
     try {
-      await transferFunds({
-        fromWallet: userWalletId,
-        toWallet: walletId,
-        amount: transferAmount,
-        transfer_description: description
-      }).unwrap();
-      navigation.navigate('Success', {
-        message: 'Transfert effectué avec succès!',
-        nextScreen: 'MonSolde'
-      });
+      // Try to get stored token first
+      let pushToken = await getStoredPushToken();
+      
+      // If no token, register for new one
+      if (!pushToken) {
+        pushToken = await registerForPushNotificationsAsync();
+      }
+
+      if (pushToken) {
+        await sendPushTokenToBackend(
+          pushToken,
+          notificationContent.title,
+          notificationContent.body,
+          notificationContent.type
+        );
+      }
+    } catch (notificationError) {
+      console.warn("Remote notification failed:", notificationError);
+      // Fallback to local notification
+      await sendPushNotification(
+        notificationContent.title,
+        notificationContent.body
+      );
+    }
+
+    navigation.navigate('Success', {
+      message: 'Transfer completed successfully!',
+      nextScreen: 'MonSolde'
+    });
     } catch (error) {
       let errorMessage = 'Une erreur est survenue. Veuillez réessayer.';
       const status = error?.status;
@@ -114,7 +189,7 @@ const WalletTransfer = ({ navigation }) => {
     }
   };
 
-  const isLoading = isProfileLoading || isBalanceLoading;
+ const isLoading = isProfileLoading || isBalanceLoading;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff', paddingTop: StatusBar.currentHeight }}>
@@ -125,17 +200,17 @@ const WalletTransfer = ({ navigation }) => {
           {isLoading ? (
             <ActivityIndicator size="small" color="#0D1C6A" />
           ) : isBalanceError ? (
-            <Text style={{ color: 'red' }}>Erreur de chargement du solde</Text>
+            <Text style={{ color: 'red' }}>{t('wallet_transfer.balance_error')}</Text>
           ) : (
             <>
               <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#0D1C6A' }}>
                 {balanceData?.data?.balance?.toFixed(2) || '0.00'} FCFA
               </Text>
-              {userWalletId ? (
+              {userWalletId && (
                 <Text style={{ fontSize: 14, color: '#666', marginTop: 5 }}>
                   {t('wallet_transfer.your_matricule')}: {userWalletId}
                 </Text>
-              ) : null}
+              )}
             </>
           )}
         </View>
@@ -148,6 +223,27 @@ const WalletTransfer = ({ navigation }) => {
           value={walletId}
           onChangeText={setWalletId}
         />
+
+        {/* Recipient Name (Read-only) */}
+        {walletId && (
+          <>
+            <Text style={{ fontSize: 16, color: '#666', marginBottom: 5 }}>{t('wallet_transfer.recipient_name')}</Text>
+            <TextInput
+              style={[
+                styles.input, 
+                { 
+                  backgroundColor: '#f9f9f9',
+                  color: isRecipientError ? 'red' : '#333'
+                }
+              ]}
+              value={
+                isRecipientLoading ? t('common.loading') : 
+                recipientName || t('wallet_transfer.recipient_info')
+              }
+              editable={false}
+            />
+          </>
+        )}
 
         {/* Amount Input */}
         <Text style={{ fontSize: 16, color: '#666', marginBottom: 5 }}>{t('wallet_transfer.amount')}</Text>
@@ -185,7 +281,6 @@ const WalletTransfer = ({ navigation }) => {
     </SafeAreaView>
   );
 };
-
 const styles = {
   input: {
     borderWidth: 1,

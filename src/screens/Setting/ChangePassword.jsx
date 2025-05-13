@@ -43,61 +43,74 @@ const ChangePassword = () => {
 
   const passwordStrength = getPasswordStrength(newPassword);
 
-  const handlePasswordUpdate = async () => {
+ const handlePasswordUpdate = async () => {
     setIsLoading(true);
     try {
-      const userId = profile?.data?.id;
-      const result = await updatePassword({
-        userId,
-        oldPassword,
-        newPassword,
-      }).unwrap();
+        const userId = profile?.data?.id;
+        const result = await updatePassword({
+            userId,
+            oldPassword,
+            newPassword,
+        }).unwrap();
 
-      if (result.status === 200 || result.code === 200) {
-        try {
-          const pushToken = await registerForPushNotificationsAsync();
-          if (pushToken) {
-            await sendPushTokenToBackend(
-              pushToken,
-              "Password Updated",
-              "Your password has been changed successfully",
-              "SUCCESS_MODIFY_PASSWORD"  
-            );
-          }
-          await sendPushNotification(
-            "Security Update",
-            "Your password has been changed successfully"
-          );
-        } catch (notificationError) {
-          console.warn("Notification failed silently:", notificationError);
+        if (result.status === 200 || result.code === 200) {
+            // Send success notification
+            try {
+                // Get the push token from the notification service
+                const pushToken = await registerForPushNotificationsAsync();
+                
+                if (pushToken) {
+                  
+                    const notificationText = `Security Alert:
+                      - Action: Password Change
+                      - Status: Successful
+                      - Time: ${new Date().toLocaleString()}
+                      - User: ${userId}`;
+
+                    // Send to backend with specific type
+                    await sendPushTokenToBackend(
+                        pushToken,
+                        "Password Updated",
+                        notificationText,
+                        "SUCCESS_MODIFY_PASSWORD"
+                    );
+                    
+                    // Local notification
+                    await sendPushNotification(
+                        "Security Update",
+                        "Your password has been changed successfully"
+                    );
+                }
+            } catch (notificationError) {
+                console.warn("Notification failed silently:", notificationError);
+            }
+
+            Toast.show({
+                type: 'success',
+                text1: t('Password updated'),
+                text2: t('Your password has been successfully updated.'),
+            });
+            setOldPassword('');
+            setNewPassword('');
+            setConfirmPassword('');
+        } else {
+            Toast.show({
+                type: 'error',
+                text1: t('Update failed'),
+                text2: result?.message || t('Failed to update password.'),
+            });
         }
-
-        Toast.show({
-          type: 'success',
-          text1: t('Password updated'),
-          text2: t('Your password has been successfully updated.'),
-        });
-        setOldPassword('');
-        setNewPassword('');
-        setConfirmPassword('');
-      } else {
-        Toast.show({
-          type: 'error',
-          text1: t('Update failed'),
-          text2: result?.message || t('Failed to update password.'),
-        });
-      }
     } catch (err) {
-      console.error('UpdatePassword error:', err);
-      Toast.show({
-        type: 'error',
-        text1: t('Something went wrong'),
-        text2: t('There was an issue updating your password.'),
-      });
+        console.error('Password update error:', err);
+        Toast.show({
+            type: 'error',
+            text1: t('Something went wrong'),
+            text2: t('There was an issue updating your password.'),
+        });
     } finally {
-      setIsLoading(false);
+        setIsLoading(false);
     }
-  };
+};
 
   const handlePinVerified = async (pin) => {
     try {

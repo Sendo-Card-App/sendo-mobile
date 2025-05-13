@@ -17,9 +17,9 @@ import {
   loginSuccess,
   loginFailure,
 } from "../../features/Auth/authSlice";
-
+import { refreshAuthToken } from "../../utils/authUtils";
 import { setIsNewUser } from '../../features/Auth/passcodeSlice';
-import { useLoginWithEmailMutation } from "../../services/Auth/authAPI";
+import { useLoginWithEmailMutation, useLoginWithPhoneMutation  } from "../../services/Auth/authAPI";
 import { useTranslation } from "react-i18next";
 import Loader from "../../components/Loader";
 import Toast from "react-native-toast-message"; 
@@ -33,6 +33,8 @@ const SignIn = () => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loginWithEmail, { isLoading }] = useLoginWithEmailMutation();
+  const [loginWithPhone] = useLoginWithPhoneMutation();
+  const [refreshInterval, setRefreshInterval] = useState(null);
   const [emailError, setEmailError] = useState(false);
   const [loading, setLoading] = React.useState(true);
   const [passwordError, setPasswordError] = useState(false);
@@ -57,6 +59,50 @@ const SignIn = () => {
    
      checkAuthData();
    }, [])
+   
+
+   useEffect(() => {
+    const setupTokenRefresh = async () => {
+      // Clear any existing interval
+      if (refreshInterval) clearInterval(refreshInterval);
+
+      const authData = await getData('@authData');
+      if (authData?.refreshToken && authData?.deviceId) {
+        // Set up new interval to refresh token every 30 minutes
+        const interval = setInterval(async () => {
+          try {
+            const result = await loginWithPhone({
+              refreshToken: authData.refreshToken,
+              deviceId: authData.deviceId
+            }).unwrap();
+
+            if (result?.data?.accessToken) {
+              const newAuthData = {
+                ...authData,
+                accessToken: result.data.accessToken,
+                refreshToken: result.data.refreshToken || authData.refreshToken
+              };
+              
+              await storeData('@authData', newAuthData);
+              dispatch(loginSuccess(newAuthData));
+            }
+          } catch (error) {
+            console.log("Token refresh failed:", error);
+            clearInterval(interval);
+          }
+        }, 30 * 60 * 1000); // 30 minutes
+
+        setRefreshInterval(interval);
+      }
+    };
+
+    setupTokenRefresh();
+
+    return () => {
+      if (refreshInterval) clearInterval(refreshInterval);
+    };
+  }, []);
+
   
   const handleSubmit = async () => {
     let hasError = false;
@@ -93,18 +139,41 @@ const SignIn = () => {
       if (response?.status === 200 && response?.data?.accessToken) {
         const userData = response.data;
   
-        const authData = {
+         const authData = {
           user: userData,
           accessToken: userData.accessToken,
+          refreshToken: userData.refreshToken, // Store refresh token
           deviceId: userData.deviceId,
           isGuest: false,
         };
-  
+        console.log(userData)
         await storeData('@authData', authData);
-        dispatch(loginSuccess(authData));
-  
-          dispatch(setIsNewUser(true)); // <-- THIS IS CRUCIAL
-  
+        dispatch(loginSuccess(authData)); 
+        dispatch(setIsNewUser(true)); // <-- THIS IS CRUCIAL
+        const interval = setInterval(async () => {
+          try {
+            const result = await loginWithPhone({
+              refreshToken: authData.refreshToken,
+              deviceId: authData.deviceId
+            }).unwrap();
+
+            if (result?.data?.accessToken) {
+              const newAuthData = {
+                ...authData,
+                accessToken: result.data.accessToken,
+                refreshToken: result.data.refreshToken || authData.refreshToken
+              };
+              
+              await storeData('@authData', newAuthData);
+              dispatch(loginSuccess(newAuthData));
+            }
+          } catch (error) {
+            console.log("Token refresh failed:", error);
+            clearInterval(interval);
+          }
+        }, 30 * 60 * 1000); // 30 minutes
+
+        setRefreshInterval(interval);
         navigation.navigate("PinCode", { setup: true }); 
   
         Toast.show({
@@ -165,112 +234,124 @@ const SignIn = () => {
           className="mt-3 mb-3 w-28 h-28"
         />
 
-        <View className="w-[80%] bg-[#f1f1f1] border-1 mt-3 pb-0 mx-auto rounded-3xl mb-2 px-5">
-          <View className="mt-5 mb-5">
-            <Text className="text-3xl font-bold flex-start">{t("signIn.title")}</Text>
-          </View>
+        <View className="w-[80%] bg-gray-200 border-1 mt-3 pb-0 mx-auto rounded-3xl mb-2 px-5" style={{backgroundColor: '#e5e5e5'}}>
+  <View className="mt-5 mb-5">
+    <Text className="text-3xl font-bold flex-start">{t("signIn.title")}</Text>
+  </View>
 
-          <TextInput
-            placeholder={t("signIn.email")}
-            onChangeText={setEmail}
-            value={email}
-            autoCapitalize="none"
-            keyboardType="email-address"
-            className="border-[#fff] bg-[#ffffff] rounded-3xl text-center mb-5 py-5"
-            style={{
-              backgroundColor: '#fff',
-              borderRadius: 30,
-              paddingVertical: 16,
-              paddingHorizontal: 20,
-              textAlign: 'center',
-              fontSize: 16,
-              // Shadow for iOS
-              shadowColor: '#fff',
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 10,
-              shadowRadius: 1,
-            }}
-          />
-          {emailError && (
-            <Text className="text-red-500 text-center mb-2">
-              Email is required
-            </Text>
-          )}
+  {/* Email Field with Label */}
+  <View className="mb-1">
+    <Text className="text-sm font-medium text-gray-700 mb-1 pl-3">{t("signIn.email")}</Text>
+    <TextInput
+      placeholder={t("signIn.emailPlaceholder") || "Enter your email address"}
+      onChangeText={setEmail}
+      value={email}
+      autoCapitalize="none"
+      keyboardType="email-address"
+      className="border-[#fff] bg-[#ffffff] rounded-3xl mb-3"
+      style={{
+        backgroundColor: '#fff',
+        borderRadius: 30,
+        paddingVertical: 14,
+        paddingHorizontal: 20,
+        fontSize: 16,
+        borderWidth: 1,
+        borderColor: '#ddd',
+      }}
+    />
+  </View>
+  {emailError && (
+    <Text className="text-red-500 text-sm mb-2 pl-3">
+      Email is required
+    </Text>
+  )}
 
-          <View className="relative">
-            <TextInput
-              placeholder={t("signIn.password")}
-              onChangeText={setPassword}
-              value={password}
-              secureTextEntry={!showPassword}
-              className="border-[#fff] bg-[#ffffff] rounded-3xl text-center mb-6 py-5"
-              style={{
-                backgroundColor: '#fff',
-                borderRadius: 30,
-                paddingVertical: 16,
-                paddingHorizontal: 20,
-                textAlign: 'center',
-                fontSize: 16,
-                // Shadow for iOS
-                shadowColor: '#fff',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 10,
-                shadowRadius: 1,
-              }}
-            />
-            <TouchableOpacity
-              onPress={() => setShowPassword(!showPassword)}
-              style={{ position: "absolute", right: 10, top: 12 }}
-            >
-              <AntDesign
-                name={showPassword ? "eye" : "eyeo"}
-                size={24}
-                color="gray"
-              />
-            </TouchableOpacity>
-          </View>
-          {passwordError && (
-            <Text className="text-red-500 text-center mb-2">
-              Password is required
-            </Text>
-          )}
+  {/* Password Field with Label */}
+  <View className="mb-1">
+    <Text className="text-sm font-medium text-gray-700 mb-1 pl-3">{t("signIn.password")}</Text>
+    <View className="relative">
+      <TextInput
+        placeholder={t("signIn.passwordPlaceholder") || "Enter your password"}
+        onChangeText={setPassword}
+        value={password}
+        secureTextEntry={!showPassword}
+        className="border-[#fff] bg-[#ffffff] rounded-3xl"
+        style={{
+          backgroundColor: '#fff',
+          borderRadius: 30,
+          paddingVertical: 14,
+          paddingHorizontal: 20,
+          fontSize: 16,
+          borderWidth: 1,
+          borderColor: '#ddd',
+        }}
+      />
+      <TouchableOpacity
+        onPress={() => setShowPassword(!showPassword)}
+        style={{ position: "absolute", right: 15, top: 12 }}
+      >
+        <AntDesign
+          name={showPassword ? "eye" : "eyeo"}
+          size={24}
+          color="gray"
+        />
+      </TouchableOpacity>
+    </View>
+  </View>
+  {passwordError && (
+    <Text className="text-red-500 text-sm mb-2 pl-3">
+      Password is required
+    </Text>
+  )}
 
-          <TouchableOpacity onPress={handleSubmit}>
-            {isLoading ? (
-              <Loader />
-            ) : (
-              <Text className="text-center mt-3 border-1-[#7ddd7d] bg-[#7ddd7d] rounded-3xl p-4 font-bold"
-              style={{
-               
-                borderRadius: 30,
-                paddingVertical: 16,
-                paddingHorizontal: 20,
-                textAlign: 'center',
-                fontSize: 16,
-                // Shadow for iOS
-                shadowColor: '#fff',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 10,
-                shadowRadius: 1,
-              }}>
-                {t("signIn.next")}
-              </Text>
-            )}
-          </TouchableOpacity>
+  {/* Submit Button */}
+  <TouchableOpacity 
+    onPress={handleSubmit}
+    className="mt-6"
+  >
+    {isLoading ? (
+      <Loader />
+    ) : (
+      <View style={{
+        backgroundColor: '#7ddd7d',
+        borderRadius: 30,
+        paddingVertical: 16,
+        paddingHorizontal: 20,
+      }}>
+        <Text className="text-center font-bold text-white" style={{fontSize: 16}}>
+          {t("signIn.next")}
+        </Text>
+      </View>
+    )}
+  </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => navigation.navigate("ForgetPassword")}>
-            <Text style={{ marginTop: 20, textAlign: "right", paddingLeft: 16 }}>
-              {t("signIn.forgotPassword")}
-            </Text>
-          </TouchableOpacity>
-           <Text className="text-center mt-5 opacity-20">{t("signIn.orSignInWith")}</Text>
-          <TouchableOpacity onPress={() => navigation.navigate("LogIn")}>
-            <Text className="mt-5 mb-5 text-center">
-              OTP LOGIN
-            </Text>
-          </TouchableOpacity>
-          
-        </View>
+  {/* Forgot Password Link */}
+  <TouchableOpacity 
+    onPress={() => navigation.navigate("ForgetPassword")}
+    className="mt-4"
+  >
+    <Text style={{ textAlign: "right", color: '#555', fontSize: 14 }}>
+      {t("signIn.forgotPassword")}
+    </Text>
+  </TouchableOpacity>
+
+  {/* Divider */}
+  <View className="flex-row items-center mt-5 mb-5">
+    <View className="flex-1 h-px bg-gray-300"></View>
+    <Text className="px-3 text-gray-500">{t("signIn.orSignInWith")}</Text>
+    <View className="flex-1 h-px bg-gray-300"></View>
+  </View>
+
+  {/* OTP Login Option */}
+  <TouchableOpacity 
+    onPress={() => navigation.navigate("LogIn")}
+    className="mb-5"
+  >
+    <Text className="text-center text-blue-600 font-medium">
+      {t("signIn.otpLogin") || "Login with OTP"}
+    </Text>
+  </TouchableOpacity>
+</View>
 
         <Text className="text-center text-white mt-5">
           {t("signIn.dontHaveAccount")}

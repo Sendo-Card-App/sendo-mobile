@@ -15,8 +15,18 @@ module.exports = {
           icon: "./assets/icon.png",
           userInterfaceStyle: "light",
           newArchEnabled: true,
+          splash: {
+            "image": "./assets/splash.png",
+            "resizeMode": "contain",
+            "backgroundColor": "#181e25"
+          },
           ios: {
-            supportsTablet: true
+            supportsTablet: true,
+            infoPlist: {
+             NSFaceIDUsageDescription: "Authentifiez-vous pour accéder à votre compte"
+             },
+           googleServicesFile: "./GoogleService-Info.plist",
+           bundleIdentifier: "com.sfe.sendo"
           },
           android: {
             adaptiveIcon: {
@@ -29,7 +39,8 @@ module.exports = {
               "android.permission.INTERNET"
             ],
             package: "com.sendo",
-            allowCleartextTraffic: true
+            allowCleartextTraffic: true,
+            googleServicesFile: "./google-services.json"
           },
             web: {
             favicon: "./assets/favicon.png"
