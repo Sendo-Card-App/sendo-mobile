@@ -16,36 +16,24 @@ import {
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import KeyboardAvoidinWrapper from "../../components/KeyboardAvoidinWrapper";
-import { OtpInput } from "react-native-otp-entry";
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
-import {
-  useResendOtpMutation,
-  useVerifyOtpMutation,
-  useSendOtpMutation
-} from "../../services/Auth/authAPI";
 import { loginSuccess } from "../../features/Auth/authSlice";
 import Loader from "../../components/Loader";
 import { storeData } from "../../services/storage";
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import Toast from 'react-native-toast-message';
+import { useLoginWithPhoneMutation } from "../../services/Auth/authAPI";
 
 const Log = () => {
   const { t, i18n } = useTranslation();
   const navigation = useNavigation();
   const dispatch = useDispatch();
-  const [verifyOtp] = useVerifyOtpMutation();
-  const [resendOtp] = useResendOtpMutation();
-  const [sendOtp] = useSendOtpMutation();
+  const [loginWithPhone, { isLoading }] = useLoginWithPhoneMutation();
 
   const [phone, setPhone] = useState("");
-  const [otp, setOtp] = useState("");
-  const [isModalVisible, setModalVisible] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isVerifying, setIsVerifying] = useState(false);
-  const [isResending, setIsResending] = useState(false);
+  const [password, setPassword] = useState("");
   const [languageModalVisible, setLanguageModalVisible] = useState(false);
-  const [seconds, setSeconds] = useState(60);
+  const [showPassword, setShowPassword] = useState(false);
 
   const [countries, setCountries] = useState([]);
   const [fullPhoneNumber, setFullPhoneNumber] = useState(""); 
@@ -81,83 +69,43 @@ const Log = () => {
     }
   }, [phone, selectedCountry.code]);
 
-  // Timer for OTP resend
-  useEffect(() => {
-    const timer = seconds > 0 && setInterval(() => setSeconds(seconds - 1), 1000);
-    return () => clearInterval(timer);
-  }, [seconds]);
-
-  const storeAuthData = async (authData) => {
-    try {
-      await AsyncStorage.setItem('@authData', JSON.stringify(authData));
-    } catch (error) {
-      Toast.show({ type: 'error', text1: 'Error saving login data' });
-    }
-  };
-
-  const handleNext = async () => {
-    if (!phone) {
-      Toast.show({ type: 'error', text1: 'Enter a valid phone number' });
+  const handleLogin = async () => {
+    if (!phone || !password) {
+      Toast.show({ type: 'error', text1: 'Phone and password are required' });
       return;
     }
 
     try {
-      setIsLoading(true);
-      await resendOtp({ phone: fullPhoneNumber }).unwrap();
-      Toast.show({ type: 'success', text1: 'OTP sent successfully' });
-      setModalVisible(true);
-      setSeconds(60); // Reset timer
-    } catch (err) {
-      Toast.show({ type: 'error', text1: err.data?.message || 'Failed to send OTP' });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      const response = await loginWithPhone({
+        phone: fullPhoneNumber,
+        password
+      }).unwrap();
 
-  const handleVerifyOtp = async (code) => {
-    if (code.length !== 6) return;
-    
-    setIsVerifying(true);
-    try {
-      const response = await verifyOtp({ phone: fullPhoneNumber, code }).unwrap();
-      
       if (response.status === 200) {
-        const authData = {
-          user: response.data.user,
-          accessToken: response.data.accessToken,
-          isGuest: false
-        };
-
-        await storeData('@authData', authData);
-        dispatch(loginSuccess(authData));
+        const { accessToken, deviceId } = response.data;
         
-        setModalVisible(false);
-        Toast.show({ type: 'success', text1: 'Login successful' });
-        navigation.navigate("Main");
+        // Store the authentication data
+        await storeData('authData', {
+          accessToken,
+          deviceId,
+          phone: fullPhoneNumber
+        });
+
+        dispatch(loginSuccess({
+          accessToken,
+          deviceId,
+          phone: fullPhoneNumber
+        }));
+
+        Toast.show({ type: 'success', text1: response.message });
+        navigation.navigate("PinCode");
       }
-    } catch (err) {
-      console.log(err)
+    } catch (error) {
+      console.error('Login error:', error);
       Toast.show({
         type: 'error',
-        text1: err?.data?.message || 'OTP verification failed',
+        text1: error.data?.message || 'Login failed',
       });
-    } finally {
-      setIsVerifying(false);
-    }
-  };
-
-  const handleResendOtp = async () => {
-    if (seconds > 0) return;
-    
-    setIsResending(true);
-    try {
-      await resendOtp({ phone: fullPhoneNumber }).unwrap();
-      setSeconds(60);
-      Toast.show({ type: 'success', text1: 'OTP resent successfully' });
-    } catch (err) {
-      Toast.show({ type: 'error', text1: err.data?.message || 'Resend failed' });
-    } finally {
-      setIsResending(false);
     }
   };
 
@@ -236,32 +184,51 @@ const Log = () => {
           <View className="w-4/5 bg-[#f1f1f1] rounded-3xl p-6 items-center">
             <Text className="text-2xl font-bold mb-6">{t("log.title")}</Text>
 
-            <TouchableOpacity 
-              onPress={() => setCountryModalVisible(true)}
-              className="flex-row items-center bg-white w-full py-3 px-4 rounded-2xl mb-4"
-            >
-              <Image source={{ uri: selectedCountry.flag }} className="w-8 h-6 mr-3" />
-              <Text className="font-bold text-lg">{selectedCountry.code}</Text>
-            </TouchableOpacity>
+            {/* Combined Country Code and Phone Input */}
+            <View className="flex-row w-full mb-4">
+              <TouchableOpacity 
+                onPress={() => setCountryModalVisible(true)}
+                className="flex-row items-center bg-white py-3 px-4 rounded-l-2xl border-r border-gray-200"
+              >
+                <Image source={{ uri: selectedCountry.flag }} className="w-8 h-6 mr-2" />
+                <Text className="font-bold text-lg">{selectedCountry.code}</Text>
+              </TouchableOpacity>
+              
+              <TextInput
+                placeholder={t("signup.phone")}
+                onChangeText={setPhone}
+                value={phone}
+                keyboardType="phone-pad"
+                className="flex-1 bg-white py-4 px-6 rounded-r-2xl text-lg"
+                maxLength={10}
+              />
+            </View>
 
-            <TextInput
-              placeholder={t("signup.phone")}
-              onChangeText={setPhone}
-              value={phone}
-              keyboardType="phone-pad"
-              className="bg-white w-full py-4 px-6 rounded-2xl text-center text-lg mb-6"
-              maxLength={10}
-            />
+            <View className="relative w-full mb-6">
+              <TextInput
+                placeholder={t("signIn.password")}
+                onChangeText={setPassword}
+                value={password}
+                secureTextEntry={!showPassword}
+                className="bg-white w-full py-4 px-6 rounded-2xl text-center text-lg"
+              />
+              <TouchableOpacity
+                onPress={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-4"
+              >
+                <Icon name={showPassword ? "eye-off" : "eye"} size={20} color="gray" />
+              </TouchableOpacity>
+            </View>
 
             <TouchableOpacity 
-              onPress={handleNext}
+              onPress={handleLogin}
               disabled={isLoading}
-              className={`w-full py-4 rounded-2xl items-center ${isLoading ? 'bg-gray-400' : 'bg-[#7ddd7d]'}`}
+              className={`w-full py-4 rounded-2xl items-center ${isLoading ? 'bg-[#7ddd7d]' : 'bg-[#7ddd7d]'}`}
             >
               {isLoading ? (
                 <ActivityIndicator color="white" />
               ) : (
-                <Text className="text-white font-bold text-lg">{t("log.next")}</Text>
+                <Text className="text-white font-bold text-lg">{t("log.login")}</Text>
               )}
             </TouchableOpacity>
 
@@ -305,73 +272,6 @@ const Log = () => {
                 />
               )}
             </SafeAreaView>
-          </Modal>
-
-          {/* OTP Verification Modal */}
-          <Modal 
-            animationType="slide" 
-            transparent 
-            visible={isModalVisible}
-            onRequestClose={() => setModalVisible(false)}
-          >
-            <View className="flex-1 bg-black/50 justify-center items-center">
-              <View className="w-5/6 bg-white rounded-2xl p-6">
-                <TouchableOpacity 
-                  onPress={() => setModalVisible(false)}
-                  className="self-end mb-2"
-                >
-                  <AntDesign name="close" size={24} color="#333" />
-                </TouchableOpacity>
-
-                <Text className="text-2xl font-bold text-center mb-1">Enter Verification Code</Text>
-                <Text className="text-gray-600 text-center mb-6">
-                  We've sent a 6-digit code to {fullPhoneNumber}
-                </Text>
-
-                <OtpInput
-                  numberOfDigits={6}
-                  onTextChange={setOtp}
-                  focusColor="#7ddd7d"
-                  theme={{
-                    containerStyle: { marginVertical: 20 },
-                    pinCodeContainerStyle: { 
-                      height: 50, 
-                      width: 40,
-                      borderWidth: 1,
-                      borderColor: '#ddd',
-                      borderRadius: 8
-                    },
-                    pinCodeTextStyle: { fontSize: 20 }
-                  }}
-                />
-
-                <TouchableOpacity
-                  onPress={() => handleVerifyOtp(otp)}
-                  disabled={otp.length !== 6 || isVerifying}
-                  className={`w-full py-4 rounded-xl items-center justify-center mt-4 ${otp.length === 6 ? 'bg-[#7ddd7d]' : 'bg-gray-300'}`}
-                >
-                  {isVerifying ? (
-                    <ActivityIndicator color="white" />
-                  ) : (
-                    <Text className="text-white font-bold text-lg">Verify</Text>
-                  )}
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={handleResendOtp}
-                  disabled={seconds > 0 || isResending}
-                  className="mt-6 items-center"
-                >
-                  {isResending ? (
-                    <ActivityIndicator color="#7ddd7d" />
-                  ) : (
-                    <Text className={`text-lg ${seconds > 0 ? 'text-gray-400' : 'text-[#7ddd7d] font-bold'}`}>
-                      {seconds > 0 ? `Resend in ${seconds}s` : 'Resend Code'}
-                    </Text>
-                  )}
-                </TouchableOpacity>
-              </View>
-            </View>
           </Modal>
         </SafeAreaView>
       </KeyboardAvoidinWrapper>

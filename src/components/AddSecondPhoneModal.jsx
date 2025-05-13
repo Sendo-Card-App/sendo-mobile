@@ -1,6 +1,7 @@
-// components/AddSecondPhoneModal.js
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Modal } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, Modal, Image, ScrollView } from 'react-native';
+import Loader from "./Loader";
+import Toast from 'react-native-toast-message';
 
 const AddSecondPhoneModal = ({
   visible,
@@ -13,22 +14,67 @@ const AddSecondPhoneModal = ({
   const [phone, setPhone] = useState('');
   const [code, setCode] = useState('');
   const [otpSent, setOtpSent] = useState(false);
+  const [localLoading, setLocalLoading] = useState(false);
+  const [countries, setCountries] = useState([]);
+  const [selectedCountry, setSelectedCountry] = useState({
+    name: 'Cameroon',
+    code: '+237',
+    flag: 'https://flagcdn.com/w320/cm.png'
+  });
+  const [showCountryPicker, setShowCountryPicker] = useState(false);
+
+  useEffect(() => {
+    fetchCountries();
+  }, []);
+
+  const fetchCountries = async () => {
+    try {
+      const res = await fetch('https://restcountries.com/v3.1/all');
+      const data = await res.json();
+      const sorted = data.map(c => ({
+        name: c.name.common,
+        code: `+${c.idd.root?.replace('+', '') || ''}${c.idd.suffixes ? c.idd.suffixes[0] : ''}`,
+        flag: c.flags?.png
+      })).filter(c => c.code).sort((a, b) => a.name.localeCompare(b.name));
+      setCountries(sorted);
+    } catch (e) {
+      Toast.show({ type: 'error', text1: 'Failed to load countries' });
+    }
+  };
 
   const handleSendOtp = async () => {
+    if (!phone) {
+      return;
+    }
+    
+    const fullPhoneNumber = `${selectedCountry.code}${phone}`;
+    
+    setLocalLoading(true);
     try {
-      await onSendOtp(phone);
+      await onSendOtp({phone: fullPhoneNumber});
       setOtpSent(true);
     } catch (err) {
       console.error(err);
+    } finally {
+      setLocalLoading(false);
     }
   };
 
   const handleVerify = async () => {
+    if (!code) {
+      return;
+    }
+    
+    const fullPhoneNumber = `${selectedCountry.code}${phone}`;
+    
+    setLocalLoading(true);
     try {
-      await onVerifyOtp({ phone, code });
+      await onVerifyOtp({ phone: fullPhoneNumber, code });
       onClose();
     } catch (err) {
       console.error(err);
+    } finally {
+      setLocalLoading(false);
     }
   };
 
@@ -55,38 +101,80 @@ const AddSecondPhoneModal = ({
               <Text style={{ fontSize: 18, marginBottom: 10 }}>
                 Add Second Phone Number
               </Text>
-              <TextInput
-                placeholder="Enter phone number"
-                value={phone}
-                onChangeText={setPhone}
-                keyboardType="phone-pad"
-                style={{ 
-                  borderWidth: 1, 
-                  borderColor: '#ccc', 
-                  padding: 10, 
-                  marginBottom: 10 
-                }}
-              />
+              
+              <View style={{ flexDirection: 'row', marginBottom: 10 }}>
+                <TouchableOpacity
+                  style={{ 
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    backgroundColor: '#fff',
+                    borderRadius: 30,
+                    paddingVertical: 14,
+                    paddingHorizontal: 15,
+                    borderWidth: 1,
+                    marginRight: 5,
+                  }}
+                  onPress={() => setShowCountryPicker(true)}
+                >
+                  {selectedCountry.flag && (
+                    <Image 
+                      source={{ uri: selectedCountry.flag }} 
+                      style={{ width: 24, height: 16, marginRight: 5 }} 
+                    />
+                  )}
+                  <Text>{selectedCountry.code}</Text>
+                </TouchableOpacity>
+                
+                <TextInput
+                  placeholder="Enter phone number"
+                  value={phone}
+                  onChangeText={setPhone}
+                  keyboardType="phone-pad"
+                  style={{ 
+                    flex: 1,
+                    backgroundColor: '#fff',
+                    borderRadius: 30,
+                    paddingVertical: 14,
+                    paddingHorizontal: 20,
+                    fontSize: 16,
+                    borderWidth: 1,
+                  }}
+                />
+              </View>
+              
+              {error && (
+                <Text style={{ color: 'red', marginBottom: 10 }}>
+                  {error}
+                </Text>
+              )}
+              
               <TouchableOpacity
                 onPress={handleSendOtp}
                 style={{ 
                   backgroundColor: '#7ddd7d', 
-                  padding: 10, 
-                  borderRadius: 5,
-                  alignItems: 'center'
+                  padding: 15, 
+                  borderRadius: 30,
+                  alignItems: 'center',
                 }}
-                disabled={isLoading}
+                disabled={localLoading || !phone}
               >
-                <Text style={{ color: 'white' }}>
-                  {isLoading ? 'Sending...' : 'Send OTP'}
-                </Text>
+                {localLoading ? (
+                  <Loader small white />
+                ) : (
+                  <Text style={{ color: 'white', fontWeight: 'bold' }}>Send OTP</Text>
+                )}
               </TouchableOpacity>
             </>
           ) : (
             <>
+                    <Image
+                      className="w-40 h-40"
+                      source={require("../images/Artboard 5.png")}
+                    />
               <Text style={{ fontSize: 18, marginBottom: 10 }}>
-                Enter OTP sent to {phone}
+                Enter OTP sent to {selectedCountry.code}{phone}
               </Text>
+              
               <TextInput
                 placeholder="Enter 6-digit OTP"
                 value={code}
@@ -94,40 +182,132 @@ const AddSecondPhoneModal = ({
                 keyboardType="number-pad"
                 maxLength={6}
                 style={{ 
-                  borderWidth: 1, 
-                  borderColor: '#ccc', 
-                  padding: 10, 
-                  marginBottom: 10 
+                  backgroundColor: '#fff',
+                  borderRadius: 30,
+                  paddingVertical: 14,
+                  paddingHorizontal: 20,
+                  fontSize: 16,
+                  borderWidth: 1,
+                  marginBottom: 10,
+                  textAlign: 'center'
                 }}
               />
+              
+              {error && (
+                <Text style={{ color: 'red', marginBottom: 10 }}>
+                  {error}
+                </Text>
+              )}
+              
               <TouchableOpacity
                 onPress={handleVerify}
                 style={{ 
                   backgroundColor: '#7ddd7d', 
-                  padding: 10, 
-                  borderRadius: 5,
+                  padding: 15, 
+                  borderRadius: 30,
                   alignItems: 'center'
                 }}
-                disabled={isLoading}
+                disabled={localLoading || !code}
               >
-                <Text style={{ color: 'white' }}>
-                  {isLoading ? 'Verifying...' : 'Verify OTP'}
-                </Text>
+                {localLoading ? (
+                  <Loader small white />
+                ) : (
+                  <Text style={{ color: 'white', fontWeight: 'bold' }}>Verify OTP</Text>
+                )}
               </TouchableOpacity>
             </>
           )}
+          
           <TouchableOpacity
-            onPress={onClose}
+            onPress={() => {
+              setOtpSent(false);
+              setPhone('');
+              setCode('');
+              onClose();
+            }}
             style={{ 
-              marginTop: 10,
+              marginTop: 15,
               padding: 10,
               alignItems: 'center'
             }}
           >
-            <Text style={{ color: 'red' }}>Cancel</Text>
+            <Text style={{ color: 'red', fontWeight: 'bold' }}>Cancel</Text>
           </TouchableOpacity>
         </View>
       </View>
+
+      {/* Country Picker Modal */}
+      <Modal
+        visible={showCountryPicker}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowCountryPicker(false)}
+      >
+        <View style={{ 
+          flex: 1, 
+          justifyContent: 'center', 
+          backgroundColor: 'rgba(0,0,0,0.5)' 
+        }}>
+          <View style={{ 
+            backgroundColor: 'white', 
+            margin: 20, 
+            padding: 20, 
+            borderRadius: 10,
+            maxHeight: '70%'
+          }}>
+            <Text style={{ 
+              fontSize: 18, 
+              marginBottom: 15,
+              fontWeight: 'bold',
+              textAlign: 'center'
+            }}>
+              Select Country
+            </Text>
+            
+            <ScrollView>
+              {countries.map((country) => (
+                <TouchableOpacity
+                  key={country.code}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    paddingVertical: 12,
+                    paddingHorizontal: 10,
+                    borderBottomWidth: 1,
+                    borderBottomColor: '#f0f0f0'
+                  }}
+                  onPress={() => {
+                    setSelectedCountry(country);
+                    setShowCountryPicker(false);
+                  }}
+                >
+                  {country.flag && (
+                    <Image 
+                      source={{ uri: country.flag }} 
+                      style={{ width: 30, height: 20, marginRight: 10 }} 
+                    />
+                  )}
+                  <Text style={{ flex: 1 }}>{country.name}</Text>
+                  <Text>{country.code}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+            
+            <TouchableOpacity
+              onPress={() => setShowCountryPicker(false)}
+              style={{ 
+                backgroundColor: '#f0f0f0', 
+                padding: 12, 
+                borderRadius: 30,
+                alignItems: 'center',
+                marginTop: 15
+              }}
+            >
+              <Text style={{ fontWeight: 'bold' }}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </Modal>
   );
 };

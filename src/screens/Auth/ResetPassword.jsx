@@ -15,7 +15,7 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import Toast from 'react-native-toast-message';
 import { useResetPasswordMutation, useGetUserProfileQuery  } from "../../services/Auth/authAPI";
 import Loader from "../../components/Loader";
-
+import { getData } from "../../services/storage";
 const ResetPassword = () => {
   const navigation = useNavigation();
   const route = useRoute();
@@ -40,59 +40,71 @@ console.log('my profile',userProfile)
 }, [userProfile]);
 
   const handleSubmit = async () => {
-    if (!newPassword || !confirmPassword) {
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: 'Both password fields are required',
-      });
-      return;
+  if (!newPassword || !confirmPassword) {
+    Toast.show({
+      type: 'error',
+      text1: 'Error',
+      text2: 'Both password fields are required',
+    });
+    return;
+  }
+
+  if (newPassword.length < 8) {
+    Toast.show({
+      type: 'error',
+      text1: 'Error',
+      text2: 'Password must be at least 8 characters',
+    });
+    return;
+  }
+
+  if (newPassword !== confirmPassword) {
+    Toast.show({
+      type: 'error',
+      text1: 'Error',
+      text2: 'Passwords do not match',
+    });
+    return;
+  }
+
+  try {
+    // Get token from storage
+    const storedToken = await getData('authToken');
+    
+    if (!storedToken) {
+      throw new Error('No authentication token found');
     }
 
-    if (newPassword.length < 8) {
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: 'Password must be at least 8 characters',
-      });
-      return;
+    // Use the token from storage instead of route params
+    await resetPassword({ 
+      token: storedToken, 
+      newPassword 
+    }).unwrap();
+    
+    Toast.show({
+      type: 'success',
+      text1: 'Success',
+      text2: 'Password has been reset successfully',
+    });
+    
+    navigation.navigate('SignIn');
+  } catch (error) {
+    console.log("Reset password error:", error);
+    let errorMessage = 'An error occurred while resetting your password. Please try again.';
+    
+    if (error.data?.status === 500) {
+      errorMessage = 'Failed to update password. Please try again.';
+    } else if (error.message === 'No authentication token found') {
+      errorMessage = 'Session expired. Please login again.';
     }
-
-    if (newPassword !== confirmPassword) {
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: 'Passwords do not match',
-      });
-      return;
-    }
-
-    try {
-      await resetPassword({ token, newPassword }).unwrap();
-      
-      Toast.show({
-        type: 'success',
-        text1: 'Success',
-        text2: 'Password has been reset successfully',
-      });
-      
-      // Navigate to sign in after successful password reset
-      navigation.navigate('SignIn');
-    } catch (error) {
-      console.log("Reset password error:", error);
-      let errorMessage = 'An error occurred while resetting your password. Please try again.';
-      
-      if (error.data?.status === 500) {
-        errorMessage = 'Failed to update password. Please try again.';
-      }
-      
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: errorMessage,
-      });
-    }
-  };
+    
+    Toast.show({
+      type: 'error',
+      text1: 'Error',
+      text2: errorMessage,
+    });
+  }
+};
 
   const handleBack = () => {
     navigation.goBack();

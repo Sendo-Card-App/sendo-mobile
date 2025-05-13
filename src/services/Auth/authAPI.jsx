@@ -6,6 +6,7 @@ const AUTH_ENDPOINTS = {
   VERIFY_OTP: '/auth/otp/verify',
   SEND_OTP: '/auth/otp/send',
   REFRESH_TOKEN: '/auth/refresh-token',
+  PHONE_LOGIN:'/auth/login-phone',
   LOGIN: '/auth/login',
   FORGOT_PASSWORD: '/auth/forgot-password',
   RESET_PASSWORD: '/auth/reset-password',
@@ -117,21 +118,21 @@ export const authApi = createApi({
 
     // Login endpoints
     loginWithPhone: builder.mutation({
-      query: ({ refreshToken,deviceId }) => ({
-        url: AUTH_ENDPOINTS.REFRESH_TOKEN,
+      query: ({ phone,password }) => ({
+        url: AUTH_ENDPOINTS.PHONE_LOGIN,
         method: 'POST',
-        body: { refreshToken,deviceId },
+        body: { phone,password },
       }),
       invalidatesTags: [TAG_TYPES.AUTH],
     }),
 
-     silentRefresh: builder.mutation({
+     LoginWithPhone: builder.mutation({
       query: ({ refreshToken, deviceId }) => ({
         url: AUTH_ENDPOINTS.REFRESH_TOKEN,
         method: 'POST',
         body: { refreshToken, deviceId },
       }),
-      // Don't invalidate tags to prevent UI updates
+      invalidatesTags: [TAG_TYPES.AUTH],
     }),
 
     loginWithEmail: builder.mutation({
