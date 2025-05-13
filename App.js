@@ -231,6 +231,7 @@ function MainStack() {
       <Stack.Screen name="Payment" component={Payment} />
       <Stack.Screen name="History" component={History}  />
       <Stack.Screen name="Receipt" component={Receipt} />
+      <Stack.Screen name="NotificationComponent" component={NotificationComponent} options={{ headerTitle: "Notification" }} />
       <Stack.Screen name="MonSolde" component={MonSolde} options={{ headerTitle: "Mon Solde" }} />
       <Stack.Screen name="CreateVirtualCard" component={CreateVirtualCard} options={{ headerTitle: "Créer une carte virtuelle" }} />
       <Stack.Screen name="VerifyIdentity" component={VerifyIdentity} options={{ headerShown: false }} />

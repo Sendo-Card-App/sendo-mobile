@@ -5,50 +5,71 @@ import { useNavigation } from "@react-navigation/native";
 import Loader from "../../components/Loader";
 import Toast from 'react-native-toast-message';
 import { useForgotPasswordMutation, useResendOtpMutation, useVerifyOtpMutation } from "../../services/Auth/authAPI";
+import { useTranslation } from 'react-i18next';
 
 const ForgetPassword = () => {
+  const { t } = useTranslation();
   const navigation = useNavigation();
-  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [showOtpModal, setShowOtpModal] = useState(false);
   const [token, setToken] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   
-  const [resendOtp, { isLoading: isOtpLoading }] = useResendOtpMutation();
-  const [verifyOtp, { isLoading: isVerifyLoading }] = useVerifyOtpMutation();
+  const [forgotPassword] = useForgotPasswordMutation();
+  const [verifyOtp] = useVerifyOtpMutation();
 
   const handleSendOtp = async () => {   
-    if (!phone) {
+    if (!email) {
       Toast.show({
         type: 'error',
-        text1: 'Error',
-        text2: 'Phone number is required',
+        text1: t('errors.error'),
+        text2: t('forgotPassword.emailRequired'),
       });
       return;
     }
 
+    // Basic email validation
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      Toast.show({
+        type: 'error',
+        text1: t('errors1.error'),
+        text2: t('forgotPassword.invalidEmail'),
+      });
+      return;
+    }
+
+    setIsLoading(true);
     try {
-      await resendOtp({ phone }).unwrap();
-      
+      await forgotPassword({ email }).unwrap();
+       setToken(response.data.token);
       Toast.show({
         type: 'success',
-        text1: 'Success',
-        text2: 'OTP code has been sent to your phone',
+        text1: t('common.success'),
+        text2: t('forgotPassword.otpSent'),
+      });
+      
+       navigation.navigate('ResetPassword', { 
+        email,
+        token: response.data.token 
       });
       
       setShowOtpModal(true);
     } catch (error) {
-      console.log("OTP send error:", error);
-      let errorMessage = 'Failed to send OTP';
+      console.log("Forgot password error:", error);
+      let errorMessage = t('forgotPassword.otpSendFailed');
       
       if (error.data?.status === 404) {
-        errorMessage = 'No account associated with this phone number';
+        errorMessage = t('forgotPassword.noAccountFound');
       }
       
       Toast.show({
         type: 'error',
-        text1: 'Error',
+        text1: t('errors1.error'),
         text2: errorMessage,
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -56,24 +77,25 @@ const ForgetPassword = () => {
     if (!otp || otp.length !== 6) {
       Toast.show({
         type: 'error',
-        text1: 'Error',
-        text2: 'Please enter a valid 6-digit OTP',
+        text1: t('errors.error'),
+        text2: t('forgotPassword.validOtpRequired'),
       });
       return;
     }
 
+    setIsLoading(true);
     try {
-      const response = await verifyOtp({ phone, code: otp }).unwrap();
-      setToken(response.data.token); // Assuming the API returns a token
+      const response = await verifyOtp({ email, code: otp }).unwrap();
+      setToken(response.data.token);
       
       Toast.show({
         type: 'success',
-        text1: 'Success',
-        text2: 'OTP verified successfully',
+        text1: t('common.success'),
+        text2: t('forgotPassword.otpVerified'),
       });
       
       navigation.navigate('ResetPassword', { 
-        phone,
+        email,
         token: response.data.token 
       });
       
@@ -83,17 +105,17 @@ const ForgetPassword = () => {
       console.log("OTP verification error:", error);
       Toast.show({
         type: 'error',
-        text1: 'Error',
-        text2: error?.data?.message || 'Invalid OTP code',
+        text1: t('errors.error'),
+        text2: error?.data?.message || t('forgotPassword.invalidOtp'),
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleBackToSignIn = () => {
     navigation.navigate('SignIn');
   };
-
-  const isLoading = isOtpLoading || isVerifyLoading;
 
   return (
     <SafeAreaView className="bg-[#181e25] flex-1 items-center justify-center">
@@ -114,18 +136,19 @@ const ForgetPassword = () => {
       <ScrollView contentContainerStyle={{ width: '100%', paddingBottom: 20 }} showsVerticalScrollIndicator={false}>
         <View className="w-[85%] bg-[#f1f1f1] rounded-3xl p-5">
           <Text className="text-2xl font-bold text-center mb-5">
-            Forgot Password
+            {t('forgotPassword.title')}
           </Text>
 
           <Text className="text-center mb-5">
-            Enter your phone number to receive an OTP code
+            {t('forgotPassword.subtitle')}
           </Text>
 
           <TextInput
-            placeholder="Enter your phone number"
-            value={phone}
-            onChangeText={setPhone}
-            keyboardType="phone-pad"
+            placeholder={t('forgotPassword.emailPlaceholder')}
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
             className="bg-white rounded-3xl py-4 px-5 mb-5"
           />
 
@@ -138,7 +161,7 @@ const ForgetPassword = () => {
               <Loader />
             ) : (
               <Text className="font-bold text-white">
-                Send OTP
+                {t('forgotPassword.sendOtp')}
               </Text>
             )}
           </TouchableOpacity>
@@ -146,7 +169,7 @@ const ForgetPassword = () => {
 
         <TouchableOpacity className="mt-5" onPress={handleBackToSignIn}>
           <Text className="text-[#7ddd7d] text-center">
-            Back to Sign In
+            {t('forgotPassword.backToSignIn')}
           </Text>
         </TouchableOpacity>
       </ScrollView>
@@ -160,16 +183,20 @@ const ForgetPassword = () => {
       >
         <View className="flex-1 justify-center items-center bg-black/50">
           <View className="w-[85%] bg-[#f1f1f1] rounded-3xl p-5">
+            <Image
+              className="w-40 h-40 self-center"
+              source={require("../../images/Artboard 5.png")}
+            />
             <Text className="text-xl font-bold text-center mb-5">
-              Enter OTP Code
+              {t('forgotPassword.enterOtp')}
             </Text>
             
             <Text className="text-center mb-5">
-              We've sent a 6-digit code to {phone}
+              {t('forgotPassword.otpSentTo')} {email}
             </Text>
 
             <TextInput
-              placeholder="Enter 6-digit OTP"
+              placeholder={t('forgotPassword.otpPlaceholder')}
               value={otp}
               onChangeText={setOtp}
               keyboardType="number-pad"
@@ -186,7 +213,7 @@ const ForgetPassword = () => {
                 className="bg-gray-300 rounded-3xl p-4 flex-1 mr-2 items-center"
               >
                 <Text className="font-bold">
-                  Cancel
+                  {t('common.cancel')}
                 </Text>
               </TouchableOpacity>
 
@@ -199,7 +226,7 @@ const ForgetPassword = () => {
                   <Loader small white />
                 ) : (
                   <Text className="font-bold text-white">
-                    Verify
+                    {t('common.verify')}
                   </Text>
                 )}
               </TouchableOpacity>

@@ -12,7 +12,11 @@ import KeyboardAvoidinWrapper from "../../components/KeyboardAvoidinWrapper";
 import { useDispatch } from "react-redux";
 import { AntDesign } from '@expo/vector-icons';
 import { useVerifyOtpMutation, useResendOtpMutation, useSendOtpMutation  } from "../../services/Auth/authAPI";
-import { sendPushNotification, sendPushTokenToBackend, registerForPushNotificationsAsync  } from '../../services/notificationService';
+import { 
+  sendPushNotification,
+  sendPushTokenToBackend,
+  registerForPushNotificationsAsync
+} from '../../services/notificationService';
 import { verifyOtpSuccess } from "../../features/Auth/authSlice";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import Loader from "../../components/Loader";
@@ -81,78 +85,89 @@ const OtpVerification = ({ route, onVerify, onResend, onClose }) => {
     sendInitialOtp();
   }, [phone]);
 
-  const handleVerifyOtp = async (codeToVerify = otp) => {
-    if (codeToVerify.length !== 6 || isVerifying) return;
-  
-    setIsVerifying(true);
-    try {
-      const response = await verifyOtp({ phone, code: codeToVerify }).unwrap();
-  
-      if (response.status === 200) {
-        // Send success notification
-        try {
-          // Get the push token from the notification service
-          const pushToken = await registerForPushNotificationsAsync();
-          
-          if (pushToken) {
-            // Send to backend with specific type
-            await sendPushTokenToBackend(
-              pushToken,
+ const handleVerifyOtp = async (codeToVerify = otp) => {
+  if (codeToVerify.length !== 6 || isVerifying) return;
+
+  setIsVerifying(true);
+  try {
+    const response = await verifyOtp({ phone, code: codeToVerify }).unwrap();
+
+    if (response.status === 200) {
+      // Enhanced notification handling
+      try {
+        const notificationPromises = [];
+        
+        // 1. Register for push notifications if not already done
+        const pushToken = await getStoredPushToken() || await registerForPushNotificationsAsync();
+        
+        if (pushToken) {
+          // Format notification content
+          const notificationDetails = `Account Verification Details:
+          - Phone: ${phone}
+          - Time: ${new Date().toLocaleString()}
+          - Status: Successfully Verified`;
+
+          // Send to backend
+          notificationPromises.push(
+            sendPushTokenToBackend(
               "Account Verified",
-              "Your account has been successfully verified!",
+              notificationDetails,
               "SUCCESS_ACCOUNT_VERIFIED"
-            );
-            
-            // Local notification
-            await sendPushNotification(
-              "Verification Successful",
-              "Your account is now verified!"
-            );
-          }
-        } catch (notificationError) {
-          console.warn("Notification failed silently:", notificationError);
+            )
+          );
         }
-  
+
+        // Always send local notification
+        notificationPromises.push(
+          sendPushNotification(
+            "Verification Successful", 
+            "Your account is now verified!"
+          )
+        );
+
+        await Promise.all(notificationPromises);
+      } catch (notificationError) {
+        console.warn("Notification subsystem failed:", notificationError);
+        // Fallback to simple toast if notifications fail
         Toast.show({
-          type: 'success',
-          text1: response.message || 'OTP verified successfully',
-        });
-  
-        if (isForgotPasswordFlow) {
-          navigation.navigate("ResetPassword", {
-            phone,
-            verificationToken: response.data?.token,
-          });
-        } else {
-          dispatch(verifyOtpSuccess(response));
-          onVerify ? onVerify(response) : navigation.navigate("Auth");
-        }
-      }
-    } catch (err) {
-      console.log(err)
-      const status = err?.status;
-      if (status === 404) {
-        Toast.show({
-          type: 'error',
-          text1: 'Invalid or Expired Code',
-          text2: 'The OTP code is incorrect or expired. Please request a new one.',
-        });
-      } else if (status === 500) {
-        Toast.show({
-          type: 'error',
-          text1: 'Server Error',
-          text2: 'An error occurred while verifying OTP. Please try again.',
-        });
-      } else {
-        Toast.show({
-          type: 'error',
-          text1: err?.data?.message || 'OTP verification failed',
+          type: 'info',
+          text1: 'Verification complete',
+          text2: 'Your account is now verified',
         });
       }
-    } finally {
-      setIsVerifying(false);
+
+      // Show success message
+      Toast.show({
+        type: 'success',
+        text1: response.message || 'OTP verified successfully',
+        visibilityTime: 3000
+      });
+
+      // Navigate after a slight delay
+      setTimeout(() => {
+        navigation.navigate("Auth");
+      }, 500);
     }
-  };
+  } catch (err) {
+    console.error('OTP Verification Error:', err);
+    
+    // Enhanced error handling
+    const status = err?.status;
+    const errorMessage = err?.data?.message || 'OTP verification failed';
+
+    Toast.show({
+      type: 'error',
+      ...(errorResponses[status] || errorResponses.default),
+    });
+
+    // Reset OTP field on certain errors
+    if ([404, 429].includes(status)) {
+      setOtp('');
+    }
+  } finally {
+    setIsVerifying(false);
+  }
+};
 
   const handleResendOtp = async () => {
     if (seconds > 0) return;

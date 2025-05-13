@@ -5,7 +5,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons'; // or any icon libra
 const NotificationComponent = ({ count = 0, onPress }) => {
   return (
     <TouchableOpacity style={styles.container} onPress={onPress}>
-      <Icon name="notifications" size={24} color="#333" />
+      
      
         <View style={styles.badge}>
           <Text style={styles.badgeText}>{count}</Text>

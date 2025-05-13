@@ -146,7 +146,7 @@ const SignIn = () => {
           deviceId: userData.deviceId,
           isGuest: false,
         };
-       console.log(userData)
+        console.log(userData)
         await storeData('@authData', authData);
         dispatch(loginSuccess(authData)); 
         dispatch(setIsNewUser(true)); // <-- THIS IS CRUCIAL

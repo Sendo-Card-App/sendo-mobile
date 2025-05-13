@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Image, SafeAreaView, StatusBar, Platform, Modal } from 'react-native';
+import * as LocalAuthentication from 'expo-local-authentication';
 
 const PinVerificationUI = ({ 
   visible,
@@ -7,15 +8,52 @@ const PinVerificationUI = ({
   onVerify,
   title = "Enter Your PIN",
   subtitle = "Please enter your 4-digit PIN to confirm the transaction",
-  isLocked = false
+  isLocked = false,
+  maxAttempts = 3 // Default to 3 attempts
 }) => {
   const [pin, setPin] = useState('');
+  const [attempts, setAttempts] = useState(0);
+  const [showError, setShowError] = useState(false);
+  const [biometricAvailable, setBiometricAvailable] = useState(false);
+
+  // Check for biometric authentication availability
+  useEffect(() => {
+    checkBiometricSupport();
+  }, []);
+
+  const checkBiometricSupport = async () => {
+    const compatible = await LocalAuthentication.hasHardwareAsync();
+    const enrolled = await LocalAuthentication.isEnrolledAsync();
+    setBiometricAvailable(compatible && enrolled);
+  };
+
+  const handleBiometricAuth = async () => {
+    try {
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: 'Authenticate to verify your identity',
+        disableDeviceFallback: true,
+      });
+
+      if (result.success) {
+        onVerify('biometric_success');
+      }
+    } catch (error) {
+      console.log('Biometric authentication error:', error);
+    }
+  };
 
   // Auto-verify when 4 digits are entered
   useEffect(() => {
     if (pin.length === 4) {
-      onVerify(pin);
-      // Don't clear pin here to show successful entry
+      const isValid = onVerify(pin); // Assume onVerify returns boolean
+      if (!isValid) {
+        setAttempts(prev => prev + 1);
+        setShowError(true);
+        setTimeout(() => {
+          setPin('');
+          setShowError(false);
+        }, 500); // Clear pin after showing error briefly
+      }
     }
   }, [pin]);
 
@@ -23,6 +61,8 @@ const PinVerificationUI = ({
     if (isLocked) return;
     if (value === 'del') {
       setPin(pin.slice(0, -1));
+    } else if (value === 'bio') {
+      handleBiometricAuth();
     } else if (pin.length < 4) {
       setPin(pin + value);
     }
@@ -34,11 +74,12 @@ const PinVerificationUI = ({
         <View
           key={index}
           style={{
-            width: 20,  // Slightly larger for better visibility
+            width: 20,
             height: 20,
             borderRadius: 10,
             marginHorizontal: 10,
-            backgroundColor: index < pin.length ? '#0D1C6A' : '#ccc',
+            backgroundColor: index < pin.length ? 
+              (showError ? 'red' : '#0D1C6A') : '#ccc',
           }}
         />
       ))}
@@ -49,10 +90,10 @@ const PinVerificationUI = ({
     ['1', '2', '3'],
     ['4', '5', '6'],
     ['7', '8', '9'],
-    ['.', '0', 'del'],
+    [biometricAvailable ? 'bio' : '.', '0', 'del'],
   ];
 
-  if (isLocked) {
+  if (attempts >= maxAttempts) {
     return (
       <Modal
         visible={visible}
@@ -116,6 +157,11 @@ const PinVerificationUI = ({
               <Text style={{ fontSize: 14, color: '#666', marginTop: 10, textAlign: 'center' }}>
                 {subtitle}
               </Text>
+              {showError && (
+                <Text style={{ color: 'red', marginTop: 5 }}>
+                  Incorrect PIN. {maxAttempts - attempts} attempts remaining.
+                </Text>
+              )}
 
               {renderDots()}
             </View>
@@ -135,12 +181,19 @@ const PinVerificationUI = ({
                         justifyContent: 'center',
                         alignItems: 'center',
                         marginHorizontal: 10,
-                        backgroundColor: '#F1F1F1',
+                        backgroundColor: item === 'bio' ? '#F1F1F1' : '#F1F1F1',
                       }}
                     >
-                      <Text style={{ fontSize: 24, color: '#0D1C6A' }}>
-                        {item === 'del' ? '⌫' : item}
-                      </Text>
+                      {item === 'del' ? (
+                        <Text style={{ fontSize: 24, color: '#0D1C6A' }}>⌫</Text>
+                      ) : item === 'bio' ? (
+                        <Image
+                          source={require('../../src/images/face-id.png')} // Add your biometric icon
+                          style={{ width: 30, height: 30 }}
+                        />
+                      ) : (
+                        <Text style={{ fontSize: 24, color: '#0D1C6A' }}>{item}</Text>
+                      )}
                     </TouchableOpacity>
                   ))}
                 </View>

@@ -121,42 +121,52 @@ useEffect(() => {
       return;
     }
 
+     try {
+    // Process the transfer
+    await transferFunds({
+      fromWallet: userWalletId,
+      toWallet: walletId,
+      amount: transferAmount,
+      transfer_description: description
+    }).unwrap();
+
+    // Prepare notification content
+    const notificationContent = {
+      title: "Transfer Successful",
+      body: `You sent ${transferAmount} FCFA to ${recipientName || walletId}`,
+      type: "TRANSFER_SUCCESS"
+    };
+
     try {
-      await transferFunds({
-        fromWallet: userWalletId,
-        toWallet: walletId,
-        amount: transferAmount,
-        transfer_description: description
-      }).unwrap();
-        // Send success notification
-      try {
-        const pushToken = await registerForPushNotificationsAsync();
-        if (pushToken) {
-          await sendPushTokenToBackend(
-            pushToken,
-            "Transfer Successful",
-            `Your transfer of ${transferAmount} FCFA was completed`,
-            "SUCCESS_TRANSFER_FUND",  // Specific type for transfers
-            {
-              amount: transferAmount,
-              recipientWallet: walletId,
-              timestamp: new Date().toISOString()
-            }
-          );
-        }
-        
-        // Local notification
-        await sendPushNotification(
-          "Transfer Completed",
-          `You sent ${transferAmount} FCFA to wallet ${walletId}`
-        );
-      } catch (notificationError) {
-        console.warn("Notification failed silently:", notificationError);
+      // Try to get stored token first
+      let pushToken = await getStoredPushToken();
+      
+      // If no token, register for new one
+      if (!pushToken) {
+        pushToken = await registerForPushNotificationsAsync();
       }
-      navigation.navigate('Success', {
-        message: 'Transfert effectué avec succès!',
-        nextScreen: 'MonSolde'
-      });
+
+      if (pushToken) {
+        await sendPushTokenToBackend(
+          pushToken,
+          notificationContent.title,
+          notificationContent.body,
+          notificationContent.type
+        );
+      }
+    } catch (notificationError) {
+      console.warn("Remote notification failed:", notificationError);
+      // Fallback to local notification
+      await sendPushNotification(
+        notificationContent.title,
+        notificationContent.body
+      );
+    }
+
+    navigation.navigate('Success', {
+      message: 'Transfer completed successfully!',
+      nextScreen: 'MonSolde'
+    });
     } catch (error) {
       let errorMessage = 'Une erreur est survenue. Veuillez réessayer.';
       const status = error?.status;
