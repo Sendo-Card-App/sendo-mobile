@@ -3,6 +3,7 @@ import React from "react";
 import { StatusBar } from "expo-status-bar";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { FontAwesome6 } from "@expo/vector-icons";
+import { AntDesign, EvilIcons, Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useTranslation } from 'react-i18next';
 
@@ -12,6 +13,7 @@ const Payment = () => {
   
   return (
     <View className="flex-1 p-6">
+      
       <Text className="text-center text-sm text-gray-400">
         {t('payment2.no_payment_method')}
       </Text>
@@ -90,6 +92,12 @@ const Payment = () => {
       </Text>
 
       <View className="mb-5 py-3 mt-auto flex-row gap-4 items-center">
+         <TouchableOpacity 
+                            onPress={() => navigation.navigate('MainTabs')}
+                            style={styles.floatingHomeButton}
+                          >
+                            <Ionicons name="home" size={44} color="#7ddd7d" />
+                          </TouchableOpacity>
         <TouchableOpacity
           className="bg-[#7ddd7d] rounded-full items-center justify-center px-4 py-2"
           onPress={() => navigation.navigate("Success")}
@@ -100,8 +108,26 @@ const Payment = () => {
         <TextInput className="border rounded-2xl border-gray-400 py-3.5 pl-2 flex-1" />
       </View>
       <StatusBar backgroundColor="#7ddd7d" />
+      
     </View>
   );
+};
+const styles = {
+  floatingHomeButton: {
+    position: 'absolute',
+    top: StatusBar.currentHeight + 500,
+    right: 20,
+    zIndex: 999,
+    backgroundColor: 'rgba(235, 248, 255, 0.9)',
+    padding: 10,
+    borderRadius: 20,
+    elevation: 3,
+    
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+  },
+ 
 };
 
 export default Payment;

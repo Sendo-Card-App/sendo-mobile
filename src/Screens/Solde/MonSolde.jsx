@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, ActivityIndicator, Alert } from "react-native";
+import { View, Text, TouchableOpacity, ActivityIndicator, StatusBar, Alert } from "react-native";
 import React, { useEffect, useState } from "react";
 import { Ionicons ,AntDesign } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
@@ -59,19 +59,27 @@ const MonSolde = () => {
   }, [balanceError]);
    
   // Handle successful balance fetch
-  useEffect(() => {
-    if (balanceData && !isBalanceLoading) {
-      Toast.show({
-        type: 'success',
-        text1: 'Success',
-        text2: 'Balance loaded successfully',
-        position: 'bottom',
-      });
-    }
-  }, [balanceData, isBalanceLoading]);
+  // useEffect(() => {
+  //   if (balanceData && !isBalanceLoading) {
+  //     Toast.show({
+  //       type: 'success',
+  //       text1: 'Success',
+  //       text2: 'Balance loaded successfully',
+  //       position: 'bottom',
+  //     });
+  //   }
+  // }, [balanceData, isBalanceLoading]);
 
   return (
     <View style={{ flex: 1, padding: 20 }}>
+       {/* Floating Home Button */}
+            <TouchableOpacity 
+              onPress={() => navigation.navigate('MainTabs')}
+              style={styles.floatingHomeButton}
+            >
+              <Ionicons name="home" size={44} color="#7ddd7d" />
+            </TouchableOpacity>
+
       <View style={{
         borderWidth: 1,
         borderColor: '#E2E8F0',
@@ -86,15 +94,37 @@ const MonSolde = () => {
         shadowRadius: 6,
         elevation: 2,
       }}>
-        <Text style={{
-          fontSize: 18,
-          fontWeight: '800',
-          fontWeight: 'bold',
-          color: '#4A5568',
-          marginBottom: 8
+        <View style={{ 
+          flexDirection: 'row', 
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: 8 
         }}>
-          {t('wallet_balance.title')}
-        </Text>
+          <Text style={{
+            fontSize: 18,
+            fontWeight: 'bold',
+            color: '#4A5568',
+          }}>
+            {t('wallet_balance.title')}
+          </Text>
+          
+          {/* Always show refresh button */}
+          <TouchableOpacity 
+            onPress={refetchBalance}
+            disabled={isLoading}
+            style={{
+              padding: 4,
+              borderRadius: 20,
+              backgroundColor: '#EBF8FF'
+            }}
+          >
+            {isLoading ? (
+              <ActivityIndicator size="small" color="#0D1C6A" />
+            ) : (
+              <Ionicons name="refresh" size={20} color="#0D1C6A" />
+            )}
+          </TouchableOpacity>
+        </View>
 
         {isLoading ? (
           <View style={{ height: 48, justifyContent: 'center' }}>
@@ -110,16 +140,6 @@ const MonSolde = () => {
             <Text style={{ color: '#E53E3E', marginRight: 8 }}>
               Impossible d'afficher le solde
             </Text>
-            <TouchableOpacity 
-              onPress={refetchBalance}
-              style={{
-                padding: 4,
-                borderRadius: 20,
-                backgroundColor: '#EBF8FF'
-              }}
-            >
-              <Ionicons name="refresh" size={20} color="#0D1C6A" />
-            </TouchableOpacity>
           </View>
         ) : (
           <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
@@ -269,5 +289,21 @@ const MonSolde = () => {
     </View>
   );
 };
-
+const styles = {
+  floatingHomeButton: {
+    position: 'absolute',
+    top: StatusBar.currentHeight + 600,
+    right: 20,
+    zIndex: 999,
+    backgroundColor: 'rgba(235, 248, 255, 0.9)',
+    padding: 10,
+    borderRadius: 20,
+    elevation: 3,
+    
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+  },
+ 
+};
 export default MonSolde;

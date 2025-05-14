@@ -9,7 +9,7 @@ import {
   SafeAreaView,
   StatusBar,
 } from "react-native";
-import { AntDesign, EvilIcons } from "@expo/vector-icons";
+import { AntDesign, EvilIcons, Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import Avatar from "../../images/Avatar.png";
 import AddSecondPhoneModal from '../../components/AddSecondPhoneModal'; 
@@ -400,7 +400,15 @@ const handleVerifySecondPhoneOtp = async ({ phone, code }) => {
 
   return (
     <SafeAreaView className="flex-1 bg-[#181e25]">
-      <StatusBar style="light" backgroundColor="#181e25" />
+      <StatusBar style="light" backgroundColor="#fffff" />
+       {/* Floating Home Button */}
+                  <TouchableOpacity 
+                    onPress={() => navigation.navigate('MainTabs')}
+                    style={styles.floatingHomeButton}
+                  >
+                    <Ionicons name="home" size={44} color="#7ddd7d" />
+                  </TouchableOpacity>
+      
       <KeyboardAvoidinWrapper>
         <View className="flex-1 p-6">
           <View className="flex-row justify-between items-center mb-6">
@@ -616,5 +624,21 @@ const handleVerifySecondPhoneOtp = async ({ phone, code }) => {
     </SafeAreaView>
   );
 };
-
+const styles = {
+  floatingHomeButton: {
+    position: 'absolute',
+    top: StatusBar.currentHeight + 600,
+    right: 20,
+    zIndex: 999,
+    backgroundColor: 'rgba(235, 248, 255, 0.9)',
+    padding: 10,
+    borderRadius: 20,
+    elevation: 3,
+    
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+  },
+ 
+};
 export default Account;

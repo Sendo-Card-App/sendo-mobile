@@ -1,20 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Image, SafeAreaView, StatusBar, Platform, Modal } from 'react-native';
 import * as LocalAuthentication from 'expo-local-authentication';
+import { useTranslation } from 'react-i18next';
 
 const PinVerificationUI = ({ 
   visible,
   onClose,
   onVerify,
-  title = "Enter Your PIN",
-  subtitle = "Please enter your 4-digit PIN to confirm the transaction",
+  title = t('pinModal.title'),
+  subtitle = t('pinModal.subtitle'),
   isLocked = false,
-  maxAttempts = 3 // Default to 3 attempts
+  maxAttempts = 3
 }) => {
   const [pin, setPin] = useState('');
   const [attempts, setAttempts] = useState(0);
   const [showError, setShowError] = useState(false);
   const [biometricAvailable, setBiometricAvailable] = useState(false);
+  const { t } = useTranslation();
 
   // Check for biometric authentication availability
   useEffect(() => {
@@ -30,7 +32,7 @@ const PinVerificationUI = ({
   const handleBiometricAuth = async () => {
     try {
       const result = await LocalAuthentication.authenticateAsync({
-        promptMessage: 'Authenticate to verify your identity',
+        promptMessage: t('biometric.prompt'),
         disableDeviceFallback: true,
       });
 
@@ -93,22 +95,17 @@ const PinVerificationUI = ({
     [biometricAvailable ? 'bio' : '.', '0', 'del'],
   ];
 
-  if (attempts >= maxAttempts) {
+ if (attempts >= maxAttempts) {
     return (
-      <Modal
-        visible={visible}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={onClose}
-      >
+      <Modal visible={visible} transparent={true} animationType="slide" onRequestClose={onClose}>
         <SafeAreaView style={{ flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.5)', paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 }}>
           <View style={{ padding: 20, flex: 1, justifyContent: 'center', alignItems: 'center' }}>
             <View style={{ backgroundColor: 'white', borderRadius: 10, padding: 20, width: '90%', alignItems: 'center' }}>
               <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#0D1C6A', marginBottom: 10 }}>
-                Account Locked
+                {t('pinModal.accountLocked')}
               </Text>
               <Text style={{ fontSize: 16, color: '#0D1C6A', marginBottom: 30, textAlign: 'center' }}>
-                Too many failed attempts. Please try again later.
+                {t('pinModal.tooManyAttempts')}
               </Text>
               <TouchableOpacity
                 style={{
@@ -120,7 +117,7 @@ const PinVerificationUI = ({
                 }}
                 onPress={onClose}
               >
-                <Text style={{ color: '#0D1C6A', fontWeight: 'bold' }}>Close</Text>
+                <Text style={{ color: '#0D1C6A', fontWeight: 'bold' }}>{t('pinModal.close')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -130,12 +127,7 @@ const PinVerificationUI = ({
   }
 
   return (
-    <Modal
-      visible={visible}
-      transparent={true}
-      animationType="slide"
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} transparent={true} animationType="slide" onRequestClose={onClose}>
       <SafeAreaView style={{ flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.5)', paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 }}>
         <View style={{ padding: 20, flex: 1, justifyContent: 'center' }}>
           <View style={{ backgroundColor: 'white', borderRadius: 10, padding: 20 }}>
@@ -159,7 +151,7 @@ const PinVerificationUI = ({
               </Text>
               {showError && (
                 <Text style={{ color: 'red', marginTop: 5 }}>
-                  Incorrect PIN. {maxAttempts - attempts} attempts remaining.
+                  {t('pinModal.incorrectPin', { attempts: maxAttempts - attempts })}
                 </Text>
               )}
 

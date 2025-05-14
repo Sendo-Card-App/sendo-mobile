@@ -119,6 +119,9 @@
         "title": "Log In",
         "phoneNumber": "Phone Number",
         "next": "Next",
+         "en": "English",
+          "fr": "French",
+          "select": "Select your language",
         "forgetPassword": "Forget Password",
         "loginWithPhone": "LOGIN WITH PHONE NUMBER",
         "orSignInWith": "Or Sign in with",
@@ -161,6 +164,8 @@
 "history": "History",
 "pay_bills": "Pay Bills",
 "account": "Account",
+ "request": "KYC verification",
+    "sub": "Submit your KYC documents",
 "payment": "Payment",
 "settings": "Settings",
 "support": "Support",
@@ -539,6 +544,50 @@
   "errors1": {
     "error": "Error",
     "countriesLoadFailed": "Failed to load countries"
+  },
+  "otpModal": {
+    "title": "Verify OTP",
+    "instructions": "Enter the 6-digit code sent to {target}",
+    "verifyButton": "Verify",
+    "resendButton": "Resend OTP",
+    "cancelButton": "Cancel"
+  },
+  "pinModal": {
+    "title": "Enter Your PIN",
+    "subtitle": "Please enter your 4-digit PIN to confirm the transaction",
+    "incorrectPin": "Incorrect PIN. {attempts} attempts remaining.",
+    "accountLocked": "Account Locked",
+    "tooManyAttempts": "Too many failed attempts. Please try again later.",
+    "close": "Close"
+  },
+  "biometric": {
+    "prompt": "Authenticate to verify your identity"
+  },
+  "headers": {
+    "account": "Account",
+    "aboutUs": "About Us",
+    "changePassword": "Change Password",
+    "addBeneficiary": "Send Money for Free",
+    "selectMethod": "Select Method",
+    "bankDeposit": "Bank Deposit Recharge",
+    "transferFunds": "Transfer Funds",
+    "paymentEstimator": "Online Payment Estimator",
+    "walletTransfer": "Wallet Transfer",
+    "addContact": "Add Contact",
+    "support": "Support",
+    "settings": "Settings",
+    "notifications": "Notifications",
+    "myBalance": "My Balance",
+    "createVirtualCard": "Create Virtual Card"
+  },
+  "tabs": {
+    "home": "Home",
+    "cards": "Cards",
+    "transfers": "Transfers",
+    "settings": "Settings"
+  },
+  "common2": {
+    "back": "Back"
   }
 
 
