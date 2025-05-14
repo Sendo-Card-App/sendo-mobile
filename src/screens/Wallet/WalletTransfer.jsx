@@ -17,6 +17,8 @@ import { useGetBalanceQuery, useTransferFundsMutation, useGetWalletDetailsQuery 
 import { useGetUserProfileQuery } from '../../services/Auth/authAPI';
 import Toast from 'react-native-toast-message';
 import { useTranslation } from 'react-i18next';
+import { Ionicons } from '@expo/vector-icons';
+import { showErrorToast } from '../../utils/errorHandler'; 
 import Loader from "../../components/Loader";
 
 const WalletTransfer = ({ navigation }) => {
@@ -85,39 +87,24 @@ useEffect(() => {
 
   const handleTransfer = async () => {
     if (!walletId) {
-      Toast.show({ 
-        type: 'error', 
-        text1: 'Erreur',
-        text2: 'Veuillez fournir un matricule de portefeuille valide.' 
-      });
-      return;
+     showErrorToast('ACTION_FAILED', 'Veuillez fournir un matricule de portefeuille valide.');
+    return;
     }
 
     const transferAmount = parseFloat(amount);
     if (isNaN(transferAmount)) {
-      Toast.show({
-        type: 'error', 
-        text1: 'Erreur', 
-        text2: 'Veuillez entrer un montant valide.' 
-      });
-      return;
+     showErrorToast('ACTION_FAILED', 'Veuillez entrer un montant valide.');
+    return;
     }
 
     if (transferAmount <= 0) {
-      Toast.show({ 
-        type: 'error', 
-        text1: 'Erreur', 
-        text2: 'Le montant doit être supérieur à 0.' 
-      });
-      return;
+       showErrorToast('ACTION_FAILED', 'Le montant doit être supérieur à 0.');
+    return;
     }
 
     if (balanceData?.data?.balance && transferAmount > balanceData.data.balance) {
-      Toast.show({ 
-        type: 'error',
-        text1: 'Erreur', 
-        text2: 'Votre solde est insuffisant pour effectuer ce transfert.' 
-      });
+      showErrorToast('ACTION_FAILED', 'Votre solde est insuffisant pour effectuer ce transfert.');
+    return;
       return;
     }
 
@@ -165,27 +152,23 @@ useEffect(() => {
 
     navigation.navigate('Success', {
       message: 'Transfer completed successfully!',
-      nextScreen: 'MonSolde'
+      nextScreen: 'MainTabs'
     });
     } catch (error) {
       let errorMessage = 'Une erreur est survenue. Veuillez réessayer.';
       const status = error?.status;
       
-      if (status === 400) {
-        errorMessage = 'Veuillez remplir tous les champs.';
-      } else if (status === 404) {
-        errorMessage = 'Portefeuille introuvable';
-      } else if (status === 500) {
-        errorMessage = 'Erreur lors du transfert';
-      } else if (error?.data?.message) {
-        errorMessage = error.data.message;
-      }
-      
-      Toast.show({ 
-        type: 'error', 
-        text1: 'Erreur', 
-        text2: errorMessage 
-      });
+      if (error?.status === 503) {
+      showErrorToast('SERVICE_UNAVAILABLE');
+    } else if (error?.status === 500) {
+      showErrorToast('ACTION_FAILED', 'Erreur serveur lors du transfert');
+    } else if (error?.status === 400) {
+      showErrorToast('ACTION_FAILED', 'Veuillez remplir tous les champs.');
+    } else if (error?.status === 404) {
+      showErrorToast('ACTION_FAILED', 'Portefeuille introuvable');
+    } else {
+      showErrorToast('ACTION_FAILED', error?.data?.message || 'Une erreur est survenue. Veuillez réessayer.');
+    }
     }
   };
 
@@ -193,6 +176,14 @@ useEffect(() => {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff', paddingTop: StatusBar.currentHeight }}>
+       {/* Floating Home Button */}
+      <TouchableOpacity 
+        onPress={() => navigation.navigate('MainTabs')}
+        style={styles.floatingHomeButton}
+      >
+        <Ionicons name="home" size={44} color="#7ddd7d" />
+      </TouchableOpacity>
+      
       <View style={{ flex: 1, paddingHorizontal: 20 }}>
         {/* Balance Display */}
         <View style={{ backgroundColor: '#F1F1F1', borderRadius: 10, padding: 15, marginBottom: 20, marginTop: 20 }}>
@@ -296,6 +287,19 @@ const styles = {
     borderRadius: 10,
     alignItems: 'center',
     marginTop: 10
+  },
+  floatingHomeButton: {
+    position: 'absolute',
+    top: StatusBar.currentHeight + 600,
+    right: 20,
+    zIndex: 999,
+    backgroundColor: 'rgba(235, 248, 255, 0.9)',
+    padding: 10,
+    borderRadius: 20,
+    elevation: 3,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
   },
   buttonText: {
     color: '#fff',

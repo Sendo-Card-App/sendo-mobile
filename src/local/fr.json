@@ -118,6 +118,9 @@
         "phoneNumber": "Numéro de téléphone",
         "next": "Suivant",
         "forgetPassword": "Mot de passe oublié",
+         "en": "Anglais",
+          "fr": "Français",
+          "select": "Choisir une langue",
         "loginWithPhone": "CONNEXION AVEC NUMÉRO DE TÉLÉPHONE",
         "orSignInWith": "Ou connectez-vous avec",
         "dontHaveAccount": "Vous n'avez pas de compte ?",
@@ -158,6 +161,8 @@
     "history": "Historique",
     "pay_bills": "Payer les factures",
     "account": "Compte",
+    "request": "KYC vérification",
+    "sub": "Veuillez soumettre vos documents du KYC",
     "payment": "Paiement",
     "settings": "Paramètres",
     "support": "Support",
@@ -537,6 +542,50 @@
   "errors1": {
     "error": "Erreur",
     "countriesLoadFailed": "Échec du chargement des pays"
+  },
+  "otpModal": {
+    "title": "Vérifier OTP",
+    "instructions": "Entrez le code à 6 chiffres envoyé à {target}",
+    "verifyButton": "Vérifier",
+    "resendButton": "Renvoyer OTP",
+    "cancelButton": "Annuler"
+  },
+   "pinModal": {
+    "title": "Entrez votre code PIN",
+    "subtitle": "Veuillez entrer votre code PIN à 4 chiffres pour confirmer la transaction",
+    "incorrectPin": "Code PIN incorrect. Il vous reste {attempts} tentatives.",
+    "accountLocked": "Compte verrouillé",
+    "tooManyAttempts": "Trop de tentatives échouées. Veuillez réessayer plus tard.",
+    "close": "Fermer"
+  },
+  "biometric": {
+    "prompt": "Authentifiez-vous pour vérifier votre identité"
+  },
+  "headers": {
+    "account": "Compte",
+    "aboutUs": "À propos de nous",
+    "changePassword": "Changer le mot de passe",
+    "addBeneficiary": "Envoyez Gratuitement de l'argent",
+    "selectMethod": "Sélectionner une méthode",
+    "bankDeposit": "Rechargement par dépôt bancaire",
+    "transferFunds": "Transférer des fonds",
+    "paymentEstimator": "Estimateur de paiement en ligne",
+    "walletTransfer": "Transfert de portefeuille",
+    "addContact": "Ajouter un contact",
+    "support": "Support",
+    "settings": "Paramètres",
+    "notifications": "Notifications",
+    "myBalance": "Mon Solde",
+    "createVirtualCard": "Créer une carte virtuelle"
+  },
+  "tabs": {
+    "home": "Accueil",
+    "cards": "Cartes",
+    "transfers": "Transferts",
+    "settings": "Paramètres"
+  },
+  "common2": {
+    "back": "Retour"
   }
 
 

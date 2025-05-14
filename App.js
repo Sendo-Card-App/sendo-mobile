@@ -2,7 +2,7 @@ import "./global.css";
 import React, { useEffect } from "react";
 import { Colors } from './src/constants/colors'; // Adjust the path as needed
 
-import { StyleSheet, View, Text, TouchableOpacity } from "react-native";
+import { StyleSheet, View, Text, TouchableOpacity,Platform } from "react-native";
 import { Provider } from "react-redux";
 import { store } from "./src/store/store";
 import Toast from "react-native-toast-message";
@@ -162,7 +162,7 @@ function MainTabs() {
       <Tab.Screen 
         name="TransferTab"
         component={History} 
-        options={{ title: 'Transfer' }}
+        options={{ title: 'History' }}
       />
       <Tab.Screen 
         name="SettingsTab" 
@@ -193,18 +193,22 @@ function AuthStack() {
 // Main Stack Navigator
 function MainStack() {
   return (
-    <Stack.Navigator
-      screenOptions={({ navigation }) => ({
-        headerStyle: { backgroundColor: Colors.primary },
-        headerTitleStyle: { fontSize: 18, fontWeight: "bold", color: Colors.text },
-        headerTitleAlign: "center",
-        headerLeft: () => (
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <AntDesign name="arrowleft" size={20} color={Colors.text} style={{ padding: 12 }} />
-          </TouchableOpacity>
-        ),
-      })}
-    >
+   <Stack.Navigator
+  screenOptions={({ navigation }) => ({
+    headerStyle: { backgroundColor: Colors.primary },
+    headerTitleStyle: { fontSize: 18, fontWeight: "bold", color: Colors.text },
+    headerTitleAlign: "center",
+    headerLeft: () => (
+      <TouchableOpacity onPress={() => navigation.goBack()}>
+        {Platform.OS === 'ios' ? (
+          <Text style={{ fontSize: 24, padding: 12, color: Colors.text, paddingLeft: Platform.OS === 'ios' ? 8 : 12, }}>&lt;</Text>
+        ) : (
+          <AntDesign name="arrowleft" size={20} color={Colors.text} style={{ padding: 12 }} />
+        )}
+      </TouchableOpacity>
+    ),
+  })}
+>
       <Stack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
       <Stack.Screen name="Account" component={Account} options={{ headerTitle: "Compte" }} />
       <Stack.Screen name="BeneficiaryScreen" component={BeneficiaryScreen} options={{ headerShown: false }} />
@@ -283,12 +287,12 @@ function DrawerNavigator() {
 export default function App() {
  
   // Register for push notifications once on mount
-  useEffect(() => {
-    registerForPushNotificationsAsync().then((token) => {
-      console.log("Expo Push Token:", token);
-      // TODO: send token to your backend here if needed
-    });
-  }, []);
+  // useEffect(() => {
+  //   registerForPushNotificationsAsync().then((token) => {
+  //     console.log("Expo Push Token:", token);
+  //     // TODO: send token to your backend here if needed
+  //   });
+  // }, []);
   return (
     <Provider store={store}>
       <NetworkProvider>

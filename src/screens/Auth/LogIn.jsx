@@ -151,24 +151,24 @@ const Log = () => {
           <Modal animationType="slide" transparent visible={languageModalVisible}>
             <View className="flex-1 justify-center items-center bg-black/50">
               <View className="w-4/5 bg-white rounded-xl p-6">
-                <Text className="text-xl font-bold mb-4 text-center">Select your language</Text>
+                <Text className="text-xl font-bold mb-4 text-center">{t("log.select")}</Text>
                 <TouchableOpacity 
                   onPress={() => changeLanguage("en")}
                   className="py-3 border-b border-gray-200"
                 >
-                  <Text className="text-lg text-center">English</Text>
+                  <Text className="text-lg text-center">{t("log.en")}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
                   onPress={() => changeLanguage("fr")}
                   className="py-3 border-b border-gray-200"
                 >
-                  <Text className="text-lg text-center">Français</Text>
+                  <Text className="text-lg text-center">{t("log.fr")}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
                   onPress={() => setLanguageModalVisible(false)}
                   className="mt-4"
                 >
-                  <Text className="text-red-500 text-lg text-center">Close</Text>
+                  <Text className="text-red-500 text-lg text-center">{t("log.close")}</Text>
                 </TouchableOpacity>
               </View>
             </View>

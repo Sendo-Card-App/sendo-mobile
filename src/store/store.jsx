@@ -5,6 +5,7 @@ import { authApi } from '../services/Auth/authAPI';
 import { kycApi } from '../services/Kyc/kycApi';
 import { walletApi } from '../services/WalletApi/walletApi';
 import { paymentSimulatorAPI } from '../services/Pay/paymentSimulatorAPI';
+import { notificationApi } from '../services/Notification/notificationApi';
 import kycReducer from '../features/Kyc/kycReducer'; // Updated path (note capital K in Kyc)
 import passcodeReducer from '../features/Auth/passcodeSlice';
 
@@ -17,12 +18,14 @@ export const store = configureStore({
     [kycApi.reducerPath]: kycApi.reducer,
     [walletApi.reducerPath]: walletApi.reducer,
     [paymentSimulatorAPI.reducerPath]: paymentSimulatorAPI.reducer,
+     [notificationApi.reducerPath]: notificationApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
       authApi.middleware,
       kycApi.middleware,
       walletApi.middleware,
-      paymentSimulatorAPI.middleware, // Don't forget to add kycApi middleware
+      paymentSimulatorAPI.middleware,
+      notificationApi.middleware, 
     ),
 });

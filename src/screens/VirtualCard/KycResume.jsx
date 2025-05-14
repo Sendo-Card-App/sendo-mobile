@@ -105,7 +105,7 @@ const KycResume = ({ navigation }) => {
       if (response.status === 201) {
         navigation.navigate('Success', {
           message: 'Votre KYC a été soumis avec succès',
-          nextScreen: 'Payment'
+          nextScreen: 'MainTabs'
         });
       }
     } catch (error) {
