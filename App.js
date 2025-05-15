@@ -17,6 +17,7 @@ import { Ionicons, AntDesign } from "@expo/vector-icons";
 
 import * as Notifications from "expo-notifications";
 import { registerForPushNotificationsAsync } from "./src/services/notificationService";
+import app from "./src/configs/firebaseConfig";
 
 // Screens & Components
 import Home from "./src/screens/Home/Home";

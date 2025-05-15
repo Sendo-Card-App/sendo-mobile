@@ -32,11 +32,10 @@
         "android.permission.INTERNET",
         "USE_BIOMETRIC", "USE_FINGERPRINT"
       ],
-      "package": "com.sendo",
+      "package": "com.sfe.sendo",
       "allowCleartextTraffic": true,
       "useNextNotificationsApi": true,
       "googleServicesFile": "./google-services.json"
-
     },
     "web": {
       "favicon": "./assets/favicon.png"

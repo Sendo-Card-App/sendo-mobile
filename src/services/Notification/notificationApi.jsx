@@ -3,32 +3,41 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 export const notificationApi = createApi({
   reducerPath: 'notificationApi',
   baseQuery: fetchBaseQuery({ 
-    baseUrl: 'https://api.sf-e.ca/api/notification/',
+    baseUrl: `${process.env.EXPO_PUBLIC_API_URL}/notification`,
     prepareHeaders: (headers, { getState }) => {
-      const token = getState().auth.token;
+      const { accessToken } = getState().auth;
       if (token) {
-        headers.set('Authorization', `Bearer ${token}`);
+        headers.set('Authorization', `Bearer ${accessToken}`);
       }
       return headers;
     }
   }),
-  tagTypes: ['Notifications'], // Add this line to specify your tag types
+  tagTypes: ['Notifications'],
   endpoints: (builder) => ({
-     getNotifications: builder.query({
-      query: (userId) => `users/${userId}`,
+    getNotifications: builder.query({
+      query: (userId) => `/users/${userId}`,
       providesTags: ['Notifications']
     }),
     markAsRead: builder.mutation({
       query: (notificationId) => ({
-        url: `read/${notificationId}`,
+        url: `/read/${notificationId}`,
         method: 'PATCH'
       }),
-      invalidatesTags: ['Notifications'] // This now references a defined tag type
-    })
+      invalidatesTags: ['Notifications']
+    }),
+    sendNotification: builder.mutation({
+      query: (notificationData) => ({
+        url: '/send',
+        method: 'POST',
+        body: notificationData,
+      }),
+      invalidatesTags: ['Notifications'],
+    }),
   })
 });
 
 export const { 
   useGetNotificationsQuery, 
-  useMarkAsReadMutation 
+  useMarkAsReadMutation,
+  useSendNotificationMutation
 } = notificationApi;

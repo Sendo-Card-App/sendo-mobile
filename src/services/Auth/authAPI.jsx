@@ -200,7 +200,7 @@ export const authApi = createApi({
           url: `${AUTH_ENDPOINTS.USER_PROFILE}/${userId}`,
           method: "PUT",
           body: formData,
-          ...(isFormData && { formData: true }),
+          //...(isFormData && { formData: true }),
         };
       },
       invalidatesTags: [TAG_TYPES.PROFILE],
