@@ -248,13 +248,13 @@ const Log = () => {
           >
             <Text className="text-[#7ddd7d] font-medium">{t("signIn.signUp")}</Text>
           </TouchableOpacity>
-          
+          {/*           
           <TouchableOpacity 
             onPress={handleGuestLogin}
             className="mt-4"
           >
             <Text className="text-[#7ddd7d] underline">{t("signIn.guestUser")}</Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
 
           {/* Country Selection Modal */}
           <Modal visible={countryModalVisible} animationType="slide">

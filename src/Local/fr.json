@@ -163,6 +163,8 @@
     "account": "Compte",
     "request": "KYC vérification",
     "sub": "Veuillez soumettre vos documents du KYC",
+     "request1": "Demander un NIU",
+     "sub1": "Demandez a Sendo de créer ou télécharger mon NUI",
     "payment": "Paiement",
     "settings": "Paramètres",
     "support": "Support",
@@ -200,6 +202,7 @@
 },
 "errors": {
   "invalid_referral": "Code de parrainage invalide",
+    "title": "Error",
   "already_used": "Ce code a déjà été utilisé",
   "kyc_required": "Veuillez compléter la vérification de votre profil pour utiliser le parrainage"
 },
@@ -330,7 +333,41 @@
     "galleryPermissionDenied": "Gallery access is required to upload documents",
     "imageSelectionError": "Error selecting image. Please try again.",
      "supportedFormats": "Formats supporter: PDF, JPG, PNG",
-    "documentUploadError": "Error uploading document. Please try again."
+    "documentUploadError": "Error uploading document. Please try again.",
+    "steps": {
+      "fees": "Frais de création",
+      "kyc": "Vérification KYC",
+      "niuNumber": "Numéro NIU",
+      "attestation": "Document d'attestation"
+    },
+    "request": {
+      "title": "Demander un NIU",
+      "processTitle": "Processus de création",
+      "feesTitle": "Information sur les frais",
+      "feesAmount": "Montant des frais",
+      "currentBalance": "Votre solde actuel",
+      "termsAccept": "J'accepte les CGU et autorise Sendo à créer mon NIU",
+      "paymentAccept": "J'autorise le prélèvement de 3 000 FCFA",
+      "payButton": "Payer le NIU",
+      "processing": "Traitement en cours..."
+    },
+     "paymentModal": {
+      "title": "Confirmation de paiement",
+      "message": "Confirmez-vous le paiement de {amount} FCFA pour la création du NIU ?",
+      "confirm": "Confirmer",
+      "cancel": "Annuler"
+    },
+    "errors": {
+      "title": "Erreur",
+      "termsNotAccepted": "Veuillez accepter les conditions pour continuer",
+      "kycNotVerified": "Votre identité doit être vérifiée avant de demander un NIU",
+      "insufficientBalance": "Votre solde est insuffisant pour payer les frais de création du NIU",
+      "technical": "Une erreur est survenue. Veuillez réessayer plus tard"
+    },
+    "success": {
+      "title": "Succès",
+      "message": "Votre demande de NIU a été soumise avec succès"
+    }
   },
   "personalDetail": {
     "title": "Détails personnels",
@@ -501,7 +538,7 @@
     "accountLocked": "Compte bloqué",
     "tooManyAttempts": "Trop de tentatives. Veuillez vous reconnecter.",
     "validationError": "Erreur de validation",
-    "generalError": "Une erreur est survenue",
+    "generalError": "Compte suspendu ou bloqué",
     "forgotPin": "Code PIN oublié",
     "forgotPinMessage": "Vous devez vous reconnecter pour réinitialiser votre code PIN",
     "forgotPinQuestion": "J'ai oublié mon code PIN ?",
@@ -509,6 +546,7 @@
     "usePinInstead": "Utiliser le code PIN",
     "biometricFailed": "Échec de l'authentification biométrique"
   },
+  
   "common": {
     "cancel": "Annuler",
     "signIn": "Se connecter"

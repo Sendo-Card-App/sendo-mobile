@@ -7,6 +7,7 @@ import { getData, clearStorage } from '../../services/storage'; // Updated impor
 import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
 import { clearAuth } from '../../features/Auth/authSlice'; // Add this import
 import Loader from "../../components/Loader";
+import Toast from 'react-native-toast-message';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { useTranslation } from 'react-i18next'; // Add for translations
 
@@ -49,7 +50,16 @@ const PinCode = ({ navigation, route }) => {
       console.error('Error clearing session:', error);
     }
   };
-
+  const showToast = (type, title, message) => {
+  Toast.show({
+    type: type,
+    text1: title,
+    text2: message,
+    visibilityTime: 4000,
+    autoHide: true,
+    topOffset: 30,
+  });
+};
   // Check for biometric availability
   useEffect(() => {
     const checkBiometrics = async () => {
@@ -138,6 +148,7 @@ const PinCode = ({ navigation, route }) => {
       console.log("Error:", error);
       setError(t('pin.generalError'));
       setPin('');
+       showToast('error', t('errors.title'), t('pin.generalError'));
     } finally {
       setIsLoading(false);
     }

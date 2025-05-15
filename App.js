@@ -43,6 +43,7 @@ import BankCard from "./src/screens/VirtualCard/BankCard";
 import BankCard1 from "./src/screens/Transfert/BankCard1";
 import ConﬁrmeTheTransfer from "./src/screens/Transfert/ConﬁrmeTheTransfer";
 import Success from "./src/screens/Transfert/Success";
+import NiuRequest from "./src/screens/Profile/NiuRequest";
 import AboutUs from "./src/screens/Setting/AboutUs";
 import BeneficiaryScreen from "./src/screens/Transfert/BeneficiaryScreen";
 import Curency from "./src/screens/Transfert/Curency";
@@ -211,6 +212,7 @@ function MainStack() {
 >
       <Stack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
       <Stack.Screen name="Account" component={Account} options={{ headerTitle: "Compte" }} />
+       <Stack.Screen name="NiuRequest" component={NiuRequest} options={{ headerTitle: "Demander un NIU" }} />
       <Stack.Screen name="BeneficiaryScreen" component={BeneficiaryScreen} options={{ headerShown: false }} />
       <Stack.Screen name="BeneficiarySelection" component={BeneficiarySelection} options={{ headerShown: false }} />
       <Stack.Screen name="AboutUs" component={AboutUs} options={{ headerTitle: "À propos de nous" }} />

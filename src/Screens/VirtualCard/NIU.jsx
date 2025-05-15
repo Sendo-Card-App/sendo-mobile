@@ -14,7 +14,7 @@ const NIU = ({ navigation }) => {
   const { t } = useTranslation();
   const { width } = Dimensions.get("screen");
   const dispatch = useDispatch();
-  const [selectedOption, setSelectedOption] = useState(null);
+  const [selectedDocument, setSelectedDocument] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   
   const handleTakePhoto = async () => {
@@ -36,12 +36,12 @@ const NIU = ({ navigation }) => {
 
       if (!result.canceled && result.assets?.[0]?.uri) {
         const image = result.assets[0];
-        dispatch(setNiuDocument({
+        const document = {
           uri: image.uri,
           type: image.type || 'image/jpeg',
           name: `niu_photo_${Date.now()}.jpg`
-        }));
-        navigation.navigate("KycResume");
+        };
+        setSelectedDocument(document);
       }
     } catch (error) {
       console.error('Error taking photo:', error);
@@ -68,12 +68,12 @@ const NIU = ({ navigation }) => {
           else if (extension === 'png') fileType = 'image/png';
         }
 
-        dispatch(setNiuDocument({
+        const document = {
           uri: result.uri,
           type: fileType || 'application/pdf',
           name: result.name || `niu_document_${Date.now()}.${fileType?.split('/')[1] || 'pdf'}`
-        }));
-        navigation.navigate("KycResume");
+        };
+        setSelectedDocument(document);
       }
     } catch (error) {
       console.error('Error uploading document:', error);
@@ -84,17 +84,20 @@ const NIU = ({ navigation }) => {
   };
 
   const handleContinue = async () => {
-    if (!selectedOption) return;
+    if (!selectedDocument) {
+      Alert.alert(t('niu.noDocumentSelected'));
+      return;
+    }
     
     try {
-      if (selectedOption === 'camera') {
-        await handleTakePhoto();
-      } else if (selectedOption === 'upload') {
-        await handleUploadDocument();
-      }
+      setIsProcessing(true);
+      dispatch(setNiuDocument(selectedDocument));
+      navigation.navigate("KycResume");
     } catch (error) {
       console.error('Error in continue handler:', error);
       Alert.alert(t('niu.generalError'));
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -127,12 +130,41 @@ const NIU = ({ navigation }) => {
           {t('niu.uploadInstruction')}
         </Text>
 
-        <Image
-          source={require("../../images/DGI.png")}
-          className="w-[80%] mx-auto mt-2"
-          style={{ height: width / 1.77 }}
-          resizeMode="contain"
-        />
+        {/* Show preview if document is selected */}
+        {selectedDocument ? (
+          <View className="w-full items-center mt-4">
+            {selectedDocument.type.includes('image') ? (
+              <Image
+                source={{ uri: selectedDocument.uri }}
+                className="w-[80%] mx-auto"
+                style={{ height: width / 1.77 }}
+                resizeMode="contain"
+              />
+            ) : (
+              <View className="bg-gray-100 p-4 rounded-lg w-[80%] items-center">
+                <MaterialIcons name="picture-as-pdf" size={60} color="red" />
+                <Text className="mt-2 text-gray-700 text-center" numberOfLines={1}>
+                  {selectedDocument.name}
+                </Text>
+              </View>
+            )}
+            <TouchableOpacity
+              className="mt-2"
+              onPress={() => {
+                setSelectedDocument(null);
+              }}
+            >
+              <Text className="text-red-500">{t('niu.removeDocument')}</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <Image
+            source={require("../../images/DGI.png")}
+            className="w-[80%] mx-auto mt-2"
+            style={{ height: width / 1.77 }}
+            resizeMode="contain"
+          />
+        )}
 
         <View className="w-[89%] mx-auto px-8">
           <Text className="text-gray-400 my-1">
@@ -146,38 +178,48 @@ const NIU = ({ navigation }) => {
         {/* Two Option Buttons */}
         <View className="w-[85%] mx-auto mt-4 mb-2 space-y-4">
           <TouchableOpacity
-            className={`flex-row items-center justify-center py-3 rounded-full border-2 ${selectedOption === 'camera' ? 'border-[#7ddd7d] bg-[#7ddd7d]/20' : 'border-gray-300'}`}
-            onPress={() => setSelectedOption('camera')}
+            className={`flex-row items-center justify-center py-3 rounded-full border-2 ${selectedDocument?.type?.includes('image') ? 'border-[#7ddd7d] bg-[#7ddd7d]/20' : 'border-gray-300'}`}
+            onPress={handleTakePhoto}
             disabled={isProcessing}
           >
-            <MaterialIcons name="photo-camera" size={24} color={selectedOption === 'camera' ? '#7ddd7d' : 'gray'} />
-            <Text className={`ml-2 text-lg font-bold ${selectedOption === 'camera' ? 'text-[#7ddd7d]' : 'text-gray-500'}`}>
+            <MaterialIcons 
+              name="photo-camera" 
+              size={24} 
+              color={selectedDocument?.type?.includes('image') ? '#7ddd7d' : 'gray'} 
+            />
+            <Text className={`ml-2 text-lg font-bold ${selectedDocument?.type?.includes('image') ? 'text-[#7ddd7d]' : 'text-gray-500'}`}>
               {t('niu.takePhotoButton')}
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            className={`flex-row items-center justify-center mt-5 py-3 rounded-full border-2 ${selectedOption === 'upload' ? 'border-[#7ddd7d] bg-[#7ddd7d]/20' : 'border-gray-300'}`}
-            onPress={() => setSelectedOption('upload')}
+            className={`flex-row items-center justify-center mt-5 py-3 rounded-full border-2 ${selectedDocument?.type?.includes('application/pdf') ? 'border-[#7ddd7d] bg-[#7ddd7d]/20' : 'border-gray-300'}`}
+            onPress={handleUploadDocument}
             disabled={isProcessing}
           >
-            <MaterialIcons name="picture-as-pdf" size={24} color={selectedOption === 'upload' ? '#7ddd7d' : 'gray'} />
-            <Text className={`ml-2 text-lg font-bold ${selectedOption === 'upload' ? 'text-[#7ddd7d]' : 'text-gray-500'}`}>
+            <MaterialIcons 
+              name="picture-as-pdf" 
+              size={24} 
+              color={selectedDocument?.type?.includes('application/pdf') ? '#7ddd7d' : 'gray'} 
+            />
+            <Text className={`ml-2 text-lg font-bold ${selectedDocument?.type?.includes('application/pdf') ? 'text-[#7ddd7d]' : 'text-gray-500'}`}>
               {t('niu.uploadDocumentButton')}
             </Text>
           </TouchableOpacity>
         </View>
 
-        {/* Submit Button */}
-        <TouchableOpacity
-          className={`mb-2 mt-auto py-3 rounded-full w-[85%] mx-auto ${selectedOption ? 'bg-[#7ddd7d]' : 'bg-gray-300'}`}
-          onPress={handleContinue}
-          disabled={!selectedOption || isProcessing}
-        >
-          <Text className={`text-xl text-center font-bold ${selectedOption ? 'text-white' : 'text-gray-500'}`}>
-            {isProcessing ? t('niu.processing') : t('niu.continueButton')}
-          </Text>
-        </TouchableOpacity>
+        {/* Submit Button - Shows when any document is selected */}
+        {selectedDocument && (
+          <TouchableOpacity
+            className="mb-2 mt-auto py-3 rounded-full w-[85%] mx-auto bg-[#7ddd7d]"
+            onPress={handleContinue}
+            disabled={isProcessing}
+          >
+            <Text className="text-xl text-center font-bold text-white">
+              {isProcessing ? t('niu.processing') : t('niu.continueButton')}
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* Footer */}

@@ -85,7 +85,7 @@ const OtpVerification = ({ route, onVerify, onResend, onClose }) => {
     sendInitialOtp();
   }, [phone]);
 
- const handleVerifyOtp = async (codeToVerify = otp) => {
+const handleVerifyOtp = async (codeToVerify = otp) => {
   if (codeToVerify.length !== 6 || isVerifying) return;
 
   setIsVerifying(true);
@@ -140,13 +140,9 @@ const OtpVerification = ({ route, onVerify, onResend, onClose }) => {
       Toast.show({
         type: 'success',
         text1: response.message || 'OTP verified successfully',
-        visibilityTime: 3000
+        visibilityTime: 3000,
+        onHide: () => navigation.navigate("SignIn") // Navigate when toast hides
       });
-
-      // Navigate after a slight delay
-      setTimeout(() => {
-        navigation.navigate("Auth");
-      }, 500);
     }
   } catch (err) {
     console.error('OTP Verification Error:', err);
@@ -155,10 +151,22 @@ const OtpVerification = ({ route, onVerify, onResend, onClose }) => {
     const status = err?.status;
     const errorMessage = err?.data?.message || 'OTP verification failed';
 
-    Toast.show({
-      type: 'error',
-      ...(errorResponses[status] || errorResponses.default),
-    });
+    // Special handling for "Token invalide" message
+    if (errorMessage === "Token invalide") {
+      Toast.show({
+        type: 'error',
+        text1: 'Invalid Token',
+        text2: 'The verification token is invalid',
+        visibilityTime: 4000,
+        position: 'top'
+      });
+    } else {
+      // Default error handling
+      Toast.show({
+        type: 'error',
+        ...(errorResponses[status] || errorResponses.default),
+      });
+    }
 
     // Reset OTP field on certain errors
     if ([404, 429].includes(status)) {
