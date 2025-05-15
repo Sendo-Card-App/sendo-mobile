@@ -16,7 +16,11 @@ module.exports = {
           userInterfaceStyle: "light",
           newArchEnabled: true,
           ios: {
-            supportsTablet: true
+            supportsTablet: true,
+            bundleIdentifier: "com.sfe.sendo",
+            infoPlist: {
+              ITSAppUsesNonExemptEncryption: false
+            }
           },
           android: {
             adaptiveIcon: {
@@ -46,11 +50,11 @@ module.exports = {
           ],
           extra: {
             eas: {
-             "projectId": "3c5e2368-a9f0-420d-aebf-8265754fe6a8",
+             "projectId": "b4090b1d-5875-4a89-9500-775dcf8a4754",
               apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL
             }
           },
-          owner: "migueljunior",
+          owner: "yanouyehiel",
         }
          
 }

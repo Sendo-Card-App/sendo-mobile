@@ -14,7 +14,8 @@
     },
     "ios": {
       "infoPlist": {
-        "NSFaceIDUsageDescription": "Authentifiez-vous pour accéder à votre compte"
+        "NSFaceIDUsageDescription": "Authentifiez-vous pour accéder à votre compte",
+        "ITSAppUsesNonExemptEncryption": false
       },
       "supportsTablet": true,
       "googleServicesFile": "./GoogleService-Info.plist",
