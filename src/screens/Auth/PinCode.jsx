@@ -146,9 +146,10 @@ const PinCode = ({ navigation, route }) => {
       }
     } catch (error) {
       console.log("Error:", error);
-      setError(t('pin.generalError'));
+      showToast('error', t('errors.title'), error.data?.message );
       setPin('');
-       showToast('error', t('errors.title'), t('pin.generalError'));
+      
+       
     } finally {
       setIsLoading(false);
     }

@@ -624,6 +624,52 @@
   },
   "common2": {
     "back": "Retour"
+  },
+  "history1": {
+    "title": "Historique des Transactions",
+    "filter": "Filtrer",
+    "filterTitle": "Filtrer les Transactions",
+    "apply": "Appliquer",
+    "reset": "Réinitialiser",
+    "resetFilters": "Réinitialiser les Filtres",
+    "noTransactions": "Aucune transaction trouvée",
+    "loadingUser": "Chargement des informations utilisateur...",
+    "errorLoading": "Erreur lors du chargement des transactions",
+    "transactions": "transactions",
+    "page": "Page",
+    "of": "sur",
+    "previous": "Précédent",
+    "next": "Suivant",
+    "dateRange": "Période",
+    "today": "Aujourd'hui",
+    "thisWeek": "Cette Semaine",
+    "thisMonth": "Ce Mois",
+    "custom": "Personnalisée",
+    "startDate": "Date de Début",
+    "endDate": "Date de Fin",
+    "type": "Type",
+    "method": "Méthode",
+    "status": "Statut",
+    "deposit": "Dépôt",
+    "withdraw": "Retrait",
+    "transfer": "Transfert",
+    "mobileMoney": "Mobile Money",
+    "bankTransfer": "Virement Bancaire",
+    "success": "Succès",
+    "failed": "Échec",
+    "pending": "En Attente",
+    "unknownRecipient": "Destinataire Inconnu",
+    "status_success": "Réussi",  
+  "status_failed": "Échoué",
+  "status_pending": "En attente",
+  "completed": "Terminé"
+    
+  },
+  "common3": {
+    "close": "Fermer",
+    "retry": "Réessayer",
+    "previous": "Précédent",
+    "next": "Suivant"
   }
 
 
