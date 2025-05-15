@@ -5,8 +5,11 @@ import { authApi } from '../services/Auth/authAPI';
 import { kycApi } from '../services/Kyc/kycApi';
 import { walletApi } from '../services/WalletApi/walletApi';
 import { paymentSimulatorAPI } from '../services/Pay/paymentSimulatorAPI';
+import { notificationApi } from '../services/Notification/notificationApi';
 import kycReducer from '../features/Kyc/kycReducer'; // Updated path (note capital K in Kyc)
+import { configApi } from '../services/Config/configApi';
 import passcodeReducer from '../features/Auth/passcodeSlice';
+import { config } from 'dotenv';
 
 export const store = configureStore({
   reducer: {
@@ -17,12 +20,16 @@ export const store = configureStore({
     [kycApi.reducerPath]: kycApi.reducer,
     [walletApi.reducerPath]: walletApi.reducer,
     [paymentSimulatorAPI.reducerPath]: paymentSimulatorAPI.reducer,
+     [notificationApi.reducerPath]: notificationApi.reducer,
+     [configApi.reducerPath]: configApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
       authApi.middleware,
       kycApi.middleware,
       walletApi.middleware,
-      paymentSimulatorAPI.middleware, // Don't forget to add kycApi middleware
+      paymentSimulatorAPI.middleware,
+      notificationApi.middleware,
+      configApi.middleware, 
     ),
 });

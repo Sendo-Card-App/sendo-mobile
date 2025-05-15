@@ -33,7 +33,6 @@
   "historyDetails": "Chronological listing of your transactions",
   "payBills": "Pay Bills",
   "payBillDetails": "Pay bills such as mobile passes, internet, and TV bouquets",
-  "account": "Account",
   "accountDetails": "Manage your personal information",
   "payment": "Payment",
   "paymentDetails": "Manage your payment methods",
@@ -48,15 +47,25 @@
 
     "signup": {
       "title": "Create Account",
-      "firstName": "First Name",
       "name": "Full Name",
       "title1": "My Account",
-      "lastName": "Last Name",
-      "email": "Email Address",
-      "phone": "Phone Number",
-      "address": "Address",
-      "password": "Password",
-      "buttonText": "SIGN UP",
+     "firstName": "First Name",
+    "firstNamePlaceholder": "Enter your first name",
+    "lastName": "Last Name",
+    "lastNamePlaceholder": "Enter your last name",
+    "email": "Email",
+    "emailPlaceholder": "Enter your email",
+    "phone": "Phone",
+    "phonePlaceholder": "Phone number",
+    "address": "Address",
+    "addressPlaceholder": "Enter your address",
+    "referralCode": "Referral Code",
+    "referralPlaceholder": "Enter referral code (optional)",
+    "password": "Password",
+    "passwordPlaceholder": "Create a password",
+    "referralToggle": "Have a referral code?",
+    "referralHide": "Hide referral code",
+    "buttonText": "Sign Up",
       "save": "Update",
       "alreadyHaveAccount": "Already have an account?",
       "signIn": "SIGN IN",
@@ -84,7 +93,10 @@
       "guestUser": "Login as a guest user",
       "login": "Login",
       "success": "Login successful!",
-    "error": "Error"
+    "error": "Error",
+    "emailPlaceholder": "Enter your email",
+    "passwordPlaceholder": "Enter your password",
+    "otpLogin": "OTP"
   },
 
   
@@ -107,11 +119,14 @@
         "title": "Log In",
         "phoneNumber": "Phone Number",
         "next": "Next",
+         "en": "English",
+          "fr": "French",
+          "select": "Select your language",
         "forgetPassword": "Forget Password",
         "loginWithPhone": "LOGIN WITH PHONE NUMBER",
         "orSignInWith": "Or Sign in with",
         "dontHaveAccount": "Don't have an account?",
-        "signUp": "SIGN UP",
+        "login": "To login",
         "guestUser": "Login as a guest user",
         "error": "Error",
         "enterPhoneNumber": "Please enter your phone number.",
@@ -149,6 +164,10 @@
 "history": "History",
 "pay_bills": "Pay Bills",
 "account": "Account",
+ "request": "KYC verification",
+    "sub": "Submit your KYC documents",
+     "sub1": "Ask Sendo to create or download my NUI",
+"request1": "Request for NUI",
 "payment": "Payment",
 "settings": "Settings",
 "support": "Support",
@@ -191,13 +210,16 @@
 "wallet_transfer": {
 "title": "Wallet Transfer",
 "available_balance": "Available Balance",
-"recipient_id": "Amount Number",
+"recipient_id": "Account Number",
+"recipient_name": "Name of beneficiary",
+"recipient_info": "Recipient Information",
+ "recipient_not_found": "Beneficiary not found",
 "recipient_placeholder": "Enter wallet matricule",
 "amount": "Amount (FCFA)",
 "amount_placeholder": "0.0",
 "description": "Description (optional)",
 "description_placeholder": "Ex: Transfer for purchase",
-"your_matricule": "Your matricule",
+"your_matricule": "Your Account Number",
 "transfer_button": "Make Transfer"
 },
 "select_method": {
@@ -213,7 +235,7 @@
 "withdrawal_limit": "📊 Deposit limit",
 "send_to_mobile": "Recharge your account via  MOMO or OM Money",
 "transfer_to_mobile": " Mobile Money",
-"simule": "Payment Simulator",
+"simule": "Payment estimator",
 "transfer_fee": "No Fee",
 "send_to_friends": "Recharge your Account Via BANK",
 "sendo_transfer": "Bank Transfer",
@@ -305,7 +327,48 @@
 "uploadInstruction": "Upload your taxpayer document",
 "description": "The unique identification number is a combination of letters and numbers assigned to taxpayers. This number is essential to identify the user as a taxpayer.",
 "takePhotoButton": "TAKE A PHOTO",
-"securityNotice": "Do not share your personal information"
+"securityNotice": "Do not share your personal information",
+    "uploadDocumentButton": "Upload Document",
+    "continueButton": "Continue",
+    "cameraPermissionDenied": "Camera permission is required to take photos",
+    "galleryPermissionDenied": "Gallery access is required to upload documents",
+    "imageSelectionError": "Error selecting image. Please try again.",
+     "supportedFormats": "Supported formats: PDF, JPG, PNG",
+    "documentUploadError": "Error uploading document. Please try again.",
+    "steps": {
+      "fees": "Creation Fees",
+      "kyc": "KYC Verification",
+      "niuNumber": "NIU Number",
+      "attestation": "Attestation Document"
+    },
+    "request": {
+      "title": "Request NIU",
+      "processTitle": "Creation Process",
+      "feesTitle": "Fees Information",
+      "feesAmount": "Fees amount",
+      "currentBalance": "Your current balance",
+      "termsAccept": "I accept the terms and authorize Sendo to create my NIU",
+      "paymentAccept": "I authorize the deduction of 3,000 FCFA",
+      "payButton": "Pay for NIU",
+      "processing": "Processing..."
+    },
+    "paymentModal": {
+      "title": "Payment Confirmation",
+      "message": "Confirm payment of {amount} FCFA for NIU creation?",
+      "confirm": "Confirm",
+      "cancel": "Cancel"
+    },
+    "errors": {
+      "title": "Error",
+      "termsNotAccepted": "Please accept all conditions to continue",
+      "kycNotVerified": "Your identity must be verified before requesting NIU",
+      "insufficientBalance": "Your balance is insufficient to pay the NIU creation fees",
+      "technical": "An error occurred. Please try again later"
+    },
+    "success": {
+      "title": "Success",
+      "message": "Your NIU request has been submitted successfully"
+    }
 },
 "personalDetail": {
 "title": "Personal Details",
@@ -430,7 +493,138 @@
 "card_price": "Card price:",
 "total": "Total:",
 "create_now": "CREATE NOW"
-}
+},
+ "account": {
+    "title": "My Account",
+    "edit": "Edit",
+    "close": "Close",
+    "fullName": "Full Name",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "phoneNumber": "Phone Number",
+    "secondPhone": "Second Phone",
+    "addSecondPhone": "Add Second Phone",
+    "remove": "Remove",
+    "email": "Email",
+    "profession": "Profession",
+    "region": "Region",
+    "city": "City",
+    "district": "District",
+    "saveChanges": "Save Changes",
+    "dataNotAvailable": "Data not available",
+    "notSet": "Not set",
+    "loading": "Loading...",
+    "otpSent": "OTP Sent",
+    "otpSentTo": "OTP sent to {{phone}}",
+    "success": "Success",
+    "verificationSuccessful": "Verification successful",
+    "secondPhoneAdded": "Second phone number verified and added successfully",
+    "error": "Error",
+    "allFieldsRequired": "All fields are required",
+    "profileUpdated": "Profile updated successfully",
+    "failedUpdate": "Failed to update profile",
+    "permissionDenied": "Permission denied",
+    "grantPermissions": "Please grant camera and media library permissions.",
+    "fileTooLarge": "File too large",
+    "maxSize": "Image must be less than 5MB.",
+    "failedPickImage": "Failed to pick image",
+    "failedSendOtp": "Failed to send OTP",
+    "failedVerifyOtp": "Failed to verify OTP"
+  },
+  "pin": {
+    "greeting": "Hello",
+    "setupPin": "Set up your PIN code",
+    "enterPin": "Enter your PIN to unlock the application",
+    "incorrectPin": "Incorrect PIN",
+    "accountLocked": "Account locked",
+    "tooManyAttempts": "Too many attempts. Please sign in again.",
+    "validationError": "Validation error",
+    "generalError": "An error occurred",
+    "forgotPin": "Forgot PIN",
+    "forgotPinMessage": "You need to sign in again to reset your PIN",
+    "forgotPinQuestion": "Forgot your PIN?",
+    "biometricPrompt": "Biometric verification required",
+    "usePinInstead": "Use PIN instead",
+    "biometricFailed": "Biometric authentication failed"
+  },
+  "common": {
+    "cancel": "Cancel",
+    "signIn": "Sign In"
+  },
+  "forgotPassword": {
+    "title": "Forgot Password",
+    "subtitle": "Enter your phone number to receive an OTP code",
+    "phonePlaceholder": "Enter your phone number",
+    "sendOtp": "Send OTP",
+    "backToSignIn": "Back to Sign In",
+    "selectCountry": "Select Country",
+    "enterOtp": "Enter OTP Code",
+    "otpSentTo": "We've sent a 6-digit code to",
+    "otpPlaceholder": "Enter 6-digit OTP",
+    "phoneRequired": "Phone number is required",
+    "otpSent": "OTP code has been sent to your phone",
+    "otpSendFailed": "Failed to send OTP",
+    "noAccountFound": "No account associated with this phone number",
+    "validOtpRequired": "Please enter a valid 6-digit OTP",
+    "otpVerified": "OTP verified successfully",
+    "invalidOtp": "Invalid OTP code",
+    "emailRequired": "Email is required",
+    "invalidEmail": "Please enter a valid email address",
+    "emailPlaceholder": "Enter your email"
+  },
+  "common1": {
+    "success": "Success",
+    "cancel": "Cancel",
+    "verify": "Verify"
+  },
+  "errors1": {
+    "error": "Error",
+    "countriesLoadFailed": "Failed to load countries"
+  },
+  "otpModal": {
+    "title": "Verify OTP",
+    "instructions": "Enter the 6-digit code sent to {target}",
+    "verifyButton": "Verify",
+    "resendButton": "Resend OTP",
+    "cancelButton": "Cancel"
+  },
+  "pinModal": {
+    "title": "Enter Your PIN",
+    "subtitle": "Please enter your 4-digit PIN to confirm the transaction",
+    "incorrectPin": "Incorrect PIN. {attempts} attempts remaining.",
+    "accountLocked": "Account Locked",
+    "tooManyAttempts": "Too many failed attempts. Please try again later.",
+    "close": "Close"
+  },
+  "biometric": {
+    "prompt": "Authenticate to verify your identity"
+  },
+  "headers": {
+    "account": "Account",
+    "aboutUs": "About Us",
+    "changePassword": "Change Password",
+    "addBeneficiary": "Send Money for Free",
+    "selectMethod": "Select Method",
+    "bankDeposit": "Bank Deposit Recharge",
+    "transferFunds": "Transfer Funds",
+    "paymentEstimator": "Online Payment Estimator",
+    "walletTransfer": "Wallet Transfer",
+    "addContact": "Add Contact",
+    "support": "Support",
+    "settings": "Settings",
+    "notifications": "Notifications",
+    "myBalance": "My Balance",
+    "createVirtualCard": "Create Virtual Card"
+  },
+  "tabs": {
+    "home": "Home",
+    "cards": "Cards",
+    "transfers": "Transfers",
+    "settings": "Settings"
+  },
+  "common2": {
+    "back": "Back"
+  }
 
 
 

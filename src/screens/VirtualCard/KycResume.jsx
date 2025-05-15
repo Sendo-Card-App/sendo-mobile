@@ -105,7 +105,7 @@ const KycResume = ({ navigation }) => {
       if (response.status === 201) {
         navigation.navigate('Success', {
           message: 'Votre KYC a été soumis avec succès',
-          nextScreen: 'Payment'
+          nextScreen: 'MainTabs'
         });
       }
     } catch (error) {
@@ -172,7 +172,7 @@ const KycResume = ({ navigation }) => {
           <Ionicons name="menu-outline" size={24} color="white" />
         </TouchableOpacity>
       </View>
-
+      
       <View className="border border-dashed border-gray-300 my-1" />
       <Text className="text-center text-white text-2xl my-3">
         {t('kyc_resume.identity_verification')}
@@ -210,6 +210,7 @@ const KycResume = ({ navigation }) => {
           )}
         </TouchableOpacity>
       </View>
+      
 
       <View className="py-4 flex-row justify-center items-center gap-2">
         <Ionicons name="shield-checkmark" size={18} color="orange" />
@@ -217,11 +218,27 @@ const KycResume = ({ navigation }) => {
           {t('kyc_resume.privacy_notice')}
         </Text>
       </View>
-
+       
       <StatusBar style="light" />
       <Toast />
     </View>
   );
 };
-
+const styles = {
+  floatingHomeButton: {
+    position: 'absolute',
+    top: StatusBar.currentHeight + 600,
+    right: 20,
+    zIndex: 999,
+    backgroundColor: 'rgba(235, 248, 255, 0.9)',
+    padding: 10,
+    borderRadius: 20,
+    elevation: 3,
+    
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+  },
+ 
+};
 export default KycResume;

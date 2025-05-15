@@ -6,6 +6,7 @@ const AUTH_ENDPOINTS = {
   VERIFY_OTP: '/auth/otp/verify',
   SEND_OTP: '/auth/otp/send',
   REFRESH_TOKEN: '/auth/refresh-token',
+  PHONE_LOGIN:'/auth/login-phone',
   LOGIN: '/auth/login',
   FORGOT_PASSWORD: '/auth/forgot-password',
   RESET_PASSWORD: '/auth/reset-password',
@@ -34,22 +35,21 @@ export const authApi = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl: process.env.EXPO_PUBLIC_API_URL,
     prepareHeaders: (headers, { getState, endpoint }) => {
-      const { accessToken } = getState().auth;
-      const { passcode } = getState().passcode
+       const { accessToken } = getState().auth;
+       const { passcode } = getState().passcode; // Now correctly accessing the nested field
 
-      console.log('Current endpoint:', endpoint); // Debug which endpoint is being called
-      console.log('Passcode available:', passcode);
+          console.log('Current passcode state:', getState().passcode);
 
-     headers.set('Accept', 'application/json');
-    headers.set('Content-Type', 'application/json');
+          headers.set('Accept', 'application/json');
+          headers.set('Content-Type', 'application/json');
 
-      if (accessToken) {
-        headers.set('Authorization', `Bearer ${accessToken}`);
-      }
-      if (passcode) {
-        headers.set('X-Passcode', passcode);
-      }
-      return headers;
+          if (accessToken) {
+            headers.set('Authorization', `Bearer ${accessToken}`);
+          }
+          if (passcode) {  // Now checking the correct value
+            headers.set('X-Passcode', passcode);
+          }
+          return headers;
     },
   }),
   tagTypes: Object.values(TAG_TYPES),
@@ -118,10 +118,19 @@ export const authApi = createApi({
 
     // Login endpoints
     loginWithPhone: builder.mutation({
-      query: ({ refreshToken,deviceId }) => ({
+      query: ({ phone,password }) => ({
+        url: AUTH_ENDPOINTS.PHONE_LOGIN,
+        method: 'POST',
+        body: { phone,password },
+      }),
+      invalidatesTags: [TAG_TYPES.AUTH],
+    }),
+
+     LoginWithPhone: builder.mutation({
+      query: ({ refreshToken, deviceId }) => ({
         url: AUTH_ENDPOINTS.REFRESH_TOKEN,
         method: 'POST',
-        body: { refreshToken,deviceId },
+        body: { refreshToken, deviceId },
       }),
       invalidatesTags: [TAG_TYPES.AUTH],
     }),

@@ -2,11 +2,12 @@ import "./global.css";
 import React, { useEffect } from "react";
 import { Colors } from './src/constants/colors'; // Adjust the path as needed
 
-import { StyleSheet, View, Text, TouchableOpacity } from "react-native";
+import { StyleSheet, View, Text, TouchableOpacity,Platform } from "react-native";
 import { Provider } from "react-redux";
 import { store } from "./src/store/store";
 import Toast from "react-native-toast-message";
 import './i18n';
+import NetworkProvider from './src/services/NetworkProvider';
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createDrawerNavigator } from "@react-navigation/drawer";
@@ -42,6 +43,7 @@ import BankCard from "./src/screens/VirtualCard/BankCard";
 import BankCard1 from "./src/screens/Transfert/BankCard1";
 import ConﬁrmeTheTransfer from "./src/screens/Transfert/ConﬁrmeTheTransfer";
 import Success from "./src/screens/Transfert/Success";
+import NiuRequest from "./src/screens/Profile/NiuRequest";
 import AboutUs from "./src/screens/Setting/AboutUs";
 import BeneficiaryScreen from "./src/screens/Transfert/BeneficiaryScreen";
 import Curency from "./src/screens/Transfert/Curency";
@@ -161,7 +163,7 @@ function MainTabs() {
       <Tab.Screen 
         name="TransferTab"
         component={History} 
-        options={{ title: 'Transfer' }}
+        options={{ title: 'History' }}
       />
       <Tab.Screen 
         name="SettingsTab" 
@@ -192,20 +194,25 @@ function AuthStack() {
 // Main Stack Navigator
 function MainStack() {
   return (
-    <Stack.Navigator
-      screenOptions={({ navigation }) => ({
-        headerStyle: { backgroundColor: Colors.primary },
-        headerTitleStyle: { fontSize: 18, fontWeight: "bold", color: Colors.text },
-        headerTitleAlign: "center",
-        headerLeft: () => (
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <AntDesign name="arrowleft" size={20} color={Colors.text} style={{ padding: 12 }} />
-          </TouchableOpacity>
-        ),
-      })}
-    >
+   <Stack.Navigator
+  screenOptions={({ navigation }) => ({
+    headerStyle: { backgroundColor: Colors.primary },
+    headerTitleStyle: { fontSize: 18, fontWeight: "bold", color: Colors.text },
+    headerTitleAlign: "center",
+    headerLeft: () => (
+      <TouchableOpacity onPress={() => navigation.goBack()}>
+        {Platform.OS === 'ios' ? (
+          <Text style={{ fontSize: 24, padding: 12, color: Colors.text, paddingLeft: Platform.OS === 'ios' ? 8 : 12, }}>&lt;</Text>
+        ) : (
+          <AntDesign name="arrowleft" size={20} color={Colors.text} style={{ padding: 12 }} />
+        )}
+      </TouchableOpacity>
+    ),
+  })}
+>
       <Stack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
       <Stack.Screen name="Account" component={Account} options={{ headerTitle: "Compte" }} />
+       <Stack.Screen name="NiuRequest" component={NiuRequest} options={{ headerTitle: "Demander un NIU" }} />
       <Stack.Screen name="BeneficiaryScreen" component={BeneficiaryScreen} options={{ headerShown: false }} />
       <Stack.Screen name="BeneficiarySelection" component={BeneficiarySelection} options={{ headerShown: false }} />
       <Stack.Screen name="AboutUs" component={AboutUs} options={{ headerTitle: "À propos de nous" }} />
@@ -219,7 +226,7 @@ function MainStack() {
       <Stack.Screen name="SelectMethod" component={SelectMethod} options={{ headerTitle: "Sélectionner une méthode" }} />
       <Stack.Screen name="BankDepositRecharge" component={BankDepositRecharge} options={{headerTitle:" Rechargement par dépôt bancaire"}} />
       <Stack.Screen name="TransfertFund" component={TransfertFund} options={{ headerTitle: "Transférer des fonds" }} />
-      <Stack.Screen name="PaymentSimulator" component={PaymentSimulator} options={{ headerTitle: " Simulateur de paiement" }} />
+      <Stack.Screen name="PaymentSimulator" component={PaymentSimulator} options={{ headerTitle: " Estimateur de paiement enligne" }} />
       <Stack.Screen name="MethodType" component={MethodType} options={{headerTitle:"Sélectionner une méthode" }} />
       <Stack.Screen name="WalletTransfer" component={WalletTransfer} options={{ headerTitle: "Transfert de portefeuille" }} />
       <Stack.Screen name="AddContact" component={AddContact} options={{ headerTitle: "Ajouter un contact" }} />
@@ -230,6 +237,7 @@ function MainStack() {
       <Stack.Screen name="Payment" component={Payment} />
       <Stack.Screen name="History" component={History}  />
       <Stack.Screen name="Receipt" component={Receipt} />
+      <Stack.Screen name="NotificationComponent" component={NotificationComponent} options={{ headerTitle: "Notification" }} />
       <Stack.Screen name="MonSolde" component={MonSolde} options={{ headerTitle: "Mon Solde" }} />
       <Stack.Screen name="CreateVirtualCard" component={CreateVirtualCard} options={{ headerTitle: "Créer une carte virtuelle" }} />
       <Stack.Screen name="VerifyIdentity" component={VerifyIdentity} options={{ headerShown: false }} />
@@ -281,18 +289,20 @@ function DrawerNavigator() {
 export default function App() {
  
   // Register for push notifications once on mount
-  useEffect(() => {
-    registerForPushNotificationsAsync().then((token) => {
-      console.log("Expo Push Token:", token);
-      // TODO: send token to your backend here if needed
-    });
-  }, []);
+  // useEffect(() => {
+  //   registerForPushNotificationsAsync().then((token) => {
+  //     console.log("Expo Push Token:", token);
+  //     // TODO: send token to your backend here if needed
+  //   });
+  // }, []);
   return (
     <Provider store={store}>
-      <NavigationContainer>
-        <DrawerNavigator />
-        <Toast />
-      </NavigationContainer>
+      <NetworkProvider>
+        <NavigationContainer>
+          <DrawerNavigator />
+          <Toast />
+        </NavigationContainer>
+      </NetworkProvider>
     </Provider>
   );
 }

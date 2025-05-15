@@ -1,219 +1,201 @@
-import React, { useEffect, useState, useCallback } from "react";
-import { View, Text, TouchableOpacity, Modal, StyleSheet, Toast } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, Image, SafeAreaView, StatusBar, Platform, Modal } from 'react-native';
+import * as LocalAuthentication from 'expo-local-authentication';
+import { useTranslation } from 'react-i18next';
 
-const PinVerificationModal = ({ 
-  visible, 
-  onClose, 
-  onVerify, 
-  title = "Enter Your PIN",
-  subtitle = "Please enter your 4-digit PIN to confirm the transaction",
-  isLocked = false
+const PinVerificationUI = ({ 
+  visible,
+  onClose,
+  onVerify,
+  title = t('pinModal.title'),
+  subtitle = t('pinModal.subtitle'),
+  isLocked = false,
+  maxAttempts = 3
 }) => {
   const [pin, setPin] = useState('');
+  const [attempts, setAttempts] = useState(0);
+  const [showError, setShowError] = useState(false);
+  const [biometricAvailable, setBiometricAvailable] = useState(false);
+  const { t } = useTranslation();
 
-  const handlePinInput = (value) => {
+  // Check for biometric authentication availability
+  useEffect(() => {
+    checkBiometricSupport();
+  }, []);
+
+  const checkBiometricSupport = async () => {
+    const compatible = await LocalAuthentication.hasHardwareAsync();
+    const enrolled = await LocalAuthentication.isEnrolledAsync();
+    setBiometricAvailable(compatible && enrolled);
+  };
+
+  const handleBiometricAuth = async () => {
+    try {
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: t('biometric.prompt'),
+        disableDeviceFallback: true,
+      });
+
+      if (result.success) {
+        onVerify('biometric_success');
+      }
+    } catch (error) {
+      console.log('Biometric authentication error:', error);
+    }
+  };
+
+  // Auto-verify when 4 digits are entered
+  useEffect(() => {
+    if (pin.length === 4) {
+      const isValid = onVerify(pin); // Assume onVerify returns boolean
+      if (!isValid) {
+        setAttempts(prev => prev + 1);
+        setShowError(true);
+        setTimeout(() => {
+          setPin('');
+          setShowError(false);
+        }, 500); // Clear pin after showing error briefly
+      }
+    }
+  }, [pin]);
+
+  const handlePress = (value) => {
+    if (isLocked) return;
     if (value === 'del') {
       setPin(pin.slice(0, -1));
+    } else if (value === 'bio') {
+      handleBiometricAuth();
     } else if (pin.length < 4) {
       setPin(pin + value);
     }
   };
 
-  const handleVerify = () => {
-    if (pin.length === 4) {
-      onVerify(pin);
-      setPin('');
-    }
-  };
+  const renderDots = () => (
+    <View style={{ flexDirection: 'row', justifyContent: 'center', marginVertical: 20 }}>
+      {[...Array(4)].map((_, index) => (
+        <View
+          key={index}
+          style={{
+            width: 20,
+            height: 20,
+            borderRadius: 10,
+            marginHorizontal: 10,
+            backgroundColor: index < pin.length ? 
+              (showError ? 'red' : '#0D1C6A') : '#ccc',
+          }}
+        />
+      ))}
+    </View>
+  );
 
-  const renderPinDots = () => {
-    return (
-      <View style={styles.pinDotsContainer}>
-        {[0, 1, 2, 3].map((i) => (
-          <View 
-            key={i} 
-            style={[
-              styles.pinDot,
-              i < pin.length ? styles.pinDotFilled : null
-            ]}
-          />
-        ))}
-      </View>
-    );
-  };
+  const keypad = [
+    ['1', '2', '3'],
+    ['4', '5', '6'],
+    ['7', '8', '9'],
+    [biometricAvailable ? 'bio' : '.', '0', 'del'],
+  ];
 
-  if (isLocked) {
+ if (attempts >= maxAttempts) {
     return (
-      <Modal
-        visible={visible}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={onClose}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Account Locked</Text>
-            <Text style={styles.modalSubtitle}>
-              Too many failed attempts. Please try again later.
-            </Text>
-            <TouchableOpacity
-              style={[styles.modalButton, styles.cancelButton]}
-              onPress={onClose}
-            >
-              <Text style={styles.cancelButtonText}>Close</Text>
-            </TouchableOpacity>
+      <Modal visible={visible} transparent={true} animationType="slide" onRequestClose={onClose}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.5)', paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 }}>
+          <View style={{ padding: 20, flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+            <View style={{ backgroundColor: 'white', borderRadius: 10, padding: 20, width: '90%', alignItems: 'center' }}>
+              <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#0D1C6A', marginBottom: 10 }}>
+                {t('pinModal.accountLocked')}
+              </Text>
+              <Text style={{ fontSize: 16, color: '#0D1C6A', marginBottom: 30, textAlign: 'center' }}>
+                {t('pinModal.tooManyAttempts')}
+              </Text>
+              <TouchableOpacity
+                style={{
+                  backgroundColor: '#F1F1F1',
+                  padding: 15,
+                  borderRadius: 10,
+                  width: '100%',
+                  alignItems: 'center',
+                }}
+                onPress={onClose}
+              >
+                <Text style={{ color: '#0D1C6A', fontWeight: 'bold' }}>{t('pinModal.close')}</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
+        </SafeAreaView>
       </Modal>
     );
   }
 
   return (
-    <Modal
-      visible={visible}
-      transparent={true}
-      animationType="slide"
-      onRequestClose={onClose}
-    >
-      <View style={styles.modalContainer}>
-        <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>{title}</Text>
-          <Text style={styles.modalSubtitle}>{subtitle}</Text>
-          
-          {renderPinDots()}
-          
-          <View style={styles.keypad}>
-            {[
-              ['1', '2', '3'],
-              ['4', '5', '6'],
-              ['7', '8', '9'],
-              ['.', '0', 'del']
-            ].map((row, rowIndex) => (
-              <View key={rowIndex} style={styles.keypadRow}>
-                {row.map((key, keyIndex) => (
-                  <TouchableOpacity
-                    key={keyIndex}
-                    style={styles.keypadButton}
-                    onPress={() => handlePinInput(key)}
-                    disabled={key === ''}
-                  >
-                    <Text style={styles.keypadText}>
-                      {key === 'del' ? '⌫' : key}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            ))}
-          </View>
-          
-          <View style={styles.modalButtons}>
-            <TouchableOpacity
-              style={[styles.modalButton, styles.cancelButton]}
-              onPress={onClose}
-            >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.modalButton, styles.confirmButton]}
-              onPress={handleVerify}
-              disabled={pin.length !== 4}
-            >
-              <Text style={styles.confirmButtonText}>Confirm</Text>
-            </TouchableOpacity>
+    <Modal visible={visible} transparent={true} animationType="slide" onRequestClose={onClose}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.5)', paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 }}>
+        <View style={{ padding: 20, flex: 1, justifyContent: 'center' }}>
+          <View style={{ backgroundColor: 'white', borderRadius: 10, padding: 20 }}>
+            {/* Header Section */}
+            <View style={{ alignItems: 'center' }}>
+              <Image
+                source={require('../../src/images/LogoSendo.png')}
+                style={{
+                  width: 80,
+                  height: 80,
+                  borderRadius: 40,
+                  marginBottom: 20,
+                }}
+              />
+
+              <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#0D1C6A' }}>
+                {title}
+              </Text>
+              <Text style={{ fontSize: 14, color: '#666', marginTop: 10, textAlign: 'center' }}>
+                {subtitle}
+              </Text>
+              {showError && (
+                <Text style={{ color: 'red', marginTop: 5 }}>
+                  {t('pinModal.incorrectPin', { attempts: maxAttempts - attempts })}
+                </Text>
+              )}
+
+              {renderDots()}
+            </View>
+
+            {/* Keypad Section */}
+            <View style={{ alignItems: 'center', marginTop: 20 }}>
+              {keypad.map((row, rowIndex) => (
+                <View key={rowIndex} style={{ flexDirection: 'row', marginVertical: 10 }}>
+                  {row.map((item, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      onPress={() => handlePress(item)}
+                      style={{
+                        width: 70,
+                        height: 70,
+                        borderRadius: 35,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        marginHorizontal: 10,
+                        backgroundColor: item === 'bio' ? '#F1F1F1' : '#F1F1F1',
+                      }}
+                    >
+                      {item === 'del' ? (
+                        <Text style={{ fontSize: 24, color: '#0D1C6A' }}>⌫</Text>
+                      ) : item === 'bio' ? (
+                        <Image
+                          source={require('../../src/images/face-id.png')} // Add your biometric icon
+                          style={{ width: 30, height: 30 }}
+                        />
+                      ) : (
+                        <Text style={{ fontSize: 24, color: '#0D1C6A' }}>{item}</Text>
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              ))}
+            </View>
           </View>
         </View>
-      </View>
+      </SafeAreaView>
     </Modal>
   );
 };
 
-const styles = StyleSheet.create({
-  modalContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  modalContent: {
-    width: '90%',
-    backgroundColor: 'white',
-    borderRadius: 10,
-    padding: 20,
-    alignItems: 'center',
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    color: '#0D1C6A',
-  },
-  modalSubtitle: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  pinDotsContainer: {
-    flexDirection: 'row',
-    marginBottom: 30,
-  },
-  pinDot: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#0D1C6A',
-    marginHorizontal: 10,
-  },
-  pinDotFilled: {
-    backgroundColor: '#0D1C6A',
-  },
-  keypad: {
-    width: '100%',
-    marginBottom: 20,
-  },
-  keypadRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: 15,
-  },
-  keypadButton: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F1F1F1',
-  },
-  keypadText: {
-    fontSize: 24,
-    color: '#0D1C6A',
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
-  },
-  modalButton: {
-    padding: 15,
-    borderRadius: 10,
-    width: '48%',
-    alignItems: 'center',
-  },
-  cancelButton: {
-    backgroundColor: '#F1F1F1',
-  },
-  confirmButton: {
-    backgroundColor: '#7ddd7d',
-  },
-  cancelButtonText: {
-    color: '#0D1C6A',
-    fontWeight: 'bold',
-  },
-  confirmButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
-  },
-});
-
-export default PinVerificationModal;
+export default PinVerificationUI;

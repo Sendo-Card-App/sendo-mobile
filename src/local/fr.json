@@ -35,7 +35,6 @@
   "historyDetails": "Listing chronologique de vos transactions",
   "payBills": "Payer les factures",
   "payBillDetails": "Payer des factures tels que les pass mobiles, internet et bouquets Tv",
-  "account": "Compte",
   "accountDetails": "Gérez vos informations personnelles",
   "payment": "Paiement",
   "paymentDetails": "Gérez vos méthodes de paiement",
@@ -50,14 +49,21 @@
     "signup": {
       "title": "Créer un compte",
       "title1": "Mon Compte",
-      "firstName": "Prénom",
-      "lastName": "Nom",
-      "name": "Nom Complet",
-      "email": "Adresse email",
-      "phone": "Numéro de téléphone",
-      "address": "Adresse",
-      "password": "Mot de passe",
-      "buttonText": "S'INSCRIRE",
+       "firstName": "Prénom",
+    "firstNamePlaceholder": "Entrez votre prénom",
+    "lastName": "Nom",
+    "lastNamePlaceholder": "Entrez votre nom",
+    "email": "Email",
+    "emailPlaceholder": "Entrez votre email",
+    "phone": "Téléphone",
+    "phonePlaceholder": "Numéro de téléphone",
+    "address": "Adresse",
+    "addressPlaceholder": "Entrez votre adresse",
+    "referralCode": "Code de parrainage",
+    "referralPlaceholder": "Code de parrainage (facultatif)",
+    "password": "Mot de passe",
+    "passwordPlaceholder": "Créez un mot de passe",
+    "buttonText": "S'inscrire",
       "save": "Enregistrer",
       "alreadyHaveAccount": "Vous avez déjà un compte?",
       "signIn": "SE CONNECTER",
@@ -70,8 +76,7 @@
       "emailUsed": "Cet email est déjà enregistré",
       "phoneUsed": "Ce numéro de téléphone est déjà enregistré",
       "referralToggle": "Vous avez un code de parrainage?",
-      "referralHide": "Masquer le code",
-      "referralPlaceholder": "Code de parrainage (optionnel)"
+      "referralHide": "Masquer le code"
     },
     "signIn": {
       "title": "Connexion",
@@ -80,13 +85,16 @@
       "next": "Suivant",
       "forgotPassword": "Mot de passe oublié",
       "loginWith": "CONNEXION AVEC EMAIL/NOM D'UTILISATEUR",
-      "orSignInWith": "Ou connectez-vous avec",
+      "orSignInWith": "Ou connectez-vous",
       "dontHaveAccount": "Vous n'avez pas de compte ?",
       "signUp": "S'INSCRIRE",
       "guestUser": "Se connecter en tant qu'utilisateur invité",
       "login": "Connexion",
       "success": "Connexion réussie !",
-    "error": "Erreur"
+    "error": "Erreur",
+    "emailPlaceholder": "Entrez votre email",
+    "passwordPlaceholder": "Entrez votre mot de passe",
+    "otpLogin": "Par OTP"
   },
   
     "otpVerification": {
@@ -110,10 +118,13 @@
         "phoneNumber": "Numéro de téléphone",
         "next": "Suivant",
         "forgetPassword": "Mot de passe oublié",
+         "en": "Anglais",
+          "fr": "Français",
+          "select": "Choisir une langue",
         "loginWithPhone": "CONNEXION AVEC NUMÉRO DE TÉLÉPHONE",
         "orSignInWith": "Ou connectez-vous avec",
         "dontHaveAccount": "Vous n'avez pas de compte ?",
-        "signUp": "S'INSCRIRE",
+        "login": "Se Connecter",
         "guestUser": "Se connecter en tant qu'utilisateur invité",
         "error": "Erreur",
         "enterPhoneNumber": "Veuillez entrer votre numéro de téléphone.",
@@ -150,6 +161,10 @@
     "history": "Historique",
     "pay_bills": "Payer les factures",
     "account": "Compte",
+    "request": "KYC vérification",
+    "sub": "Veuillez soumettre vos documents du KYC",
+     "request1": "Demander un NIU",
+     "sub1": "Demandez a Sendo de créer ou télécharger mon NUI",
     "payment": "Paiement",
     "settings": "Paramètres",
     "support": "Support",
@@ -187,13 +202,17 @@
 },
 "errors": {
   "invalid_referral": "Code de parrainage invalide",
+    "title": "Error",
   "already_used": "Ce code a déjà été utilisé",
   "kyc_required": "Veuillez compléter la vérification de votre profil pour utiliser le parrainage"
 },
 "wallet_transfer": {
     "title": "Transfert de Portefeuille",
-    "available_balance": "Solde disponible",
+    "available_balance": "Solde Non-disponible",
+    "recipient_info": "Recharger",
     "recipient_id": "Numéro de compte",
+    "recipient_name": "Nom du bénéficiaire",
+     "recipient_not_found": "Bénéficiaire non retrouve",
     "recipient_placeholder": "Entrez le matricule du portefeuille",
     "amount": "Montant (FCFA)",
     "amount_placeholder": "0.0",
@@ -215,10 +234,10 @@
     "withdrawal_limit": "📊 Limite de depot",
     "send_to_mobile": "Recharge de l'argent sur ton compte Sendo par MOMO ou OM",
     "transfer_to_mobile": "Mobile Money",
-    "simule": " Simulateur de paiement",
+    "simule": " Estimateur de paiement",
     "transfer_fee": "Gratuit",
     "send_to_friends": "Recharge ton compte par BANQUE",
-    "sendo_transfer": "Dépôt Banque",
+    "sendo_transfer": "Dépôt Bancaire",
     "no_fee": "Gratuit",
     "make_transfer": "Recharger mon compte",
     "bank_name": "Nom de la banque",
@@ -307,7 +326,48 @@
     "uploadInstruction": "Téléchargez votre document de contribuable",
     "description": "Le numéro d'identification unique est une combinaison de lettres et de chiffres attribuée aux contribuables. Ce numéro est essentiel pour identifier l'utilisateur en tant que contribuable.",
     "takePhotoButton": "PRENDRE UNE PHOTO",
-    "securityNotice": "Ne partagez pas vos informations personnelles"
+    "securityNotice": "Ne partagez pas vos informations personnelles",
+    "uploadDocumentButton": "Upload Document",
+    "continueButton": "Continue",
+    "cameraPermissionDenied": "Camera permission is required to take photos",
+    "galleryPermissionDenied": "Gallery access is required to upload documents",
+    "imageSelectionError": "Error selecting image. Please try again.",
+     "supportedFormats": "Formats supporter: PDF, JPG, PNG",
+    "documentUploadError": "Error uploading document. Please try again.",
+    "steps": {
+      "fees": "Frais de création",
+      "kyc": "Vérification KYC",
+      "niuNumber": "Numéro NIU",
+      "attestation": "Document d'attestation"
+    },
+    "request": {
+      "title": "Demander un NIU",
+      "processTitle": "Processus de création",
+      "feesTitle": "Information sur les frais",
+      "feesAmount": "Montant des frais",
+      "currentBalance": "Votre solde actuel",
+      "termsAccept": "J'accepte les CGU et autorise Sendo à créer mon NIU",
+      "paymentAccept": "J'autorise le prélèvement de 3 000 FCFA",
+      "payButton": "Payer le NIU",
+      "processing": "Traitement en cours..."
+    },
+     "paymentModal": {
+      "title": "Confirmation de paiement",
+      "message": "Confirmez-vous le paiement de {amount} FCFA pour la création du NIU ?",
+      "confirm": "Confirmer",
+      "cancel": "Annuler"
+    },
+    "errors": {
+      "title": "Erreur",
+      "termsNotAccepted": "Veuillez accepter les conditions pour continuer",
+      "kycNotVerified": "Votre identité doit être vérifiée avant de demander un NIU",
+      "insufficientBalance": "Votre solde est insuffisant pour payer les frais de création du NIU",
+      "technical": "Une erreur est survenue. Veuillez réessayer plus tard"
+    },
+    "success": {
+      "title": "Succès",
+      "message": "Votre demande de NIU a été soumise avec succès"
+    }
   },
   "personalDetail": {
     "title": "Détails personnels",
@@ -432,6 +492,138 @@
     "card_price": "Prix de la carte:",
     "total": "Total:",
     "create_now": "CRÉER MAINTENANT"
+  },
+  "account": {
+    "title": "Mon Compte",
+    "edit": "Modifier",
+    "close": "Fermer",
+    "fullName": "Nom Complet",
+    "firstName": "Prénom",
+    "lastName": "Nom",
+    "phoneNumber": "Numéro de Téléphone",
+    "secondPhone": "Deuxième Téléphone",
+    "addSecondPhone": "Ajouter un Deuxième Téléphone",
+    "remove": "Supprimer",
+    "email": "Email",
+    "profession": "Profession",
+    "region": "Région",
+    "city": "Ville",
+    "district": "Quartier",
+    "saveChanges": "Enregistrer les Modifications",
+    "dataNotAvailable": "Données non disponibles",
+    "notSet": "Non défini",
+    "loading": "Chargement...",
+    "otpSent": "OTP Envoyé",
+    "otpSentTo": "OTP envoyé à {{phone}}",
+    "success": "Succès",
+    "verificationSuccessful": "Vérification réussie",
+    "secondPhoneAdded": "Deuxième numéro de téléphone vérifié et ajouté avec succès",
+    "error": "Erreur",
+    "allFieldsRequired": "Tous les champs sont obligatoires",
+    "profileUpdated": "Profil mis à jour avec succès",
+    "failedUpdate": "Échec de la mise à jour du profil",
+    "permissionDenied": "Permission refusée",
+    "grantPermissions": "Veuillez accorder les permissions pour la caméra et la galerie.",
+    "fileTooLarge": "Fichier trop volumineux",
+    "maxSize": "L'image doit être inférieure à 5Mo.",
+    "failedPickImage": "Échec de la sélection de l'image",
+    "failedSendOtp": "Échec de l'envoi de l'OTP",
+    "failedVerifyOtp": "Échec de la vérification de l'OTP"
+  },
+  "pin": {
+    "greeting": "Salut",
+    "setupPin": "Définissez votre code PIN",
+    "enterPin": "Entrez votre code PIN pour déverrouiller l'application",
+    "incorrectPin": "Code PIN incorrect",
+    "accountLocked": "Compte bloqué",
+    "tooManyAttempts": "Trop de tentatives. Veuillez vous reconnecter.",
+    "validationError": "Erreur de validation",
+    "generalError": "Compte suspendu ou bloqué",
+    "forgotPin": "Code PIN oublié",
+    "forgotPinMessage": "Vous devez vous reconnecter pour réinitialiser votre code PIN",
+    "forgotPinQuestion": "J'ai oublié mon code PIN ?",
+    "biometricPrompt": "Vérification biométrique requise",
+    "usePinInstead": "Utiliser le code PIN",
+    "biometricFailed": "Échec de l'authentification biométrique"
+  },
+  
+  "common": {
+    "cancel": "Annuler",
+    "signIn": "Se connecter"
+  },
+  "forgotPassword": {
+    "title": "Mot de passe oublié",
+    "subtitle": "Entrez votre numéro de téléphone pour recevoir un code OTP",
+    "phonePlaceholder": "Entrez votre numéro de téléphone",
+    "sendOtp": "Envoyer",
+    "backToSignIn": "Retour à la connexion",
+    "selectCountry": "Sélectionner un pays",
+    "enterOtp": "Entrez le code OTP",
+    "otpSentTo": "Nous avons envoyé un code à 6 chiffres au",
+    "otpPlaceholder": "Entrez le code OTP à 6 chiffres",
+    "phoneRequired": "Le numéro de téléphone est requis",
+    "otpSent": "Le code OTP a été envoyé à votre téléphone",
+    "otpSendFailed": "Échec de l'envoi du email de verification",
+    "noAccountFound": "Aucun compte associé à ce numéro de téléphone",
+    "validOtpRequired": "Veuillez entrer un code OTP valide à 6 chiffres",
+    "otpVerified": "Code OTP vérifié avec succès",
+    "invalidOtp": "Code OTP invalide",
+    "emailRequired": "Email is required",
+    "invalidEmail": "Veuillez entrer un email valide",
+    "emailPlaceholder": "Veuillez entrer votre email"
+  },
+  "common1": {
+    "success": "Succès",
+    "cancel": "Annuler",
+    "verify": "Vérifier"
+  },
+  "errors1": {
+    "error": "Erreur",
+    "countriesLoadFailed": "Échec du chargement des pays"
+  },
+  "otpModal": {
+    "title": "Vérifier OTP",
+    "instructions": "Entrez le code à 6 chiffres envoyé à {target}",
+    "verifyButton": "Vérifier",
+    "resendButton": "Renvoyer OTP",
+    "cancelButton": "Annuler"
+  },
+   "pinModal": {
+    "title": "Entrez votre code PIN",
+    "subtitle": "Veuillez entrer votre code PIN à 4 chiffres pour confirmer la transaction",
+    "incorrectPin": "Code PIN incorrect. Il vous reste {attempts} tentatives.",
+    "accountLocked": "Compte verrouillé",
+    "tooManyAttempts": "Trop de tentatives échouées. Veuillez réessayer plus tard.",
+    "close": "Fermer"
+  },
+  "biometric": {
+    "prompt": "Authentifiez-vous pour vérifier votre identité"
+  },
+  "headers": {
+    "account": "Compte",
+    "aboutUs": "À propos de nous",
+    "changePassword": "Changer le mot de passe",
+    "addBeneficiary": "Envoyez Gratuitement de l'argent",
+    "selectMethod": "Sélectionner une méthode",
+    "bankDeposit": "Rechargement par dépôt bancaire",
+    "transferFunds": "Transférer des fonds",
+    "paymentEstimator": "Estimateur de paiement en ligne",
+    "walletTransfer": "Transfert de portefeuille",
+    "addContact": "Ajouter un contact",
+    "support": "Support",
+    "settings": "Paramètres",
+    "notifications": "Notifications",
+    "myBalance": "Mon Solde",
+    "createVirtualCard": "Créer une carte virtuelle"
+  },
+  "tabs": {
+    "home": "Accueil",
+    "cards": "Cartes",
+    "transfers": "Transferts",
+    "settings": "Paramètres"
+  },
+  "common2": {
+    "back": "Retour"
   }
 
 

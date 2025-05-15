@@ -15,6 +15,11 @@ module.exports = {
           icon: "./assets/icon.png",
           userInterfaceStyle: "light",
           newArchEnabled: true,
+          splash: {
+            "image": "./assets/splash.png",
+            "resizeMode": "contain",
+            "backgroundColor": "#181e25"
+          },
           ios: {
             supportsTablet: true,
             bundleIdentifier: "com.sfe.sendo",

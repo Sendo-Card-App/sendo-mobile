@@ -9,10 +9,16 @@ import {
   SafeAreaView,
   StatusBar,
 } from "react-native";
-import { AntDesign, EvilIcons } from "@expo/vector-icons";
+import { AntDesign, EvilIcons, Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import Avatar from "../../images/Avatar.png";
+import AddSecondPhoneModal from '../../components/AddSecondPhoneModal'; 
 import KeyboardAvoidinWrapper from "../../components/KeyboardAvoidinWrapper";
+import { 
+  sendPushNotification,
+  sendPushTokenToBackend,
+  registerForPushNotificationsAsync
+} from '../../services/notificationService';
 import {
   useGetUserProfileQuery,
   useUpdateProfileMutation,
@@ -25,21 +31,34 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import Loader from "../../components/Loader";
 import Toast from "react-native-toast-message";
+import { useTranslation } from 'react-i18next';
 import OtpVerificationModal from "../../components/OtpVerificationModal";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
 const Account = () => {
   const navigation = useNavigation();
+    const { t } = useTranslation();
 
   const { data: userProfile, isLoading, error, refetch } = useGetUserProfileQuery();
 
   const [updateProfile, { isLoading: isUpdating }] = useUpdateProfileMutation();
-  const [sendOtp] = useSendOtpMutation();
-  const [verifyOtp] = useVerifyOtpMutation();
-  const [addSecondPhone] = useAddSecondPhoneMutation();
-  const [sendSecondPhoneOtp] = useSendSecondPhoneOtpMutation();
-  const [verifySecondPhoneOtp] = useVerifySecondPhoneOtpMutation();
+  const [
+  addSecondPhone, 
+  { isLoading: isAddingPhone }
+] = useAddSecondPhoneMutation();
+
+const [
+  sendSecondPhoneOtp, 
+  { isLoading: isSendingOtp }
+] = useSendSecondPhoneOtpMutation();
+
+const [
+  verifySecondPhoneOtp, 
+  { isLoading: isVerifyingOtp }
+] = useVerifySecondPhoneOtpMutation();
+  const [showSecondPhoneModal, setShowSecondPhoneModal] = useState(false);
+  const [secondPhoneNumber, setSecondPhoneNumber] = useState('');
 
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
@@ -77,36 +96,7 @@ const Account = () => {
       setOriginalData(profileData);
     }
   }, [userProfile]);
-  
-  const handleVerifyOtp = async (code) => {
-    try {
-      if (isSecondPhone) {
-        await verifySecondPhoneOtp({ phone: tempValue, code }).unwrap();
-        await addSecondPhone({ phone: tempValue }).unwrap();
-        Toast.show({
-          type: "success",
-          text1: "Success",
-          text2: "Second phone number added successfully",
-        });
-      } else {
-        await verifyOtp({ [otpTarget]: tempValue, code }).unwrap();
-        setFormData((prev) => ({
-          ...prev,
-          [otpTarget]: tempValue,
-        }));
-      }
-
-      setShowOtpModal(false);
-      setIsSecondPhone(false);
-    } catch (err) {
-      console.error("OTP Verification Error:", err);
-      Toast.show({
-        type: "error",
-        text1: "Error",
-        text2: err?.data?.message || "Invalid OTP code",
-      });
-    }
-  };
+    
 
   const handleSave = async () => {
     const {
@@ -279,19 +269,150 @@ const Account = () => {
   };
 
   const handleAddSecondPhone = () => {
-    setIsSecondPhone(true);
-    setOtpTarget("phone");
-    setTempValue("");
-    setShowOtpModal(true);
+    setShowSecondPhoneModal(true);
   };
+
+  const handleSendSecondPhoneOtp = async (phone) => {
+  try {
+    // First check if the phone can be added
+    await addSecondPhone({ phone }).unwrap();
+    
+    // Then send OTP to the phone
+    await sendSecondPhoneOtp({ phone }).unwrap();
+    
+    setSecondPhoneNumber(phone);
+    Toast.show({
+      type: 'success',
+      text1: 'OTP Sent',
+      text2: `OTP sent to ${phone}`,
+    });
+  } catch (err) {
+    console.error('OTP send error:', err);
+    Toast.show({
+      type: 'error',
+      text1: 'Error',
+      text2: err?.data?.message || 'Failed to send OTP',
+    });
+    throw err;
+  }
+};
+
+const handleVerifySecondPhoneOtp = async ({ phone, code }) => {
+  try {
+    // Verify the OTP
+    const response = await verifySecondPhoneOtp({ phone, code }).unwrap();
+    
+    // Determine which success notification to show based on the response
+    const isNewAddition = response?.isNewAddition || false;
+    
+    // Prepare success notification
+    const notificationContent = {
+      title: isNewAddition 
+        ? "Second Phone Number Added" 
+        : "Phone Verification Successful",
+      body: isNewAddition
+        ? `Your second phone number ${phone} has been successfully added to your account`
+        : `Your second phone number ${phone} has been verified`,
+      type: isNewAddition 
+        ? "SUCCESS_ADD_SECOND_NUMBER" 
+        : "SUCCESS_VERIFY_SECOND_NUMBER"
+    };
+
+    try {
+      // Try remote notification first
+      let pushToken = await getStoredPushToken();
+      if (!pushToken) {
+        pushToken = await registerForPushNotificationsAsync();
+      }
+      
+      if (pushToken) {
+        await sendPushTokenToBackend(
+          pushToken,
+          notificationContent.title,
+          notificationContent.body,
+          notificationContent.type,
+          { 
+            phoneNumber: phone,
+            timestamp: new Date().toISOString() 
+          }
+        );
+      }
+    } catch (notificationError) {
+      console.warn("Remote notification failed:", notificationError);
+      // Fallback to local notification
+      await sendPushNotification(
+        notificationContent.title,
+        notificationContent.body,
+        {
+          data: {
+            type: notificationContent.type,
+            phoneNumber: phone
+          }
+        }
+      );
+    }
+
+    // Show toast with appropriate message
+    Toast.show({
+      type: 'success',
+      text1: 'Success',
+      text2: isNewAddition
+        ? 'Second phone number added successfully'
+        : 'Second phone number verified successfully',
+    });
+    
+    // Refresh user data
+    await refetch();
+    
+  } catch (err) {
+    // Error notification
+    const errorNotification = {
+      title: "Verification Failed",
+      body: err?.data?.message || 'Failed to verify phone number',
+      type: "VERIFICATION_ERROR",
+      data: {
+        phoneNumber: phone,
+        errorCode: err?.data?.code || 'UNKNOWN_ERROR'
+      }
+    };
+    
+    try {
+      await sendPushNotification(
+        errorNotification.title,
+        errorNotification.body,
+        {
+          data: errorNotification.data
+        }
+      );
+    } catch (pushError) {
+      console.error('Failed to send error notification:', pushError);
+    }
+    
+    console.error('Verification error:', err);
+    Toast.show({
+      type: 'error',
+      text1: 'Error',
+      text2: err?.data?.message || 'Failed to verify OTP',
+    });
+    throw err;
+  }
+};
 
   return (
     <SafeAreaView className="flex-1 bg-[#181e25]">
-      <StatusBar style="light" backgroundColor="#181e25" />
+      <StatusBar style="light" backgroundColor="#fffff" />
+       {/* Floating Home Button */}
+                  <TouchableOpacity 
+                    onPress={() => navigation.navigate('MainTabs')}
+                    style={styles.floatingHomeButton}
+                  >
+                    <Ionicons name="home" size={44} color="#7ddd7d" />
+                  </TouchableOpacity>
+      
       <KeyboardAvoidinWrapper>
         <View className="flex-1 p-6">
           <View className="flex-row justify-between items-center mb-6">
-            <Text className="text-white text-2xl font-bold">My Account</Text>
+             <Text className="text-white text-2xl font-bold">{t('account.title')}</Text>
             <TouchableOpacity onPress={() => setIsEditing(!isEditing)}>
               <AntDesign name={isEditing ? "close" : "edit"} size={24} color="white" />
             </TouchableOpacity>
@@ -315,7 +436,7 @@ const Account = () => {
           <View className="bg-[#f1f1f1] rounded-2xl p-6">
             {/* Full Name */}
             <View className="mb-6">
-              <Text className="text-gray-700 font-bold mb-2">Full Name</Text>
+              <Text className="text-gray-700 font-bold mb-2">{t('account.fullName')}</Text>
               {isEditing ? (
                 <View className="flex-row space-x-2">
                   <TextInput
@@ -338,9 +459,9 @@ const Account = () => {
               )}
             </View>
 
-            {/* Phone Number */}
+              {/* Phone Number Section */}
             <View className="mb-6">
-              <Text className="text-gray-700 font-bold mb-2">Phone Number</Text>
+              <Text className="text-gray-700 font-bold mb-2">{t('account.phoneNumber')}</Text>
               {isEditing ? (
                 <>
                   <TextInput
@@ -350,23 +471,50 @@ const Account = () => {
                     placeholder="Phone Number"
                     className="bg-white rounded-xl p-3 mb-2"
                   />
-                  <TouchableOpacity
-                    onPress={handleAddSecondPhone}
-                    className="bg-blue-500 p-2 rounded-lg items-center"
-                  >
-                    <Text className="text-white">Add Second Phone</Text>
-                  </TouchableOpacity>
+                  {userProfile?.data?.secondPhoneNumber ? (
+                    <View className="mt-2">
+                      <Text className="text-gray-700 font-bold mb-2">{t('account.secondPhone')}</Text>
+                      <View className="flex-row items-center">
+                        <Text className="flex-1 text-lg bg-white rounded-xl p-3">
+                          {userProfile.data.secondPhoneNumber.phone}
+                        </Text>
+                        <TouchableOpacity 
+                          className="ml-2 p-2 bg-red-500 rounded-lg"
+                          onPress={() => {/* Add remove functionality here */}}
+                        >
+                          <Text className="text-white">{t('account.remove')}</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  ) : (
+                    <TouchableOpacity
+                      onPress={handleAddSecondPhone}
+                      className="bg-blue-500 p-2 rounded-lg items-center"
+                    >
+                      <Text className="text-white">{t('account.addSecondPhone')}</Text>
+                    </TouchableOpacity>
+                  )}
                 </>
               ) : (
-                <Text className="text-lg bg-white rounded-xl p-3">
-                  {userProfile?.data?.phone || "Loading..."}
-                </Text>
+                <>
+                  <Text className="text-lg bg-white rounded-xl p-3">
+                    {userProfile?.data?.phone || "Loading..."}
+                  </Text>
+                  {userProfile?.data?.secondPhoneNumber && (
+                    <>
+                      <Text className="text-gray-700 font-bold mb-2 mt-2">{t('account.secondPhone')}</Text>
+                      <Text className="text-lg bg-white rounded-xl p-3">
+                        {userProfile.data.secondPhoneNumber.phone}
+                      </Text>
+                    </>
+                  )}
+                </>
               )}
             </View>
 
             {/* Email */}
             <View className="mb-6">
-              <Text className="text-gray-700 font-bold mb-2">Email</Text>
+              <Text className="text-gray-700 font-bold mb-2">{t('account.email')}</Text>
               {isEditing ? (
                 <TextInput
                   value={formData.email}
@@ -414,28 +562,28 @@ const Account = () => {
             ) : (
               <>
                 <View className="mb-6">
-                  <Text className="text-gray-700 font-bold mb-2">Profession</Text>
+                  <Text className="text-gray-700 font-bold mb-2">{t('account.profession')}</Text>
                   <Text className="text-lg bg-white rounded-xl p-3">
                     {userProfile?.data?.profession || "Not set"}
                   </Text>
                 </View>
 
                 <View className="mb-6">
-                  <Text className="text-gray-700 font-bold mb-2">Region</Text>
+                  <Text className="text-gray-700 font-bold mb-2">{t('account.region')}</Text>
                   <Text className="text-lg bg-white rounded-xl p-3">
                     {userProfile?.data?.region || "Not set"}
                   </Text>
                 </View>
 
                 <View className="mb-6">
-                  <Text className="text-gray-700 font-bold mb-2">City</Text>
+                  <Text className="text-gray-700 font-bold mb-2">{t('account.city')}</Text>
                   <Text className="text-lg bg-white rounded-xl p-3">
                     {userProfile?.data?.city || "Not set"}
                   </Text>
                 </View>
 
                 <View className="mb-6">
-                  <Text className="text-gray-700 font-bold mb-2">District</Text>
+                  <Text className="text-gray-700 font-bold mb-2">{t('account.district')}</Text>
                   <Text className="text-lg bg-white rounded-xl p-3">
                     {userProfile?.data?.district || "Not set"}
                   </Text>
@@ -454,7 +602,7 @@ const Account = () => {
                 {isUpdating ? (
                   <Loader small white />
                 ) : (
-                  <Text className="text-white font-bold text-lg">Save Changes</Text>
+                  <Text className="text-white font-bold text-lg">{t('account.saveChanges')}</Text>
                 )}
               </TouchableOpacity>
             )}
@@ -462,18 +610,35 @@ const Account = () => {
         </View>
       </KeyboardAvoidinWrapper>
 
-      {/* OTP Verification Modal */}
-      <OtpVerificationModal
-        visible={showOtpModal}
+      {/* Second Phone Modal */}
+      <AddSecondPhoneModal
+        visible={showSecondPhoneModal}
         onClose={() => {
-          setShowOtpModal(false);
-          setIsSecondPhone(false);
+          setShowSecondPhoneModal(false);
+          setSecondPhoneNumber('');
         }}
-        onVerify={handleVerifyOtp}
-        target={otpTarget === "email" ? tempValue : `+${tempValue}`}
+        onSendOtp={handleSendSecondPhoneOtp}
+        onVerifyOtp={handleVerifySecondPhoneOtp}
+        isLoading={isAddingPhone || isSendingOtp || isVerifyingOtp}
       />
     </SafeAreaView>
   );
 };
-
+const styles = {
+  floatingHomeButton: {
+    position: 'absolute',
+    top: StatusBar.currentHeight + 600,
+    right: 20,
+    zIndex: 999,
+    backgroundColor: 'rgba(235, 248, 255, 0.9)',
+    padding: 10,
+    borderRadius: 20,
+    elevation: 3,
+    
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+  },
+ 
+};
 export default Account;
