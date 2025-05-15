@@ -1,10 +1,10 @@
-// features/kyc/kycApi.js
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
 const KYC_ENDPOINTS = {
   SUBMIT_KYC: '/kyc/send',
   GET_STATUS: '/kyc/status',
-  SEND_SELFIE: '/users/send-picture', // Selfie-specific endpoint
+  SEND_SELFIE: '/users/send-picture',
+  NIU_REQUEST: '/requests/ask',
 };
 
 export const kycApi = createApi({
@@ -29,6 +29,7 @@ export const kycApi = createApi({
       }),
       invalidatesTags: ['KYC'],
     }),
+    
     sendSelfie: builder.mutation({
       query: (formData) => ({
         url: KYC_ENDPOINTS.SEND_SELFIE,
@@ -39,6 +40,18 @@ export const kycApi = createApi({
         },
       }),
     }),
+     
+    NiuResquest: builder.mutation({
+      query: (requestData) => ({
+        url: KYC_ENDPOINTS.NIU_REQUEST,
+        method: 'POST',
+        body: requestData,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }),
+    }),
+    
     getKYCStatus: builder.query({
       query: () => KYC_ENDPOINTS.GET_STATUS,
       providesTags: ['KYC'],
@@ -49,5 +62,6 @@ export const kycApi = createApi({
 export const { 
   useSubmitKYCMutation, 
   useGetKYCStatusQuery,
-  useSendSelfieMutation
+  useSendSelfieMutation,
+  useNiuResquestMutation,
 } = kycApi;
