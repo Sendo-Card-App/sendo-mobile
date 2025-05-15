@@ -194,7 +194,7 @@ const handleVerifyOtp = async (codeToVerify = otp) => {
     } catch (err) {
       Toast.show({
         type: 'error',
-        text1: err?.data?.message || 'Failed to resend OTP',
+        text1: err?.data?.message,
       });
     } finally {
       setIsResending(false);

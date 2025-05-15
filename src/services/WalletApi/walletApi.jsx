@@ -82,11 +82,24 @@ export const walletApi = createApi({
       invalidatesTags: [TAG_TYPES.WALLET],
     }),
 
-    getTransactionHistory: builder.query({
-      query: ({ limit = 10, offset = 0 }) => ({
-        url: WALLET_ENDPOINTS.HISTORY,
-        params: { limit, offset },
-      }),
+   getTransactionHistory: builder.query({
+      query: ({ userId, page = 1, limit = 10, type, status, method, startDate, endDate }) => {
+        const params = {
+          page,
+          limit,
+          ...(type && { type }),
+          ...(status && { status }),
+          ...(method && { method }),
+          ...(startDate && { startDate }),
+          ...(endDate && { endDate })
+        };
+        
+        return {
+          url: `/transactions/users/${userId}`,
+          method: 'GET',
+          params
+        };
+      },
       providesTags: [TAG_TYPES.TRANSACTIONS],
     }),
 

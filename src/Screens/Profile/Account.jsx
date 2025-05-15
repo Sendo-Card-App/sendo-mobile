@@ -33,6 +33,9 @@ import Loader from "../../components/Loader";
 import Toast from "react-native-toast-message";
 import { useTranslation } from 'react-i18next';
 import OtpVerificationModal from "../../components/OtpVerificationModal";
+import { useSendNotificationMutation } from "../../services/Notification/notificationApi";
+import { TypesNotification } from "../../utils/constants";
+import { getFCMToken } from "../../services/Notification/firebaseNotifications";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
@@ -77,7 +80,20 @@ const [
   const [otpTarget, setOtpTarget] = useState(null); // 'email', 'phone', or 'secondPhone'
   const [tempValue, setTempValue] = useState("");
   const [isSecondPhone, setIsSecondPhone] = useState(false);
-
+  const [sendNotification] = useSendNotificationMutation();
+  const handleSendNotification = async () => {
+    try {
+      const notificationPayload = {
+        token: await registerForPushNotificationsAsync(),
+        title: 'Informations de compte modifiées',
+        body: 'Les informations de votre compte ont été modifiées avec succès.',
+        type: TypesNotification.SUCCESS_MODIFY_ACCOUNT_INFORMATIONS
+      };
+      await sendNotification(notificationPayload).unwrap();
+    } catch (err) {
+      console.error('Erreur lors de l’envoi:', err);
+    }
+  };
 
   useEffect(() => {
     if (userProfile) {
@@ -121,7 +137,7 @@ const [
     }
   
     try {
-      let payloadToSend;
+      let payloadToSend = null;
   
       if (picture) {
         const formDataToSend = new FormData();
@@ -153,7 +169,8 @@ const [
           picture,
         };
       }
-  
+      console.log('user profile', userProfile)
+      await handleSendNotification();
       await updateProfile({
         userId: userProfile.data.id,
         formData: payloadToSend,

@@ -624,7 +624,53 @@
   },
   "common2": {
     "back": "Back"
+  },
+  "history1": {
+    "title": "Transaction History",
+    "filter": "Filter",
+    "filterTitle": "Filter Transactions",
+    "apply": "Apply",
+    "reset": "Reset",
+    "resetFilters": "Reset Filters",
+    "noTransactions": "No transactions found",
+    "loadingUser": "Loading user information...",
+    "errorLoading": "Error loading transactions",
+    "transactions": "transactions",
+    "page": "Page",
+    "of": "of",
+    "previous": "Previous",
+    "next": "Next",
+    "dateRange": "Date Range",
+    "today": "Today",
+    "thisWeek": "This Week",
+    "thisMonth": "This Month",
+    "custom": "Custom",
+    "startDate": "Start Date",
+    "endDate": "End Date",
+    "type": "Type",
+    "method": "Method",
+    "status": "Status",
+    "deposit": "Deposit",
+    "withdraw": "Withdraw",
+    "transfer": "Transfer",
+    "mobileMoney": "Mobile Money",
+    "bankTransfer": "Bank Transfer",
+    "success": "Success",
+    "failed": "Failed",
+    "pending": "Pending",
+    "unknownRecipient": "Unknown Recipient",
+     "status_success": "Success",  
+  "status_failed": "Failed",
+  "status_pending": "Pending",
+  "completed": "Completed"
+  },
+  "common3": {
+    "close": "Close",
+    "retry": "Retry",
+    "previous": "Previous",
+    "next": "Next"
   }
+
 
 
 
