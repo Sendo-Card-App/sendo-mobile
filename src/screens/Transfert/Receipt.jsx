@@ -6,44 +6,169 @@ import {
   ScrollView,
   SafeAreaView,
   Linking,
+  ActivityIndicator,
+  Alert
 } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
+import moment from "moment";
+import * as Print from 'expo-print';
+import * as Sharing from 'expo-sharing';
+import * as FileSystem from 'expo-file-system';
 
 const ReceiptScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
+  const transaction = route.params?.transaction;
+  const [isGenerating, setIsGenerating] = React.useState(false);
 
-  // Suppose your API returned this URL in route.params.receiptUrl
-  const receiptUrl = route.params?.receiptUrl || "https://example.com/receipt.pdf";
+  if (!transaction) {
+    return (
+      <SafeAreaView className="flex-1 bg-white justify-center items-center">
+        <Text className="text-red-500">Détails de transaction non trouvés</Text>
+        <TouchableOpacity 
+          className="mt-4 px-4 py-2 bg-blue-500 rounded"
+          onPress={() => navigation.goBack()}
+        >
+          <Text className="text-white">Retour</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
+    );
+  }
 
-  const handleDownloadReceipt = () => {
-    if (!receiptUrl) {
-      console.warn("No receipt URL provided");
+  const handleDownloadReceipt = async () => {
+    if (transaction.status !== 'SUCCESS') {
+      Alert.alert(
+        "Reçu indisponible",
+        "Le reçu est uniquement disponible pour les transactions réussies"
+      );
       return;
     }
-    Linking.openURL(receiptUrl).catch((err) => {
-      console.error("Failed to open URL:", err);
-    });
+
+    setIsGenerating(true);
+    try {
+      const html = generateReceiptHTML(transaction);
+      await Print.printAsync({
+        html,
+        orientation: 'portrait'
+      });
+    } catch (error) {
+      Alert.alert(
+        "Erreur",
+        "Échec de génération du reçu. Veuillez réessayer."
+      );
+      console.error(error);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const generateReceiptHTML = (transaction) => {
+    return `
+      <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 20px; }
+            .header { text-align: center; margin-bottom: 20px; }
+            .title { font-size: 18px; font-weight: bold; margin: 10px 0; }
+            .section { margin-bottom: 15px; }
+            .section-title { font-weight: bold; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+            .row { display: flex; justify-content: space-between; margin: 5px 0; }
+            .footer { margin-top: 30px; font-size: 12px; text-align: center; color: #666; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div class="title">Reçu de transfert Sendo</div>
+            <div>ID de transaction: ${transaction.id}</div>
+          </div>
+          
+          <div class="section">
+            <div class="section-title">Détails de la transaction</div>
+            <div class="row">
+              <span>Date:</span>
+              <span>${moment(transaction.created_at).format('DD/MM/YYYY HH:mm')}</span>
+            </div>
+            <div class="row">
+              <span>Statut:</span>
+              <span>${transaction.status}</span>
+            </div>
+          </div>
+          
+          <div class="section">
+            <div class="section-title">Bénéficiaire</div>
+            <div class="row">
+              <span>Nom:</span>
+              <span>${transaction.recipient_name || 'N/A'}</span>
+            </div>
+            <div class="row">
+              <span>Numéro:</span>
+              <span>${transaction.recipient_number ? transaction.recipient_number.replace(/(\d{3})\d+(\d{3})/, '$1*****$2') : 'N/A'}</span>
+            </div>
+            <div class="row">
+              <span>Méthode:</span>
+              <span>${transaction.method || 'N/A'}</span>
+            </div>
+          </div>
+          
+          <div class="section">
+            <div class="section-title">Montant</div>
+            <div class="row">
+              <span>Montant envoyé:</span>
+              <span>${transaction.amount?.toLocaleString()} FCFA</span>
+            </div>
+            <div class="row">
+              <span>Frais:</span>
+              <span>${transaction.fees || 0} FCFA</span>
+            </div>
+            <div class="row">
+              <span>Total:</span>
+              <span>${(transaction.amount + (transaction.fees || 0)).toLocaleString()} FCFA</span>
+            </div>
+          </div>
+          
+          <div class="footer">
+            Ce reçu est généré automatiquement et peut être utilisé comme justificatif.
+          </div>
+        </body>
+      </html>
+    `;
+  };
+
+  const getStatusSteps = () => {
+    const date = moment(transaction.created_at).format('dddd, D MMMM YYYY / HH:mm');
+    
+    return [
+      {
+        status: "Transmis",
+        completed: true,
+        time: date
+      },
+      {
+        status: "Effectué",
+        completed: true
+      },
+      {
+        status: "Le transfert a réussi",
+        completed: transaction.status === 'SUCCESS',
+        time: moment(transaction.created_at).add(3, 'minutes').format('dddd, D MMMM YYYY / HH:mm')
+      }
+    ];
   };
 
   return (
     <SafeAreaView className="flex-1 bg-white">
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
-
-
         {/* Title */}
         <View className="items-center my-4 px-4">
           <Text className="text-lg font-semibold text-gray-700">
             Transferts récents
           </Text>
-          <View className="flex-row justify-end items-center w-full mt-1">
-            <Text className="text-green-500 font-semibold">Cacher</Text>
-          </View>
+          
         </View>
 
         {/* Card */}
-        <View className="bg-white mx-4 p-4 rounded-xl shadow-md border border-gray-100">
+        <View className="bg-white mx-4 mt-5 p-4 rounded-xl shadow-md border border-gray-100">
           <View className="items-center mb-4">
             <View className="bg-[#7ddd7d] w-20 h-20 rounded-full justify-center items-center">
               <Text className="text-white text-5xl font-bold">i</Text>
@@ -52,56 +177,46 @@ const ReceiptScreen = () => {
 
           {/* Status Steps */}
           <View className="mb-4">
-            <View className="flex-row items-start mb-2">
-              <AntDesign name="checkcircle" size={20} color="#7ddd7d" />
-              <View className="ml-2">
-                <Text className="text-gray-800 font-semibold">Transmis</Text>
-                <Text className="text-xs text-gray-600">
-                  Lundi, 27 Janvier 2025 / 23:20
-                </Text>
+            {getStatusSteps().map((step, index) => (
+              <View key={index} className="flex-row items-start mb-2">
+                <AntDesign 
+                  name="checkcircle" 
+                  size={20} 
+                  color={step.completed ? "#7ddd7d" : "#d1d5db"} 
+                />
+                <View className="ml-2">
+                  <Text className="text-gray-800 font-semibold">{step.status}</Text>
+                  {step.time && (
+                    <Text className="text-xs text-gray-600">{step.time}</Text>
+                  )}
+                </View>
               </View>
-            </View>
-            <View className="flex-row items-start mb-2">
-              <AntDesign name="checkcircle" size={20} color="#7ddd7d" />
-              <View className="ml-2">
-                <Text className="text-gray-800 font-semibold">Effectué</Text>
-              </View>
-            </View>
-            <View className="flex-row items-start mb-2">
-              <AntDesign name="checkcircle" size={20} color="#7ddd7d" />
-              <View className="ml-2">
-                <Text className="text-gray-800 font-semibold">
-                  Le transfert a réussi
-                </Text>
-                <Text className="text-xs text-gray-600">
-                  Lundi, 27 Janvier 2025 / 23:23
-                </Text>
-              </View>
-            </View>
+            ))}
           </View>
 
           {/* Confirmation message */}
           <Text className="text-gray-800 font-semibold text-sm mb-2">
-            André Djoumdjeu a reçu votre transfert.
+            {transaction.recipient_name || 'Le bénéficiaire'} a reçu votre transfert.
           </Text>
 
           {/* Bénéficiaire Info */}
           <Text className="text-gray-600 text-sm">
             Bénéficiaire :{" "}
-            <Text className="font-semibold">ANDRÉ DJOUMDJEU</Text>
+            <Text className="font-semibold">{transaction.recipient_name?.toUpperCase() || 'N/A'}</Text>
           </Text>
-          <Text className="text-gray-600 text-sm">Paiement : Orange Money</Text>
+          <Text className="text-gray-600 text-sm">Paiement : {transaction.method || 'N/A'}</Text>
           <Text className="text-gray-600 text-sm mb-2">
-            Numéro : +237 696 00 00 00
+            Numéro : {transaction.recipient_number ? 
+              transaction.recipient_number.replace(/(\d{3})\d+(\d{3})/, '$1*****$2') : 
+              'N/A'}
           </Text>
 
           {/* Détails Reçu */}
           <Text className="text-green-600 font-semibold my-1">Reçu</Text>
-          <Text className="text-gray-600 text-sm">Visa...0000</Text>
-          <Text className="text-gray-600 text-sm">Frais de transfert</Text>
-          <Text className="text-gray-600 text-sm">Montant du transfert</Text>
+          <Text className="text-gray-600 text-sm">Montant du transfert: {transaction.amount?.toLocaleString()} FCFA</Text>
+          <Text className="text-gray-600 text-sm">Frais de transfert: {transaction.fees || 0} FCFA</Text>
           <Text className="text-gray-600 text-sm mb-2">
-            Total pour le bénéficiaire
+            Total: {(transaction.amount + (transaction.fees || 0)).toLocaleString()} FCFA
           </Text>
 
           {/* Autres détails */}
@@ -109,21 +224,25 @@ const ReceiptScreen = () => {
             Détails du transfert
           </Text>
           <Text className="text-gray-600 text-sm">
-            Envoyé : 27 Janvier 2025 / 23:20
+            Envoyé : {moment(transaction.created_at).format('D MMMM YYYY / HH:mm')}
           </Text>
           <Text className="text-gray-600 text-sm">
-            Reçu : 27 Janvier 2025 / 23:23 UTC
-          </Text>
-          <Text className="text-gray-600 text-sm">
-            ID du transfert : 000000000000000000000000000000
+            ID du transfert : {transaction.id}
           </Text>
 
           {/* Télécharger le reçu */}
           <TouchableOpacity
             onPress={handleDownloadReceipt}
-            className="bg-[#7ddd7d] py-3 mt-4 rounded-lg items-center"
+            disabled={isGenerating || transaction.status !== 'SUCCESS'}
+            className={`py-3 mt-4 rounded-lg items-center ${transaction.status !== 'SUCCESS' ? 'bg-gray-300' : 'bg-[#7ddd7d]'}`}
           >
-            <Text className="text-white font-bold">TÉLÉCHARGER LE REÇU</Text>
+            {isGenerating ? (
+              <ActivityIndicator color="white" />
+            ) : (
+              <Text className="text-white font-bold">
+                {transaction.status === 'SUCCESS' ? 'TÉLÉCHARGER LE REÇU' : 'REÇU INDISPONIBLE'}
+              </Text>
+            )}
           </TouchableOpacity>
         </View>
 

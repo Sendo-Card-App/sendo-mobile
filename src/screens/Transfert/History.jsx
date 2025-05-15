@@ -7,7 +7,8 @@ import {
   ActivityIndicator, 
   Platform,
   ScrollView,
-  Modal 
+  Modal,
+  Dimensions
 } from "react-native";
 import React, { useState, useEffect } from "react";
 import OrangeMoney from "../../images/om.png";
@@ -19,6 +20,10 @@ import { useTranslation } from "react-i18next";
 import DateTimePicker from '@react-native-community/datetimepicker';
 import moment from 'moment';
 import Loader from "../../components/Loader";
+
+// Get screen dimensions
+const { width } = Dimensions.get('window');
+const isSmallScreen = width < 375; // iPhone SE and similar small devices
 
 const HistoryCard = ({ transaction, onPress }) => {
   const { t } = useTranslation();
@@ -54,10 +59,17 @@ const HistoryCard = ({ transaction, onPress }) => {
   };
 
   return (
-    <TouchableOpacity onPress={onPress} className="border p-4 mx-5 my-2 rounded-3xl border-gray-500">
+    <TouchableOpacity 
+      onPress={onPress} 
+      className={`border p-4 ${isSmallScreen ? 'mx-3' : 'mx-5'} my-2 rounded-3xl border-gray-500`}
+    >
       <View className="border-b border-gray-500 pb-2 flex-row gap-2">
-        <Image source={getMethodIcon()} className="w-10 h-10" />
-        <View>
+        <Image 
+          source={getMethodIcon()} 
+          className="w-10 h-10"
+          resizeMode="contain"
+        />
+        <View className="flex-1">
           <Text className="text-gray-600 text-sm">
             {transaction.recipient_name || transaction.recipient_number || t('history1.unknownRecipient')}
           </Text>
@@ -129,8 +141,8 @@ const FilterModal = ({ visible, onClose, filters, setFilters, applyFilters }) =>
       visible={visible}
       onRequestClose={onClose}
     >
-      <View className="flex-1 justify-end bg-transparent bg-opacity-50">
-        <View className="bg-white p-5 rounded-t-3xl max-h-[80%]">
+      <View className="flex-1 justify-end bg-black bg-opacity-50">
+        <View className={`bg-white p-5 rounded-t-3xl ${isSmallScreen ? 'max-h-[85%]' : 'max-h-[80%]'}`}>
           <View className="flex-row justify-between items-center mb-4">
             <Text className="text-xl font-bold">{t('history1.filterTitle')}</Text>
             <TouchableOpacity onPress={onClose}>
@@ -140,7 +152,7 @@ const FilterModal = ({ visible, onClose, filters, setFilters, applyFilters }) =>
 
           <ScrollView>
             {/* Date Filter */}
-            <View className="mb-1 ">
+            <View className="mb-1">
               <Text className="font-bold mb-2">{t('history1.dateRange')}</Text>
               <View className="flex-row flex-wrap">
                 {quickDateFilters.map(item => (
@@ -157,54 +169,27 @@ const FilterModal = ({ visible, onClose, filters, setFilters, applyFilters }) =>
               </View>
 
               {filters.dateRange === 'custom' && (
-            <View className="flex-row justify-between mt-2">
-              <TouchableOpacity 
-                className="border p-2 rounded flex-1 mr-2"
-                onPress={() => {
-                  setDateType('start');
-                  setShowDatePicker(true);
-                }}
-              >
-                <Text>{filters.startDate ? moment(filters.startDate).format('DD/MM/YYYY') : t('history1.startDate')}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                className="border p-2 rounded flex-1 ml-2"
-                onPress={() => {
-                  setDateType('end');
-                  setShowDatePicker(true);
-                }}
-              >
-                <Text>{filters.endDate ? moment(filters.endDate).format('DD/MM/YYYY') : t('history1.endDate')}</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-
-              {showDatePicker && (
-            <Modal
-              transparent={true}
-              animationType="fade"
-              visible={showDatePicker}
-              onRequestClose={() => setShowDatePicker(false)}
-            >
-              <View className="flex-1 justify-center items-center bg-transparent bg-opacity-50">
-                <View className="bg-black p-5 rounded-lg w-80">
-                  <DateTimePicker
-                    value={dateType === 'start' ? (filters.startDate || new Date()) : (filters.endDate || new Date())}
-                    mode="date"
-                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                    onChange={handleDateChange}
-                    style={Platform.OS === 'android' ? { alignSelf: 'center' } : {}}
-                  />
-                  <TouchableOpacity
-                    onPress={() => setShowDatePicker(false)}
-                    className="mt-4 p-2 bg-blue-500 rounded-lg"
+                <View className="flex-row justify-between mt-2">
+                  <TouchableOpacity 
+                    className="border p-2 rounded flex-1 mr-2"
+                    onPress={() => {
+                      setDateType('start');
+                      setShowDatePicker(true);
+                    }}
                   >
-                    <Text className="text-white text-center">{t('common3.close')}</Text>
+                    <Text>{filters.startDate ? moment(filters.startDate).format('DD/MM/YYYY') : t('history1.startDate')}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    className="border p-2 rounded flex-1 ml-2"
+                    onPress={() => {
+                      setDateType('end');
+                      setShowDatePicker(true);
+                    }}
+                  >
+                    <Text>{filters.endDate ? moment(filters.endDate).format('DD/MM/YYYY') : t('history1.endDate')}</Text>
                   </TouchableOpacity>
                 </View>
-              </View>
-            </Modal>
-          )}
+              )}
             </View>
 
             {/* Type Filter */}
@@ -301,12 +286,30 @@ const FilterModal = ({ visible, onClose, filters, setFilters, applyFilters }) =>
       </View>
 
       {showDatePicker && (
-        <DateTimePicker
-          value={dateType === 'start' ? (filters.startDate || new Date()) : (filters.endDate || new Date())}
-          mode="date"
-          display="default"
-          onChange={handleDateChange}
-        />
+        <Modal
+          transparent={true}
+          animationType="fade"
+          visible={showDatePicker}
+          onRequestClose={() => setShowDatePicker(false)}
+        >
+          <View className="flex-1 justify-center items-center bg-black bg-opacity-50">
+            <View className="bg-black p-5 rounded-lg w-80">
+              <DateTimePicker
+                value={dateType === 'start' ? (filters.startDate || new Date()) : (filters.endDate || new Date())}
+                mode="date"
+                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                onChange={handleDateChange}
+                style={Platform.OS === 'android' ? { alignSelf: 'center' } : {}}
+              />
+              <TouchableOpacity
+                onPress={() => setShowDatePicker(false)}
+                className="mt-4 p-2 bg-blue-500 rounded-lg"
+              >
+                <Text className="text-white text-center">{t('common3.close')}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
       )}
     </Modal>
   );
@@ -320,7 +323,6 @@ const History = () => {
   const userIdFromProfile = userProfile?.data?.id;
   const userId = userIdFromRedux || userIdFromProfile;
 
-  
   const [filters, setFilters] = useState({
     dateRange: null,
     method: null,
@@ -345,10 +347,9 @@ const History = () => {
       startDate: appliedFilters.startDate,
       endDate: appliedFilters.endDate
     },
-    { skip: !userId } // RTK Query option to skip if userId is falsy
+    { skip: !userId }
   );
 
-  // 3. Now conditionally render UI (after all hooks)
   if (!userId) {
     return (
       <View className="flex-1 justify-center items-center">
@@ -357,8 +358,6 @@ const History = () => {
       </View>
     );
   }
-
-  // Rest of the component...
 
   const applyFilters = () => {
     const params = {
@@ -369,7 +368,6 @@ const History = () => {
       ...(filters.status && { status: filters.status }),
     };
     
-    // Apply date filters
     if (filters.dateRange) {
       switch(filters.dateRange) {
         case 'today':
@@ -385,12 +383,8 @@ const History = () => {
           params.endDate = moment().endOf('month').format('YYYY-MM-DD');
           break;
         case 'custom':
-          if (filters.startDate) {
-            params.startDate = moment(filters.startDate).format('YYYY-MM-DD');
-          }
-          if (filters.endDate) {
-            params.endDate = moment(filters.endDate).format('YYYY-MM-DD');
-          }
+          if (filters.startDate) params.startDate = moment(filters.startDate).format('YYYY-MM-DD');
+          if (filters.endDate) params.endDate = moment(filters.endDate).format('YYYY-MM-DD');
           break;
       }
     }
@@ -442,17 +436,14 @@ const History = () => {
 
   return (
     <View className="flex-1 bg-gray-50">
-      <View className="flex-row justify-between items-center p-4">
+      <View className={`flex-row justify-between items-center ${Platform.OS === 'ios' ? 'mt-10' : 'mt-4'} p-4`}>
         <Text className="text-xl font-bold">{t('history1.title')}</Text>
-        <View className="flex-row items-center">
-         
-          <TouchableOpacity 
-            className="px-3 py-1 border border-blue-500 rounded-full"
-            onPress={() => setShowFilterModal(true)}
-          >
-            <Text className="text-blue-500">{t('history1.filter')}</Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity 
+          className="px-3 py-1 border border-blue-500 rounded-full"
+          onPress={() => setShowFilterModal(true)}
+        >
+          <Text className="text-blue-500">{t('history1.filter')}</Text>
+        </TouchableOpacity>
       </View>
 
       {transactions.length > 0 ? (
@@ -470,6 +461,7 @@ const History = () => {
             setCurrentPage(1);
             refetch();
           }}
+          contentContainerStyle={{ paddingBottom: 16 }}
           ListFooterComponent={() => (
             <View className="flex-row justify-between items-center p-4 bg-gray-100">
               <TouchableOpacity 

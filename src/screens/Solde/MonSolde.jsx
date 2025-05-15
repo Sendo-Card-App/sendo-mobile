@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, ActivityIndicator, StatusBar, Alert } from "react-native";
+import { View, Text, TouchableOpacity, ActivityIndicator, StatusBar, Alert,Dimensions } from "react-native";
 import React, { useEffect, useState } from "react";
 import { Ionicons ,AntDesign } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
@@ -6,6 +6,11 @@ import { useGetBalanceQuery } from "../../services/WalletApi/walletApi";
 import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
 import { useTranslation } from 'react-i18next';
 import Toast from 'react-native-toast-message';
+
+
+
+const { width } = Dimensions.get('window');
+const isSmallScreen = width < 375;
 
 const MonSolde = () => {
   const navigation = useNavigation();

@@ -9,12 +9,18 @@ import {
   TouchableOpacity,
   Modal,
   FlatList,
+  Dimensions,
   Alert
 } from 'react-native';
 import { AntDesign, MaterialIcons } from "@expo/vector-icons";
 import Toast from 'react-native-toast-message';
 import Loader from "../../components/Loader";
 import { useSimulatePaymentMutation } from '../../services/WalletApi/walletApi'; // Adjust path as needed
+
+
+
+const { width } = Dimensions.get('window');
+const isSmallScreen = width < 375;
 
 const PaymentSimulator = () => {
   const [amount, setAmount] = useState('100');
