@@ -164,6 +164,7 @@
 "history": "History",
 "pay_bills": "Pay Bills",
 "account": "Account",
+"favorite": "Favorite contact",
  "request": "KYC verification",
     "sub": "Submit your KYC documents",
      "sub1": "Ask Sendo to create or download my NUI",
@@ -549,7 +550,11 @@
   },
   "common": {
     "cancel": "Cancel",
-    "signIn": "Sign In"
+    "signIn": "Sign In",
+     "error": "Error",
+    "success": "Success",
+    "retry": "Retry",
+    "processing": "Processing..."
   },
   "forgotPassword": {
     "title": "Forgot Password",
@@ -669,7 +674,47 @@
     "retry": "Retry",
     "previous": "Previous",
     "next": "Next"
+  },
+  "addSecondPhone": {
+    "title": "Add Second Phone Number",
+    "phonePlaceholder": "Enter phone number",
+    "sendOtp": "Send OTP",
+    "otpTitle": "Enter OTP sent to {phone}",
+    "otpPlaceholder": "Enter 6-digit OTP",
+    "verifyOtp": "Verify OTP",
+    "cancel": "Cancel",
+    "selectCountry": "Select Country",
+    "countryPickerCancel": "Cancel",
+    "error": {
+      "loadCountries": "Failed to load countries"
+    }
+  },
+  "contacts": {
+    "permissionRequired": "Permission required",
+    "permissionMessage": "Access to your contacts is required to use this feature.",
+    "settings": "Open Settings",
+    "loading": "Loading contacts...",
+    "noContacts": "No contacts available",
+    "syncError": "Failed to load contacts",
+    "noPhoneNumber": "This contact doesn't have a phone number",
+    "requiredFields": "All fields are required",
+    "invalidPhone": "The phone number is invalid",
+    "alreadyFavorite": "This contact is already in your favorites",
+    "addSuccess": "Contact added to favorites!",
+    "addError": "An error occurred while adding. Please try again.",
+    "addFavorite": "Add a favorite",
+    "beneficiaryName": "Beneficiary name",
+    "namePlaceholder": "Enter name",
+    "phoneNumber": "Phone number",
+    "phonePlaceholder": "Enter phone number",
+    "receptionMethod": "Reception method",
+    "bankAccount": "Bank Account",
+    "addToFavorites": "Add to favorites",
+    "searchPlaceholder": "Search contacts...",
+    "noName": "No name",
+    "openSettings": "Open Settings"
   }
+
 
 
 

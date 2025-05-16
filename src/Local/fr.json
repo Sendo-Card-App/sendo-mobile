@@ -161,6 +161,7 @@
     "history": "Historique",
     "pay_bills": "Payer les factures",
     "account": "Compte",
+    "favorite": "Contact favori",
     "request": "KYC vérification",
     "sub": "Veuillez soumettre vos documents du KYC",
      "request1": "Demander un NIU",
@@ -549,7 +550,11 @@
   
   "common": {
     "cancel": "Annuler",
-    "signIn": "Se connecter"
+    "signIn": "Se connecter",
+    "error": "Erreur",
+    "success": "Succès",
+    "retry": "Réessayer",
+    "processing": "Traitement en cours..."
   },
   "forgotPassword": {
     "title": "Mot de passe oublié",
@@ -633,7 +638,7 @@
     "reset": "Réinitialiser",
     "resetFilters": "Réinitialiser les Filtres",
     "noTransactions": "Aucune transaction trouvée",
-    "loadingUser": "Chargement des informations utilisateur...",
+    "loadingUser": "Chargement des historique de transaction......",
     "errorLoading": "Erreur lors du chargement des transactions",
     "transactions": "transactions",
     "page": "Page",
@@ -670,6 +675,45 @@
     "retry": "Réessayer",
     "previous": "Précédent",
     "next": "Suivant"
+  },
+  "addSecondPhone": {
+    "title": "Ajouter un deuxième numéro de téléphone",
+    "phonePlaceholder": "Entrez le numéro de téléphone",
+    "sendOtp": "Envoyer OTP",
+    "otpTitle": "Entrez l'OTP envoyé au {phone}",
+    "otpPlaceholder": "Entrez l'OTP à 6 chiffres",
+    "verifyOtp": "Vérifier OTP",
+    "cancel": "Annuler",
+    "selectCountry": "Sélectionner un pays",
+    "countryPickerCancel": "Annuler",
+    "error": {
+      "loadCountries": "Échec du chargement des pays"
+    }
+  },
+   "contacts": {
+    "permissionRequired": "Permission requise",
+    "permissionMessage": "L'accès à vos contacts est requis pour utiliser cette fonctionnalité.",
+    "settings": "Paramètres",
+    "loading": "Chargement des contacts...",
+    "noContacts": "Aucun contact disponible",
+    "syncError": "Échec du chargement des contacts",
+    "noPhoneNumber": "Ce contact n'a pas de numéro de téléphone",
+    "requiredFields": "Tous les champs sont obligatoires",
+    "invalidPhone": "Le numéro de téléphone est invalide",
+    "alreadyFavorite": "Ce contact est déjà dans vos favoris",
+    "addSuccess": "Contact ajouté aux favoris !",
+    "addError": "Une erreur est survenue lors de l'ajout. Veuillez réessayer.",
+    "addFavorite": "Ajouter un favori",
+    "beneficiaryName": "Nom du bénéficiaire",
+    "namePlaceholder": "Entrez le nom",
+    "phoneNumber": "Numéro de téléphone",
+    "phonePlaceholder": "Entrez le numéro",
+    "receptionMethod": "Moyen de réception",
+    "bankAccount": "Compte bancaire",
+    "addToFavorites": "Ajouter aux favoris",
+    "searchPlaceholder": "Rechercher des contacts...",
+    "noName": "Aucun nom",
+    "openSettings": "Ouvrir les paramètres"
   }
 
 

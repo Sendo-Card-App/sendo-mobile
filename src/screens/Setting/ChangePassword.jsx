@@ -91,8 +91,8 @@ const ChangePassword = () => {
       console.error('UpdatePassword error:', err);
       Toast.show({
         type: 'error',
-        text1: t('Something went wrong'),
-        text2: t('There was an issue updating your password.'),
+        text1: t('Wrong passwod'),
+        text2: t('The password enter your old passwod.'),
       });
     } finally {
       setIsLoading(false);

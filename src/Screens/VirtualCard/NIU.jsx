@@ -179,7 +179,7 @@ const NIU = ({ navigation }) => {
         <View className="w-[85%] mx-auto mt-4 mb-2 space-y-4">
           <TouchableOpacity
             className={`flex-row items-center justify-center py-3 rounded-full border-2 ${selectedDocument?.type?.includes('image') ? 'border-[#7ddd7d] bg-[#7ddd7d]/20' : 'border-gray-300'}`}
-            onPress={handleTakePhoto}
+            onPress={() => navigation.navigate("Camera")}
             disabled={isProcessing}
           >
             <MaterialIcons 

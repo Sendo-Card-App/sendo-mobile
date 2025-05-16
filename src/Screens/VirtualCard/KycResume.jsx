@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, Image, FlatList, Alert } from "react-native";
 import { useSelector, useDispatch } from 'react-redux';
 import { useSubmitKYCMutation, useSendSelfieMutation } from '../../services/Kyc/kycApi';
+import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
 import { useNavigation } from '@react-navigation/native';
 import Toast from 'react-native-toast-message';
 import { StatusBar } from "expo-status-bar";
@@ -19,7 +20,10 @@ const KycResume = ({ navigation }) => {
   const { personalDetails, selfie, identityDocument, niuDocument, addressProof, submissionStatus } = useSelector(state => state.kyc);
   const isKYCComplete = useSelector(selectIsKYCComplete);
   const { t } = useTranslation();
+  const { data: userProfile, isLoading: isProfileLoading, error: profileError } = useGetUserProfileQuery();
+    
   
+
   const Data = [
     { id: "1", name: t('kyc_resume.personal_details'), route: "PersonalDetail", 
       completed: !!personalDetails.profession && !!personalDetails.region && !!personalDetails.city && !!personalDetails.district },
@@ -45,6 +49,33 @@ const KycResume = ({ navigation }) => {
   };
 
   const handleSubmit = async () => {
+    // First check if KYC is already verified
+  if (userProfile?.data?.isVerifiedKYC) {
+  Toast.show({
+    type: 'success',
+    text1: 'KYC Already Verified',
+    text2: 'Your KYC documents have already been verified',
+    visibilityTime: 3000,
+    onHide: () => {
+      Alert.alert(
+        'Create Virtual Card?',
+        'Would you like to create a virtual card now?',
+        [
+          {
+            text: 'Not Now',
+            style: 'cancel',
+             onPress: () => navigation.navigate('MainTabs'),
+          },
+          {
+            text: 'Create Vitual Card',
+            onPress: () => navigation.navigate('CreateVirtualCard'),
+          },
+        ]
+      );
+    }
+  });
+  return;
+}
     if (!isKYCComplete) {
       Toast.show({
         type: 'error',
