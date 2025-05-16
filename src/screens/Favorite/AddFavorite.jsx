@@ -20,7 +20,8 @@ import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
 import { 
   useSynchronizeContactsMutation,
   useAddFavoriteMutation,
-  useGetFavoritesQuery 
+  useGetFavoritesQuery,
+  useRemoveFavoriteMutation 
 } from '../../services/Contact/contactsApi';
 import Loader from "../../components/Loader";
 
@@ -35,11 +36,8 @@ const AddFavorite = () => {
   // API hooks
   const [synchronizeContacts] = useSynchronizeContactsMutation();
   const [addFavorite, { isLoading: isAddingFavorite }] = useAddFavoriteMutation();
-  const { data: favoritesResponse, isLoading: isLoadingFavorites } = useGetFavoritesQuery(userId, { skip: !userId });
-  
-  // Ensure favorites is always an array
-  const favorites = Array.isArray(favoritesResponse) ? favoritesResponse : 
-                   (favoritesResponse?.data ? favoritesResponse.data : []);
+  const [removeFavorite] = useRemoveFavoriteMutation();
+  const { data: favoritesResponse, isLoading: isLoadingFavorites, refetch: refetchFavorites } = useGetFavoritesQuery(userId, { skip: !userId });
   
   // State
   const [contacts, setContacts] = useState([]);
@@ -47,6 +45,7 @@ const AddFavorite = () => {
   const [selectedContact, setSelectedContact] = useState(null);
   const [status, setStatus] = useState('idle');
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState('contacts'); // 'contacts' or 'favorites'
   const [formData, setFormData] = useState({
     name: '',
     phoneNumber: '',
@@ -83,74 +82,105 @@ const AddFavorite = () => {
   };
 
   // Fetch and sync contacts
- const fetchAndSyncContacts = async () => {
-  try {
-    const hasPermission = await requestContactsPermission();
-    if (!hasPermission) {
-      setStatus('permission-denied');
-      return;
-    }
+  const fetchAndSyncContacts = async () => {
+    try {
+      const hasPermission = await requestContactsPermission();
+      if (!hasPermission) {
+        setStatus('permission-denied');
+        return;
+      }
 
-    setStatus('loading');
-    
-    // Initial fetch with pagination
-    let allContacts = [];
-    let hasMoreContacts = true;
-    let offset = 0;
-    const pageSize = 100; // Number of contacts to fetch per batch
+      setStatus('loading');
+      
+      // Initial fetch with pagination
+      let allContacts = [];
+      let hasMoreContacts = true;
+      let offset = 0;
+      const pageSize = 100;
 
-    while (hasMoreContacts) {
-      // Fetch contacts in batches
-      const { data, hasNextPage } = await Contacts.getContactsAsync({
-        fields: [Contacts.Fields.Name, Contacts.Fields.PhoneNumbers],
-        pageSize,
-        pageOffset: offset,
+      while (hasMoreContacts) {
+        const { data, hasNextPage } = await Contacts.getContactsAsync({
+          fields: [Contacts.Fields.Name, Contacts.Fields.PhoneNumbers],
+          pageSize,
+          pageOffset: offset,
+        });
+
+        const validContacts = data.filter(contact => 
+          contact.phoneNumbers && contact.phoneNumbers.length > 0
+        );
+
+        allContacts = [...allContacts, ...validContacts];
+        offset += pageSize;
+        hasMoreContacts = hasNextPage;
+
+        setContacts(allContacts);
+        setStatus(`loading-${offset}`);
+      }
+
+      const batchSize = 50;
+      for (let i = 0; i < allContacts.length; i += batchSize) {
+        const batch = allContacts.slice(i, i + batchSize);
+        const contactsToSync = batch.map(contact => ({
+          name: contact.name,
+          phone: contact.phoneNumbers[0].number
+        }));
+
+        await synchronizeContacts(contactsToSync).unwrap();
+      }
+
+      setStatus('ready');
+      Toast.show({
+        type: 'success',
+        text1: 'Sync Complete',
+        text2: `Successfully synced ${allContacts.length} contacts`
       });
 
-      // Filter valid contacts with phone numbers
-      const validContacts = data.filter(contact => 
-        contact.phoneNumbers && contact.phoneNumbers.length > 0
+    } catch (error) {
+      console.error('Failed to sync contacts:', error);
+      setStatus('error');
+      Toast.show({
+        type: 'error',
+        text1: 'Sync Failed',
+        text2: 'Failed to synchronize contacts with server'
+      });
+    }
+  };
+
+  // Handle delete favorite
+  const handleDeleteFavorite = async (phone) => {
+    try {
+      Alert.alert(
+        'Confirm Delete',
+        'Are you sure you want to remove this contact from favorites?',
+        [
+          {
+            text: 'Cancel',
+            style: 'cancel',
+          },
+          {
+            text: 'Delete',
+            onPress: async () => {
+              await removeFavorite({ userId, phone }).unwrap();
+              refetchFavorites();
+              Toast.show({
+                type: 'success',
+                text1: 'Success',
+                text2: 'Contact removed from favorites'
+              });
+            },
+            style: 'destructive',
+          },
+        ],
       );
-
-      allContacts = [...allContacts, ...validContacts];
-      offset += pageSize;
-      hasMoreContacts = hasNextPage;
-
-      // Update UI periodically with progress
-      setContacts(allContacts);
-      setStatus(`loading-${offset}`); // You can use this to show progress
+    } catch (error) {
+      console.error('Failed to delete favorite:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Delete Failed',
+        text2: 'Failed to remove contact from favorites'
+      });
     }
-
-    // Prepare contacts for synchronization in batches
-    const batchSize = 50; // Sync in smaller batches to avoid timeout
-    for (let i = 0; i < allContacts.length; i += batchSize) {
-      const batch = allContacts.slice(i, i + batchSize);
-      const contactsToSync = batch.map(contact => ({
-        name: contact.name,
-        phone: contact.phoneNumbers[0].number
-      }));
-
-      // Sync current batch with backend
-      await synchronizeContacts(contactsToSync).unwrap();
-    }
-
-    setStatus('ready');
-    Toast.show({
-      type: 'success',
-      text1: 'Sync Complete',
-      text2: `Successfully synced ${allContacts.length} contacts`
-    });
-
-  } catch (error) {
-    console.error('Failed to sync contacts:', error);
-    setStatus('error');
-    Toast.show({
-      type: 'error',
-      text1: 'Sync Failed',
-      text2: 'Failed to synchronize contacts with server'
-    });
-  }
-};
+  };
 
   // Phone number validation
   const isValidPhoneNumber = (phoneNumber) => {
@@ -185,8 +215,8 @@ const AddFavorite = () => {
       let result = [...contacts];
       
       // Filter out favorites
-      if (favorites.length > 0) {
-        const favoritePhones = favorites.map(fav => fav.phone);
+      if (favoritesResponse?.data?.length > 0) {
+        const favoritePhones = favoritesResponse.data.map(fav => fav.phone);
         result = result.filter(
           contact => !favoritePhones.includes(contact.phoneNumbers[0]?.number)
         );
@@ -202,7 +232,7 @@ const AddFavorite = () => {
       
       setFilteredContacts(result);
     }
-  }, [contacts, favorites, searchQuery]);
+  }, [contacts, favoritesResponse, searchQuery]);
 
   // Handle form submission
   const handleAddFavorite = async () => {
@@ -225,8 +255,7 @@ const AddFavorite = () => {
     }
     
     try {
-      // Check if already in favorites
-      const isAlreadyFavorite = favorites.some(
+      const isAlreadyFavorite = favoritesResponse?.data?.some(
         fav => fav.phone === formData.phoneNumber
       );
       
@@ -239,7 +268,6 @@ const AddFavorite = () => {
         return;
       }
       
-      // Add to favorites via API
       await addFavorite({
         userId,
         phone: formData.phoneNumber
@@ -271,15 +299,7 @@ const AddFavorite = () => {
   // Render contact list item
   const renderContactItem = ({ item }) => (
     <TouchableOpacity 
-      style={{
-        padding: width * 0.05,
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
-        flexDirection: 'row',
-        alignItems: 'center',
-        minHeight: height * 0.08,
-        backgroundColor: '#fff'
-      }}
+      className="p-4 border-b border-gray-200 flex-row items-center min-h-16 bg-white"
       onPress={() => handleSelectContact(item)}
       activeOpacity={0.7}
     >
@@ -287,22 +307,14 @@ const AddFavorite = () => {
         name="account-outline" 
         size={width * 0.07} 
         color="#666" 
-        style={{ marginRight: width * 0.04 }}
+        className="mr-3"
       />
-      <View style={{ flex: 1 }}>
-        <Text style={{ 
-          fontWeight: 'bold', 
-          fontSize: width * 0.04,
-          color: '#333'
-        }}>
+      <View className="flex-1">
+        <Text className="font-bold text-base text-gray-800">
           {item.name || t('contacts.noName')}
         </Text>
         {item.phoneNumbers && item.phoneNumbers.length > 0 && (
-          <Text style={{ 
-            color: '#666', 
-            fontSize: width * 0.035,
-            marginTop: 4
-          }}>
+          <Text className="text-gray-600 text-sm mt-1">
             {item.phoneNumbers[0].number}
           </Text>
         )}
@@ -315,44 +327,47 @@ const AddFavorite = () => {
     </TouchableOpacity>
   );
 
+  // Render favorite item
+  const renderFavoriteItem = ({ item }) => (
+    <View className="p-4 border-b border-gray-200 flex-row items-center min-h-16 bg-white">
+      <View className="flex-1">
+        <Text className="font-bold text-base text-gray-800">
+          {item.name || item.phone}
+        </Text>
+        <Text className="text-gray-600 text-sm mt-1">
+          {item.phone}
+        </Text>
+      </View>
+      <TouchableOpacity
+        onPress={() => handleDeleteFavorite(item.phone)}
+        className="p-2"
+      >
+        <MaterialCommunityIcons 
+          name="delete" 
+          size={width * 0.06} 
+          color="#f44336" 
+        />
+      </TouchableOpacity>
+    </View>
+  );
+
   // Permission denied view
   if (status === 'permission-denied') {
     return (
-      <View style={{
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: width * 0.1,
-        backgroundColor: '#fff'
-      }}>
+      <View className="flex-1 justify-center items-center p-8 bg-white">
         <MaterialCommunityIcons 
           name="alert-circle-outline" 
           size={width * 0.15} 
           color="#f44336" 
         />
-        <Text style={{
-          textAlign: 'center',
-          marginBottom: width * 0.05,
-          fontSize: width * 0.045,
-          color: '#555'
-        }}>
+        <Text className="text-center mb-4 text-lg text-gray-600">
           {t('contacts.permissionMessage')}
         </Text>
         <TouchableOpacity 
-          style={{
-            backgroundColor: '#4CAF50',
-            padding: width * 0.04,
-            borderRadius: 8,
-            width: width * 0.6,
-            alignItems: 'center'
-          }}
+          className="bg-green-500 px-4 py-3 rounded-lg w-48 items-center"
           onPress={() => Linking.openSettings()}
         >
-          <Text style={{ 
-            color: 'white', 
-            fontSize: width * 0.04,
-            fontWeight: '600'
-          }}>
+          <Text className="text-white text-base font-semibold">
             {t('contacts.openSettings')}
           </Text>
         </TouchableOpacity>
@@ -366,26 +381,15 @@ const AddFavorite = () => {
   }
 
   // Empty state
-  if (status === 'ready' && filteredContacts.length === 0) {
+  if (status === 'ready' && filteredContacts.length === 0 && activeTab === 'contacts') {
     return (
-      <View style={{
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: width * 0.1,
-        backgroundColor: '#fff'
-      }}>
+      <View className="flex-1 justify-center items-center p-8 bg-white">
         <MaterialCommunityIcons 
           name="account-search" 
           size={width * 0.15} 
           color="#999" 
         />
-        <Text style={{
-          textAlign: 'center',
-          marginTop: width * 0.05,
-          fontSize: width * 0.045,
-          color: '#555'
-        }}>
+        <Text className="text-center mt-4 text-lg text-gray-600">
           {t('contacts.noContacts')}
         </Text>
       </View>
@@ -395,41 +399,20 @@ const AddFavorite = () => {
   // Error state
   if (status === 'error') {
     return (
-      <View style={{
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: width * 0.1,
-        backgroundColor: '#fff'
-      }}>
+      <View className="flex-1 justify-center items-center p-8 bg-white">
         <MaterialCommunityIcons 
           name="emoticon-sad-outline" 
           size={width * 0.15} 
           color="#f44336" 
         />
-        <Text style={{
-          textAlign: 'center',
-          marginBottom: width * 0.05,
-          fontSize: width * 0.045,
-          color: '#555'
-        }}>
+        <Text className="text-center mb-4 text-lg text-gray-600">
           {t('contacts.syncError')}
         </Text>
         <TouchableOpacity 
-          style={{
-            backgroundColor: '#4CAF50',
-            padding: width * 0.04,
-            borderRadius: 8,
-            width: width * 0.6,
-            alignItems: 'center'
-          }}
+          className="bg-green-500 px-4 py-3 rounded-lg w-48 items-center"
           onPress={fetchAndSyncContacts}
         >
-          <Text style={{ 
-            color: 'white', 
-            fontSize: width * 0.04,
-            fontWeight: '600'
-          }}>
+          <Text className="text-white text-base font-semibold">
             {t('common.retry')}
           </Text>
         </TouchableOpacity>
@@ -442,62 +425,31 @@ const AddFavorite = () => {
     return (
       <>
         <ScrollView 
-          style={{ flex: 1, backgroundColor: '#fff' }}
+          className="flex-1 bg-white"
           contentContainerStyle={{ paddingBottom: width * 0.1 }}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={{ padding: width * 0.05 }}>
-            <Text style={{ 
-              fontSize: width * 0.05,
-              marginBottom: width * 0.05,
-              fontWeight: '600',
-              color: '#333'
-            }}>
+          <View className="p-4">
+            <Text className="text-xl mb-4 font-semibold text-gray-800">
               {t('contacts.addFavorite')}
             </Text>
             
-            <Text style={{ 
-              marginBottom: width * 0.02,
-              fontSize: width * 0.04,
-              color: '#555'
-            }}>
+            <Text className="mb-1 text-base text-gray-600">
               {t('contacts.beneficiaryName')}
             </Text>
             <TextInput
-              style={{
-                height: height * 0.06,
-                borderColor: '#ddd',
-                borderWidth: 1,
-                marginBottom: width * 0.04,
-                paddingHorizontal: width * 0.03,
-                borderRadius: 8,
-                fontSize: width * 0.04,
-                backgroundColor: '#fff'
-              }}
+              className="h-14 border border-gray-300 mb-3 px-3 rounded-lg text-base bg-white"
               value={formData.name}
               onChangeText={(text) => setFormData({...formData, name: text})}
               placeholder={t('contacts.namePlaceholder')}
               placeholderTextColor="#999"
             />
             
-            <Text style={{ 
-              marginBottom: width * 0.02,
-              fontSize: width * 0.04,
-              color: '#555'
-            }}>
+            <Text className="mb-1 text-base text-gray-600">
               {t('contacts.phoneNumber')}
             </Text>
             <TextInput
-              style={{
-                height: height * 0.06,
-                borderColor: '#ddd',
-                borderWidth: 1,
-                marginBottom: width * 0.04,
-                paddingHorizontal: width * 0.03,
-                borderRadius: 8,
-                fontSize: width * 0.04,
-                backgroundColor: '#fff'
-              }}
+              className="h-14 border border-gray-300 mb-3 px-3 rounded-lg text-base bg-white"
               value={formData.phoneNumber}
               onChangeText={(text) => setFormData({...formData, phoneNumber: text})}
               placeholder={t('contacts.phonePlaceholder')}
@@ -505,30 +457,16 @@ const AddFavorite = () => {
               keyboardType="phone-pad"
             />
             
-            <Text style={{ 
-              marginBottom: width * 0.02,
-              fontSize: width * 0.04,
-              color: '#555'
-            }}>
+            <Text className="mb-1 text-base text-gray-600">
               {t('contacts.receptionMethod')}
             </Text>
-            <View style={{
-              width: '100%',
-              marginBottom: width * 0.05,
-              backgroundColor: '#f9f9f9',
-              borderRadius: 8,
-              borderWidth: 1,
-              borderColor: '#ddd',
-              overflow: 'hidden'
-            }}>
+            <View className="w-full mb-5 bg-gray-50 rounded-lg border border-gray-300 overflow-hidden">
               <Picker
                 selectedValue={formData.receptionMethod}
                 onValueChange={(itemValue) => 
                   setFormData({...formData, receptionMethod: itemValue})
                 }
-                style={{
-                  height: height * 0.06,
-                }}
+                style={{ height: height * 0.06 }}
                 dropdownIconColor="#666"
               >
                 <Picker.Item label="Orange Money" value="Orange Money" />
@@ -537,49 +475,23 @@ const AddFavorite = () => {
               </Picker>
             </View>
             
-            <View style={{
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              marginTop: width * 0.05
-            }}>
+            <View className="flex-row justify-between mt-4">
               <TouchableOpacity 
-                style={{
-                  flex: 1,
-                  marginHorizontal: width * 0.015,
-                  padding: width * 0.035,
-                  borderRadius: 8,
-                  alignItems: 'center',
-                  backgroundColor: '#f44336'
-                }}
+                className="flex-1 mx-1 py-3 rounded-lg items-center bg-red-500"
                 onPress={() => setSelectedContact(null)}
                 activeOpacity={0.7}
               >
-                <Text style={{ 
-                  color: 'white', 
-                  fontSize: width * 0.04,
-                  fontWeight: '600'
-                }}>
+                <Text className="text-white text-base font-semibold">
                   {t('common.cancel')}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity 
-                style={{
-                  flex: 1,
-                  marginHorizontal: width * 0.015,
-                  padding: width * 0.035,
-                  borderRadius: 8,
-                  alignItems: 'center',
-                  backgroundColor: '#4CAF50'
-                }}
+                className="flex-1 mx-1 py-3 rounded-lg items-center bg-green-500"
                 onPress={handleAddFavorite}
                 disabled={isAddingFavorite}
                 activeOpacity={0.7}
               >
-                <Text style={{ 
-                  color: 'white', 
-                  fontSize: width * 0.04,
-                  fontWeight: '600'
-                }}>
+                <Text className="text-white text-base font-semibold">
                   {isAddingFavorite ? t('common.processing') : t('contacts.addToFavorites')}
                 </Text>
               </TouchableOpacity>
@@ -591,53 +503,78 @@ const AddFavorite = () => {
     );
   }
 
-  // Contact list view
   return (
-    <View style={{ flex: 1, backgroundColor: '#fff' }}>
-      <View style={{
-        padding: width * 0.05,
-        backgroundColor: '#f5f5f5',
-        borderBottomWidth: 1,
-        borderBottomColor: '#ddd'
-      }}>
-        <TextInput
-          style={{
-            height: height * 0.06,
-            borderColor: '#ddd',
-            borderWidth: 1,
-            paddingHorizontal: width * 0.04,
-            borderRadius: 8,
-            fontSize: width * 0.04,
-            backgroundColor: '#fff'
+    <View className="flex-1 bg-white">
+      {/* Tab navigation */}
+      <View className="flex-row border-b border-gray-200">
+        <TouchableOpacity 
+          className={`flex-1 py-4 items-center ${activeTab === 'contacts' ? 'border-b-2 border-green-500' : ''}`}
+          onPress={() => setActiveTab('contacts')}
+        >
+          <Text className={`text-base font-semibold ${activeTab === 'contacts' ? 'text-green-500' : 'text-gray-500'}`}>
+            Contacts
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          className={`flex-1 py-4 items-center ${activeTab === 'favorites' ? 'border-b-2 border-green-500' : ''}`}
+          onPress={() => {
+            setActiveTab('favorites');
+            refetchFavorites();
           }}
+        >
+          <Text className={`text-base font-semibold ${activeTab === 'favorites' ? 'text-green-500' : 'text-gray-500'}`}>
+            Favorites ({favoritesResponse?.data?.length || 0})
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Search bar */}
+      <View className="p-4 bg-gray-100 border-b border-gray-200">
+        <TextInput
+          className="h-14 border border-gray-300 px-4 rounded-lg text-base bg-white"
           placeholder={t('contacts.searchPlaceholder')}
           placeholderTextColor="#999"
           value={searchQuery}
           onChangeText={setSearchQuery}
         />
       </View>
-      <FlatList
-        data={filteredContacts}
-        keyExtractor={(item) => item.id}
-        renderItem={renderContactItem}
-        contentContainerStyle={{ paddingBottom: width * 0.05 }}
-        refreshing={status === 'loading'}
-        onRefresh={fetchAndSyncContacts}
-        ListEmptyComponent={
-          <View style={{ 
-            alignItems: 'center', 
-            padding: width * 0.1,
-            justifyContent: 'center'
-          }}>
-            <Text style={{ 
-              fontSize: width * 0.04,
-              color: '#666'
-            }}>
-              {t('contacts.noContacts')}
-            </Text>
-          </View>
-        }
-      />
+
+      {/* Contacts list */}
+      {activeTab === 'contacts' && (
+        <FlatList
+          data={filteredContacts}
+          keyExtractor={(item) => item.id}
+          renderItem={renderContactItem}
+          contentContainerStyle={{ paddingBottom: width * 0.05 }}
+          refreshing={status === 'loading'}
+          onRefresh={fetchAndSyncContacts}
+          ListEmptyComponent={
+            <View className="items-center p-8 justify-center">
+              <Text className="text-base text-gray-600">
+                {t('contacts.noContacts')}
+              </Text>
+            </View>
+          }
+        />
+      )}
+
+      {/* Favorites list */}
+      {activeTab === 'favorites' && (
+        <FlatList
+          data={favoritesResponse?.data || []}
+          keyExtractor={(item) => item.phone}
+          renderItem={renderFavoriteItem}
+          contentContainerStyle={{ paddingBottom: width * 0.05 }}
+          ListEmptyComponent={
+            <View className="items-center p-8 justify-center">
+              <Text className="text-base text-gray-600">
+                No favorites yet
+              </Text>
+            </View>
+          }
+        />
+      )}
+
       <Toast />
     </View>
   );

@@ -15,10 +15,10 @@ export const contactsApi = createApi({
   
   endpoints: (builder) => ({
     synchronizeContacts: builder.mutation({
-      query: (contacts) => ({
+      query: (name,phone) => ({
         url: '/contacts/synchronize',
         method: 'POST',
-        body: { contacts },
+        body: { name,phone },
       }),
       invalidatesTags: ['Contacts'],
     }),
