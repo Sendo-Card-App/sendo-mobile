@@ -22,7 +22,7 @@ const Curency = () => {
     <View style={{ flex: 1, backgroundColor: '#141414', padding: 16 }}>
       <StatusBar barStyle="light-content" />
       {/* Header Section */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10, marginTop:25, }}>
         <TouchableOpacity>
           <AntDesign name="arrowleft" size={24} color="white" onPress={() => navigation.goBack()} />
         </TouchableOpacity>

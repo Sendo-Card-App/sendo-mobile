@@ -141,7 +141,7 @@ const FilterModal = ({ visible, onClose, filters, setFilters, applyFilters }) =>
       visible={visible}
       onRequestClose={onClose}
     >
-      <View className="flex-1 justify-end bg-black bg-opacity-50">
+      <View className="flex-1 justify-end bg-transparent bg-opacity-50">
         <View className={`bg-white p-5 rounded-t-3xl ${isSmallScreen ? 'max-h-[85%]' : 'max-h-[80%]'}`}>
           <View className="flex-row justify-between items-center mb-4">
             <Text className="text-xl font-bold">{t('history1.filterTitle')}</Text>
@@ -292,8 +292,8 @@ const FilterModal = ({ visible, onClose, filters, setFilters, applyFilters }) =>
           visible={showDatePicker}
           onRequestClose={() => setShowDatePicker(false)}
         >
-          <View className="flex-1 justify-center items-center bg-black bg-opacity-50">
-            <View className="bg-black p-5 rounded-lg w-80">
+          <View className="flex-1 justify-center items-center bg-white bg-opacity-50">
+            <View className="bg-green p-5 rounded-lg w-80">
               <DateTimePicker
                 value={dateType === 'start' ? (filters.startDate || new Date()) : (filters.endDate || new Date())}
                 mode="date"
@@ -349,6 +349,7 @@ const History = () => {
     },
     { skip: !userId }
   );
+  
 
   if (!userId) {
     return (
@@ -408,6 +409,10 @@ const History = () => {
   useEffect(() => {
     refetch();
   }, [appliedFilters, refetch]);
+
+  useEffect(() => {
+  console.log('Current userId:', userId);
+}, [userId]);
 
   if (isLoading && currentPage === 1) {
     return (

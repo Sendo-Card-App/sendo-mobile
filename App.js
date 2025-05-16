@@ -24,6 +24,7 @@ import Home from "./src/screens/Home/Home";
 import WelcomeScreen from "./src/screens/Auth/WelcomeScreen";
 import PinCode from "./src/screens/Auth/PinCode";
 import AddBeneficiary from "./src/screens/Solde/AddBeneficiary";
+import AddFavorite from "./src/screens/Favorite/AddFavorite";
 import SelectMethod from "./src/screens/Wallet/SelectMethod";
 import BankDepositRecharge from "./src/screens/Wallet/BankDepositRecharge";
 import AddContact from "./src/screens/Solde/AddContact";
@@ -231,6 +232,7 @@ function MainStack() {
       <Stack.Screen name="MethodType" component={MethodType} options={{headerTitle:"Sélectionner une méthode" }} />
       <Stack.Screen name="WalletTransfer" component={WalletTransfer} options={{ headerTitle: "Transfert de portefeuille" }} />
       <Stack.Screen name="AddContact" component={AddContact} options={{ headerTitle: "Ajouter un contact" }} />
+      <Stack.Screen name="AddFavorite" component={AddFavorite} options={{ headerTitle: "Ajouter un contact favoris" }} />
       <Stack.Screen name="ConﬁrmeTheTransfer" component={ConﬁrmeTheTransfer} options={{ headerShown: false }} />
       <Stack.Screen name="Success" component={Success} options={{ headerShown: false }} />
       <Stack.Screen name="Support" component={Support} />

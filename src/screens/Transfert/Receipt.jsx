@@ -13,6 +13,7 @@ import { AntDesign } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import moment from "moment";
 import * as Print from 'expo-print';
+import Loader from "../../components/Loader";
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system';
 
@@ -80,7 +81,7 @@ const ReceiptScreen = () => {
         <body>
           <div class="header">
             <div class="title">Reçu de transfert Sendo</div>
-            <div>ID de transaction: ${transaction.id}</div>
+            <div>ID de transaction: ${transaction.reference}</div>
           </div>
           
           <div class="section">
@@ -227,7 +228,7 @@ const ReceiptScreen = () => {
             Envoyé : {moment(transaction.created_at).format('D MMMM YYYY / HH:mm')}
           </Text>
           <Text className="text-gray-600 text-sm">
-            ID du transfert : {transaction.id}
+            Reference du transfert : {transaction.reference}
           </Text>
 
           {/* Télécharger le reçu */}
@@ -237,7 +238,7 @@ const ReceiptScreen = () => {
             className={`py-3 mt-4 rounded-lg items-center ${transaction.status !== 'SUCCESS' ? 'bg-gray-300' : 'bg-[#7ddd7d]'}`}
           >
             {isGenerating ? (
-              <ActivityIndicator color="white" />
+              <Loader color="white" />
             ) : (
               <Text className="text-white font-bold">
                 {transaction.status === 'SUCCESS' ? 'TÉLÉCHARGER LE REÇU' : 'REÇU INDISPONIBLE'}

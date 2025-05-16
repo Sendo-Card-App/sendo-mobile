@@ -1,16 +1,18 @@
-import { View, Text, TouchableOpacity, ActivityIndicator, StatusBar, Alert,Dimensions } from "react-native";
+import { View, Text, TouchableOpacity, ActivityIndicator, StatusBar, Alert, Dimensions, Platform } from "react-native";
 import React, { useEffect, useState } from "react";
-import { Ionicons ,AntDesign } from "@expo/vector-icons";
+import { Ionicons, AntDesign } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useGetBalanceQuery } from "../../services/WalletApi/walletApi";
 import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
 import { useTranslation } from 'react-i18next';
 import Toast from 'react-native-toast-message';
-
-
-
-const { width } = Dimensions.get('window');
+import Loader from "../../components/Loader";
+const { width, height } = Dimensions.get('window');
 const isSmallScreen = width < 375;
+const isIOS = Platform.OS === 'ios';
+
+// Responsive scaling function
+const scale = (size) => (width / 375) * size;
 
 const MonSolde = () => {
   const navigation = useNavigation();
@@ -34,7 +36,6 @@ const MonSolde = () => {
 
   const isLoading = isProfileLoading || isBalanceLoading;
   
-     //console.log(userProfile)
   // Handle API errors
   useEffect(() => {
     if (balanceError) {
@@ -57,41 +58,37 @@ const MonSolde = () => {
         text1: 'Error',
         text2: errorMessage,
         position: 'top',
-        visibilityTime: 10000, // Display for 10 seconds (10000ms)
+        visibilityTime: 10000,
         autoHide: true,
       });
     }
   }, [balanceError]);
-   
-  // Handle successful balance fetch
-  // useEffect(() => {
-  //   if (balanceData && !isBalanceLoading) {
-  //     Toast.show({
-  //       type: 'success',
-  //       text1: 'Success',
-  //       text2: 'Balance loaded successfully',
-  //       position: 'bottom',
-  //     });
-  //   }
-  // }, [balanceData, isBalanceLoading]);
 
   return (
-    <View style={{ flex: 1, padding: 20 }}>
-       {/* Floating Home Button */}
-            <TouchableOpacity 
-              onPress={() => navigation.navigate('MainTabs')}
-              style={styles.floatingHomeButton}
-            >
-              <Ionicons name="home" size={44} color="#7ddd7d" />
-            </TouchableOpacity>
+    <View style={{ 
+      flex: 1, 
+      padding: isSmallScreen ? scale(15) : scale(20),
+      paddingTop: isIOS ? scale(30) : StatusBar.currentHeight + scale(10)
+    }}>
+      {/* Floating Home Button */}
+      <TouchableOpacity 
+        onPress={() => navigation.navigate('MainTabs')}
+        style={[styles.floatingHomeButton, {
+          top: (StatusBar.currentHeight || 0) + (isSmallScreen ? height * 0.85 : height * 0.88),
+          right: isSmallScreen ? scale(15) : scale(20),
+          padding: isSmallScreen ? scale(8) : scale(10)
+        }]}
+      >
+        <Ionicons name="home" size={isSmallScreen ? scale(38) : scale(44)} color="#7ddd7d" />
+      </TouchableOpacity>
 
       <View style={{
         borderWidth: 1,
         borderColor: '#E2E8F0',
-        borderRadius: 12,
-        padding: 20,
-        marginHorizontal: 16,
-        marginTop: 16,
+        borderRadius: scale(12),
+        padding: isSmallScreen ? scale(15) : scale(20),
+        marginHorizontal: isSmallScreen ? scale(10) : scale(16),
+        marginTop: isSmallScreen ? scale(10) : scale(16),
         backgroundColor: 'white',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
@@ -103,61 +100,60 @@ const MonSolde = () => {
           flexDirection: 'row', 
           justifyContent: 'space-between',
           alignItems: 'center',
-          marginBottom: 8 
+          marginBottom: scale(8) 
         }}>
           <Text style={{
-            fontSize: 18,
+            fontSize: isSmallScreen ? scale(16) : scale(18),
             fontWeight: 'bold',
             color: '#4A5568',
           }}>
             {t('wallet_balance.title')}
           </Text>
           
-          {/* Always show refresh button */}
           <TouchableOpacity 
             onPress={refetchBalance}
             disabled={isLoading}
             style={{
-              padding: 4,
-              borderRadius: 20,
+              padding: scale(4),
+              borderRadius: scale(20),
               backgroundColor: '#EBF8FF'
             }}
           >
             {isLoading ? (
-              <ActivityIndicator size="small" color="#0D1C6A" />
+              <Loader size="small" color="#0D1C6A" />
             ) : (
-              <Ionicons name="refresh" size={20} color="#0D1C6A" />
+              <Ionicons name="refresh" size={isSmallScreen ? scale(18) : scale(20)} color="#0D1C6A" />
             )}
           </TouchableOpacity>
         </View>
 
         {isLoading ? (
-          <View style={{ height: 48, justifyContent: 'center' }}>
+          <View style={{ height: scale(48), justifyContent: 'center' }}>
             <ActivityIndicator size="small" color="#0D1C6A" />
           </View>
         ) : isBalanceError ? (
           <View style={{ 
             flexDirection: 'row', 
             alignItems: 'center',
-            height: 48,
+            height: scale(48),
             justifyContent: 'center'
           }}>
-            <Text style={{ color: '#E53E3E', marginRight: 8 }}>
+            <Text style={{ color: '#E53E3E', marginRight: scale(8), fontSize: isSmallScreen ? scale(14) : scale(16) }}>
               Impossible d'afficher le solde
             </Text>
           </View>
         ) : (
           <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
             <Text style={{
-              fontSize: 32,
+              fontSize: isSmallScreen ? scale(28) : scale(32),
               fontWeight: '700',
               color: '#1A365D',
-              marginRight: 4
+              marginRight: scale(4)
             }}>
               {balanceData?.data.balance || "0.00"}
             </Text>
             <Text style={{
-              fontSize: 18,
+              fontSize: isSmallScreen ? scale(16) : scale(18),
               fontWeight: '600',
               color: '#718096'
             }}>
@@ -167,103 +163,133 @@ const MonSolde = () => {
         )}
       </View>
 
-     <View style={{ 
-          flexDirection: 'row', 
-          justifyContent: 'space-between', 
-          paddingHorizontal: 16, 
-          marginTop: 40 
-        }}>
-          {/* Recharge Button */}
-          <View style={{ flex: 1, alignItems: 'center' }}>
-            <TouchableOpacity
-              style={{ 
-                backgroundColor: '#7ddd7d', 
-                width: 70, 
-                height: 70, 
-                borderRadius: 35, 
-                alignItems: 'center', 
-                justifyContent: 'center',
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 1 },
-                shadowOpacity: 0.2,
-                shadowRadius: 2,
-                elevation: 2,
-              }}
-              onPress={() => navigation.navigate("MethodType")}
-            >
-              <Ionicons name="add-circle-outline" size={28} color="white" />
-            </TouchableOpacity>
-            <Text style={{ textAlign: 'center', color: 'black', fontSize: 12, fontWeight: 'bold', marginTop: 4 }}>
-              {t('wallet_balance.recharge')}
-            </Text>
-          </View>
-
-          {/* Withdraw Button */}
-          <View style={{ flex: 1, alignItems: 'center' }}>
-            <TouchableOpacity
-              style={{ 
-                backgroundColor: '#5dade2', 
-                width: 70, 
-                height: 70, 
-                borderRadius: 35, 
-                alignItems: 'center', 
-                justifyContent: 'center',
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 1 },
-                shadowOpacity: 0.2,
-                shadowRadius: 2,
-                elevation: 2,
-              }}
-              onPress={() => navigation.navigate("Withdrawal")}
-            >
-              <Ionicons name="remove-circle-outline" size={28} color="white" />
-            </TouchableOpacity>
-            <Text style={{ textAlign: 'center', color: 'black', fontSize: 12, fontWeight: 'bold', marginTop: 4 }}>
-              {t('wallet_balance.withdraw')}
-            </Text>
-          </View>
-
-          {/* Transfer Button */}
-          <View style={{ flex: 1, alignItems: 'center' }}>
-            <TouchableOpacity
-              style={{ 
-                backgroundColor: '#f39c12', 
-                width: 70, 
-                height: 70, 
-                borderRadius: 35, 
-                alignItems: 'center', 
-                justifyContent: 'center',
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 1 },
-                shadowOpacity: 0.2,
-                shadowRadius: 2,
-                elevation: 2,
-              }}
-              onPress={() => navigation.navigate("SelectMethod")}
-            >
-              <Ionicons name="swap-horizontal-outline" size={28} color="white" />
-            </TouchableOpacity>
-            <Text style={{ textAlign: 'center', color: 'black', fontSize: 12, fontWeight: 'bold', marginTop: 4 }}>
-              {t('wallet_balance.transfer')}
-            </Text>
-          </View>
-        </View>
-       <TouchableOpacity style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          backgroundColor: '#FFF',
-          borderRadius: 20,
-          padding: 15,
-          marginBottom: 20,
-          marginTop:30,
-          }}
-          onPress={() => navigation.navigate("PaymentSimulator")}
+      <View style={{ 
+        flexDirection: 'row', 
+        justifyContent: 'space-between', 
+        paddingHorizontal: isSmallScreen ? scale(10) : scale(16), 
+        marginTop: isSmallScreen ? scale(30) : scale(40) 
+      }}>
+        {/* Recharge Button */}
+        <View style={{ flex: 1, alignItems: 'center' }}>
+          <TouchableOpacity
+            style={{ 
+              backgroundColor: '#7ddd7d', 
+              width: isSmallScreen ? scale(60) : scale(70), 
+              height: isSmallScreen ? scale(60) : scale(70), 
+              borderRadius: isSmallScreen ? scale(30) : scale(35), 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 1 },
+              shadowOpacity: 0.2,
+              shadowRadius: 2,
+              elevation: 2,
+            }}
+            onPress={() => navigation.navigate("MethodType")}
           >
-         <AntDesign name="calculator" size={50} color="#999" style={{ marginRight: 5 }} />
-          <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#0D1C6A', marginLeft: 30, flex: 1 }}>
-              {t('method.simule')}
+            <Ionicons name="add-circle-outline" size={isSmallScreen ? scale(24) : scale(28)} color="white" />
+          </TouchableOpacity>
+          <Text style={{ 
+            textAlign: 'center', 
+            color: 'black', 
+            fontSize: isSmallScreen ? scale(12) : scale(14), 
+            fontWeight: 'bold', 
+            marginTop: isSmallScreen ? scale(2) : scale(4) 
+          }}>
+            {t('wallet_balance.recharge')}
           </Text>
-         </TouchableOpacity>
+        </View>
+
+        {/* Withdraw Button */}
+        <View style={{ flex: 1, alignItems: 'center' }}>
+          <TouchableOpacity
+            style={{ 
+              backgroundColor: '#5dade2', 
+              width: isSmallScreen ? scale(60) : scale(70), 
+              height: isSmallScreen ? scale(60) : scale(70), 
+              borderRadius: isSmallScreen ? scale(30) : scale(35), 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 1 },
+              shadowOpacity: 0.2,
+              shadowRadius: 2,
+              elevation: 2,
+            }}
+            onPress={() => navigation.navigate("Withdrawal")}
+          >
+            <Ionicons name="remove-circle-outline" size={isSmallScreen ? scale(24) : scale(28)} color="white" />
+          </TouchableOpacity>
+          <Text style={{ 
+            textAlign: 'center', 
+            color: 'black', 
+            fontSize: isSmallScreen ? scale(12) : scale(14), 
+            fontWeight: 'bold', 
+            marginTop: isSmallScreen ? scale(2) : scale(4) 
+          }}>
+            {t('wallet_balance.withdraw')}
+          </Text>
+        </View>
+
+        {/* Transfer Button */}
+        <View style={{ flex: 1, alignItems: 'center' }}>
+          <TouchableOpacity
+            style={{ 
+              backgroundColor: '#f39c12', 
+              width: isSmallScreen ? scale(60) : scale(70), 
+              height: isSmallScreen ? scale(60) : scale(70), 
+              borderRadius: isSmallScreen ? scale(30) : scale(35), 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 1 },
+              shadowOpacity: 0.2,
+              shadowRadius: 2,
+              elevation: 2,
+            }}
+            onPress={() => navigation.navigate("SelectMethod")}
+          >
+            <Ionicons name="swap-horizontal-outline" size={isSmallScreen ? scale(24) : scale(28)} color="white" />
+          </TouchableOpacity>
+          <Text style={{ 
+            textAlign: 'center', 
+            color: 'black', 
+            fontSize: isSmallScreen ? scale(12) : scale(14), 
+            fontWeight: 'bold', 
+            marginTop: isSmallScreen ? scale(2) : scale(4) 
+          }}>
+            {t('wallet_balance.transfer')}
+          </Text>
+        </View>
+      </View>
+
+      <TouchableOpacity style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#FFF',
+        borderRadius: scale(20),
+        padding: isSmallScreen ? scale(12) : scale(15),
+        marginBottom: isSmallScreen ? scale(15) : scale(20),
+        marginTop: isSmallScreen ? scale(20) : scale(30),
+      }}
+        onPress={() => navigation.navigate("PaymentSimulator")}
+      >
+        <AntDesign 
+          name="calculator" 
+          size={isSmallScreen ? scale(40) : scale(50)} 
+          color="#999" 
+          style={{ marginRight: isSmallScreen ? scale(3) : scale(5) }} 
+        />
+        <Text style={{ 
+          fontSize: isSmallScreen ? scale(14) : scale(16), 
+          fontWeight: 'bold', 
+          color: '#0D1C6A', 
+          marginLeft: isSmallScreen ? scale(20) : scale(30), 
+          flex: 1 
+        }}>
+          {t('method.simule')}
+        </Text>
+      </TouchableOpacity>
 
       <Text style={{ 
         fontWeight: '800', 
@@ -271,44 +297,54 @@ const MonSolde = () => {
         borderBottomWidth: 1, 
         borderTopWidth: 1, 
         borderColor: '#9CA3AF', 
-        paddingTop: 24, 
-        paddingBottom: 4, 
+        paddingTop: isSmallScreen ? scale(18) : scale(24), 
+        paddingBottom: scale(4), 
         borderStyle: 'dashed', 
-        fontSize: 18 
+        fontSize: isSmallScreen ? scale(16) : scale(18) 
       }}>
         {t('wallet_balance.referral_balance')}
       </Text>
 
-      <Text style={{ fontWeight: '800', color: '#374151', marginTop: 8, fontSize: 18 }}>
+      <Text style={{ 
+        fontWeight: '800', 
+        color: '#374151', 
+        marginTop: isSmallScreen ? scale(6) : scale(8), 
+        fontSize: isSmallScreen ? scale(16) : scale(18) 
+      }}>
         0,00 CAD
       </Text>
 
-      <Text style={{ fontSize: 14, color: '#9CA3AF' }}>
+      <Text style={{ 
+        fontSize: isSmallScreen ? scale(12) : scale(14), 
+        color: '#9CA3AF' 
+      }}>
         {t('wallet_balance.referral_terms')}
         <Text style={{ textDecorationLine: 'underline' }}> {t('wallet_balance.terms_conditions')}</Text>
       </Text>
 
-      <Text style={{ color: '#7ddd7d', fontWeight: 'bold', fontSize: 14, marginVertical: 16 }}>
+      <Text style={{ 
+        color: '#7ddd7d', 
+        fontWeight: 'bold', 
+        fontSize: isSmallScreen ? scale(12) : scale(14), 
+        marginVertical: isSmallScreen ? scale(12) : scale(16) 
+      }}>
         {t('wallet_balance.share_referral')}
       </Text>
     </View>
   );
 };
+
 const styles = {
   floatingHomeButton: {
     position: 'absolute',
-    top: StatusBar.currentHeight + 600,
-    right: 20,
     zIndex: 999,
     backgroundColor: 'rgba(235, 248, 255, 0.9)',
-    padding: 10,
-    borderRadius: 20,
+    borderRadius: scale(20),
     elevation: 3,
-    
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 3,
   },
- 
 };
+
 export default MonSolde;

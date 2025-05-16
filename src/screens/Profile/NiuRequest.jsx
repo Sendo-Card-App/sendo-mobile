@@ -19,7 +19,7 @@ const NiuRequest = () => {
   const navigation = useNavigation();
   const kycStatus = useSelector(state => state.kyc.status);
   const [completedSteps, setCompletedSteps] = useState({
-    1: false, // Fees step
+    1: true, // Fees step
     2: true,  // KYC step (already completed)
     3: false, // NIU Number step
     4: false  // Attestation step
@@ -91,32 +91,47 @@ const NiuRequest = () => {
   ];
 
   const handlePaymentConfirmation = async () => {
-    setShowPaymentModal(false);
-    
-    try {
-      const requestData = {
-        type: "NIU_REQUEST",
-        description: "National Identification Number request",
-        userId: userId,
-        status: "pending",
-      };
+  setShowPaymentModal(false);
+  
+  try {
+    const requestData = {
+      type: "NIU_REQUEST",
+      description: "National Identification Number request",
+      userId: userId,
+      status: "pending",
+    };
 
-      const response = await niuRequest(requestData).unwrap();
+    const response = await niuRequest(requestData).unwrap();
+    
+    // Check for 201 status code explicitly
+    if (response.status === 201 || response.success) {
+      // Mark fees step as completed
+      setCompletedSteps(prev => ({...prev, 1: true}));
       
-      if (response.success) {
-        // Mark fees step as completed
-        setCompletedSteps(prev => ({...prev, 1: true}));
-        
-        showToast('success', t('niu.success.title'), t('niu.success.message'));
-        setTimeout(() => navigation.navigate('MainTabs'), 500);
-      } else {
-        showToast('error', t('niu.errors.title'), response.message || t('niu.errors.technical'));
-      }
-    } catch (error) {
-      console.error('NIU request error:', error);
-      showToast('error', t('niu.errors.title'), error.data?.message || t('niu.errors.technical'));
+      showToast('success', t('niu.success.title'), t('niu.success.message'));
+      
+      // Navigate after toast is shown (500ms delay matches toast display)
+      setTimeout(() => navigation.navigate('MainTabs'), 500);
+    } else {
+      // Handle non-201 success cases if your API has them
+      showToast('error', t('niu.errors.title'), 
+        response.message || t('niu.errors.unexpectedSuccess'));
     }
-  };
+  } catch (error) {
+    console.error('NIU request error:', error);
+    
+    // Handle different error cases
+    if (error.status === 401) {
+      showToast('error', t('niu.errors.title'), t('niu.errors.unauthorized'));
+    } else if (error.status === 400) {
+      showToast('error', t('niu.errors.title'), 
+        error.data?.message || t('niu.errors.badRequest'));
+    } else {
+      showToast('error', t('niu.errors.title'), 
+        error.data?.message || t('niu.errors.technical'));
+    }
+  }
+};
 
   const handlePayPress = () => {
     if (!termsAccepted || !paymentAccepted) {

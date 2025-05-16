@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Modal, Image, ScrollView } from 'react-native';
 import Loader from "./Loader";
 import Toast from 'react-native-toast-message';
+import { useTranslation } from 'react-i18next';
 
 const AddSecondPhoneModal = ({
   visible,
@@ -14,6 +15,7 @@ const AddSecondPhoneModal = ({
   const [phone, setPhone] = useState('');
   const [code, setCode] = useState('');
   const [otpSent, setOtpSent] = useState(false);
+   const { t } = useTranslation();
   const [localLoading, setLocalLoading] = useState(false);
   const [countries, setCountries] = useState([]);
   const [selectedCountry, setSelectedCountry] = useState({
@@ -78,28 +80,14 @@ const AddSecondPhoneModal = ({
     }
   };
 
-  return (
-    <Modal
-      visible={visible}
-      transparent={true}
-      animationType="slide"
-      onRequestClose={onClose}
-    >
-      <View style={{ 
-        flex: 1, 
-        justifyContent: 'center', 
-        backgroundColor: 'rgba(0,0,0,0.5)' 
-      }}>
-        <View style={{ 
-          backgroundColor: 'white', 
-          margin: 20, 
-          padding: 20, 
-          borderRadius: 10 
-        }}>
+   return (
+    <Modal visible={visible} transparent={true} animationType="slide" onRequestClose={onClose}>
+      <View style={{ flex: 1, justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+        <View style={{ backgroundColor: 'white', margin: 20, padding: 20, borderRadius: 10 }}>
           {!otpSent ? (
             <>
               <Text style={{ fontSize: 18, marginBottom: 10 }}>
-                Add Second Phone Number
+                {t('addSecondPhone.title')}
               </Text>
               
               <View style={{ flexDirection: 'row', marginBottom: 10 }}>
@@ -126,7 +114,7 @@ const AddSecondPhoneModal = ({
                 </TouchableOpacity>
                 
                 <TextInput
-                  placeholder="Enter phone number"
+                  placeholder={t('addSecondPhone.phonePlaceholder')}
                   value={phone}
                   onChangeText={setPhone}
                   keyboardType="phone-pad"
@@ -142,12 +130,6 @@ const AddSecondPhoneModal = ({
                 />
               </View>
               
-              {error && (
-                <Text style={{ color: 'red', marginBottom: 10 }}>
-                  {error}
-                </Text>
-              )}
-              
               <TouchableOpacity
                 onPress={handleSendOtp}
                 style={{ 
@@ -161,22 +143,24 @@ const AddSecondPhoneModal = ({
                 {localLoading ? (
                   <Loader small white />
                 ) : (
-                  <Text style={{ color: 'white', fontWeight: 'bold' }}>Send OTP</Text>
+                  <Text style={{ color: 'white', fontWeight: 'bold' }}>
+                    {t('addSecondPhone.sendOtp')}
+                  </Text>
                 )}
               </TouchableOpacity>
             </>
           ) : (
             <>
-                    <Image
-                      className="w-40 h-40"
-                      source={require("../images/Artboard 5.png")}
-                    />
+              <Image
+                className="w-40 h-40"
+                source={require("../images/Artboard 5.png")}
+              />
               <Text style={{ fontSize: 18, marginBottom: 10 }}>
-                Enter OTP sent to {selectedCountry.code}{phone}
+                {t('addSecondPhone.otpTitle', { phone: `${selectedCountry.code}${phone}` })}
               </Text>
               
               <TextInput
-                placeholder="Enter 6-digit OTP"
+                placeholder={t('addSecondPhone.otpPlaceholder')}
                 value={code}
                 onChangeText={setCode}
                 keyboardType="number-pad"
@@ -193,12 +177,6 @@ const AddSecondPhoneModal = ({
                 }}
               />
               
-              {error && (
-                <Text style={{ color: 'red', marginBottom: 10 }}>
-                  {error}
-                </Text>
-              )}
-              
               <TouchableOpacity
                 onPress={handleVerify}
                 style={{ 
@@ -212,7 +190,9 @@ const AddSecondPhoneModal = ({
                 {localLoading ? (
                   <Loader small white />
                 ) : (
-                  <Text style={{ color: 'white', fontWeight: 'bold' }}>Verify OTP</Text>
+                  <Text style={{ color: 'white', fontWeight: 'bold' }}>
+                    {t('addSecondPhone.verifyOtp')}
+                  </Text>
                 )}
               </TouchableOpacity>
             </>
@@ -225,13 +205,11 @@ const AddSecondPhoneModal = ({
               setCode('');
               onClose();
             }}
-            style={{ 
-              marginTop: 15,
-              padding: 10,
-              alignItems: 'center'
-            }}
+            style={{ marginTop: 15, padding: 10, alignItems: 'center' }}
           >
-            <Text style={{ color: 'red', fontWeight: 'bold' }}>Cancel</Text>
+            <Text style={{ color: 'red', fontWeight: 'bold' }}>
+              {t('addSecondPhone.cancel')}
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -243,25 +221,10 @@ const AddSecondPhoneModal = ({
         animationType="slide"
         onRequestClose={() => setShowCountryPicker(false)}
       >
-        <View style={{ 
-          flex: 1, 
-          justifyContent: 'center', 
-          backgroundColor: 'rgba(0,0,0,0.5)' 
-        }}>
-          <View style={{ 
-            backgroundColor: 'white', 
-            margin: 20, 
-            padding: 20, 
-            borderRadius: 10,
-            maxHeight: '70%'
-          }}>
-            <Text style={{ 
-              fontSize: 18, 
-              marginBottom: 15,
-              fontWeight: 'bold',
-              textAlign: 'center'
-            }}>
-              Select Country
+        <View style={{ flex: 1, justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <View style={{ backgroundColor: 'white', margin: 20, padding: 20, borderRadius: 10, maxHeight: '70%' }}>
+            <Text style={{ fontSize: 18, marginBottom: 15, fontWeight: 'bold', textAlign: 'center' }}>
+              {t('addSecondPhone.selectCountry')}
             </Text>
             
             <ScrollView>
@@ -303,7 +266,9 @@ const AddSecondPhoneModal = ({
                 marginTop: 15
               }}
             >
-              <Text style={{ fontWeight: 'bold' }}>Cancel</Text>
+              <Text style={{ fontWeight: 'bold' }}>
+                {t('addSecondPhone.countryPickerCancel')}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>

@@ -352,17 +352,17 @@ const DrawerComponent = ({ navigation }) => {
                       </View>
                     </TouchableOpacity>
                      <TouchableOpacity
-                                className="flex-row gap-2 my-2 mb-5"
-                                onPress={() => navigation2.navigate("NiuRequest")}
-                              >
-                                <Feather name="file-text" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
-                                <View>
-                                  <Text className="font-bold text-gray-500">{t('drawer.request1')}</Text>
-                                  <Text className="text-sm text-gray-500">
-                                   {t('drawer.sub1')}
-                                  </Text>
-                                </View>
-                              </TouchableOpacity>
+                      className="flex-row gap-2 my-2 mb-5"
+                      onPress={() => navigation2.navigate("NiuRequest")}
+                    >
+                      <Feather name="file-text" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
+                      <View>
+                        <Text className="font-bold text-gray-500">{t('drawer.request1')}</Text>
+                        <Text className="text-sm text-gray-500">
+                          {t('drawer.sub1')}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
 
           <TouchableOpacity
             onPress={() => navigation2.navigate("Payment")}
@@ -374,6 +374,15 @@ const DrawerComponent = ({ navigation }) => {
               <Text className="text-sm text-gray-500">
                 Gérez vos méthodes de paiement
               </Text>
+            </View>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => navigation2.navigate("AddFavorite")}
+            className="flex-row gap-2 my-2 mb-5"
+          >
+            <MaterialCommunityIcons name="heart" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
+            <View>
+              <Text className="font-bold text-gray-500">{t('drawer.favorite')}</Text>
             </View>
           </TouchableOpacity>
 
