@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, TextInput } from "react-native";
+import { View, Text, TouchableOpacity, TextInput, Platform,Dimensions } from "react-native";
 import React from "react";
 import { StatusBar } from "expo-status-bar";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
@@ -6,6 +6,10 @@ import { FontAwesome6 } from "@expo/vector-icons";
 import { AntDesign, EvilIcons, Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useTranslation } from 'react-i18next';
+
+// Get screen dimensions
+const { width } = Dimensions.get('window');
+const isSmallScreen = width < 375; // iPhone SE and similar small devices
 
 const Payment = () => {
   const navigation = useNavigation();
