@@ -109,6 +109,19 @@ const Settings = ({ navigation }) => {
         />
       </View>
 
+      {/* <TouchableOpacity
+        className="bg-blue-50 mx-4 mt-3 rounded-lg"
+        onPress={() => navigation.navigate('Chat')}
+      >
+        <View className="px-5 py-4 flex-row items-center">
+           <Ionicons name="chatbubble-outline" size={24} color="black" />
+          <View className="ml-3 flex-1">
+            <Text className="text-lg font-semibold">{t('client')}</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color="gray" />
+        </View>
+      </TouchableOpacity> */}
+
       {/* Change Password */}
       <TouchableOpacity
         className="bg-blue-50 mx-4 mt-3 rounded-lg"

@@ -6,6 +6,7 @@ import { StyleSheet, View, Text, TouchableOpacity,Platform } from "react-native"
 import { Provider } from "react-redux";
 import { store } from "./src/store/store";
 import Toast from "react-native-toast-message";
+import { useTranslation } from 'react-i18next'; 
 import './i18n';
 import NetworkProvider from './src/services/NetworkProvider';
 import { NavigationContainer } from "@react-navigation/native";
@@ -81,7 +82,9 @@ const Tab = createBottomTabNavigator();
 
 // Custom tab bar component
 function CustomTabBar({ state, descriptors, navigation }) {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  
   return (
     <View style={styles.tabContainer}>
       {state.routes.map((route, index) => {
@@ -134,7 +137,7 @@ function CustomTabBar({ state, descriptors, navigation }) {
               color={isFocused ? Colors.primary : Colors.text} 
             />
             <Text style={[styles.tabLabel, { color: isFocused ? Colors.primary : Colors.text }]}>
-              {options.title || route.name}
+              {options.title || t(`tabs.${route.name.toLowerCase().replace('tab', '')}`)}
             </Text>
           </TouchableOpacity>
         );
@@ -145,6 +148,8 @@ function CustomTabBar({ state, descriptors, navigation }) {
 
 // Tab Navigator
 function MainTabs() {
+  const { t } = useTranslation();
+  
   return (
     <Tab.Navigator
       tabBar={(props) => <CustomTabBar {...props} />}
@@ -155,22 +160,22 @@ function MainTabs() {
       <Tab.Screen 
         name="HomeTab" 
         component={Home} 
-        options={{ title: 'Home' }}
+        options={{ title: t('tabs.home') }}
       />
       <Tab.Screen 
         name="ManageVirtualCardTab" 
         component={ManageVirtualCard} 
-        options={{ title: 'Cards' }}
+        options={{ title: t('tabs.cards') }}
       />
       <Tab.Screen 
         name="TransferTab"
         component={History} 
-        options={{ title: 'History' }}
+        options={{ title: t('tabs.history') }}
       />
       <Tab.Screen 
         name="SettingsTab" 
         component={Settings} 
-        options={{ title: 'Settings' }}
+        options={{ title: t('tabs.settings') }}
       />
     </Tab.Navigator>
   );
@@ -195,54 +200,110 @@ function AuthStack() {
 
 // Main Stack Navigator
 function MainStack() {
+  const { t } = useTranslation();
   return (
    <Stack.Navigator
-  screenOptions={({ navigation }) => ({
-    headerStyle: { backgroundColor: Colors.primary },
-    headerTitleStyle: { fontSize: 18, fontWeight: "bold", color: Colors.text },
-    headerTitleAlign: "center",
-    headerLeft: () => (
-      <TouchableOpacity onPress={() => navigation.goBack()}>
-        {Platform.OS === 'ios' ? (
-          <Text style={{ fontSize: 24, padding: 12, color: Colors.text, paddingLeft: Platform.OS === 'ios' ? 8 : 12, }}>&lt;</Text>
-        ) : (
-          <AntDesign name="arrowleft" size={20} color={Colors.text} style={{ padding: 12 }} />
-        )}
-      </TouchableOpacity>
-    ),
-  })}
->
+      screenOptions={({ navigation }) => ({
+        headerStyle: { 
+          backgroundColor: Colors.primary,
+          height: 60, 
+        },
+        headerTitleStyle: { 
+          fontSize: 18, 
+          fontWeight: "bold", 
+          color: Colors.text,
+         
+          marginTop: Platform.OS === 'ios' ? 0 : -3,
+        },
+        headerTitleAlign: "center",
+        headerLeftContainerStyle: {
+         
+          paddingTop: Platform.OS === 'ios' ? 0 : 4,
+        },
+        headerLeft: () => (
+          <TouchableOpacity 
+            onPress={() => navigation.goBack()}
+            style={{ 
+              flexDirection: 'row',
+              alignItems: 'center',
+              height: '100%', 
+              paddingHorizontal: 12,
+            }}
+          >
+            {Platform.OS === 'ios' ? (
+              <Text style={{ 
+                fontSize: 24, 
+                color: Colors.text,
+               
+                marginTop: Platform.OS === 'ios' ? -2 : 0,
+              }}>&lt;</Text>
+            ) : (
+              <AntDesign 
+                name="arrowleft" 
+                size={20} 
+                color={Colors.text}
+                style={{ marginTop: 2 }}
+              />
+            )}
+          </TouchableOpacity>
+        ),
+      })}
+    >
       <Stack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
-      <Stack.Screen name="Account" component={Account} options={{ headerTitle: "Compte" }} />
-       <Stack.Screen name="NiuRequest" component={NiuRequest} options={{ headerTitle: "Demander un NIU" }} />
+      <Stack.Screen 
+        name="Account" 
+        component={Account} 
+        options={{ headerTitle: t('screens.account') }} 
+      />
+      <Stack.Screen 
+        name="NiuRequest" 
+        component={NiuRequest} 
+        options={{ headerTitle: t('screens.niuRequest') }} 
+      />
       <Stack.Screen name="BeneficiaryScreen" component={BeneficiaryScreen} options={{ headerShown: false }} />
       <Stack.Screen name="BeneficiarySelection" component={BeneficiarySelection} options={{ headerShown: false }} />
-      <Stack.Screen name="AboutUs" component={AboutUs} options={{ headerTitle: "À propos de nous" }} />
+      <Stack.Screen 
+        name="AboutUs" 
+        component={AboutUs} 
+        options={{ headerTitle: t('screens.aboutUs') }} 
+      />
+      <Stack.Screen 
+        name="ChangePassword" 
+        component={ChangePassword} 
+        options={{ headerTitle: t('screens.changePassword') }} 
+      />
       <Stack.Screen name="BeneficiaryDetails" component={BeneficiaryDetails} options={{ headerShown: false }} />
-      <Stack.Screen name="ChangePassword" component={ChangePassword} options={{ headerTitle: "Changer le mot de passe" }} />
       <Stack.Screen name="PaymentMethod" component={PaymentMethod} options={{ headerShown: false }} />
       <Stack.Screen name="Curency" component={Curency} options={{ headerShown: false }} />
       <Stack.Screen name="BankCard" component={BankCard} options={{ headerShown: false }} />
       <Stack.Screen name="BankCard1" component={BankCard1} options={{ headerShown: false }} />
-      <Stack.Screen name="AddBeneficiary" component={AddBeneficiary} options={{ headerTitle: " Envoyez Gratuitement de l'argent" }} />
-      <Stack.Screen name="SelectMethod" component={SelectMethod} options={{ headerTitle: "Sélectionner une méthode" }} />
-      <Stack.Screen name="BankDepositRecharge" component={BankDepositRecharge} options={{headerTitle:" Rechargement par dépôt bancaire"}} />
-      <Stack.Screen name="TransfertFund" component={TransfertFund} options={{ headerTitle: "Transférer des fonds" }} />
-      <Stack.Screen name="PaymentSimulator" component={PaymentSimulator} options={{ headerTitle: " Estimateur de paiement enligne" }} />
-      <Stack.Screen name="MethodType" component={MethodType} options={{headerTitle:"Sélectionner une méthode" }} />
-      <Stack.Screen name="WalletTransfer" component={WalletTransfer} options={{ headerTitle: "Transfert de portefeuille" }} />
-      <Stack.Screen name="AddContact" component={AddContact} options={{ headerTitle: "Ajouter un contact" }} />
-      <Stack.Screen name="AddFavorite" component={AddFavorite} options={{ headerTitle: "Ajouter un contact favoris" }} />
+     <Stack.Screen 
+        name="AddBeneficiary" 
+        component={AddBeneficiary} 
+        options={{ headerTitle: t('screens.addBeneficiary') }} 
+      />
+      <Stack.Screen 
+        name="SelectMethod" 
+        component={SelectMethod} 
+        options={{ headerTitle: t('screens.selectMethod') }} 
+      />
+      <Stack.Screen name="BankDepositRecharge" component={BankDepositRecharge} options={{ headerTitle: t('screens.bankDeposit') }}/>
+      <Stack.Screen name="TransfertFund" component={TransfertFund} options={{ headerTitle: t('screens.transferFunds') }} />
+      <Stack.Screen name="PaymentSimulator" component={PaymentSimulator} options={{ headerTitle: t('screens.PaymentSimulator') }} />
+      <Stack.Screen name="MethodType" component={MethodType} options={{ headerTitle: t('screens.selectMethod') }} />
+      <Stack.Screen name="WalletTransfer" component={WalletTransfer} options={{ headerTitle: t('screens.walletTransfer') }} />
+      <Stack.Screen name="AddContact" component={AddContact} options={{ headerTitle: t('screens.addContact') }} />
+      <Stack.Screen name="AddFavorite" component={AddFavorite} options={{ headerTitle: t('screens.addFavorite') }} />
       <Stack.Screen name="ConﬁrmeTheTransfer" component={ConﬁrmeTheTransfer} options={{ headerShown: false }} />
       <Stack.Screen name="Success" component={Success} options={{ headerShown: false }} />
-      <Stack.Screen name="Support" component={Support} />
-      <Stack.Screen name="Settings" component={Settings}/>
-      <Stack.Screen name="Payment" component={Payment} />
-      <Stack.Screen name="History" component={History}  />
-      <Stack.Screen name="Receipt" component={Receipt} />
-      <Stack.Screen name="NotificationComponent" component={NotificationComponent} options={{ headerTitle: "Notification" }} />
-      <Stack.Screen name="MonSolde" component={MonSolde} options={{ headerTitle: "Mon Solde" }} />
-      <Stack.Screen name="CreateVirtualCard" component={CreateVirtualCard} options={{ headerTitle: "Créer une carte virtuelle" }} />
+      <Stack.Screen name="Support" component={Support} options={{ headerTitle: t('screens.support') }}/>
+      <Stack.Screen name="Settings" component={Settings} options={{ headerTitle: t('screens.setting') }}/>
+      <Stack.Screen name="Payment" component={Payment} options={{ headerTitle: t('screens.payment') }} />
+      <Stack.Screen name="History" component={History} options={{ headerTitle: t('screens.history') }} />
+      <Stack.Screen name="Receipt" component={Receipt} options={{ headerTitle: t('screens.receipt') }}/>
+      <Stack.Screen name="NotificationComponent" component={NotificationComponent} options={{ headerTitle: t('screens.notification') }} />
+      <Stack.Screen name="MonSolde" component={MonSolde} options={{ headerTitle: t('screens.myBalance') }} />
+      <Stack.Screen name="CreateVirtualCard" component={CreateVirtualCard}options={{ headerTitle: t('screens.createCard') }} />
       <Stack.Screen name="VerifyIdentity" component={VerifyIdentity} options={{ headerShown: false }} />
       <Stack.Screen name="ManageVirtualCard" component={ManageVirtualCard} options={{ headerShown: false }} />
       <Stack.Screen name="KycResume" component={KycResume} options={{ headerShown: false }} />

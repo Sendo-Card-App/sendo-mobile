@@ -17,6 +17,7 @@
 "switch_on": "On",
 "switch_off": "Off",
 "change_password": " Create a new password",
+"client": "Talk with us",
 "choose_language": "Choose Language",
 "old_password": "Old Password",
 "new_password": "New Password",
@@ -355,7 +356,7 @@
     },
     "paymentModal": {
       "title": "Payment Confirmation",
-      "message": "Confirm payment of {amount} FCFA for NIU creation?",
+      "message": "Confirm payment for NIU creation?",
       "confirm": "Confirm",
       "cancel": "Cancel"
     },
@@ -621,12 +622,6 @@
     "myBalance": "My Balance",
     "createVirtualCard": "Create Virtual Card"
   },
-  "tabs": {
-    "home": "Home",
-    "cards": "Cards",
-    "transfers": "Transfers",
-    "settings": "Settings"
-  },
   "common2": {
     "back": "Back"
   },
@@ -694,6 +689,8 @@
     "permissionMessage": "Access to your contacts is required to use this feature.",
     "settings": "Open Settings",
     "loading": "Loading contacts...",
+    "favorites": "Favorites",
+    "contact": "Contacts",
     "noContacts": "No contacts available",
     "syncError": "Failed to load contacts",
     "noPhoneNumber": "This contact doesn't have a phone number",
@@ -712,7 +709,37 @@
     "addToFavorites": "Add to favorites",
     "searchPlaceholder": "Search contacts...",
     "noName": "No name",
-    "openSettings": "Open Settings"
+    "openSettings": "Open Settings",
+    "selectFromPhone": "Select from phone contacts",
+    "createNewContact": "Create new contact manually"
+  },
+  "tabs": {
+    "home": "Home",
+    "cards": "Cards",
+    "history": "History",
+    "settings": "Settings"
+  },
+  "screens": {
+    "account": "Account",
+    "niuRequest": "Request NIU",
+    "aboutUs": "About Us",
+    "changePassword": "Change Password",
+    "addBeneficiary": "Send Money Free",
+    "selectMethod": "Select Method",
+    "bankDeposit": "Bank Deposit Recharge",
+    "transferFunds": "Transfer Funds",
+    "paymentSimulator": "Online Payment Estimator",
+    "walletTransfer": "Wallet Transfer",
+    "addContact": "Add Contact",
+    "addFavorite": "Add Favorite Contact",
+    "notification": "Notification",
+    "myBalance": "My Balance",
+    "createCard": "Create Virtual Card",
+    "support": "Support",
+    "payment": "Payments",
+      "history": "History",
+       "setting": "Settings",
+        "receipt": "Receipt"
   }
 
 

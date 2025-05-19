@@ -14,15 +14,15 @@ export const contactsApi = createApi({
   tagTypes: ['Contacts', 'Favorites'],
   
   endpoints: (builder) => ({
-    synchronizeContacts: builder.mutation({
-      query: (name,phone) => ({
-        url: '/contacts/synchronize',
-        method: 'POST',
-        body: { name,phone },
-      }),
-      invalidatesTags: ['Contacts'],
-    }),
-    
+   // services/Contact/contactsApi.js
+synchronizeContacts: builder.mutation({
+  query: (payload) => ({
+    url: '/contacts/synchronize',
+    method: 'POST',
+    body:  payload , 
+  }),
+  invalidatesTags: ['Contacts'],
+}),
     getSynchronizedContacts: builder.query({
       query: (userId) => `/contacts/users/${userId}`,
       providesTags: ['Contacts'],

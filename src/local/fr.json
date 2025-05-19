@@ -19,6 +19,7 @@
   "switch_on": "Activé",
   "switch_off": "Désactivé",
   "change_password": "Créer un nouveau Mot de Passe",
+  "client": "Discuter avec nous",
 "choose_language": "Choisir la Langue",
 "old_password": "Ancien Mot de Passe",
 "new_password": "Nouveau Mot de Passe",
@@ -209,7 +210,7 @@
 },
 "wallet_transfer": {
     "title": "Transfert de Portefeuille",
-    "available_balance": "Solde Non-disponible",
+    "available_balance": "Solde Disponible",
     "recipient_info": "Recharger",
     "recipient_id": "Numéro de compte",
     "recipient_name": "Nom du bénéficiaire",
@@ -354,7 +355,7 @@
     },
      "paymentModal": {
       "title": "Confirmation de paiement",
-      "message": "Confirmez-vous le paiement de {amount} FCFA pour la création du NIU ?",
+      "message": "Confirmez-vous le paiement pour la création du NIU ?",
       "confirm": "Confirmer",
       "cancel": "Annuler"
     },
@@ -621,12 +622,6 @@
     "myBalance": "Mon Solde",
     "createVirtualCard": "Créer une carte virtuelle"
   },
-  "tabs": {
-    "home": "Accueil",
-    "cards": "Cartes",
-    "transfers": "Transferts",
-    "settings": "Paramètres"
-  },
   "common2": {
     "back": "Retour"
   },
@@ -704,6 +699,8 @@
     "addSuccess": "Contact ajouté aux favoris !",
     "addError": "Une erreur est survenue lors de l'ajout. Veuillez réessayer.",
     "addFavorite": "Ajouter un favori",
+    "favorites": "Favoris",
+    "contact": "Contacts",
     "beneficiaryName": "Nom du bénéficiaire",
     "namePlaceholder": "Entrez le nom",
     "phoneNumber": "Numéro de téléphone",
@@ -713,7 +710,37 @@
     "addToFavorites": "Ajouter aux favoris",
     "searchPlaceholder": "Rechercher des contacts...",
     "noName": "Aucun nom",
-    "openSettings": "Ouvrir les paramètres"
+    "openSettings": "Ouvrir les paramètres",
+    "selectFromPhone": "Sélectionner depuis les contacts",
+    "createNewContact": "Créer un nouveau contact manuellement"
+  },
+  "tabs": {
+    "home": "Accueil",
+    "cards": "Cartes",
+    "history": "Historique",
+    "settings": "Paramètres"
+  },
+  "screens": {
+    "account": "Compte",
+    "niuRequest": "Demander un NIU",
+    "aboutUs": "À propos de nous",
+    "changePassword": "Changer le mot de passe",
+    "addBeneficiary": "Envoyez Gratuitement de l'argent",
+    "selectMethod": "Sélectionner une méthode",
+    "bankDeposit": "Rechargement par dépôt bancaire",
+    "transferFunds": "Transférer des fonds",
+    "paymentSimulator": "Estimateur de paiement enligne",
+    "walletTransfer": "Transfert de portefeuille",
+    "addContact": "Ajouter un contact",
+    "addFavorite": "Ajouter un contact favoris",
+    "notification": "Notification",
+    "myBalance": "Mon Solde",
+    "createCard": "Créer une carte virtuelle",
+    "support": "Support",
+     "payment": "Paiements",
+      "history": "Historiques",
+       "setting": "Paramètres",
+        "receipt": "Recu"
   }
 
 
