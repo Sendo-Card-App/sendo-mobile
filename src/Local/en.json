@@ -313,6 +313,13 @@
 },
 "camera": {
 "selfie_guide": "Take a selfie with your ID",
+"id_front_guide": "Take a picture of the front of your ID",
+      "id_back_guide": "Take a picture of the back of your ID",
+        "passport_guide": "Take a picture of your passport",
+        "driving_license_guide": "Take a picture of your driver's license",
+        "id_card_guide": "Take a picture of your ID card",
+        "utility_bill_guide": "Take a picture of your utility bill",
+      
 "niu_guide": "Take a photo of your NIU document",
 "address_guide": "Take a photo of your proof of address",
 "default_guide": "Take a photo",
@@ -350,7 +357,7 @@
       "feesAmount": "Fees amount",
       "currentBalance": "Your current balance",
       "termsAccept": "I accept the terms and authorize Sendo to create my NIU",
-      "paymentAccept": "I authorize the deduction of 3,000 FCFA",
+      "paymentAccept": "I authorize the deduction of ",
       "payButton": "Pay for NIU",
       "processing": "Processing..."
     },

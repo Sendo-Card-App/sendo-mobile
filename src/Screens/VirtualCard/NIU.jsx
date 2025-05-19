@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { AntDesign, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 import * as DocumentPicker from 'expo-document-picker';
+import * as FileSystem from 'expo-file-system';
 import * as ImagePicker from 'expo-image-picker';
 import TopLogo from "../../images/TopLogo.png";
 import { useDispatch } from 'react-redux';
@@ -17,71 +18,79 @@ const NIU = ({ navigation }) => {
   const [selectedDocument, setSelectedDocument] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   
-  const handleTakePhoto = async () => {
-    try {
-      setIsProcessing(true);
-      const { status } = await ImagePicker.requestCameraPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert(t('niu.cameraPermissionDenied'));
-        setIsProcessing(false);
+ const handleTakePhoto = () => {
+  navigation.navigate("Camera", {
+    purpose: 'niu',
+    onCapture: (image) => {
+    dispatch(setNiuDocument(image));
+     navigation.navigate("KycResume");
+          }
+  });
+};
+
+ const handlePickDocument = async () => {
+  try {
+    // First try to pick from gallery
+    const galleryResult = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.8,
+    });
+
+    if (!galleryResult.canceled) {
+      const asset = galleryResult.assets[0];
+      const fileInfo = await FileSystem.getInfoAsync(asset.uri);
+      const fileSizeMB = fileInfo.size / (1024 * 1024);
+
+      if (fileSizeMB > 5) {
+        Alert.alert(
+          t('niu.fileTooLarge'),
+          t('niu.imageSizeLimit')
+        );
         return;
       }
-      
-      const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [4, 3],
-        quality: 0.7,
+
+      setSelectedDocument({
+        name: `niu_document_${Date.now()}.jpg`,
+        uri: asset.uri,
+        type: 'image/jpeg'
       });
-
-      if (!result.canceled && result.assets?.[0]?.uri) {
-        const image = result.assets[0];
-        const document = {
-          uri: image.uri,
-          type: image.type || 'image/jpeg',
-          name: `niu_photo_${Date.now()}.jpg`
-        };
-        setSelectedDocument(document);
-      }
-    } catch (error) {
-      console.error('Error taking photo:', error);
-      Alert.alert(t('niu.imageSelectionError'));
-    } finally {
-      setIsProcessing(false);
+      return;
     }
-  };
 
-  const handleUploadDocument = async () => {
-    try {
-      setIsProcessing(true);
-      const result = await DocumentPicker.getDocumentAsync({
-        type: ['application/pdf', 'image/jpeg', 'image/png'],
-        copyToCacheDirectory: true,
+    // If user canceled image picker, try document picker
+    const docResult = await DocumentPicker.getDocumentAsync({
+      type: ['image/*', 'application/pdf'],
+      copyToCacheDirectory: true
+    });
+
+    if (docResult.type === 'success') {
+      const fileInfo = await FileSystem.getInfoAsync(docResult.uri);
+      const fileSizeMB = fileInfo.size / (1024 * 1024);
+
+      if (fileSizeMB > 5) {
+        Alert.alert(
+          t('niu.fileTooLarge'),
+          t('niu.documentSizeLimit')
+        );
+        return;
+      }
+
+      setSelectedDocument({
+        name: docResult.name,
+        uri: docResult.uri,
+        type: docResult.mimeType || 'application/pdf'
       });
-
-      if (result.type === 'success') {
-        let fileType = result.mimeType;
-        if (!fileType) {
-          const extension = result.name.split('.').pop().toLowerCase();
-          if (extension === 'pdf') fileType = 'application/pdf';
-          else if (extension === 'jpg' || extension === 'jpeg') fileType = 'image/jpeg';
-          else if (extension === 'png') fileType = 'image/png';
-        }
-
-        const document = {
-          uri: result.uri,
-          type: fileType || 'application/pdf',
-          name: result.name || `niu_document_${Date.now()}.${fileType?.split('/')[1] || 'pdf'}`
-        };
-        setSelectedDocument(document);
-      }
-    } catch (error) {
-      console.error('Error uploading document:', error);
-      Alert.alert(t('niu.documentUploadError'));
-    } finally {
-      setIsProcessing(false);
     }
-  };
+  } catch (err) {
+    console.error("Document selection error:", err);
+    Alert.alert(
+      t('niu.error'),
+      t('niu.documentSelectionError')
+    );
+  }
+};
 
   const handleContinue = async () => {
     if (!selectedDocument) {
@@ -154,7 +163,7 @@ const NIU = ({ navigation }) => {
                 setSelectedDocument(null);
               }}
             >
-              <Text className="text-red-500">{t('niu.removeDocument')}</Text>
+              <Text className="text-red-500">Retire le document</Text>
             </TouchableOpacity>
           </View>
         ) : (
@@ -176,11 +185,11 @@ const NIU = ({ navigation }) => {
         </View>
 
         {/* Two Option Buttons */}
-        <View className="w-[85%] mx-auto mt-4 mb-2 space-y-4">
+        <View className="w-[85%] mx-auto mt-1 mb-2 space-y-4">
           <TouchableOpacity
             className={`flex-row items-center justify-center py-3 rounded-full border-2 ${selectedDocument?.type?.includes('image') ? 'border-[#7ddd7d] bg-[#7ddd7d]/20' : 'border-gray-300'}`}
-            onPress={() => navigation.navigate("Camera")}
-            disabled={isProcessing}
+             onPress={handleTakePhoto}
+             disabled={isProcessing}
           >
             <MaterialIcons 
               name="photo-camera" 
@@ -193,8 +202,8 @@ const NIU = ({ navigation }) => {
           </TouchableOpacity>
 
           <TouchableOpacity
-            className={`flex-row items-center justify-center mt-5 py-3 rounded-full border-2 ${selectedDocument?.type?.includes('application/pdf') ? 'border-[#7ddd7d] bg-[#7ddd7d]/20' : 'border-gray-300'}`}
-            onPress={handleUploadDocument}
+            className={`flex-row items-center justify-center mt-1 py-3 rounded-full border-2 ${selectedDocument?.type?.includes('application/pdf') ? 'border-[#7ddd7d] bg-[#7ddd7d]/20' : 'border-gray-300'}`}
+            onPress={handlePickDocument}
             disabled={isProcessing}
           >
             <MaterialIcons 
@@ -211,7 +220,7 @@ const NIU = ({ navigation }) => {
         {/* Submit Button - Shows when any document is selected */}
         {selectedDocument && (
           <TouchableOpacity
-            className="mb-2 mt-auto py-3 rounded-full w-[85%] mx-auto bg-[#7ddd7d]"
+            className=" py-3 rounded-full w-[85%] mx-auto bg-[#7ddd7d]"
             onPress={handleContinue}
             disabled={isProcessing}
           >

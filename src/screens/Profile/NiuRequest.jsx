@@ -203,7 +203,7 @@ const NiuRequest = () => {
           />
           
           <CheckBox
-            title={t('niu.request.paymentAccept')}
+           title={`${t('niu.request.paymentAccept')} ${feeAmount.toLocaleString()} FCFA`}
             checked={paymentAccepted}
             onPress={() => setPaymentAccepted(!paymentAccepted)}
             containerStyle={{ backgroundColor: 'transparent', borderWidth: 0 }}
