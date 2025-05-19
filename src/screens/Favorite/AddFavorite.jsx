@@ -21,11 +21,38 @@ import {
   useSynchronizeContactsMutation,
   useAddFavoriteMutation,
   useGetFavoritesQuery,
-  useRemoveFavoriteMutation 
+  useRemoveFavoriteMutation,
+  useGetSynchronizedContactsQuery
 } from '../../services/Contact/contactsApi';
 import Loader from "../../components/Loader";
 
 const { width, height } = Dimensions.get('window');
+
+// Phone number helper functions
+const isValidPhoneNumber = (phoneNumber) => {
+  const cleaned = phoneNumber.replace(/[^\d+]/g, '');
+  const cameroonRegex = /^(\+237|237)?[236]\d{8}$/;
+  const canadaRegex = /^(\+1|1)?\d{10}$/;
+  return cameroonRegex.test(cleaned) || canadaRegex.test(cleaned);
+};
+
+const formatPhoneNumber = (phoneNumber) => {
+  const cleaned = phoneNumber.replace(/[^\d+]/g, '');
+  
+  // Format Cameroon numbers
+  if (/^(\+237|237)?[236]\d{8}$/.test(cleaned)) {
+    return cleaned.startsWith('237') ? `+${cleaned}` : 
+           cleaned.startsWith('+237') ? cleaned : `+237${cleaned}`;
+  }
+  
+  // Format Canada numbers
+  if (/^(\+1|1)?\d{10}$/.test(cleaned)) {
+    return cleaned.startsWith('1') ? `+${cleaned}` : 
+           cleaned.startsWith('+1') ? cleaned : `+1${cleaned}`;
+  }
+  
+  return phoneNumber;
+};
 
 const AddFavorite = () => {
   const { t } = useTranslation();
@@ -37,15 +64,24 @@ const AddFavorite = () => {
   const [synchronizeContacts] = useSynchronizeContactsMutation();
   const [addFavorite, { isLoading: isAddingFavorite }] = useAddFavoriteMutation();
   const [removeFavorite] = useRemoveFavoriteMutation();
-  const { data: favoritesResponse, isLoading: isLoadingFavorites, refetch: refetchFavorites } = useGetFavoritesQuery(userId, { skip: !userId });
+  const { 
+    data: favoritesResponse, 
+    isLoading: isLoadingFavorites, 
+    refetch: refetchFavorites 
+  } = useGetFavoritesQuery(userId, { skip: !userId });
   
+  const { 
+    data: synchronizedContacts, 
+    isLoading: isLoadingContacts,
+    refetch: refetchContacts 
+  } = useGetSynchronizedContactsQuery(userId, { skip: !userId });
+
   // State
-  const [contacts, setContacts] = useState([]);
   const [filteredContacts, setFilteredContacts] = useState([]);
   const [selectedContact, setSelectedContact] = useState(null);
   const [status, setStatus] = useState('idle');
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState('contacts'); // 'contacts' or 'favorites'
+  const [activeTab, setActiveTab] = useState('contacts');
   const [formData, setFormData] = useState({
     name: '',
     phoneNumber: '',
@@ -57,7 +93,6 @@ const AddFavorite = () => {
   const requestContactsPermission = async () => {
     try {
       const { status } = await Contacts.requestPermissionsAsync();
-      
       if (status !== 'granted') {
         Alert.alert(
           t('contacts.permissionRequired'),
@@ -81,6 +116,41 @@ const AddFavorite = () => {
     }
   };
 
+  // Process contacts for backend
+  const processContactsForBackend = (rawContacts) => {
+    const contactsToSync = [];
+    const sanitizeName = (name) => {
+      return (name || '').replace(/[^\x00-\x7F]/g, '').trim() || 'Unknown';
+    };
+
+    for (const contact of rawContacts) {
+      if (contact.phoneNumbers?.length > 0) {
+        const rawPhoneNumber = contact.phoneNumbers[0].number;
+        
+        if (!rawPhoneNumber) continue;
+        
+        const phoneNumber = formatPhoneNumber(rawPhoneNumber.replace(/[^\d+]/g, ''));
+        
+        if (!isValidPhoneNumber(phoneNumber)) continue;
+        
+        const contactName = sanitizeName(
+          contact.name || 
+          contact.firstName || 
+          contact.lastName || 
+          contact.company || 
+          'Unknown'
+        );
+        
+        contactsToSync.push({
+          name: contactName,
+          phone: phoneNumber
+        });
+      }
+    }
+
+    return contactsToSync;
+  };
+
   // Fetch and sync contacts
   const fetchAndSyncContacts = async () => {
     try {
@@ -92,209 +162,90 @@ const AddFavorite = () => {
 
       setStatus('loading');
       
-      // Initial fetch with pagination
-      let allContacts = [];
-      let hasMoreContacts = true;
-      let offset = 0;
-      const pageSize = 100;
-
-      while (hasMoreContacts) {
-        const { data, hasNextPage } = await Contacts.getContactsAsync({
-          fields: [Contacts.Fields.Name, Contacts.Fields.PhoneNumbers],
-          pageSize,
-          pageOffset: offset,
-        });
-
-        const validContacts = data.filter(contact => 
-          contact.phoneNumbers && contact.phoneNumbers.length > 0
-        );
-
-        allContacts = [...allContacts, ...validContacts];
-        offset += pageSize;
-        hasMoreContacts = hasNextPage;
-
-        setContacts(allContacts);
-        setStatus(`loading-${offset}`);
-      }
-
+      // Get all contacts from device
+      const { data } = await Contacts.getContactsAsync({
+        fields: [Contacts.Fields.Name, Contacts.Fields.PhoneNumbers],
+      });
+      
+      // Process contacts to match backend format
+      const contactsToSync = processContactsForBackend(data);
+      console.log('Processed contacts for sync:', JSON.stringify(contactsToSync, null, 2));
+      
+      // Process in batches
       const batchSize = 50;
-      for (let i = 0; i < allContacts.length; i += batchSize) {
-        const batch = allContacts.slice(i, i + batchSize);
-        const contactsToSync = batch.map(contact => ({
-          name: contact.name,
-          phone: contact.phoneNumbers[0].number
-        }));
-
-        await synchronizeContacts(contactsToSync).unwrap();
+      let successfulSyncs = 0;
+      
+      for (let i = 0; i < contactsToSync.length; i += batchSize) {
+        const batch = contactsToSync.slice(i, i + batchSize);
+        const payload = { contacts: batch };
+        
+        console.log('Sending batch to backend:', JSON.stringify(payload, null, 2));
+        
+        try {
+          const response = await synchronizeContacts(payload).unwrap();
+          successfulSyncs += batch.length;
+          console.log('Batch sync successful', response);
+        } catch (error) {
+          console.error(`Failed to sync batch starting at index ${i}`, error);
+        }
       }
-
+      
+      // Refresh the synchronized contacts list
+      await refetchContacts();
+      
       setStatus('ready');
       Toast.show({
         type: 'success',
         text1: 'Sync Complete',
-        text2: `Successfully synced ${allContacts.length} contacts`
+        text2: `Synced ${successfulSyncs}/${contactsToSync.length} contacts`
       });
 
     } catch (error) {
-      console.error('Failed to sync contacts:', error);
+      console.error('Sync failed:', error);
       setStatus('error');
       Toast.show({
         type: 'error',
         text1: 'Sync Failed',
-        text2: 'Failed to synchronize contacts with server'
+        text2: error.message || 'Unknown error'
       });
     }
   };
 
-  // Handle delete favorite
-  const handleDeleteFavorite = async (phone) => {
-    try {
-      Alert.alert(
-        'Confirm Delete',
-        'Are you sure you want to remove this contact from favorites?',
-        [
-          {
-            text: 'Cancel',
-            style: 'cancel',
-          },
-          {
-            text: 'Delete',
-            onPress: async () => {
-              await removeFavorite({ userId, phone }).unwrap();
-              refetchFavorites();
-              Toast.show({
-                type: 'success',
-                text1: 'Success',
-                text2: 'Contact removed from favorites'
-              });
-            },
-            style: 'destructive',
-          },
-        ],
-      );
-    } catch (error) {
-      console.error('Failed to delete favorite:', error);
-      Toast.show({
-        type: 'error',
-        text1: 'Delete Failed',
-        text2: 'Failed to remove contact from favorites'
-      });
-    }
-  };
-
-  // Phone number validation
-  const isValidPhoneNumber = (phoneNumber) => {
-    const cleaned = phoneNumber.replace(/[^\d+]/g, '');
-    const cameroonRegex = /^(\+237|237)?[6|2|3]\d{8}$/;
-    const canadaRegex = /^(\+1|1)?\d{10}$/;
-    return cameroonRegex.test(cleaned) || canadaRegex.test(cleaned);
-  };
-
-  // Handle contact selection
-  const handleSelectContact = (contact) => {
-    if (!contact.phoneNumbers || contact.phoneNumbers.length === 0) {
-      Toast.show({
-        type: 'error',
-        text1: 'Invalid Contact',
-        text2: 'Selected contact has no phone number'
-      });
-      return;
-    }
-    
-    setSelectedContact(contact);
-    setFormData({
-      name: contact.name || '',
-      phoneNumber: contact.phoneNumbers[0].number || '',
-      receptionMethod: 'Orange Money',
-      country: 'Cameroun'
-    });
-  };
-
+  // Filter contacts based on search and favorites
   useEffect(() => {
-    if (contacts.length > 0) {
-      let result = [...contacts];
+    if (synchronizedContacts?.data?.length > 0) {
+      let result = [...synchronizedContacts.data];
       
-      // Filter out favorites
       if (favoritesResponse?.data?.length > 0) {
         const favoritePhones = favoritesResponse.data.map(fav => fav.phone);
         result = result.filter(
-          contact => !favoritePhones.includes(contact.phoneNumbers[0]?.number)
+          contact => !favoritePhones.includes(formatPhoneNumber(contact.phone))
         );
       }
       
-      // Apply search filter
       if (searchQuery) {
         result = result.filter(contact => 
           contact.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          contact.phoneNumbers?.[0]?.number?.includes(searchQuery)
+          contact.phone?.includes(searchQuery)
         );
       }
       
       setFilteredContacts(result);
+    } else {
+      setFilteredContacts([]);
     }
-  }, [contacts, favoritesResponse, searchQuery]);
+  }, [synchronizedContacts, favoritesResponse, searchQuery]);
 
-  // Handle form submission
-  const handleAddFavorite = async () => {
-    if (!formData.name || !formData.phoneNumber) {
-      Toast.show({
-        type: 'error',
-        text1: 'Validation Error',
-        text2: 'Name and phone number are required'
-      });
-      return;
-    }
-    
-    if (!isValidPhoneNumber(formData.phoneNumber)) {
-      Toast.show({
-        type: 'error',
-        text1: 'Validation Error',
-        text2: 'Please enter a valid phone number'
-      });
-      return;
-    }
-    
-    try {
-      const isAlreadyFavorite = favoritesResponse?.data?.some(
-        fav => fav.phone === formData.phoneNumber
-      );
-      
-      if (isAlreadyFavorite) {
-        Toast.show({
-          type: 'error',
-          text1: 'Duplicate Contact',
-          text2: 'This contact is already in your favorites'
-        });
-        return;
-      }
-      
-      await addFavorite({
-        userId,
-        phone: formData.phoneNumber
-      }).unwrap();
-      
-      Toast.show({
-        type: 'success',
-        text1: 'Success',
-        text2: 'Contact added to favorites successfully'
-      });
-      navigation.goBack();
-    } catch (error) {
-      console.error('Failed to add favorite:', error);
-      Toast.show({
-        type: 'error',
-        text1: 'Add Failed',
-        text2: 'Failed to add contact to favorites'
-      });
-    }
+  // Handle contact selection
+  const handleSelectContact = (contact) => {
+    setSelectedContact(contact);
+    setFormData({
+      name: contact.name || '',
+      phoneNumber: formatPhoneNumber(contact.phone || ''),
+      receptionMethod: 'Orange Money',
+      country: 'Cameroun'
+    });
   };
-
-  // Load contacts on mount
-  useEffect(() => {
-    if (userId) {
-      fetchAndSyncContacts();
-    }
-  }, [userId]);
 
   // Render contact list item
   const renderContactItem = ({ item }) => (
@@ -313,11 +264,9 @@ const AddFavorite = () => {
         <Text className="font-bold text-base text-gray-800">
           {item.name || t('contacts.noName')}
         </Text>
-        {item.phoneNumbers && item.phoneNumbers.length > 0 && (
-          <Text className="text-gray-600 text-sm mt-1">
-            {item.phoneNumbers[0].number}
-          </Text>
-        )}
+        <Text className="text-gray-600 text-sm mt-1">
+          {formatPhoneNumber(item.phone)}
+        </Text>
       </View>
       <MaterialCommunityIcons 
         name="chevron-right" 
@@ -335,11 +284,11 @@ const AddFavorite = () => {
           {item.name || item.phone}
         </Text>
         <Text className="text-gray-600 text-sm mt-1">
-          {item.phone}
+          {formatPhoneNumber(item.phone)}
         </Text>
       </View>
       <TouchableOpacity
-        onPress={() => handleDeleteFavorite(item.phone)}
+        onPress={() => removeFavorite({ userId, phone: item.phone })}
         className="p-2"
       >
         <MaterialCommunityIcons 
@@ -376,12 +325,12 @@ const AddFavorite = () => {
   }
 
   // Loading state
-  if (status === 'loading' || isLoadingFavorites) {
+  if (isLoadingContacts || isLoadingFavorites) {
     return <Loader />;
   }
 
-  // Empty state
-  if (status === 'ready' && filteredContacts.length === 0 && activeTab === 'contacts') {
+  // Empty state for contacts
+  if (activeTab === 'contacts' && !filteredContacts.length) {
     return (
       <View className="flex-1 justify-center items-center p-8 bg-white">
         <MaterialCommunityIcons 
@@ -392,28 +341,12 @@ const AddFavorite = () => {
         <Text className="text-center mt-4 text-lg text-gray-600">
           {t('contacts.noContacts')}
         </Text>
-      </View>
-    );
-  }
-
-  // Error state
-  if (status === 'error') {
-    return (
-      <View className="flex-1 justify-center items-center p-8 bg-white">
-        <MaterialCommunityIcons 
-          name="emoticon-sad-outline" 
-          size={width * 0.15} 
-          color="#f44336" 
-        />
-        <Text className="text-center mb-4 text-lg text-gray-600">
-          {t('contacts.syncError')}
-        </Text>
         <TouchableOpacity 
-          className="bg-green-500 px-4 py-3 rounded-lg w-48 items-center"
+          className="bg-green-500 px-4 py-3 rounded-lg w-48 items-center mt-4"
           onPress={fetchAndSyncContacts}
         >
           <Text className="text-white text-base font-semibold">
-            {t('common.retry')}
+            {t('contacts.syncNow')}
           </Text>
         </TouchableOpacity>
       </View>
@@ -487,7 +420,28 @@ const AddFavorite = () => {
               </TouchableOpacity>
               <TouchableOpacity 
                 className="flex-1 mx-1 py-3 rounded-lg items-center bg-green-500"
-                onPress={handleAddFavorite}
+                onPress={() => {
+                  addFavorite({
+                    userId,
+                    phone: formatPhoneNumber(formData.phoneNumber)
+                  })
+                  .unwrap()
+                  .then(() => {
+                    Toast.show({
+                      type: 'success',
+                      text1: 'Success',
+                      text2: 'Contact added to favorites'
+                    });
+                    navigation.goBack();
+                  })
+                  .catch(error => {
+                    Toast.show({
+                      type: 'error',
+                      text1: 'Error',
+                      text2: error.data?.message || 'Failed to add favorite'
+                    });
+                  });
+                }}
                 disabled={isAddingFavorite}
                 activeOpacity={0.7}
               >
@@ -512,7 +466,7 @@ const AddFavorite = () => {
           onPress={() => setActiveTab('contacts')}
         >
           <Text className={`text-base font-semibold ${activeTab === 'contacts' ? 'text-green-500' : 'text-gray-500'}`}>
-            Contacts
+            {t('contacts.contact')}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity 
@@ -523,45 +477,50 @@ const AddFavorite = () => {
           }}
         >
           <Text className={`text-base font-semibold ${activeTab === 'favorites' ? 'text-green-500' : 'text-gray-500'}`}>
-            Favorites ({favoritesResponse?.data?.length || 0})
+             {t('contacts.favorites')} ({favoritesResponse?.length || 0})
           </Text>
         </TouchableOpacity>
       </View>
 
       {/* Search bar */}
       <View className="p-4 bg-gray-100 border-b border-gray-200">
-        <TextInput
-          className="h-14 border border-gray-300 px-4 rounded-lg text-base bg-white"
-          placeholder={t('contacts.searchPlaceholder')}
-          placeholderTextColor="#999"
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-        />
+        <View className="flex-row items-center">
+          <TextInput
+            className="flex-1 h-14 border border-gray-300 px-4 rounded-lg text-base bg-white"
+            placeholder={t('contacts.searchPlaceholder')}
+            placeholderTextColor="#999"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+          <TouchableOpacity 
+            className="ml-2 bg-green-500 p-3 rounded-lg"
+            onPress={fetchAndSyncContacts}
+          >
+            <MaterialCommunityIcons 
+              name="sync" 
+              size={24} 
+              color="white" 
+            />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Contacts list */}
       {activeTab === 'contacts' && (
         <FlatList
           data={filteredContacts}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => item.phone}
           renderItem={renderContactItem}
           contentContainerStyle={{ paddingBottom: width * 0.05 }}
-          refreshing={status === 'loading'}
-          onRefresh={fetchAndSyncContacts}
-          ListEmptyComponent={
-            <View className="items-center p-8 justify-center">
-              <Text className="text-base text-gray-600">
-                {t('contacts.noContacts')}
-              </Text>
-            </View>
-          }
+          refreshing={isLoadingContacts}
+          onRefresh={refetchContacts}
         />
       )}
 
       {/* Favorites list */}
       {activeTab === 'favorites' && (
         <FlatList
-          data={favoritesResponse?.data || []}
+          data={favoritesResponse || []}
           keyExtractor={(item) => item.phone}
           renderItem={renderFavoriteItem}
           contentContainerStyle={{ paddingBottom: width * 0.05 }}

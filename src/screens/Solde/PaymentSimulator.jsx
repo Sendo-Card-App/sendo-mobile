@@ -64,6 +64,11 @@ const PaymentSimulator = () => {
     }
 
     try {
+      console.log("Sending payment data to backend:", {
+        amount: parseFloat(amount),
+        currency
+      });
+      
       const response = await simulatePayment({
         amount: parseFloat(amount),
         currency
