@@ -37,6 +37,18 @@ const Camera = ({ navigation, route }) => {
         return t('camera.selfie_guide');
       case 'niu':
         return t('camera.niu_guide');
+         case 'id_front':
+        return t('camera.id_front_guide');
+      case 'id_back':
+        return t('camera.id_back_guide');
+      case 'passport':
+        return t('camera.passport_guide');
+      case 'driving_license':
+        return t('camera.driving_license_guide');
+      case 'cni':
+        return t('camera.cni_guide');
+      case 'id_card':
+        return t('camera.id_card_guide');
       case 'address_proof':
         return t('camera.address_guide');
       default:

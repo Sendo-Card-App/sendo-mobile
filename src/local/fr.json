@@ -312,6 +312,10 @@
   },
   "camera": {
     "selfie_guide": "Prenez un selfie avec votre pièce d'identité",
+     "id_front_guide": "Prenez un recto de votre pièce d'identité",
+      "id_back_guide": "Prenez un verso de votre pièce d'identité",
+       "passport_guide": "Prenez un photo de votre passport",
+        "driving_license_guide": "Prenez un phpto de votre permis de conduit",
     "niu_guide": "Prenez une photo de votre document NIU",
     "address_guide": "Prenez une photo de votre justificatif de domicile",
     "default_guide": "Prenez une photo",
@@ -349,7 +353,7 @@
       "feesAmount": "Montant des frais",
       "currentBalance": "Votre solde actuel",
       "termsAccept": "J'accepte les CGU et autorise Sendo à créer mon NIU",
-      "paymentAccept": "J'autorise le prélèvement de 3 000 FCFA",
+      "paymentAccept": "J'autorise le prélèvement de ",
       "payButton": "Payer le NIU",
       "processing": "Traitement en cours..."
     },
