@@ -78,7 +78,7 @@ const Settings = ({ navigation }) => {
       <Text className="p-5 ml-1 mt-10 text-xl font-bold text-gray-600">{t('security')}</Text>
 
       {/* Biometrics */}
-      <View className="bg-blue-50 px-5 py-4 flex-row items-center mx-4 rounded-lg">
+      <View className="bg-green-50 px-5 py-4 flex-row items-center mx-4 rounded-lg">
         <AntDesign name="lock" size={24} color="black" />
         <View className="ml-3 flex-1">
           <Text className="text-lg font-semibold">{t('biometrics')}</Text>
@@ -94,14 +94,14 @@ const Settings = ({ navigation }) => {
       </View>
 
       {/* Notifications */}
-      <View className="bg-blue-50 px-5 py-4 flex-row items-center mx-4 mt-3 rounded-lg">
+      <View className="bg-green-50 px-5 py-4 flex-row items-center mx-4 mt-3 rounded-lg">
         <Ionicons name="notifications-outline" size={24} color="black" />
         <View className="ml-3 flex-1">
           <Text className="text-lg font-semibold">{t('notifications')}</Text>
           <Text className="text-sm text-gray-500 mt-1">{t('ensure_notifications')}</Text>
         </View>
         <Switch
-          trackColor={{ true: "#7ddd7d", false: "#f1f1f1" }}
+          trackColor={{ true: "green", false: "#f1f1f1" }}
           thumbColor={isNotificationsEnabled ? "#ffffff" : "#f8f8f8"}
           ios_backgroundColor="#f1f1f1"
           onValueChange={toggleNotifications}
@@ -124,7 +124,7 @@ const Settings = ({ navigation }) => {
 
       {/* Change Password */}
       <TouchableOpacity
-        className="bg-blue-50 mx-4 mt-3 rounded-lg"
+        className="bg-green-50 mx-4 mt-3 rounded-lg"
         onPress={() => navigation.navigate('ChangePassword')}
       >
         <View className="px-5 py-4 flex-row items-center">
@@ -139,7 +139,7 @@ const Settings = ({ navigation }) => {
       {/* Language Selector */}
       <View className="mt-6 mx-4">
         <TouchableOpacity
-          className="flex-row items-center px-4 py-4 bg-blue-50 rounded-lg"
+          className="flex-row items-center px-4 py-4 bg-green-50 rounded-lg"
           onPress={() => setLanguageModalVisible(true)}
         >
           <Icon name="language" size={24} color="black" />

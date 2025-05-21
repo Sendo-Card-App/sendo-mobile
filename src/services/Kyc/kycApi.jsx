@@ -5,6 +5,7 @@ const KYC_ENDPOINTS = {
   GET_STATUS: '/kyc/status',
   SEND_SELFIE: '/users/send-picture',
   NIU_REQUEST: '/requests/ask',
+  GET_USER_REQUESTS: '/requests/users',
 };
 
 export const kycApi = createApi({
@@ -56,12 +57,18 @@ export const kycApi = createApi({
       query: () => KYC_ENDPOINTS.GET_STATUS,
       providesTags: ['KYC'],
     }),
+
+    getUserRequests: builder.query({
+      query: (userId) => `${KYC_ENDPOINTS.GET_USER_REQUESTS}/${userId}`,
+      providesTags: ['Requests'],
+    }),
   }),
 });
 
 export const { 
   useSubmitKYCMutation, 
   useGetKYCStatusQuery,
+  useGetUserRequestsQuery,
   useSendSelfieMutation,
   useNiuResquestMutation,
 } = kycApi;

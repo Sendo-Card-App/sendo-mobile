@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, TextInput, Platform,Dimensions } from "react-native";
+import { View, Text, TouchableOpacity, TextInput, Platform,Dimensions,StyleSheet  } from "react-native";
 import React from "react";
 import { StatusBar } from "expo-status-bar";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
@@ -8,7 +8,7 @@ import { useNavigation } from "@react-navigation/native";
 import { useTranslation } from 'react-i18next';
 
 // Get screen dimensions
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 const isSmallScreen = width < 375; // iPhone SE and similar small devices
 
 const Payment = () => {
@@ -95,13 +95,18 @@ const Payment = () => {
         {t('payment2.share_referral')}
       </Text>
 
-      <View className="mb-5 py-3 mt-auto flex-row gap-4 items-center">
-         <TouchableOpacity 
-                            onPress={() => navigation.navigate('MainTabs')}
-                            style={styles.floatingHomeButton}
-                          >
-                            <Ionicons name="home" size={44} color="#7ddd7d" />
-                          </TouchableOpacity>
+       <View className="mb-5 py-3 mt-auto flex-row gap-4 items-center">
+        <TouchableOpacity 
+          onPress={() => navigation.navigate('MainTabs')}
+          style={styles.floatingHomeButton}
+        >
+          <Ionicons 
+            name="home" 
+            size={isSmallScreen ? 36 : 44} 
+            color="#7ddd7d" 
+          />
+        </TouchableOpacity>
+        
         <TouchableOpacity
           className="bg-[#7ddd7d] rounded-full items-center justify-center px-4 py-2"
           onPress={() => navigation.navigate("Success")}
@@ -116,22 +121,23 @@ const Payment = () => {
     </View>
   );
 };
-const styles = {
+const styles = StyleSheet.create({
   floatingHomeButton: {
     position: 'absolute',
-    top: StatusBar.currentHeight + 500,
+    top: Platform.select({
+      ios: height * 0.82,  // 82% from top for iOS
+      android: height * 0.8 // 80% from top for Android
+    }),
     right: 20,
     zIndex: 999,
     backgroundColor: 'rgba(235, 248, 255, 0.9)',
     padding: 10,
     borderRadius: 20,
     elevation: 3,
-    
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 3,
   },
- 
-};
+});
 
 export default Payment;

@@ -9,44 +9,63 @@ import {
   TouchableOpacity,
   Modal,
   FlatList,
-  Dimensions,
-  Alert
+  Dimensions
 } from 'react-native';
-import { AntDesign, MaterialIcons } from "@expo/vector-icons";
+import { AntDesign } from "@expo/vector-icons";
 import Toast from 'react-native-toast-message';
 import Loader from "../../components/Loader";
-import { useSimulatePaymentMutation } from '../../services/WalletApi/walletApi'; // Adjust path as needed
-
-
+import { useSimulatePaymentMutation } from '../../services/WalletApi/walletApi';
 
 const { width } = Dimensions.get('window');
-const isSmallScreen = width < 375;
 
 const PaymentSimulator = () => {
   const [amount, setAmount] = useState('100');
   const [currency, setCurrency] = useState('USD');
+  const [conversionData, setConversionData] = useState(null);
   const [showCurrencyDropdown, setShowCurrencyDropdown] = useState(false);
+  const [isCalculating, setIsCalculating] = useState(false);
   
-  // API mutation hook
-  const [simulatePayment, { isLoading }] = useSimulatePaymentMutation();
+  const [simulatePayment] = useSimulatePaymentMutation();
   
-  // Supported currencies and their rates
   const currencies = [
-    { code: 'USD', name: 'US Dollar', rate: 656.0 },
+    { code: 'USD', name: 'US Dollar', rate: 625.0 },
     { code: 'EUR', name: 'Euro', rate: 655.0 },
     { code: 'CAD', name: 'Canadian Dollar', rate: 480.0 }
   ];
   
-  const visaFee = 350.0;
-  const paysikaFeeRate = 0.0182; // 1.82%
-  
-  // Get current currency details
   const currentCurrency = currencies.find(c => c.code === currency) || currencies[0];
-  
-  // Calculate amounts
-  const convertedAmount = parseFloat(amount) * currentCurrency.rate;
-  const paysikaFee = convertedAmount * paysikaFeeRate;
-  const totalAmount = convertedAmount + visaFee + paysikaFee;
+  const visaFee = 1118.75;
+  const paysikaFeeRate = 0.0179;
+
+  // Calculate amounts based on current input
+  const calculateConversion = () => {
+    if (!amount || isNaN(parseFloat(amount))) return null;
+    
+    const numericAmount = parseFloat(amount);
+    const convertedAmount = numericAmount * currentCurrency.rate;
+    const paysikaFee = convertedAmount * paysikaFeeRate;
+    const totalAmount = convertedAmount + visaFee + paysikaFee;
+    
+    return {
+      result: {
+        amountConverted: convertedAmount,
+        partnerVisaFees: visaFee,
+        sendoFees: paysikaFee,
+        totalAmount: totalAmount
+      },
+      fees: {
+        percentagePartnerFees: paysikaFeeRate * 100
+      }
+    };
+  };
+
+  // Update conversion data whenever amount or currency changes
+  useEffect(() => {
+    const calculatedData = calculateConversion();
+    if (calculatedData) {
+      setConversionData({ data: calculatedData });
+    }
+  }, [amount, currency]);
 
   const handleCurrencySelect = (selectedCurrency) => {
     setCurrency(selectedCurrency);
@@ -64,30 +83,32 @@ const PaymentSimulator = () => {
     }
 
     try {
-      console.log("Sending payment data to backend:", {
-        amount: parseFloat(amount),
-        currency
-      });
-      
+      setIsCalculating(true);
       const response = await simulatePayment({
         amount: parseFloat(amount),
         currency
       }).unwrap();
+
+      // Update with server-side calculated data
+      setConversionData(response);
       
       Toast.show({
         type: 'success',
         text1: 'Simulation Successful',
         text2: `${amount} ${currency} payment simulated successfully`,
       });
+
     } catch (error) {
-        console.log(error)
       Toast.show({
         type: 'error',
         text1: 'Simulation Failed',
-        text2: error.data?.message || 'Failed to simulate payment',
+        text2: error.data?.message || error.message || 'Failed to simulate payment',
       });
+    } finally {
+      setIsCalculating(false);
     }
   };
+
   return (
     <KeyboardAvoidingView 
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -117,7 +138,7 @@ const PaymentSimulator = () => {
         </View>
         
         <Text style={styles.exchangeRateText}>
-          Taux (avec frais internationaux): 1{currency} ~ {currentCurrency.rate} FCFA
+          Taux: 1{currency} = {currentCurrency.rate} FCFA
         </Text>
 
         {/* Currency Dropdown Modal */}
@@ -141,7 +162,7 @@ const PaymentSimulator = () => {
                       styles.currencyItemText,
                       currency === item.code && styles.selectedCurrency
                     ]}>
-                      {item.code} - {item.name}
+                      {item.code} - {item.name} ({item.rate} FCFA)
                     </Text>
                   </TouchableOpacity>
                 )}
@@ -157,56 +178,73 @@ const PaymentSimulator = () => {
           </View>
         </Modal>
 
-        {/* Conversion Results */}
-        <View style={styles.resultsContainer}>
-        <View style={styles.feeRow}>
-          <Text style={styles.sectionTitle}>Montant converti</Text>
-          <Text style={styles.convertedAmount}>
-            {convertedAmount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, " ")} FCFA
-          </Text>
-          </View>
+        {/* Conversion Results - Show real-time calculation */}
+        {conversionData && (
+          <View style={styles.resultsContainer}>
+            <View style={styles.feeRow}>
+              <Text style={styles.sectionTitle}>Montant converti</Text>
+              <Text style={styles.convertedAmount}>
+                {conversionData.data.result.amountConverted.toLocaleString('fr-FR', {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2
+                })} FCFA
+              </Text>
+            </View>
 
-          <View style={styles.feeRow}>
-            <Text style={styles.feeLabel}>Frais du partenaire (VISA)</Text>
-            <Text style={styles.feeValue}>{visaFee.toFixed(1)} XAF</Text>
-          </View>
+            <View style={styles.feeRow}>
+              <Text style={styles.feeLabel}>Frais du partenaire (VISA)</Text>
+              <Text style={styles.feeValue}>
+                {conversionData.data.result.partnerVisaFees.toLocaleString('fr-FR', {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2
+                })} FCFA
+              </Text>
+            </View>
 
-          <View style={styles.feeRow}>
-            <Text style={styles.feeLabel}>Frais de Sendo (TTC)</Text>
-            <Text style={styles.feeValue}>
-              {paysikaFee.toFixed(2)} XAF ({(paysikaFeeRate * 100).toFixed(2)}%)
-            </Text>
+            <View style={styles.feeRow}>
+              <Text style={styles.feeLabel}>Frais de Sendo (TTC)</Text>
+              <Text style={styles.feeValue}>
+                {conversionData.data.result.sendoFees.toLocaleString('fr-FR', {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2
+                })} FCFA ({(conversionData.data.fees.percentagePartnerFees).toFixed(2)}%)
+              </Text>
+            </View>
+
+            <View style={styles.feeRow}>
+              <Text style={styles.totalLabel}>Montant total débité</Text>
+              <Text style={styles.totalAmount}>
+                {conversionData.data.result.totalAmount.toLocaleString('fr-FR', {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2
+                })} FCFA
+              </Text>
+            </View>
           </View>
-          <View style={styles.feeRow}>
-          <Text style={styles.totalLabel}>Montant total débité</Text>
-            <Text style={styles.totalAmount}>
-              {totalAmount.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, " ")} XAF
-            </Text>
-          </View>
-        </View>
+        )}
 
         <View style={styles.disclaimerContainer}>
-            <View style={styles.disclaimerContent}>
-                <Text style={styles.disclaimerText}>
-                Les frais de change sont mis à jour chaque semaine et différent de ceux des sites de conversion,
-                car ils incluent le coût d'achat de la devise étrangère auprès des banques.
-                </Text>
-            </View>
-            </View>
-             {/* Add the simulate payment button */}
-             <TouchableOpacity 
-            style={styles.simulateButton}
-            onPress={handleSimulatePayment}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <Loader color="#fff" />
-            ) : (
-              <Text style={styles.simulateButtonText}>Estimateur de paiement</Text>
-            )}
-          </TouchableOpacity>
+          <View style={styles.disclaimerContent}>
+            <Text style={styles.disclaimerText}>
+              Les frais de change sont mis à jour chaque semaine et différent de ceux des sites de conversion,
+              car ils incluent le coût d'achat de la devise étrangère auprès des banques.
+            </Text>
+          </View>
         </View>
-      
+
+        {/* Simulate Button - Now optional since we show real-time results */}
+        <TouchableOpacity 
+          style={styles.simulateButton}
+          onPress={handleSimulatePayment}
+          disabled={isCalculating}
+        >
+          {isCalculating ? (
+            <Loader color="#fff" />
+          ) : (
+            <Text style={styles.simulateButtonText}>Recharger ma carte</Text>
+          )}
+        </TouchableOpacity>
+      </View>
     </KeyboardAvoidingView>
   );
 };
