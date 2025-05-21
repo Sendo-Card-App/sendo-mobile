@@ -761,6 +761,18 @@
       "history": "Historiques",
        "setting": "Paramètres",
         "receipt": "Recu"
+  },
+  "paymentSimulator": {
+    "title": "Entrez le montant que vous souhaitez payer",
+    "amountPlaceholder": "100",
+    "exchangeRate": "Taux: 1 ",
+    "convertedAmount": "Montant converti",
+    "partnerFees": "Frais du partenaire (VISA)",
+    "sendoFees": "Frais de Sendo (TTC)",
+    "totalAmount": "Montant total débité",
+    "disclaimer": "Les frais de change sont mis à jour chaque semaine et différent de ceux des sites de conversion, car ils incluent le coût d'achat de la devise étrangère auprès des banques.",
+    "rechargeButton": "Recharger ma carte",
+    "closeButton": "Fermer"
   }
 
 

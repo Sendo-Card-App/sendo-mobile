@@ -764,6 +764,18 @@
       "history": "History",
        "setting": "Settings",
         "receipt": "Receipt"
+  },
+   "paymentSimulator": {
+    "title": "Enter the amount you want to pay",
+    "amountPlaceholder": "100",
+    "exchangeRate": "Rate: 1",
+    "convertedAmount": "Converted amount",
+    "partnerFees": "Partner fees (VISA)",
+    "sendoFees": "Sendo fees (VAT included)",
+    "totalAmount": "Total amount to be debited",
+    "disclaimer": "Exchange rates are updated weekly and differ from conversion websites, as they include the cost of purchasing foreign currency from banks.",
+    "rechargeButton": "Recharge my card",
+    "closeButton": "Close"
   }
 
 

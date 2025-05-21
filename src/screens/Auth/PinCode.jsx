@@ -3,7 +3,7 @@ import { StatusBar, Platform, View, Text, TouchableOpacity, Image, SafeAreaView,
 import { useCreatePasscodeMutation } from '../../services/Auth/authAPI';
 import { useSelector, useDispatch } from 'react-redux';
 import { setPasscode, incrementAttempt, resetAttempts, lockPasscode, toggleBiometric, clearPasscode, setIsNewUser } from '../../features/Auth/passcodeSlice';
-import { getData, clearStorage, removeData } from '../../services/storage';
+import { getData, clearStorage } from '../../services/storage';
 import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
 import { clearAuth } from '../../features/Auth/authSlice';
 import Loader from "../../components/Loader";
@@ -226,50 +226,25 @@ const PinCode = ({ navigation, route }) => {
     </View>
   );
 
-const handleForgotPin = async () => {
-  Alert.alert(
-    t('pin.forgotPin'),
-    t('pin.forgotPinMessage'),
-    [
-      {
-        text: t('common.cancel'),
-        style: 'cancel',
-      },
-      {
-        text: t('common.signIn'),
-        onPress: async () => {
-          try {
-            setIsLoading(true);
-            
-            // Clear AsyncStorage
-            await clearStorage();
-            
-           
-            await Promise.all([
-              removeData('authToken'),
-              removeData('refreshToken'),
-              removeData('userData'),
-              removeData('appSettings'),
-              // Add any other keys used in your app
-            ]);
-            
-            // Reset navigation state completely
-            navigation.reset({
-              index: 0,
-              routes: [{ name: 'SignIn' }],
-            });
-            
-          } catch (error) {
-            console.error('Error during session cleanup:', error);
-        
-          } finally {
-            setIsLoading(false);
-          }
+  const handleForgotPin = async () => {
+    Alert.alert(
+      t('pin.forgotPin'),
+      t('pin.forgotPinMessage'),
+      [
+        {
+          text: t('common.cancel'),
+          style: 'cancel',
         },
-      },
-    ]
-  );
-};
+        {
+          text: t('common.signIn'),
+          onPress: async () => {
+            await clearSession();
+            navigation.navigate('SignIn');
+          },
+        },
+      ]
+    );
+  };
 
   // Get appropriate biometric icon
   const getBiometricIcon = () => {
