@@ -13,6 +13,7 @@ import {
 import React, { useState, useEffect } from "react";
 import OrangeMoney from "../../images/om.png";
 import { useNavigation } from "@react-navigation/native";
+import SkeletonLoader from '../../components/SkeletonLoader';
 import { useGetTransactionHistoryQuery } from "../../services/WalletApi/walletApi";
 import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
 import { useSelector } from "react-redux";
@@ -453,72 +454,80 @@ const History = () => {
         </TouchableOpacity>
       </View>
 
-      {transactions.length > 0 ? (
-        <FlatList
-          data={transactions}
-          renderItem={({ item }) => (
-            <HistoryCard 
-              transaction={item} 
-              onPress={() => navigation.navigate('Receipt', { transaction: item })}
-            />
-          )}
-          keyExtractor={(item) => item.id.toString()}
-          refreshing={isLoading}
-          onRefresh={() => {
-            setCurrentPage(1);
-            refetch();
-          }}
-          contentContainerStyle={{ paddingBottom: 16 }}
-          ListFooterComponent={() => (
-            <View className="flex-row justify-between items-center p-4 bg-gray-100">
-              <TouchableOpacity 
-                onPress={handlePrevPage}
-                disabled={currentPage === 1}
-                className={`px-4 py-2 rounded ${currentPage === 1 ? 'bg-gray-300' : 'bg-green-500'}`}
-              >
-                <Text className={currentPage === 1 ? 'text-gray-500' : 'text-white'}>
-                  {t('common3.previous')}
-                </Text>
-              </TouchableOpacity>
-              
-              <Text>
-                {t('history1.page')} {currentPage} {t('history1.of')} {pagination.totalPages}
-              </Text>
-              
-              <TouchableOpacity 
-                onPress={handleNextPage}
-                disabled={currentPage >= pagination.totalPages}
-                className={`px-4 py-2 rounded ${currentPage >= pagination.totalPages ? 'bg-gray-300' : 'bg-blue-500'}`}
-              >
-                <Text className={currentPage >= pagination.totalPages ? 'text-gray-500' : 'text-white'}>
-                  {t('common3.next')}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          )}
-        />
-      ) : (
-        <View className="flex-1 justify-center items-center">
-          <Text className="text-gray-500">{t('history1.noTransactions')}</Text>
-          <TouchableOpacity 
-            className="mt-4 px-4 py-2 bg-green-500 rounded"
-            onPress={() => {
+      <SkeletonLoader
+        isLoading={isLoading}
+        skeletonType="list"
+        skeletonDuration={2000}
+        fallbackToSpinner={true}
+        error={isError}
+      >
+        {transactions.length > 0 ? (
+          <FlatList
+            data={transactions}
+            renderItem={({ item }) => (
+              <HistoryCard 
+                transaction={item} 
+                onPress={() => navigation.navigate('Receipt', { transaction: item })}
+              />
+            )}
+            keyExtractor={(item) => item.id.toString()}
+            refreshing={isLoading}
+            onRefresh={() => {
               setCurrentPage(1);
-              setAppliedFilters({ page: 1, limit: 10 });
-              setFilters({
-                dateRange: null,
-                method: null,
-                type: null,
-                status: null,
-                startDate: null,
-                endDate: null
-              });
+              refetch();
             }}
-          >
-            <Text className="text-white">{t('history1.resetFilters')}</Text>
-          </TouchableOpacity>
-        </View>
-      )}
+            contentContainerStyle={{ paddingBottom: 16 }}
+            ListFooterComponent={() => (
+              <View className="flex-row justify-between items-center p-4 bg-gray-100">
+                <TouchableOpacity 
+                  onPress={handlePrevPage}
+                  disabled={currentPage === 1}
+                  className={`px-4 py-2 rounded ${currentPage === 1 ? 'bg-gray-300' : 'bg-green-500'}`}
+                >
+                  <Text className={currentPage === 1 ? 'text-gray-500' : 'text-white'}>
+                    {t('common3.previous')}
+                  </Text>
+                </TouchableOpacity>
+                
+                <Text>
+                  {t('history1.page')} {currentPage} {t('history1.of')} {pagination.totalPages}
+                </Text>
+                
+                <TouchableOpacity 
+                  onPress={handleNextPage}
+                  disabled={currentPage >= pagination.totalPages}
+                  className={`px-4 py-2 rounded ${currentPage >= pagination.totalPages ? 'bg-gray-300' : 'bg-blue-500'}`}
+                >
+                  <Text className={currentPage >= pagination.totalPages ? 'text-gray-500' : 'text-white'}>
+                    {t('common3.next')}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          />
+        ) : (
+          <View className="flex-1 justify-center items-center">
+            <Text className="text-gray-500">{t('history1.noTransactions')}</Text>
+            <TouchableOpacity 
+              className="mt-4 px-4 py-2 bg-green-500 rounded"
+              onPress={() => {
+                setCurrentPage(1);
+                setAppliedFilters({ page: 1, limit: 10 });
+                setFilters({
+                  dateRange: null,
+                  method: null,
+                  type: null,
+                  status: null,
+                  startDate: null,
+                  endDate: null
+                });
+              }}
+            >
+              <Text className="text-white">{t('history1.resetFilters')}</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </SkeletonLoader>
 
       <FilterModal
         visible={showFilterModal}
