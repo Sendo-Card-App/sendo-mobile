@@ -26,7 +26,7 @@ const support = ({navigation}) => {
               </View>
             </TouchableOpacity>
       
-      <View className="bg-gray-200 p-3 px-6 mt-3 rounded-lg">
+      <View className="bg-green-50 p-3 px-6 mt-3 rounded-lg">
         <Text className="text-gray-900 font-bold text-xl">{t('support2.faq')}</Text>
         <Text className="text-gray-600">{t('support2.faq_description')}</Text>
       </View>
@@ -34,7 +34,7 @@ const support = ({navigation}) => {
         <Text className="text-gray-900 font-bold">{t('support2.email')}</Text>
         <Text className="text-gray-600">{t('support2.email_description')}</Text>
       </View>
-      <View className="bg-gray-200 p-3 px-6 mt-3 rounded-lg">
+      <View className="bg-green-50 p-3 px-6 mt-3 rounded-lg">
         <Text className="text-gray-900 font-bold">{t('support2.phone')}</Text>
         <Text className="text-gray-600">{t('support2.phone_description')}</Text>
       </View>

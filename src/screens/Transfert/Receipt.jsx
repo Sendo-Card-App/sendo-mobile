@@ -38,7 +38,7 @@ const ReceiptScreen = () => {
   }
 
   const handleDownloadReceipt = async () => {
-    if (transaction.status !== 'SUCCESS') {
+    if (transaction.status !== 'COMPLETED') {
       Alert.alert(
         "Reçu indisponible",
         "Le reçu est uniquement disponible pour les transactions réussies"
@@ -81,14 +81,14 @@ const ReceiptScreen = () => {
         <body>
           <div class="header">
             <div class="title">Reçu de transfert Sendo</div>
-            <div>ID de transaction: ${transaction.reference}</div>
+            <div>Reference de transaction: ${transaction.transactionReference}</div>
           </div>
           
           <div class="section">
             <div class="section-title">Détails de la transaction</div>
             <div class="row">
               <span>Date:</span>
-              <span>${moment(transaction.created_at).format('DD/MM/YYYY HH:mm')}</span>
+              <span>${transaction.createdAt ? moment(transaction.createdAt).format('DD/MM/YYYY HH:mm') : 'N/A'}</span>
             </div>
             <div class="row">
               <span>Statut:</span>
@@ -110,21 +110,25 @@ const ReceiptScreen = () => {
               <span>Méthode:</span>
               <span>${transaction.method || 'N/A'}</span>
             </div>
+            <div class="row">
+              <span>Type:</span>
+              <span>${transaction.type || 'N/A'}</span>
+            </div>
           </div>
           
           <div class="section">
             <div class="section-title">Montant</div>
             <div class="row">
               <span>Montant envoyé:</span>
-              <span>${transaction.amount?.toLocaleString()} FCFA</span>
+              <span>${transaction.amount}  ${transaction.currency }</span>
             </div>
             <div class="row">
               <span>Frais:</span>
-              <span>${transaction.fees || 0} FCFA</span>
+              <span>${transaction.partnerFees || 0} FCFA</span>
             </div>
             <div class="row">
               <span>Total:</span>
-              <span>${(transaction.amount + (transaction.fees || 0)).toLocaleString()} FCFA</span>
+              <span>${transaction.totalAmount } ${transaction.currency }</span>
             </div>
           </div>
           
@@ -137,23 +141,33 @@ const ReceiptScreen = () => {
   };
 
   const getStatusSteps = () => {
-    const date = moment(transaction.created_at).format('dddd, D MMMM YYYY / HH:mm');
+    const formatDate = (date) => date ? moment(date).format('DD/MM/YYYY HH:mm') : 'N/A';
+  
     
     return [
-      {
-        status: "Transmis",
-        completed: true,
-        time: date
-      },
-      {
-        status: "Effectué",
-        completed: true
-      },
-      {
-        status: "Le transfert a réussi",
-        completed: transaction.status === 'SUCCESS',
-        time: moment(transaction.created_at).add(3, 'minutes').format('dddd, D MMMM YYYY / HH:mm')
-      }
+     {
+      status: "Transmis",
+      description: "Transfert initié avec succès",
+      completed: true,
+      time: formatDate(transaction.createdAt),
+      icon: "checkmark-circle" // Example icon name
+    },
+       {
+      status: "En traitement",
+      description: "Vérification en cours",
+      completed: transaction.status !== 'PENDING' && transaction.status !== 'FAILED',
+      time: transaction.processedAt ? formatDate(transaction.processedAt) : 'En attente',
+      icon: "time" // Example icon name
+    },
+    {
+      status: transaction.status === 'COMPLETED' ? "Terminé" : "Échec",
+      description: transaction.status === 'COMPLETED' 
+        ? "Le transfert a réussi" 
+        : "Le transfert a échoué",
+      completed: transaction.status === 'COMPLETED',
+      time: transaction.updatedAt ? formatDate(transaction.updatedAt) : 'N/A',
+      icon: transaction.status === 'COMPLETED' ? "checkmark-done" : "close-circle" // Example icons
+    }
     ];
   };
 
@@ -205,7 +219,8 @@ const ReceiptScreen = () => {
             Bénéficiaire :{" "}
             <Text className="font-semibold">{transaction.recipient_name?.toUpperCase() || 'N/A'}</Text>
           </Text>
-          <Text className="text-gray-600 text-sm">Paiement : {transaction.method || 'N/A'}</Text>
+          <Text className="text-gray-600 text-sm">Methode de Paiement : {transaction.method || 'N/A'}</Text>
+           <Text className="text-gray-600 text-sm">Type de Paiement : {transaction.type || 'N/A'}</Text>
           <Text className="text-gray-600 text-sm mb-2">
             Numéro : {transaction.recipient_number ? 
               transaction.recipient_number.replace(/(\d{3})\d+(\d{3})/, '$1*****$2') : 
@@ -214,10 +229,10 @@ const ReceiptScreen = () => {
 
           {/* Détails Reçu */}
           <Text className="text-green-600 font-semibold my-1">Reçu</Text>
-          <Text className="text-gray-600 text-sm">Montant du transfert: {transaction.amount?.toLocaleString()} FCFA</Text>
-          <Text className="text-gray-600 text-sm">Frais de transfert: {transaction.fees || 0} FCFA</Text>
+          <Text className="text-gray-600 text-sm">Montant du transfert: {transaction.amount } {transaction.currency }</Text>
+          <Text className="text-gray-600 text-sm">Frais de transfert: {transaction.partnerFees || 0} {transaction.currency }</Text>
           <Text className="text-gray-600 text-sm mb-2">
-            Total: {(transaction.amount + (transaction.fees || 0)).toLocaleString()} FCFA
+            Total: {transaction.totalAmount } {transaction.currency }
           </Text>
 
           {/* Autres détails */}
@@ -225,17 +240,17 @@ const ReceiptScreen = () => {
             Détails du transfert
           </Text>
           <Text className="text-gray-600 text-sm">
-            Envoyé : {moment(transaction.created_at).format('D MMMM YYYY / HH:mm')}
+            Envoyé : {transaction.createdAt ? moment(transaction.createdAt).format('DD/MM/YYYY HH:mm') : 'N/A'}
           </Text>
           <Text className="text-gray-600 text-sm">
-            Reference du transfert : {transaction.reference}
+            Reference du transfert : {transaction.transactionReference}
           </Text>
 
           {/* Télécharger le reçu */}
           <TouchableOpacity
             onPress={handleDownloadReceipt}
-            disabled={isGenerating || transaction.status !== 'SUCCESS'}
-            className={`py-3 mt-4 rounded-lg items-center ${transaction.status !== 'SUCCESS' ? 'bg-gray-300' : 'bg-[#7ddd7d]'}`}
+            disabled={isGenerating || transaction.status !== 'COMPLETED'}
+            className={`py-3 mt-4 rounded-lg items-center ${transaction.status !== 'COMPLETED' ? 'bg-gray-300' : 'bg-[#7ddd7d]'}`}
           >
             {isGenerating ? (
               <Loader color="white" />

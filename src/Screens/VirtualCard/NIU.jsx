@@ -28,9 +28,42 @@ const NIU = ({ navigation }) => {
   });
 };
 
- const handlePickDocument = async () => {
+const handlePickDocument = async () => {
   try {
-    // First try to pick from gallery
+    // First try to pick from document picker (PDF or images)
+    const docResult = await DocumentPicker.getDocumentAsync({
+      type: ['image/*', 'application/pdf'],
+      copyToCacheDirectory: true
+    });
+
+    if (docResult.type === 'success') {
+      const fileInfo = await FileSystem.getInfoAsync(docResult.uri);
+      
+      // Check file size (5MB limit)
+      const fileSizeMB = fileInfo.size / (1024 * 1024);
+      if (fileSizeMB > 5) {
+        Alert.alert(
+          t('niu.fileTooLarge'),
+          t('niu.documentSizeLimit')
+        );
+        return;
+      }
+
+      // Determine file type
+      let fileType = docResult.mimeType || 'application/pdf';
+      if (docResult.name?.match(/\.(jpg|jpeg|png|gif)$/i)) {
+        fileType = 'image/jpeg';
+      }
+
+      setSelectedDocument({
+        name: docResult.name,
+        uri: docResult.uri,
+        type: fileType
+      });
+      return;
+    }
+
+    // If user canceled document picker or we want to try image picker as fallback
     const galleryResult = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
@@ -56,38 +89,12 @@ const NIU = ({ navigation }) => {
         uri: asset.uri,
         type: 'image/jpeg'
       });
-      return;
-    }
-
-    // If user canceled image picker, try document picker
-    const docResult = await DocumentPicker.getDocumentAsync({
-      type: ['image/*', 'application/pdf'],
-      copyToCacheDirectory: true
-    });
-
-    if (docResult.type === 'success') {
-      const fileInfo = await FileSystem.getInfoAsync(docResult.uri);
-      const fileSizeMB = fileInfo.size / (1024 * 1024);
-
-      if (fileSizeMB > 5) {
-        Alert.alert(
-          t('niu.fileTooLarge'),
-          t('niu.documentSizeLimit')
-        );
-        return;
-      }
-
-      setSelectedDocument({
-        name: docResult.name,
-        uri: docResult.uri,
-        type: docResult.mimeType || 'application/pdf'
-      });
     }
   } catch (err) {
     console.error("Document selection error:", err);
     Alert.alert(
       t('niu.error'),
-      t('niu.documentSelectionError')
+      err.message || t('niu.documentSelectionError')
     );
   }
 };
