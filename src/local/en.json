@@ -655,6 +655,8 @@
     "loadingUser": "Loading user information...",
     "errorLoading": "Error loading transactions",
     "transactions": "transactions",
+    "todayTransactions": "Today's Transactions",
+    "noTransactionsToday": "No transactions today",
     "page": "Page",
     "of": "of",
     "previous": "Previous",
@@ -761,6 +763,7 @@
     "createCard": "Create Virtual Card",
     "support": "Support",
     "payment": "Payments",
+     "chat": "Chats",
       "history": "History",
        "setting": "Settings",
         "receipt": "Receipt"

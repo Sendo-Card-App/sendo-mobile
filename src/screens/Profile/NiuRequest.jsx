@@ -143,9 +143,13 @@ const NiuRequest = () => {
     }
   }, [balanceError]);
 
-  if (isConfigLoading || isProfileLoading || isBalanceLoading || isRequestsLoading) {
-    return <Loader />;
-  }
+ if (isConfigLoading || isProfileLoading || isBalanceLoading || isRequestsLoading) {
+  return (
+    <View className="flex-1 justify-center items-center">
+      <Loader size="large" />
+    </View>
+  );
+}
 
   // Process steps
   const steps = [

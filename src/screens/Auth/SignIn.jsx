@@ -47,7 +47,7 @@ const SignIn = () => {
            dispatch(loginSuccess(authData));
            navigation.replace("SignIn");
          } else {
-           navigation.replace("Auth");
+           navigation.replace("AUTH");
          }
        } catch (error) {
          console.log("Error checking auth data:", error);

@@ -3,7 +3,7 @@ import { StatusBar, Platform, View, Text, TouchableOpacity, Image, SafeAreaView,
 import { useCreatePasscodeMutation } from '../../services/Auth/authAPI';
 import { useSelector, useDispatch } from 'react-redux';
 import { setPasscode, incrementAttempt, resetAttempts, lockPasscode, toggleBiometric, clearPasscode, setIsNewUser } from '../../features/Auth/passcodeSlice';
-import { getData, clearStorage } from '../../services/storage';
+import { getData, removeData, storeData } from "../../services/storage";
 import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
 import { clearAuth } from '../../features/Auth/authSlice';
 import Loader from "../../components/Loader";
@@ -18,6 +18,7 @@ const PinCode = ({ navigation, route }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [biometricAvailable, setBiometricAvailable] = useState(false);
   const [biometricType, setBiometricType] = useState(null);
+   const [authData, setAuthData] = useState(null);
   
   const dispatch = useDispatch();
   const [createPasscode] = useCreatePasscodeMutation();
@@ -60,6 +61,16 @@ const PinCode = ({ navigation, route }) => {
       topOffset: 30,
     });
   };
+
+   useEffect(() => {
+      const loadAuthData = async () => {
+        const data = await getData('@authData');
+        setAuthData(data);
+        setIsAuthenticated(!!data);
+        setAuthChecked(true);
+      };
+      loadAuthData();
+    }, []);
 
   // Check for biometric availability
   useEffect(() => {
@@ -176,24 +187,6 @@ const PinCode = ({ navigation, route }) => {
           dispatch(setPasscode(enteredPin));
           dispatch(setIsNewUser(false));
           
-          // Ask to enable biometric auth if available
-          if (biometricAvailable) {
-            Alert.alert(
-              t('pin.enableBiometricTitle'),
-              t('pin.enableBiometricMessage'),
-              [
-                {
-                  text: t('common.noThanks'),
-                  style: 'cancel',
-                },
-                {
-                  text: t('common.enable'),
-                  onPress: () => dispatch(toggleBiometric(true))
-                }
-              ]
-            );
-          }
-          
           navigation.navigate('Main');
         } else {
           setError(t('pin.validationError'));
@@ -227,24 +220,47 @@ const PinCode = ({ navigation, route }) => {
   );
 
   const handleForgotPin = async () => {
-    Alert.alert(
-      t('pin.forgotPin'),
-      t('pin.forgotPinMessage'),
-      [
-        {
-          text: t('common.cancel'),
-          style: 'cancel',
-        },
-        {
-          text: t('common.signIn'),
-          onPress: async () => {
-            await clearSession();
-            navigation.navigate('SignIn');
-          },
-        },
-      ]
-    );
-  };
+  Alert.alert(
+    t('pin.forgotPin'),
+    t('pin.forgotPinMessage'),
+    [
+      {
+        text: t('common.cancel'),
+        style: 'cancel',
+        onPress: () => console.log('Cancel pressed') // Optional logging
+      },
+      {
+        text: t('common.signIn'),
+        onPress: async () => {
+          try {
+            // Clear authentication data
+            await removeData('@authData');
+            
+            // Update state
+            setAuthData(null);
+            
+            // Navigate to sign in after a slight delay for better UX
+            setTimeout(() => {
+              navigation.navigate('SignIn', { 
+                screen: 'Auth',
+                params: { showForgotPinMessage: true }
+              });
+            });
+            
+          } catch (error) {
+            console.error('Error clearing auth data:', error);
+            Toast.show({
+              type: 'error',
+              text1: t('common.error'),
+              text2: t('pin.clearDataError')
+            });
+          }
+        }
+      },
+    ],
+    { cancelable: false } // Prevent dismissing by tapping outside
+  );
+};
 
   // Get appropriate biometric icon
   const getBiometricIcon = () => {
