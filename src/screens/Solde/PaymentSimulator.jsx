@@ -80,7 +80,7 @@ const PaymentSimulator = () => {
       if (amount && !isNaN(parseFloat(amount))) {
         handleSimulatePayment();
       }
-    }, 500); // Debounce for 500ms
+    }); 
 
     return () => clearTimeout(timer);
   }, [amount, currency]);

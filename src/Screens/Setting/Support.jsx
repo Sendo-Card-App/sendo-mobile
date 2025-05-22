@@ -15,7 +15,7 @@ const support = ({navigation}) => {
       </Text>
        <TouchableOpacity
               className=" mx-4 mt-3 rounded-lg"
-              onPress={() => navigation.navigate('Chat')}
+              onPress={() => navigation.navigate('ChatScreen')}
             >
               <View className="px-5 py-4 flex-row items-center">
                  <Ionicons name="chatbubble-outline" size={24} color="black" />

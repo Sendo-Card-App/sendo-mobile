@@ -28,6 +28,7 @@ import AddBeneficiary from "./src/screens/Solde/AddBeneficiary";
 import AddFavorite from "./src/screens/Favorite/AddFavorite";
 import SelectMethod from "./src/screens/Wallet/SelectMethod";
 import BankDepositRecharge from "./src/screens/Wallet/BankDepositRecharge";
+import ChatScreen from "./src/screens/Chat/ChatScreen";
 import AddContact from "./src/screens/Solde/AddContact";
 import TransfertFund from "./src/screens/Wallet/TransfertFund";
 import WalletTransfer from "./src/screens/Wallet/WalletTransfer";
@@ -320,6 +321,7 @@ function MainStack() {
       <Stack.Screen name="ConﬁrmeTheTransfer" component={ConﬁrmeTheTransfer} options={{ headerShown: false }} />
       <Stack.Screen name="Success" component={Success} options={{ headerShown: false }} />
       <Stack.Screen name="Support" component={Support} options={{ headerTitle: t('screens.support') }}/>
+      <Stack.Screen name="ChatScreen" component={ChatScreen} options={{ headerTitle: t('screens.chat') }} />
       <Stack.Screen name="Settings" component={Settings} options={{ headerTitle: t('screens.setting') }}/>
       <Stack.Screen name="Payment" component={Payment} options={{ headerTitle: t('screens.payment') }} />
       <Stack.Screen name="History" component={History} options={{ headerTitle: t('screens.history') }} />

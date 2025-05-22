@@ -34,7 +34,7 @@ const HistoryCard = ({ transaction, onPress }) => {
       case 'COMPLETED': return 'text-green-600';
       case 'FAILED': return 'text-red-600';
       case 'PENDING': return 'text-yellow-600';
-     case 'BLOCKED': return 'text-orange-600';
+      case 'BLOCKED': return 'text-orange-600';
       default: return 'text-gray-600';
     }
   };
@@ -59,7 +59,7 @@ const HistoryCard = ({ transaction, onPress }) => {
         return require('../../images/transaction.png');
     }
   };
-  //console.log('Transaction:', transaction);
+
   return (
     <TouchableOpacity 
       onPress={onPress} 
@@ -264,7 +264,7 @@ const FilterModal = ({ visible, onClose, filters, setFilters, applyFilters }) =>
               className="px-4 py-3 bg-gray-200 rounded-full flex-1 mr-2"
               onPress={() => {
                 setFilters({
-                  dateRange: null,
+                  dateRange: 'today', // Reset to today
                   method: null,
                   type: null,
                   status: null,
@@ -326,8 +326,9 @@ const History = () => {
   const userIdFromProfile = userProfile?.data?.id;
   const userId = userIdFromRedux || userIdFromProfile;
 
+  // Initialize filters with today as default
   const [filters, setFilters] = useState({
-    dateRange: null,
+    dateRange: 'today',
     method: null,
     type: null,
     status: null,
@@ -335,24 +336,23 @@ const History = () => {
     endDate: null
   });
 
-  const [appliedFilters, setAppliedFilters] = useState({});
+  const [appliedFilters, setAppliedFilters] = useState({
+    page: 1,
+    limit: 10,
+    startDate: moment().startOf('day').format('YYYY-MM-DD'),
+    endDate: moment().endOf('day').format('YYYY-MM-DD')
+  });
+
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
 
   const { data, isLoading, isError, refetch } = useGetTransactionHistoryQuery(
     { 
       userId,
-      page: appliedFilters.page || 1,
-      limit: appliedFilters.limit || 10,
-      type: appliedFilters.type,
-      status: appliedFilters.status,
-      method: appliedFilters.method,
-      startDate: appliedFilters.startDate,
-      endDate: appliedFilters.endDate
+      ...appliedFilters
     },
     { skip: !userId }
   );
-  
 
   if (!userId) {
     return (
@@ -372,6 +372,7 @@ const History = () => {
       ...(filters.status && { status: filters.status }),
     };
     
+    // Apply date filters based on selection
     if (filters.dateRange) {
       switch(filters.dateRange) {
         case 'today':
@@ -391,6 +392,10 @@ const History = () => {
           if (filters.endDate) params.endDate = moment(filters.endDate).format('YYYY-MM-DD');
           break;
       }
+    } else {
+      // Default to today if no date range is selected
+      params.startDate = moment().startOf('day').format('YYYY-MM-DD');
+      params.endDate = moment().endOf('day').format('YYYY-MM-DD');
     }
     
     setCurrentPage(1);
@@ -412,10 +417,6 @@ const History = () => {
   useEffect(() => {
     refetch();
   }, [appliedFilters, refetch]);
-
-  useEffect(() => {
-  console.log('Current userId:', userId);
-}, [userId]);
 
   if (isLoading && currentPage === 1) {
     return (
@@ -442,10 +443,17 @@ const History = () => {
   const transactions = data?.data?.items || [];
   const pagination = data?.data?.pagination || { page: 1, totalItems: 0, totalPages: 1 };
 
+  // Check if we're showing today's transactions and there are none
+  const isShowingToday = appliedFilters.startDate === moment().startOf('day').format('YYYY-MM-DD') && 
+                         appliedFilters.endDate === moment().endOf('day').format('YYYY-MM-DD');
+  const noTransactionsToday = isShowingToday && transactions.length === 0;
+
   return (
     <View className="flex-1 bg-gray-50">
       <View className={`flex-row justify-between items-center ${Platform.OS === 'ios' ? 'mt-10' : 'mt-4'} p-4`}>
-        <Text className="text-xl font-bold">{t('history1.title')}</Text>
+        <Text className="text-xl font-bold">
+          {isShowingToday ? t('history1.todayTransactions') : t('history1.title')}
+        </Text>
         <TouchableOpacity 
           className="px-3 py-1 border border-green rounded-full"
           onPress={() => setShowFilterModal(true)}
@@ -507,14 +515,22 @@ const History = () => {
           />
         ) : (
           <View className="flex-1 justify-center items-center">
-            <Text className="text-gray-500">{t('history1.noTransactions')}</Text>
+            <Text className="text-gray-500">
+              {noTransactionsToday ? t('history1.noTransactionsToday') : t('history1.noTransactions')}
+            </Text>
             <TouchableOpacity 
               className="mt-4 px-4 py-2 bg-green-500 rounded"
               onPress={() => {
                 setCurrentPage(1);
-                setAppliedFilters({ page: 1, limit: 10 });
+                // Reset to show today's transactions
+                setAppliedFilters({ 
+                  page: 1, 
+                  limit: 10,
+                  startDate: moment().startOf('day').format('YYYY-MM-DD'),
+                  endDate: moment().endOf('day').format('YYYY-MM-DD')
+                });
                 setFilters({
-                  dateRange: null,
+                  dateRange: 'today',
                   method: null,
                   type: null,
                   status: null,

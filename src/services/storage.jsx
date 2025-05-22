@@ -28,18 +28,3 @@ export const removeData = async (key) => {
     throw e;
   }
 };
-// In your storage service
-export const clearStorage = async () => {
-  try {
-    await AsyncStorage.multiRemove([
-      'authToken',
-      'refreshToken',
-      'userData',
-      'appSettings',
-      // Add any other keys you need to remove
-    ]);
-  } catch (e) {
-    console.error('Failed to clear storage', e);
-    throw e;
-  }
-};

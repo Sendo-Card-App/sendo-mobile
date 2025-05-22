@@ -648,6 +648,8 @@
     "reset": "Réinitialiser",
     "resetFilters": "Réinitialiser les Filtres",
     "noTransactions": "Aucune transaction trouvée",
+     "todayTransactions": "Transactions d'aujourd'hui",
+    "noTransactionsToday": "Aucune transaction aujourd'hui",
     "loadingUser": "Chargement des historique de transaction......",
     "errorLoading": "Erreur lors du chargement des transactions",
     "transactions": "transactions",
@@ -758,6 +760,7 @@
     "createCard": "Créer une carte virtuelle",
     "support": "Support",
      "payment": "Paiements",
+      "chat": "Discussion",
       "history": "Historiques",
        "setting": "Paramètres",
         "receipt": "Recu"
