@@ -1,0 +1,2 @@
+// config.js
+export const EXPO_PUBLIC_API_URL= "https://api.sf-e.ca/api";
