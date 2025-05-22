@@ -222,7 +222,7 @@ const PinCode = ({ navigation, route }) => {
       <View style={{ padding: 20, flex: 1, justifyContent: 'space-between' }}>
         <View style={{ alignItems: 'center' }}>           
           <Image
-            source={require('../../images/LogoSendo.png')}
+            source={require('../../Images/LogoSendo.png')}
             style={{
               width: 100,
               height: 100,
@@ -276,8 +276,8 @@ const PinCode = ({ navigation, route }) => {
                       <Image
                         source={
                           Platform.OS === 'ios' 
-                            ? require('../../images/face-id.png')
-                            : require('../../images/fingerprint.png')
+                            ? require('../../Images/face-id.png')
+                            : require('../../Images/fingerprint.png')
                         }
                         style={{ width: 30, height: 30 }}
                       />

@@ -11,7 +11,7 @@ import {
   Dimensions
 } from "react-native";
 import React, { useState, useEffect } from "react";
-import OrangeMoney from "../../images/om.png";
+import OrangeMoney from "../../Images/om.png";
 import { useNavigation } from "@react-navigation/native";
 import { useGetTransactionHistoryQuery } from "../../services/WalletApi/walletApi";
 import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
@@ -50,11 +50,11 @@ const HistoryCard = ({ transaction, onPress }) => {
     switch(transaction.method?.toUpperCase()) {
       case 'MOBILE_MONEY':
         return transaction.recipient_number?.includes('2376') ? 
-          OrangeMoney : require('../../images/om.png');
+          OrangeMoney : require('../../Images/om.png');
       case 'BANK_TRANSFER':
-        return require('../../images/RoyalBank.png');
+        return require('../../Images/RoyalBank.png');
       default:
-        return require('../../images/transaction.png');
+        return require('../../Images/transaction.png');
     }
   };
 

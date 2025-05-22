@@ -3,12 +3,12 @@ import { View, Text, TextInput, TouchableOpacity, Image, ScrollView, StatusBar }
 import { AntDesign } from '@expo/vector-icons';
 import Ionicons from "@expo/vector-icons/Ionicons";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import HomeImage from "../../images/HomeImage2.png";
-import button from "../../images/ButtomLogo.png";
-import ArrowGoRound from "../../images/ArrowGoRound.png";
-import person from "../../images/person.png"; // Ensure you have this image in your project
-import mtn from "../../images/mtn.png"; // Ensure you have this image in your project
-import om from "../../images/om.png"; // Ensure you have this image in your project
+import HomeImage from "../../Images/HomeImage2.png";
+import button from "../../Images/ButtomLogo.png";
+import ArrowGoRound from "../../Images/ArrowGoRound.png";
+import person from "../../Images/person.png"; // Ensure you have this image in your project
+import mtn from "../../Images/mtn.png"; // Ensure you have this image in your project
+import om from "../../Images/om.png"; // Ensure you have this image in your project
 import { useNavigation, useRoute } from '@react-navigation/native';
 
 const Curency = () => {

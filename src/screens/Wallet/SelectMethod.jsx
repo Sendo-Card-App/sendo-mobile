@@ -42,7 +42,7 @@ const SelectMethod = ({navigation}) => {
           padding: 15,
           marginBottom: 20,
         }}>
-          <Image source={require('../../images/om.png')} style={{ width: 40, height: 40, borderRadius: 20 }} />
+          <Image source={require('../../Images/om.png')} style={{ width: 40, height: 40, borderRadius: 20 }} />
           <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#0D1C6A', marginLeft: 10, flex: 1 }}>
             {t('select_method.transfer_to_mobile')}
           </Text>
@@ -63,7 +63,7 @@ const SelectMethod = ({navigation}) => {
             borderRadius: 10,
             padding: 15,
           }}>
-          <Image source={require('../../images/LogoSendo.png')} style={{ width: 40, height: 40, borderRadius: 20 }} />
+          <Image source={require('../../Images/LogoSendo.png')} style={{ width: 40, height: 40, borderRadius: 20 }} />
           <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#0D1C6A', marginLeft: 10, flex: 1 }}>
             {t('select_method.sendo_transfer')}
           </Text>

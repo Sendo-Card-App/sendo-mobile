@@ -134,7 +134,7 @@ const PinVerificationUI = ({
             {/* Header Section */}
             <View style={{ alignItems: 'center' }}>
               <Image
-                source={require('../../src/images/LogoSendo.png')}
+                source={require('../../src/Images/LogoSendo.png')}
                 style={{
                   width: 80,
                   height: 80,
@@ -180,7 +180,7 @@ const PinVerificationUI = ({
                         <Text style={{ fontSize: 24, color: '#0D1C6A' }}>⌫</Text>
                       ) : item === 'bio' ? (
                         <Image
-                          source={require('../../src/images/face-id.png')} // Add your biometric icon
+                          source={require('../../src/Images/face-id.png')} // Add your biometric icon
                           style={{ width: 30, height: 30 }}
                         />
                       ) : (
