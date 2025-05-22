@@ -13,8 +13,8 @@ import {
 import { AntDesign } from '@expo/vector-icons';
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { MaterialIcons } from '@expo/vector-icons';
-import HomeImage from "../../images/HomeImage2.png";
-import button from "../../images/ButtomLogo.png";
+import HomeImage from "../../Images/HomeImage2.png";
+import button from "../../Images/ButtomLogo.png";
 import { useNavigation } from '@react-navigation/native';
 
 const BeneficiaryDetails = () => {

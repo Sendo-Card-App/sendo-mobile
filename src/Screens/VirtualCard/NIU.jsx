@@ -4,7 +4,7 @@ import { AntDesign, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
-import TopLogo from "../../images/TopLogo.png";
+import TopLogo from "../../Images/TopLogo.png";
 import { useDispatch } from 'react-redux';
 import KycTab from "../../components/KycTab";
 import { setNiuDocument } from '../../features/Kyc/kycReducer';
@@ -159,7 +159,7 @@ const NIU = ({ navigation }) => {
           </View>
         ) : (
           <Image
-            source={require("../../images/DGI.png")}
+            source={require("../../Images/DGI.png")}
             className="w-[80%] mx-auto mt-2"
             style={{ height: width / 1.77 }}
             resizeMode="contain"

@@ -1,0 +1,254 @@
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, Image, ScrollView } from 'react-native';
+import { CheckBox } from 'react-native-elements';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
+import { useSelector } from 'react-redux';
+import { useGetBalanceQuery } from '../../services/WalletApi/walletApi';
+import { useGetUserProfileQuery } from "../../services/Auth/authAPI"; 
+import { useNiuResquestMutation } from "../../services/Kyc/kycApi";
+import { useGetConfigQuery } from '../../services/Config/configApi';
+import Toast from 'react-native-toast-message';
+import TopLogo from '../../Images/TopLogo.png';
+import Loader from "../../components/Loader";
+import PaymentConfirmationModal from '../../components/PaymentConfirmationModal';
+
+const NiuRequest = () => {
+  const { t } = useTranslation();
+  const navigation = useNavigation();
+  const kycStatus = useSelector(state => state.kyc.status);
+  const [completedSteps, setCompletedSteps] = useState({
+    1: true, // Fees step
+    2: true,  // KYC step (already completed)
+    3: false, // NIU Number step
+    4: false  // Attestation step
+  });
+  // Define showToast first
+  const showToast = (type, title, message) => {
+    Toast.show({
+      type: type,
+      text1: title,
+      text2: message,
+      visibilityTime: 4000,
+      autoHide: true,
+      topOffset: 50,
+    });
+  };
+
+  const { data: userProfile, isLoading: isProfileLoading } = useGetUserProfileQuery();
+  const userId = userProfile?.data.id;
+  const [niuRequest, { isLoading: isSubmitting }] = useNiuResquestMutation();
+
+  const { 
+    data: configData, 
+    isLoading: isConfigLoading,
+    error: configError
+  } = useGetConfigQuery();
+  const niuConfig = configData?.data?.find(item => item.id === 12);
+  const feeAmount = niuConfig?.value || 3000;
+   
+  useEffect(() => {
+    if (configError) {
+      console.error('Config fetch error:', configError);
+      showToast('error', t('niu.errors.title'), t('niu.errors.configFetchFailed'));
+    }
+  }, [configError]);
+
+ 
+   
+  // Wallet balance
+  const { 
+    data: balanceData, 
+    error: balanceError,
+    isLoading: isBalanceLoading
+  } = useGetBalanceQuery(userId, { skip: !userId });
+  const balance = balanceData?.balance || 0;
+  
+  // State
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [paymentAccepted, setPaymentAccepted] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+
+  useEffect(() => {
+    if (balanceError) {
+      showToast('error', t('niu.errors.title'), t('niu.errors.balanceFetchFailed'));
+    }
+  }, [balanceError]);
+
+  if (isConfigLoading || isProfileLoading || isBalanceLoading) {
+    return <Loader />;
+  }
+
+  //console.log(configData)
+
+  // Process steps
+  const steps = [
+    { id: 1, title: t('niu.steps.fees'), completed: completedSteps[1] },
+    { id: 2, title: t('niu.steps.kyc'), completed: completedSteps[2] },
+    { id: 3, title: t('niu.steps.niuNumber'), completed: completedSteps[3] },
+    { id: 4, title: t('niu.steps.attestation'), completed: completedSteps[4] },
+  ];
+
+  const handlePaymentConfirmation = async () => {
+  setShowPaymentModal(false);
+  
+  try {
+    const requestData = {
+      type: "NIU_REQUEST",
+      description: "National Identification Number request",
+      userId: userId,
+      status: "pending",
+    };
+
+    const response = await niuRequest(requestData).unwrap();
+    
+    // Check for 201 status code explicitly
+    if (response.status === 201 || response.success) {
+      // Mark fees step as completed
+      setCompletedSteps(prev => ({...prev, 1: true}));
+      
+      showToast('success', t('niu.success.title'), t('niu.success.message'));
+      
+      // Navigate after toast is shown (500ms delay matches toast display)
+      setTimeout(() => navigation.navigate('MainTabs'), 500);
+    } else {
+      // Handle non-201 success cases if your API has them
+      showToast('error', t('niu.errors.title'), 
+        response.message || t('niu.errors.unexpectedSuccess'));
+    }
+  } catch (error) {
+    console.error('NIU request error:', error);
+    
+    // Handle different error cases
+    if (error.status === 401) {
+      showToast('error', t('niu.errors.title'), t('niu.errors.unauthorized'));
+    } else if (error.status === 400) {
+      showToast('error', t('niu.errors.title'), 
+        error.data?.message || t('niu.errors.badRequest'));
+    } else {
+      showToast('error', t('niu.errors.title'), 
+        error.data?.message || t('niu.errors.technical'));
+    }
+  }
+};
+
+  const handlePayPress = () => {
+    if (!termsAccepted || !paymentAccepted) {
+      showToast('error', t('niu.errors.title'), t('niu.errors.termsNotAccepted'));
+      return;
+    }
+    
+    if (balanceData?.data?.balance < feeAmount) {
+      showToast('error', t('niu.errors.title'), t('niu.errors.insufficientBalance'));
+      return;
+    }
+    
+    setShowPaymentModal(true);
+  };
+
+  return (
+    <View className="bg-[#181e25] flex-1 pt-0 relative">
+      {/* Header */}
+      <View className="border-b border-dashed border-white flex-row justify-between py-4 mt-10 items-center mx-5 pt-5">
+        <View className="absolute -top-12 left-0 right-0 items-center justify-center">
+          <Image source={TopLogo} className="h-36 w-40" resizeMode="contain" />
+        </View>
+      </View>
+
+      {/* Title */}
+      <View className="border border-dashed border-gray-300 my-1" />
+      <Text className="text-center text-white text-2xl my-3">
+        {t('niu.request.title')}
+      </Text>
+
+      {/* Main Content */}
+      <ScrollView className="flex-1 pb-3 bg-white rounded-t-3xl">
+        {/* Process Steps */}
+        <View className="p-5">
+          <Text className="font-bold text-lg mb-4">{t('niu.request.processTitle')}</Text>
+          
+          {steps.map((step) => (
+            <View key={step.id} className="flex-row items-center mb-3">
+              <MaterialCommunityIcons 
+                name={step.completed ? "check-circle" : "progress-clock"} 
+                size={24} 
+                color={step.completed ? "green" : "gray"} 
+                style={{ marginRight: 12 }}
+              />
+              <Text className={`text-base ${step.completed ? 'font-bold text-black' : 'text-gray-500'}`}>
+                {step.title}
+              </Text>
+            </View>
+          ))}
+        </View>
+
+        {/* Fees Information */}
+        <View className="bg-gray-100 p-5 mx-5 rounded-lg">
+          <Text className="font-bold text-lg mb-2">{t('niu.request.feesTitle')}</Text>
+          <Text className="text-gray-700 mb-1">
+            {t('niu.request.feesAmount')}: <Text className="font-bold">{feeAmount.toLocaleString()} FCFA</Text>
+          </Text>
+        </View>
+
+        {/* Terms Checkboxes */}
+        <View className="p-5">
+          <CheckBox
+            title={t('niu.request.termsAccept')}
+            checked={termsAccepted}
+            onPress={() => setTermsAccepted(!termsAccepted)}
+            containerStyle={{ backgroundColor: 'transparent', borderWidth: 0 }}
+            textStyle={{ color: '#333', fontWeight: 'normal' }}
+            checkedColor="#7ddd7d"
+          />
+          
+          <CheckBox
+            title={t('niu.request.paymentAccept')}
+            checked={paymentAccepted}
+            onPress={() => setPaymentAccepted(!paymentAccepted)}
+            containerStyle={{ backgroundColor: 'transparent', borderWidth: 0 }}
+            textStyle={{ color: '#333', fontWeight: 'normal' }}
+            checkedColor="#7ddd7d"
+          />
+        </View>
+
+        {/* Pay Button */}
+        <TouchableOpacity
+        className={`mx-5 mb-8 py-3 rounded-full ${termsAccepted && paymentAccepted ? 'bg-green-500' : 'bg-gray-300'}`}
+        onPress={handlePayPress}
+        disabled={!termsAccepted || !paymentAccepted || isSubmitting}
+      >
+        {isSubmitting ? (
+          <View className="flex-row justify-center items-center">
+            <Loader color="white" size="small" />
+            <Text className="text-xl text-center font-bold text-white ml-2">
+              {t('niu.request.processing')}
+            </Text>
+          </View>
+        ) : (
+          <Text className={`text-xl text-center font-bold ${termsAccepted && paymentAccepted ? 'text-white' : 'text-gray-500'}`}>
+            {t('niu.request.payButton')}
+          </Text>
+        )}
+      </TouchableOpacity>
+      </ScrollView>
+
+      {/* Payment Confirmation Modal */}
+      <PaymentConfirmationModal
+        visible={showPaymentModal}
+        onClose={() => setShowPaymentModal(false)}
+        onConfirm={handlePaymentConfirmation}
+        amount={feeAmount}
+        title={t('niu.paymentModal.title')}
+        message={t('niu.paymentModal.message', { amount: feeAmount.toLocaleString() })}
+        confirmText={t('niu.paymentModal.confirm')}
+        cancelText={t('niu.paymentModal.cancel')}
+      />
+
+      {/* Toast Component */}
+      <Toast />
+    </View>
+  );
+};
+
+export default NiuRequest;

@@ -1,8 +1,8 @@
 import { View, Text, Image, TouchableOpacity, ScrollView, TextInput } from "react-native";
 import React, { useState } from "react";
 import { MaterialIcons } from '@expo/vector-icons';
-import button from "../../images/ButtomLogo.png";
-import HomeImage from "../../images/HomeImage2.png";
+import button from "../../Images/ButtomLogo.png";
+import HomeImage from "../../Images/HomeImage2.png";
 import { AntDesign, Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 

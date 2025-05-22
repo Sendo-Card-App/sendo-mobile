@@ -1,9 +1,9 @@
 import { View, Text, Image, TouchableOpacity } from "react-native";
 import React from "react";
-import TopLogo from "../../images/TopLogo.png";
+import TopLogo from "../../Images/TopLogo.png";
 import { Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
-import VerifyImage from "../../images/VerifyImage.png";
+import VerifyImage from "../../Images/VerifyImage.png";
 import { useTranslation } from 'react-i18next';
 
 const VerifyIdentity = ({ navigation }) => {
