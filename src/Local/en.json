@@ -242,7 +242,7 @@
 "recipient_name": "Name of beneficiary",
 "recipient_info": "Recipient Information",
  "recipient_not_found": "Beneficiary not found",
-"recipient_placeholder": "Enter wallet matricule",
+"recipient_placeholder": "Enter account number",
 "amount": "Amount (FCFA)",
 "amount_placeholder": "0.0",
 "description": "Description (optional)",
@@ -597,6 +597,7 @@
   },
   "common": {
     "cancel": "Cancel",
+    "close": "Close",
     "signIn": "Sign In",
      "error": "Error",
     "success": "Success",
@@ -850,7 +851,7 @@
     "securityWarning": "Do not share your personal information..."
   },
   "addressScreen": {
-    "title": "Your Residential Address",
+    "title": "Reciever information",
     "fields": {
       "firstname": "Firstname",
       "lastname": "Lastname",
@@ -894,7 +895,7 @@
   },
   "confirmeTheTransfer": {
     "title": "Transfer Confirmation",
-    "interacInstructions": "Please use the following information to transfer funds to your account via INTERAC:",
+    "interacInstructions": "Please use the following information to transfer funds to our INTERAC account:",
     "interacPhone": "Phone number:  506 233 2921",
     "fullname": "Full Name",
     "lastname": "Last Name",
@@ -905,7 +906,7 @@
     "transferFee": "Transfer Fee",
     "exchangeRate": "Exchange Rate",
     "convertedAmount": "Converted Amount",
-    "totalDebited": "Total Debited",
+    "totalDebited": "Total Sent",
     "paymentMethod": "Payment Method",
     "processingNote": "Your transfer should be processed within a few minutes.",
     "confirmButton": "Confirm and Continue",

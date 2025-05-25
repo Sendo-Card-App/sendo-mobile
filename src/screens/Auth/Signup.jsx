@@ -17,7 +17,7 @@ import { AntDesign } from "@expo/vector-icons";
 import { Feather } from '@expo/vector-icons';
 import KeyboardAvoidinWrapper from "../../components/KeyboardAvoidinWrapper";
 import { useDispatch, useSelector } from "react-redux";
-import { useRegisterMutation } from "../../services/Auth/authAPI";
+import { useRegisterMutation, useEmailSendMutation } from "../../services/Auth/authAPI";
 import {
   signupStart,
   signupSuccess,
@@ -33,6 +33,7 @@ const Signup = () => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const [register, { isLoading }] = useRegisterMutation();
+   const [emailSend] = useEmailSendMutation();
   const { error, isSignupSuccess } = useSelector((state) => state.auth);
 
   const [countries, setCountries] = useState([]);
@@ -137,7 +138,23 @@ const Signup = () => {
       if (response.accessToken) {
         await AsyncStorage.setItem('@accessToken', response.accessToken);
       }
-
+      
+    try {
+      await emailSend({ email: signupDetails.email }).unwrap();
+      Toast.show({
+        type: 'success',
+        text1: 'Success',
+        text2: 'Verification email sent successfully',
+      });
+    } catch (emailError) {
+      console.error('Failed to send email:', emailError);
+     
+      Toast.show({
+        type: 'info',
+        text1: 'Notice',
+        text2: 'Account created but email verification not sent',
+      });
+    }
       dispatch(signupSuccess(response));
       Toast.show({
         type: 'success',
@@ -246,6 +263,7 @@ const Signup = () => {
                 shadowOpacity: 0.1,
                 shadowRadius: 2,
                 elevation: 2,
+                 color: '#000' // Ensure text color is readable
               }}
             />
             {validationErrors.firstName && (
@@ -272,6 +290,7 @@ const Signup = () => {
                 shadowOpacity: 0.1,
                 shadowRadius: 2,
                 elevation: 2,
+                 color: '#000' 
               }}
             />
             {validationErrors.lastName && (
@@ -300,6 +319,7 @@ const Signup = () => {
                 shadowOpacity: 0.1,
                 shadowRadius: 2,
                 elevation: 2,
+                 color: '#000' 
               }}
             />
             {validationErrors.email && (
@@ -315,6 +335,7 @@ const Signup = () => {
                 shadowOpacity: 0.1,
                 shadowRadius: 2,
                 elevation: 2,
+                 color: '#000' 
               }}>
               <TouchableOpacity onPress={openModal} className="px-3">
                 <Text className="text-lg">{selectedCountry.flag} {selectedCountry.code}</Text>
@@ -356,6 +377,7 @@ const Signup = () => {
                 shadowOpacity: 0.1,
                 shadowRadius: 2,
                 elevation: 2,
+                 color: '#000' 
               }}
             />
             {validationErrors.address && (
@@ -394,6 +416,7 @@ const Signup = () => {
                     shadowOpacity: 0.1,
                     shadowRadius: 2,
                     elevation: 2,
+                     color: '#000' 
                   }}
                 />
               </>
@@ -421,6 +444,7 @@ const Signup = () => {
                   shadowOpacity: 0.1,
                   shadowRadius: 2,
                   elevation: 2,
+                   color: '#000' 
                 }}
               />
               <TouchableOpacity
@@ -466,6 +490,33 @@ const Signup = () => {
             {t("signup.signIn")}
           </Text>
         </TouchableOpacity>
+        {/* Country Picker Modal */}
+        <Modal visible={isModalVisible} animationType="slide">
+          <SafeAreaView className="flex-1 bg-white">
+            <FlatList
+              data={countries}
+              keyExtractor={(item, index) => index.toString()}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  className="flex-row items-center p-4 border-b border-gray-200"
+                  onPress={() => selectCountry(item)}
+                >
+                  <Text className="text-lg mr-2">{item.flag}</Text>
+                  <Text className="text-lg">{item.name} ({item.callingCode})</Text>
+                </TouchableOpacity>
+              )}
+            />
+            <TouchableOpacity
+              className="absolute bottom-5 left-5 right-5 bg-green-500 py-4 rounded-full"
+              onPress={closeModal}
+            >
+              <Text className="text-white text-center text-lg">{t("common.close")}</Text>
+            </TouchableOpacity>
+          </SafeAreaView>
+        </Modal>
+
+        {/* Loader Overlay */}
+        {isLoading && <Loader />}
       </SafeAreaView>
     </KeyboardAvoidinWrapper>
   );

@@ -257,6 +257,7 @@ const SignIn = () => {
         fontSize: 16,
         borderWidth: 1,
         borderColor: '#ddd',
+         color: '#000' // Ensure text color is black for better contrast
       }}
     />
   </View>
@@ -284,6 +285,7 @@ const SignIn = () => {
           fontSize: 16,
           borderWidth: 1,
           borderColor: '#ddd',
+           color: '#000' // Ensure text color is black for better contrast
         }}
       />
       <TouchableOpacity

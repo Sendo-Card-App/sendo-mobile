@@ -3,6 +3,7 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 // Constants for endpoints
 const AUTH_ENDPOINTS = {
   REGISTER: '/auth/register',
+  AUTH: '/auth/email/send',
   VERIFY_OTP: '/auth/otp/verify',
   SEND_OTP: '/auth/otp/send',
   REFRESH_TOKEN: '/auth/refresh-token',
@@ -55,6 +56,15 @@ export const authApi = createApi({
         url: AUTH_ENDPOINTS.REGISTER,
         method: 'POST',
         body: userData,
+      }),
+      invalidatesTags: [TAG_TYPES.AUTH],
+    }),
+    // Email endpoints
+     emailSend: builder.mutation({
+      query: (email) => ({
+        url: AUTH_ENDPOINTS.AUTH,
+        method: 'POST',
+        body: email,
       }),
       invalidatesTags: [TAG_TYPES.AUTH],
     }),
@@ -229,6 +239,7 @@ export { AUTH_ENDPOINTS, TAG_TYPES };
 export const { 
   useRegisterMutation,
   useVerifyOtpMutation,
+  useEmailSendMutation,
   useSendOtpMutation,
   useVerifyPasscodeMutation,
   useCreatePasscodeMutation,

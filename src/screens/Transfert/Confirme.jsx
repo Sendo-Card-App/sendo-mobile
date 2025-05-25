@@ -74,7 +74,7 @@ const ConfirmeTheTransfer = () => {
       provider,
     }).unwrap();
 
-    console.log("response", response);
+    //console.log("response", response);
 
     if (response.status === 200 && response.data) {
       Toast.show({
@@ -83,7 +83,6 @@ const ConfirmeTheTransfer = () => {
         text2: "Veuillez suivre l’évolution du statut dans l’historique.",
       });
 
-      // ✅ Send notification
       try {
         let pushToken = await getStoredPushToken();
         if (!pushToken) {
