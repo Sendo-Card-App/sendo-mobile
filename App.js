@@ -75,10 +75,16 @@ import AddressConfirm from "./src/Screens/VirtualCard/AddressConfirm";
 import Address from "./src/Screens/Transfert/Address";
 import Camera from "./src/Screens/VirtualCard/Camera";
 import ChangePassword from "./src/Screens/Setting/ChangePassword";
+import ChatScreen from "./src/Screens/Chat/ChatScreen";
 
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
 const Tab = createBottomTabNavigator();
+
+const headerHeight = Platform.select({
+  ios: 60,
+  android: 56, // Standard Android header height
+});
 
 // Custom tab bar component
 function CustomTabBar({ state, descriptors, navigation }) {
@@ -206,19 +212,29 @@ function MainStack() {
       screenOptions={({ navigation }) => ({
         headerStyle: { 
           backgroundColor: Colors.primary,
-          height: 60, 
+          height: headerHeight,
+          elevation: 0, // Remove shadow on Android
+          shadowOpacity: 0, // Remove shadow on iOS
         },
         headerTitleStyle: { 
           fontSize: 18, 
           fontWeight: "bold", 
           color: Colors.text,
-         
-          marginTop: Platform.OS === 'ios' ? 0 : -3,
+          alignSelf: 'center',
+          textAlign: 'center',
+          width: '100%',
+          marginLeft: -40, // Compensate for back button space
         },
         headerTitleAlign: "center",
         headerLeftContainerStyle: {
-         
-          paddingTop: Platform.OS === 'ios' ? 0 : 4,
+          paddingLeft: Platform.select({
+            ios: 8,
+            android: 16,
+          }),
+          paddingTop: Platform.select({
+            ios: 0,
+            android: 4,
+          }),
         },
         headerLeft: () => (
           <TouchableOpacity 
@@ -226,24 +242,32 @@ function MainStack() {
             style={{ 
               flexDirection: 'row',
               alignItems: 'center',
-              height: '100%', 
-              paddingHorizontal: 12,
+              justifyContent: 'center',
+              height: '100%',
+              minWidth: 40, // Ensure consistent tap area
+              paddingHorizontal: Platform.select({
+                ios: 8,
+                android: 16,
+              }),
             }}
           >
             {Platform.OS === 'ios' ? (
               <Text style={{ 
                 fontSize: 24, 
                 color: Colors.text,
-               
-                marginTop: Platform.OS === 'ios' ? -2 : 0,
+                marginTop: -2,
               }}>&lt;</Text>
             ) : (
-              <AntDesign 
-                name="arrowleft" 
-                size={20} 
-                color={Colors.text}
-                style={{ marginTop: 2 }}
-              />
+              <View style={{ 
+                justifyContent: 'center',
+                height: '100%',
+              }}>
+                <AntDesign 
+                  name="arrowleft" 
+                  size={20} 
+                  color={Colors.text}
+                />
+              </View>
             )}
           </TouchableOpacity>
         ),
@@ -289,7 +313,7 @@ function MainStack() {
       />
       <Stack.Screen name="BankDepositRecharge" component={BankDepositRecharge} options={{ headerTitle: t('screens.bankDeposit') }}/>
       <Stack.Screen name="TransfertFund" component={TransfertFund} options={{ headerTitle: t('screens.transferFunds') }} />
-      <Stack.Screen name="PaymentSimulator" component={PaymentSimulator} options={{ headerTitle: t('screens.PaymentSimulator') }} />
+      <Stack.Screen name="PaymentSimulator" component={PaymentSimulator} options={{ headerTitle: t('screens.paymentSimulator') }} />
       <Stack.Screen name="MethodType" component={MethodType} options={{ headerTitle: t('screens.selectMethod') }} />
       <Stack.Screen name="WalletTransfer" component={WalletTransfer} options={{ headerTitle: t('screens.walletTransfer') }} />
       <Stack.Screen name="AddContact" component={AddContact} options={{ headerTitle: t('screens.addContact') }} />
@@ -297,6 +321,7 @@ function MainStack() {
       <Stack.Screen name="ConﬁrmeTheTransfer" component={ConﬁrmeTheTransfer} options={{ headerShown: false }} />
       <Stack.Screen name="Success" component={Success} options={{ headerShown: false }} />
       <Stack.Screen name="Support" component={Support} options={{ headerTitle: t('screens.support') }}/>
+      <Stack.Screen name="ChatScreen" component={ChatScreen} options={{ headerTitle: t('screens.chat') }} />
       <Stack.Screen name="Settings" component={Settings} options={{ headerTitle: t('screens.setting') }}/>
       <Stack.Screen name="Payment" component={Payment} options={{ headerTitle: t('screens.payment') }} />
       <Stack.Screen name="History" component={History} options={{ headerTitle: t('screens.history') }} />

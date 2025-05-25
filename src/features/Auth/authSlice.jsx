@@ -37,6 +37,16 @@ const authSlice = createSlice({
       state.loading = false;
       state.error = action.payload;
     },
+    setAuth: (state, action) => {
+      state.token = action.payload.token;
+      state.user = action.payload.user;
+      state.isAuthenticated = true;
+    },
+    clearAuth: (state) => {
+      state.token = null;
+      state.user = null;
+      state.isAuthenticated = false;
+    },
 
     // Login actions
     loginStart(state, action) {
@@ -144,6 +154,8 @@ export const {
   verifyOtpStart,
   verifyOtpSuccess,
   verifyOtpFailure,
+  setAuth, 
+  clearAuth,
   setPasscode,
   clearPasscode,
   setPasscodeRequired,

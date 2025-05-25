@@ -1,13 +1,40 @@
 import { View, Text, Image, TouchableOpacity } from "react-native";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import TopLogo from "../../Images/TopLogo.png";
 import { Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 import VerifyImage from "../../Images/VerifyImage.png";
 import { useTranslation } from 'react-i18next';
+import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
 
 const VerifyIdentity = ({ navigation }) => {
   const { t } = useTranslation();
+  const [showVerifiedMessage, setShowVerifiedMessage] = useState(false);
+  const { data: userProfile, isLoading: isProfileLoading } = useGetUserProfileQuery();
+
+  useEffect(() => {
+    if (userProfile?.data?.isVerifiedKYC) {
+      setShowVerifiedMessage(true);
+      const timer = setTimeout(() => {
+        setShowVerifiedMessage(false);
+      }, 10000); // 20 seconds
+      return () => clearTimeout(timer);
+    }
+  }, [userProfile]);
+
+  const handleNextPress = () => {
+    if (!userProfile?.data?.isVerifiedKYC) {
+      navigation.navigate("KycResume");
+    }
+  };
+
+  if (isProfileLoading) {
+    return (
+      <View className="bg-[#181e25] flex-1 items-center justify-center">
+        <Text className="text-white">Loading...</Text>
+      </View>
+    );
+  }
 
   return (
     <View className="bg-[#181e25] flex-1 pt-0 relative">
@@ -34,6 +61,14 @@ const VerifyIdentity = ({ navigation }) => {
 
       {/* Main Content */}
       <View className="flex-1 gap-6 py-3 bg-white px-8 rounded-t-3xl">
+        {showVerifiedMessage && (
+          <View className="bg-green-100 p-3 rounded-md mb-4">
+            <Text className="text-green-800 text-center font-bold text-lg">
+              {t('verifyIdentity.alreadyVerifiedMessage')}
+            </Text>
+          </View>
+        )}
+
         <View className="my-5">
           <Text className="text-center text-gray-800 text-sm font-bold">
             {t('verifyIdentity.heading')}
@@ -53,14 +88,17 @@ const VerifyIdentity = ({ navigation }) => {
           </Text>
         </Text>
 
-        <TouchableOpacity
-          className="mt-auto bg-[#7ddd7d] py-3 rounded-full mb-8"
-          onPress={() => navigation.navigate("KycResume")}
-        >
-          <Text className="text-xl text-center font-bold">
-            {t('verifyIdentity.nextButton')}
-          </Text>
-        </TouchableOpacity>
+        {/* Only show button if user is not verified */}
+        {!userProfile?.data?.isVerifiedKYC && (
+          <TouchableOpacity
+            className="mt-auto py-3 rounded-full mb-8 bg-[#7ddd7d]"
+            onPress={handleNextPress}
+          >
+            <Text className="text-xl text-center font-bold">
+              {t('verifyIdentity.nextButton')}
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* Footer */}
@@ -77,4 +115,3 @@ const VerifyIdentity = ({ navigation }) => {
 };
 
 export default VerifyIdentity;
-

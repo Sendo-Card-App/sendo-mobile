@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { useSelector } from 'react-redux';
 import { useGetBalanceQuery } from '../../services/WalletApi/walletApi';
 import { useGetUserProfileQuery } from "../../services/Auth/authAPI"; 
-import { useNiuResquestMutation } from "../../services/Kyc/kycApi";
+import { useNiuResquestMutation, useGetUserRequestsQuery } from "../../services/Kyc/kycApi";
 import { useGetConfigQuery } from '../../services/Config/configApi';
 import Toast from 'react-native-toast-message';
 import TopLogo from '../../Images/TopLogo.png';
@@ -24,7 +24,7 @@ const NiuRequest = () => {
     3: false, // NIU Number step
     4: false  // Attestation step
   });
-  // Define showToast first
+
   const showToast = (type, title, message) => {
     Toast.show({
       type: type,
@@ -40,6 +40,13 @@ const NiuRequest = () => {
   const userId = userProfile?.data.id;
   const [niuRequest, { isLoading: isSubmitting }] = useNiuResquestMutation();
 
+  // Fetch user requests
+  const { 
+    data: userRequests,
+    isLoading: isRequestsLoading,
+    error: requestsError
+  } = useGetUserRequestsQuery(userId, { skip: !userId });
+
   const { 
     data: configData, 
     isLoading: isConfigLoading,
@@ -53,10 +60,70 @@ const NiuRequest = () => {
       console.error('Config fetch error:', configError);
       showToast('error', t('niu.errors.title'), t('niu.errors.configFetchFailed'));
     }
-  }, [configError]);
+    if (requestsError) {
+      console.error('Requests fetch error:', requestsError);
+      showToast('error', t('niu.errors.title'), t('niu.errors.requestsFetchFailed'));
+    }
+  }, [configError, requestsError]);
 
- 
-   
+  // Check for existing NIU requests
+  useEffect(() => {
+  if (userRequests?.data?.items) {
+    const niuRequests = userRequests.data.items.filter(
+      request => request.type === 'NIU_REQUEST'
+    );
+    
+    // Check if any request is approved
+    const approvedRequest = niuRequests.find(
+      request => request.status === 'APPROVED'
+    );
+    
+    // Check if any request is pending
+    const pendingRequest = niuRequests.find(
+      request => request.status === 'UNPROCESSED' || request.status === 'PENDING'
+    );
+    
+    // Check if any request was rejected
+    const rejectedRequest = niuRequests.find(
+      request => request.status === 'REJECTED'
+    );
+
+    if (approvedRequest) {
+      // User already has an approved NIU request
+      setCompletedSteps(prev => ({
+        ...prev,
+        1: true, // Fees step
+        3: true, // NIU Number step
+        4: true  // Attestation step
+      }));
+    } else if (pendingRequest) {
+      // User has a pending request
+      setCompletedSteps(prev => ({
+        ...prev,
+        1: true, // Fees step
+        3: false, // NIU Number step
+        4: false  // Attestation step
+      }));
+    } else if (rejectedRequest) {
+      // User had a rejected request
+      setCompletedSteps(prev => ({
+        ...prev,
+        1: false, // Fees step needs to be paid again
+        3: false, // NIU Number step
+        4: false  // Attestation step
+      }));
+    } else {
+      // No existing requests
+      setCompletedSteps(prev => ({
+        ...prev,
+        1: false,
+        3: false,
+        4: false
+      }));
+    }
+  }
+}, [userRequests]);
+
   // Wallet balance
   const { 
     data: balanceData, 
@@ -76,11 +143,13 @@ const NiuRequest = () => {
     }
   }, [balanceError]);
 
-  if (isConfigLoading || isProfileLoading || isBalanceLoading) {
-    return <Loader />;
-  }
-
-  //console.log(configData)
+ if (isConfigLoading || isProfileLoading || isBalanceLoading || isRequestsLoading) {
+  return (
+    <View className="flex-1 justify-center items-center">
+      <Loader size="large" />
+    </View>
+  );
+}
 
   // Process steps
   const steps = [
@@ -91,47 +160,40 @@ const NiuRequest = () => {
   ];
 
   const handlePaymentConfirmation = async () => {
-  setShowPaymentModal(false);
-  
-  try {
-    const requestData = {
-      type: "NIU_REQUEST",
-      description: "National Identification Number request",
-      userId: userId,
-      status: "pending",
-    };
+    setShowPaymentModal(false);
+    
+    try {
+      const requestData = {
+        type: "NIU_REQUEST",
+        description: "National Identification Number request",
+        userId: userId,
+        status: "pending",
+      };
 
-    const response = await niuRequest(requestData).unwrap();
-    
-    // Check for 201 status code explicitly
-    if (response.status === 201 || response.success) {
-      // Mark fees step as completed
-      setCompletedSteps(prev => ({...prev, 1: true}));
+      const response = await niuRequest(requestData).unwrap();
       
-      showToast('success', t('niu.success.title'), t('niu.success.message'));
+      if (response.status === 201 || response.success) {
+        setCompletedSteps(prev => ({...prev, 1: true}));
+        showToast('success', t('niu.success.title'), t('niu.success.message'));
+        setTimeout(() => navigation.navigate('NiuRequest'), 500);
+      } else {
+        showToast('error', t('niu.errors.title'), 
+          response.message || t('niu.errors.unexpectedSuccess'));
+      }
+    } catch (error) {
+      console.error('NIU request error:', error);
       
-      // Navigate after toast is shown (500ms delay matches toast display)
-      setTimeout(() => navigation.navigate('MainTabs'), 500);
-    } else {
-      // Handle non-201 success cases if your API has them
-      showToast('error', t('niu.errors.title'), 
-        response.message || t('niu.errors.unexpectedSuccess'));
+      if (error.status === 401) {
+        showToast('error', t('niu.errors.title'), t('niu.errors.unauthorized'));
+      } else if (error.status === 400) {
+        showToast('error', t('niu.errors.title'), 
+          error.data?.message || t('niu.errors.badRequest'));
+      } else {
+        showToast('error', t('niu.errors.title'), 
+          error.data?.message || t('niu.errors.technical'));
+      }
     }
-  } catch (error) {
-    console.error('NIU request error:', error);
-    
-    // Handle different error cases
-    if (error.status === 401) {
-      showToast('error', t('niu.errors.title'), t('niu.errors.unauthorized'));
-    } else if (error.status === 400) {
-      showToast('error', t('niu.errors.title'), 
-        error.data?.message || t('niu.errors.badRequest'));
-    } else {
-      showToast('error', t('niu.errors.title'), 
-        error.data?.message || t('niu.errors.technical'));
-    }
-  }
-};
+  };
 
   const handlePayPress = () => {
     if (!termsAccepted || !paymentAccepted) {
@@ -145,6 +207,54 @@ const NiuRequest = () => {
     }
     
     setShowPaymentModal(true);
+  };
+
+  // Get status message based on existing requests
+  const getStatusMessage = () => {
+    if (!userRequests?.data?.items) return null;
+    
+    const niuRequests = userRequests.data.items.filter(
+      request => request.type === 'NIU_REQUEST'
+    );
+    
+    const approvedRequest = niuRequests.find(
+      request => request.status === 'APPROVED'
+    );
+    
+    const pendingRequest = niuRequests.find(
+      request => request.status === 'UNPROCESSED' || request.status === 'PENDING'
+    );
+    
+    const rejectedRequest = niuRequests.find(
+      request => request.status === 'REJECTED'
+    );
+
+    if (approvedRequest) {
+      return (
+        <Text className="text-green-600 mt-2 font-bold text-lg">
+          {t('niu.request.statusApproved')}
+        </Text>
+      );
+    }
+    
+    if (pendingRequest) {
+      return (
+        <Text className="text-green-600 mt-2 font-bold text-lg">
+          {t('niu.request.statusPending')}
+        </Text>
+      );
+    }
+    
+    if (rejectedRequest) {
+      return (
+        <Text className="text-red-600 mt-2 font-bold text-lg">
+          {t('niu.request.statusRejected')}
+          {rejectedRequest.reason && `: ${rejectedRequest.reason}`}
+        </Text>
+      );
+    }
+    
+    return null;
   };
 
   return (
@@ -189,6 +299,7 @@ const NiuRequest = () => {
           <Text className="text-gray-700 mb-1">
             {t('niu.request.feesAmount')}: <Text className="font-bold">{feeAmount.toLocaleString()} FCFA</Text>
           </Text>
+          {getStatusMessage()}
         </View>
 
         {/* Terms Checkboxes */}
@@ -203,7 +314,7 @@ const NiuRequest = () => {
           />
           
           <CheckBox
-            title={t('niu.request.paymentAccept')}
+            title={`${t('niu.request.paymentAccept')} ${feeAmount.toLocaleString()} FCFA`}
             checked={paymentAccepted}
             onPress={() => setPaymentAccepted(!paymentAccepted)}
             containerStyle={{ backgroundColor: 'transparent', borderWidth: 0 }}
@@ -214,23 +325,23 @@ const NiuRequest = () => {
 
         {/* Pay Button */}
         <TouchableOpacity
-        className={`mx-5 mb-8 py-3 rounded-full ${termsAccepted && paymentAccepted ? 'bg-green-500' : 'bg-gray-300'}`}
-        onPress={handlePayPress}
-        disabled={!termsAccepted || !paymentAccepted || isSubmitting}
-      >
-        {isSubmitting ? (
-          <View className="flex-row justify-center items-center">
-            <Loader color="white" size="small" />
-            <Text className="text-xl text-center font-bold text-white ml-2">
-              {t('niu.request.processing')}
+          className={`mx-5 mb-8 py-3 rounded-full ${termsAccepted && paymentAccepted ? 'bg-green-500' : 'bg-gray-300'}`}
+          onPress={handlePayPress}
+          disabled={!termsAccepted || !paymentAccepted || isSubmitting || completedSteps[3]}
+        >
+          {isSubmitting ? (
+            <View className="flex-row justify-center items-center">
+              <Loader color="white" size="small" />
+              <Text className="text-xl text-center font-bold text-white ml-2">
+                {t('niu.request.processing')}
+              </Text>
+            </View>
+          ) : (
+            <Text className={`text-xl text-center font-bold ${termsAccepted && paymentAccepted ? 'text-white' : 'text-gray-500'}`}>
+              {completedSteps[3] ? t('niu.request.alreadyApproved') : t('niu.request.payButton')}
             </Text>
-          </View>
-        ) : (
-          <Text className={`text-xl text-center font-bold ${termsAccepted && paymentAccepted ? 'text-white' : 'text-gray-500'}`}>
-            {t('niu.request.payButton')}
-          </Text>
-        )}
-      </TouchableOpacity>
+          )}
+        </TouchableOpacity>
       </ScrollView>
 
       {/* Payment Confirmation Modal */}

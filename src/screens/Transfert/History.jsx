@@ -13,6 +13,7 @@ import {
 import React, { useState, useEffect } from "react";
 import OrangeMoney from "../../Images/om.png";
 import { useNavigation } from "@react-navigation/native";
+import SkeletonLoader from '../../components/SkeletonLoader';
 import { useGetTransactionHistoryQuery } from "../../services/WalletApi/walletApi";
 import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
 import { useSelector } from "react-redux";
@@ -30,9 +31,10 @@ const HistoryCard = ({ transaction, onPress }) => {
   
   const getStatusColor = (status) => {
     switch(status?.toUpperCase()) {
-      case 'SUCCESS': return 'text-green-600';
+      case 'COMPLETED': return 'text-green-600';
       case 'FAILED': return 'text-red-600';
       case 'PENDING': return 'text-yellow-600';
+      case 'BLOCKED': return 'text-orange-600';
       default: return 'text-gray-600';
     }
   };
@@ -84,7 +86,7 @@ const HistoryCard = ({ transaction, onPress }) => {
         </Text>
         <View className="items-end">
           <Text className="text-gray-600 text-sm">
-            {moment(transaction.created_at).format('DD/MM/YYYY à HH:mm')}
+            {transaction.createdAt ? moment(transaction.createdAt).format('DD/MM/YYYY HH:mm') : 'N/A'}
           </Text>
           <Text className={`text-sm font-bold ${getStatusColor(transaction.status)}`}>
             {t(`history1.${transaction.status?.toLowerCase()}`)}
@@ -129,9 +131,10 @@ const FilterModal = ({ visible, onClose, filters, setFilters, applyFilters }) =>
   ];
 
   const statuses = [
-    { label: t('history1.success'), value: 'SUCCESS' },
+    { label: t('history1.success'), value: 'COMPLETED' },
     { label: t('history1.failed'), value: 'FAILED' },
-    { label: t('history1.pending'), value: 'PENDING' }
+    { label: t('history1.pending'), value: 'PENDING' },
+    { label: t('history1.blocked'), value: 'BLOCKED' }
   ];
 
   return (
@@ -146,7 +149,7 @@ const FilterModal = ({ visible, onClose, filters, setFilters, applyFilters }) =>
           <View className="flex-row justify-between items-center mb-4">
             <Text className="text-xl font-bold">{t('history1.filterTitle')}</Text>
             <TouchableOpacity onPress={onClose}>
-              <Text className="text-blue-500">{t('common3.close')}</Text>
+              <Text className="text-green">{t('common3.close')}</Text>
             </TouchableOpacity>
           </View>
 
@@ -158,7 +161,7 @@ const FilterModal = ({ visible, onClose, filters, setFilters, applyFilters }) =>
                 {quickDateFilters.map(item => (
                   <TouchableOpacity
                     key={item.value}
-                    className={`px-3 py-2 mr-2 mb-2 rounded-full ${filters.dateRange === item.value ? 'bg-blue-500' : 'bg-gray-200'}`}
+                    className={`px-3 py-2 mr-2 mb-2 rounded-full ${filters.dateRange === item.value ? 'bg-green-500' : 'bg-gray-200'}`}
                     onPress={() => setFilters(prev => ({ ...prev, dateRange: item.value }))}
                   >
                     <Text className={filters.dateRange === item.value ? 'text-white' : 'text-gray-800'}>
@@ -199,7 +202,7 @@ const FilterModal = ({ visible, onClose, filters, setFilters, applyFilters }) =>
                 {types.map(item => (
                   <TouchableOpacity
                     key={item.value}
-                    className={`px-3 py-2 mr-2 mb-2 rounded-full ${filters.type === item.value ? 'bg-blue-500' : 'bg-gray-200'}`}
+                    className={`px-3 py-2 mr-2 mb-2 rounded-full ${filters.type === item.value ? 'bg-green-500' : 'bg-gray-200'}`}
                     onPress={() => setFilters(prev => ({ 
                       ...prev, 
                       type: prev.type === item.value ? null : item.value 
@@ -220,7 +223,7 @@ const FilterModal = ({ visible, onClose, filters, setFilters, applyFilters }) =>
                 {methods.map(item => (
                   <TouchableOpacity
                     key={item.value}
-                    className={`px-3 py-2 mr-2 mb-2 rounded-full ${filters.method === item.value ? 'bg-blue-500' : 'bg-gray-200'}`}
+                    className={`px-3 py-2 mr-2 mb-2 rounded-full ${filters.method === item.value ? 'bg-green-500' : 'bg-gray-200'}`}
                     onPress={() => setFilters(prev => ({ 
                       ...prev, 
                       method: prev.method === item.value ? null : item.value 
@@ -241,7 +244,7 @@ const FilterModal = ({ visible, onClose, filters, setFilters, applyFilters }) =>
                 {statuses.map(item => (
                   <TouchableOpacity
                     key={item.value}
-                    className={`px-3 py-2 mr-2 mb-2 rounded-full ${filters.status === item.value ? 'bg-blue-500' : 'bg-gray-200'}`}
+                    className={`px-3 py-2 mr-2 mb-2 rounded-full ${filters.status === item.value ? 'bg-green-500' : 'bg-gray-200'}`}
                     onPress={() => setFilters(prev => ({ 
                       ...prev, 
                       status: prev.status === item.value ? null : item.value 
@@ -261,7 +264,7 @@ const FilterModal = ({ visible, onClose, filters, setFilters, applyFilters }) =>
               className="px-4 py-3 bg-gray-200 rounded-full flex-1 mr-2"
               onPress={() => {
                 setFilters({
-                  dateRange: null,
+                  dateRange: 'today', // Reset to today
                   method: null,
                   type: null,
                   status: null,
@@ -273,7 +276,7 @@ const FilterModal = ({ visible, onClose, filters, setFilters, applyFilters }) =>
               <Text className="text-center">{t('history1.reset')}</Text>
             </TouchableOpacity>
             <TouchableOpacity 
-              className="px-4 py-3 bg-blue-500 rounded-full flex-1 ml-2"
+              className="px-4 py-3 bg-green-500 rounded-full flex-1 ml-2"
               onPress={() => {
                 applyFilters();
                 onClose();
@@ -303,7 +306,7 @@ const FilterModal = ({ visible, onClose, filters, setFilters, applyFilters }) =>
               />
               <TouchableOpacity
                 onPress={() => setShowDatePicker(false)}
-                className="mt-4 p-2 bg-blue-500 rounded-lg"
+                className="mt-4 p-2 bg-green-500 rounded-lg"
               >
                 <Text className="text-white text-center">{t('common3.close')}</Text>
               </TouchableOpacity>
@@ -323,8 +326,9 @@ const History = () => {
   const userIdFromProfile = userProfile?.data?.id;
   const userId = userIdFromRedux || userIdFromProfile;
 
+  // Initialize filters with today as default
   const [filters, setFilters] = useState({
-    dateRange: null,
+    dateRange: 'today',
     method: null,
     type: null,
     status: null,
@@ -332,24 +336,23 @@ const History = () => {
     endDate: null
   });
 
-  const [appliedFilters, setAppliedFilters] = useState({});
+  const [appliedFilters, setAppliedFilters] = useState({
+    page: 1,
+    limit: 10,
+    startDate: moment().startOf('day').format('YYYY-MM-DD'),
+    endDate: moment().endOf('day').format('YYYY-MM-DD')
+  });
+
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
 
   const { data, isLoading, isError, refetch } = useGetTransactionHistoryQuery(
     { 
       userId,
-      page: appliedFilters.page || 1,
-      limit: appliedFilters.limit || 10,
-      type: appliedFilters.type,
-      status: appliedFilters.status,
-      method: appliedFilters.method,
-      startDate: appliedFilters.startDate,
-      endDate: appliedFilters.endDate
+      ...appliedFilters
     },
     { skip: !userId }
   );
-  
 
   if (!userId) {
     return (
@@ -369,6 +372,7 @@ const History = () => {
       ...(filters.status && { status: filters.status }),
     };
     
+    // Apply date filters based on selection
     if (filters.dateRange) {
       switch(filters.dateRange) {
         case 'today':
@@ -388,6 +392,10 @@ const History = () => {
           if (filters.endDate) params.endDate = moment(filters.endDate).format('YYYY-MM-DD');
           break;
       }
+    } else {
+      // Default to today if no date range is selected
+      params.startDate = moment().startOf('day').format('YYYY-MM-DD');
+      params.endDate = moment().endOf('day').format('YYYY-MM-DD');
     }
     
     setCurrentPage(1);
@@ -410,10 +418,6 @@ const History = () => {
     refetch();
   }, [appliedFilters, refetch]);
 
-  useEffect(() => {
-  console.log('Current userId:', userId);
-}, [userId]);
-
   if (isLoading && currentPage === 1) {
     return (
       <View className="flex-1 justify-center items-center">
@@ -427,7 +431,7 @@ const History = () => {
       <View className="flex-1 justify-center items-center">
         <Text className="text-red-500">{t('history1.errorLoading')}</Text>
         <TouchableOpacity 
-          className="mt-4 px-4 py-2 bg-blue-500 rounded"
+          className="mt-4 px-4 py-2 bg-green-500 rounded"
           onPress={refetch}
         >
           <Text className="text-white">{t('common3.retry')}</Text>
@@ -439,84 +443,107 @@ const History = () => {
   const transactions = data?.data?.items || [];
   const pagination = data?.data?.pagination || { page: 1, totalItems: 0, totalPages: 1 };
 
+  // Check if we're showing today's transactions and there are none
+  const isShowingToday = appliedFilters.startDate === moment().startOf('day').format('YYYY-MM-DD') && 
+                         appliedFilters.endDate === moment().endOf('day').format('YYYY-MM-DD');
+  const noTransactionsToday = isShowingToday && transactions.length === 0;
+
   return (
     <View className="flex-1 bg-gray-50">
       <View className={`flex-row justify-between items-center ${Platform.OS === 'ios' ? 'mt-10' : 'mt-4'} p-4`}>
-        <Text className="text-xl font-bold">{t('history1.title')}</Text>
+        <Text className="text-xl font-bold">
+          {isShowingToday ? t('history1.todayTransactions') : t('history1.title')}
+        </Text>
         <TouchableOpacity 
-          className="px-3 py-1 border border-blue-500 rounded-full"
+          className="px-3 py-1 border border-green rounded-full"
           onPress={() => setShowFilterModal(true)}
         >
-          <Text className="text-blue-500">{t('history1.filter')}</Text>
+          <Text className="text-green-500">{t('history1.filter')}</Text>
         </TouchableOpacity>
       </View>
 
-      {transactions.length > 0 ? (
-        <FlatList
-          data={transactions}
-          renderItem={({ item }) => (
-            <HistoryCard 
-              transaction={item} 
-              onPress={() => navigation.navigate('Receipt', { transaction: item })}
-            />
-          )}
-          keyExtractor={(item) => item.id.toString()}
-          refreshing={isLoading}
-          onRefresh={() => {
-            setCurrentPage(1);
-            refetch();
-          }}
-          contentContainerStyle={{ paddingBottom: 16 }}
-          ListFooterComponent={() => (
-            <View className="flex-row justify-between items-center p-4 bg-gray-100">
-              <TouchableOpacity 
-                onPress={handlePrevPage}
-                disabled={currentPage === 1}
-                className={`px-4 py-2 rounded ${currentPage === 1 ? 'bg-gray-300' : 'bg-blue-500'}`}
-              >
-                <Text className={currentPage === 1 ? 'text-gray-500' : 'text-white'}>
-                  {t('common3.previous')}
-                </Text>
-              </TouchableOpacity>
-              
-              <Text>
-                {t('history1.page')} {currentPage} {t('history1.of')} {pagination.totalPages}
-              </Text>
-              
-              <TouchableOpacity 
-                onPress={handleNextPage}
-                disabled={currentPage >= pagination.totalPages}
-                className={`px-4 py-2 rounded ${currentPage >= pagination.totalPages ? 'bg-gray-300' : 'bg-blue-500'}`}
-              >
-                <Text className={currentPage >= pagination.totalPages ? 'text-gray-500' : 'text-white'}>
-                  {t('common3.next')}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          )}
-        />
-      ) : (
-        <View className="flex-1 justify-center items-center">
-          <Text className="text-gray-500">{t('history1.noTransactions')}</Text>
-          <TouchableOpacity 
-            className="mt-4 px-4 py-2 bg-blue-500 rounded"
-            onPress={() => {
+      <SkeletonLoader
+        isLoading={isLoading}
+        skeletonType="list"
+        skeletonDuration={2000}
+        fallbackToSpinner={true}
+        error={isError}
+      >
+        {transactions.length > 0 ? (
+          <FlatList
+            data={transactions}
+            renderItem={({ item }) => (
+              <HistoryCard 
+                transaction={item} 
+                onPress={() => navigation.navigate('Receipt', { transaction: item })}
+              />
+            )}
+            keyExtractor={(item) => item.id.toString()}
+            refreshing={isLoading}
+            onRefresh={() => {
               setCurrentPage(1);
-              setAppliedFilters({ page: 1, limit: 10 });
-              setFilters({
-                dateRange: null,
-                method: null,
-                type: null,
-                status: null,
-                startDate: null,
-                endDate: null
-              });
+              refetch();
             }}
-          >
-            <Text className="text-white">{t('history1.resetFilters')}</Text>
-          </TouchableOpacity>
-        </View>
-      )}
+            contentContainerStyle={{ paddingBottom: 16 }}
+            ListFooterComponent={() => (
+              <View className="flex-row justify-between items-center p-4 bg-gray-100">
+                <TouchableOpacity 
+                  onPress={handlePrevPage}
+                  disabled={currentPage === 1}
+                  className={`px-4 py-2 rounded ${currentPage === 1 ? 'bg-gray-300' : 'bg-green-500'}`}
+                >
+                  <Text className={currentPage === 1 ? 'text-gray-500' : 'text-white'}>
+                    {t('common3.previous')}
+                  </Text>
+                </TouchableOpacity>
+                
+                <Text>
+                  {t('history1.page')} {currentPage} {t('history1.of')} {pagination.totalPages}
+                </Text>
+                
+                <TouchableOpacity 
+                  onPress={handleNextPage}
+                  disabled={currentPage >= pagination.totalPages}
+                  className={`px-4 py-2 rounded ${currentPage >= pagination.totalPages ? 'bg-gray-300' : 'bg-blue-500'}`}
+                >
+                  <Text className={currentPage >= pagination.totalPages ? 'text-gray-500' : 'text-white'}>
+                    {t('common3.next')}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          />
+        ) : (
+          <View className="flex-1 justify-center items-center">
+            <Text className="text-gray-500">
+              {noTransactionsToday ? t('history1.noTransactionsToday') : t('history1.noTransactions')}
+            </Text>
+            <TouchableOpacity 
+              className="mt-4 px-4 py-2 bg-green-500 rounded"
+              onPress={() => {
+                setCurrentPage(1);
+                // Reset to show today's transactions
+                setAppliedFilters({ 
+                  page: 1, 
+                  limit: 10,
+                  startDate: moment().startOf('day').format('YYYY-MM-DD'),
+                  endDate: moment().endOf('day').format('YYYY-MM-DD')
+                });
+                setFilters({
+                  dateRange: 'today',
+                  method: null,
+                  type: null,
+                  status: null,
+                  startDate: null,
+                  endDate: null
+                });
+              }}
+            >
+              <Text className="text-white">{t('history1.resetFilters')}</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </SkeletonLoader>
 
       <FilterModal
         visible={showFilterModal}

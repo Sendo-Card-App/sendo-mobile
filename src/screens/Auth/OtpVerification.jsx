@@ -136,13 +136,12 @@ const handleVerifyOtp = async (codeToVerify = otp) => {
         });
       }
 
-      // Show success message
       Toast.show({
         type: 'success',
         text1: response.message || 'OTP verified successfully',
-        visibilityTime: 3000,
-        onHide: () => navigation.navigate("SignIn") // Navigate when toast hides
+        visibilityTime: 2000
       });
+      navigation.navigate("SignIn"); // Navigate immediately
     }
   } catch (err) {
     console.error('OTP Verification Error:', err);

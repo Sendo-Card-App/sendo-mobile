@@ -40,6 +40,7 @@ const IdentityCard = ({ navigation }) => {
       }
     });
   };
+  
 
   const handleDocumentTypeChange = (type) => {
     dispatch(setIdentityDocumentType(type));

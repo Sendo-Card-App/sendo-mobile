@@ -9,85 +9,124 @@ import {
   TouchableOpacity,
   Modal,
   FlatList,
-  Dimensions,
-  Alert
+  Dimensions
 } from 'react-native';
-import { AntDesign, MaterialIcons } from "@expo/vector-icons";
+import { AntDesign } from "@expo/vector-icons";
 import Toast from 'react-native-toast-message';
 import Loader from "../../components/Loader";
-import { useSimulatePaymentMutation } from '../../services/WalletApi/walletApi'; // Adjust path as needed
-
-
+import { useSimulatePaymentMutation } from '../../services/WalletApi/walletApi';
+import { useGetConfigQuery } from '../../services/Config/configApi';
+import { useTranslation } from 'react-i18next';
 
 const { width } = Dimensions.get('window');
-const isSmallScreen = width < 375;
 
 const PaymentSimulator = () => {
+  const { t } = useTranslation();
   const [amount, setAmount] = useState('100');
   const [currency, setCurrency] = useState('USD');
+  const [conversionData, setConversionData] = useState({
+    data: {
+      result: {
+        amountConverted: 0,
+        partnerVisaFees: 0,
+        sendoFees: 0,
+        totalAmount: 0
+      },
+      fees: {
+        percentagePartnerFees: 0,
+        percentageSendoFees: 0
+      }
+    }
+  });
   const [showCurrencyDropdown, setShowCurrencyDropdown] = useState(false);
+  const [isCalculating, setIsCalculating] = useState(false);
   
-  // API mutation hook
-  const [simulatePayment, { isLoading }] = useSimulatePaymentMutation();
+  const [simulatePayment] = useSimulatePaymentMutation();
   
-  // Supported currencies and their rates
+  // Get config data
+  const { 
+    data: configData, 
+    isLoading: isConfigLoading,
+    error: configError
+  } = useGetConfigQuery();
+  
+  // Extract needed config values
+  const getConfigValue = (name) => {
+    const configItem = configData?.data?.find(item => item.name === name);
+    return configItem ? configItem.value : null;
+  };
+
+  const USD_REAL_TIME_VALUE = getConfigValue('USD_REAL_TIME_VALUE') || 625;
+  const EUR_REAL_TIME_VALUE = getConfigValue('EUR_REAL_TIME_VALUE') || 655;
+  const CAD_REAL_TIME_VALUE = getConfigValue('CAD_REAL_TIME_VALUE') || 480;
+  const PARTNER_VISA_FEES = getConfigValue('PARTNER_VISA_FEES') || 1.79;
+  const SENDO_SERVICE_FEES = getConfigValue('SENDO_SERVICE_FEES') || 0.01;
+
   const currencies = [
-    { code: 'USD', name: 'US Dollar', rate: 656.0 },
-    { code: 'EUR', name: 'Euro', rate: 655.0 },
-    { code: 'CAD', name: 'Canadian Dollar', rate: 480.0 }
+    { code: 'USD', name: 'US Dollar', rate: USD_REAL_TIME_VALUE },
+    { code: 'EUR', name: 'Euro', rate: EUR_REAL_TIME_VALUE },
+    { code: 'CAD', name: 'Canadian Dollar', rate: CAD_REAL_TIME_VALUE }
   ];
   
-  const visaFee = 350.0;
-  const paysikaFeeRate = 0.0182; // 1.82%
-  
-  // Get current currency details
   const currentCurrency = currencies.find(c => c.code === currency) || currencies[0];
-  
-  // Calculate amounts
-  const convertedAmount = parseFloat(amount) * currentCurrency.rate;
-  const paysikaFee = convertedAmount * paysikaFeeRate;
-  const totalAmount = convertedAmount + visaFee + paysikaFee;
 
   const handleCurrencySelect = (selectedCurrency) => {
     setCurrency(selectedCurrency);
     setShowCurrencyDropdown(false);
   };
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (amount && !isNaN(parseFloat(amount))) {
+        handleSimulatePayment();
+      }
+    }); 
+
+    return () => clearTimeout(timer);
+  }, [amount, currency]);
+
   const handleSimulatePayment = async () => {
     if (!amount || isNaN(parseFloat(amount))) {
-      Toast.show({
-        type: 'error',
-        text1: 'Invalid Amount',
-        text2: 'Please enter a valid payment amount',
-      });
       return;
     }
 
     try {
-      console.log("Sending payment data to backend:", {
-        amount: parseFloat(amount),
-        currency
-      });
-      
+      setIsCalculating(true);
       const response = await simulatePayment({
         amount: parseFloat(amount),
         currency
       }).unwrap();
-      
-      Toast.show({
-        type: 'success',
-        text1: 'Simulation Successful',
-        text2: `${amount} ${currency} payment simulated successfully`,
-      });
+
+      setConversionData(response);
+
     } catch (error) {
-        console.log(error)
       Toast.show({
         type: 'error',
         text1: 'Simulation Failed',
-        text2: error.data?.message || 'Failed to simulate payment',
+        text2: error.data?.message || error.message || 'Failed to simulate payment',
       });
+    } finally {
+      setIsCalculating(false);
     }
   };
+
+  const handleRecharge = () => {
+    console.log('next page');
+  };
+
+  if (isConfigLoading) {
+    return <Loader />;
+  }
+
+  if (configError) {
+    Toast.show({
+      type: 'error',
+      text1: 'Configuration Error',
+      text2: 'Failed to load exchange rates',
+    });
+    return null;
+  }
+
   return (
     <KeyboardAvoidingView 
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -95,7 +134,7 @@ const PaymentSimulator = () => {
     >
       <View style={styles.content}>
         <Text style={styles.instructionText}>
-          Entrez le montant que vous souhaitez payer
+          {t('paymentSimulator.title')}
         </Text>
         
         {/* Amount Input */}
@@ -105,7 +144,7 @@ const PaymentSimulator = () => {
             onChangeText={setAmount}
             keyboardType="numeric"
             style={styles.amountInput}
-            placeholder="100"
+            placeholder={t('paymentSimulator.amountPlaceholder')}
           />
           <TouchableOpacity 
             style={styles.currencySelector}
@@ -117,7 +156,7 @@ const PaymentSimulator = () => {
         </View>
         
         <Text style={styles.exchangeRateText}>
-          Taux (avec frais internationaux): 1{currency} ~ {currentCurrency.rate} FCFA
+          {t('paymentSimulator.exchangeRate')}{currency} = {currentCurrency.rate} FCFA
         </Text>
 
         {/* Currency Dropdown Modal */}
@@ -141,7 +180,7 @@ const PaymentSimulator = () => {
                       styles.currencyItemText,
                       currency === item.code && styles.selectedCurrency
                     ]}>
-                      {item.code} - {item.name}
+                      {item.code} - {item.name} ({item.rate} FCFA)
                     </Text>
                   </TouchableOpacity>
                 )}
@@ -151,62 +190,81 @@ const PaymentSimulator = () => {
                 style={styles.closeButton}
                 onPress={() => setShowCurrencyDropdown(false)}
               >
-                <Text style={styles.closeButtonText}>Fermer</Text>
+                <Text style={styles.closeButtonText}>{t('paymentSimulator.closeButton')}</Text>
               </TouchableOpacity>
             </View>
           </View>
         </Modal>
 
-        {/* Conversion Results */}
+        {/* Conversion Results - Always visible with initial 0 values */}
         <View style={styles.resultsContainer}>
-        <View style={styles.feeRow}>
-          <Text style={styles.sectionTitle}>Montant converti</Text>
-          <Text style={styles.convertedAmount}>
-            {convertedAmount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, " ")} FCFA
-          </Text>
-          </View>
-
           <View style={styles.feeRow}>
-            <Text style={styles.feeLabel}>Frais du partenaire (VISA)</Text>
-            <Text style={styles.feeValue}>{visaFee.toFixed(1)} XAF</Text>
-          </View>
-
-          <View style={styles.feeRow}>
-            <Text style={styles.feeLabel}>Frais de Sendo (TTC)</Text>
-            <Text style={styles.feeValue}>
-              {paysikaFee.toFixed(2)} XAF ({(paysikaFeeRate * 100).toFixed(2)}%)
+            <Text style={styles.sectionTitle}>
+              {t('paymentSimulator.convertedAmount')}
+            </Text>
+            <Text style={styles.convertedAmount}>
+              {conversionData.data.result.amountConverted.toLocaleString('fr-FR', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+              })} FCFA
             </Text>
           </View>
+
           <View style={styles.feeRow}>
-          <Text style={styles.totalLabel}>Montant total débité</Text>
+            <Text style={styles.feeLabel}>
+              {t('paymentSimulator.partnerFees')}
+            </Text>
+            <Text style={styles.feeValue}>
+              {conversionData.data.result.partnerVisaFees.toLocaleString('fr-FR', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+              })} FCFA ({PARTNER_VISA_FEES}%)
+            </Text>
+          </View>
+
+          <View style={styles.feeRow}>
+            <Text style={styles.feeLabel}>
+              {t('paymentSimulator.sendoFees')}
+            </Text>
+            <Text style={styles.feeValue}>
+              {conversionData.data.result.sendoFees.toLocaleString('fr-FR', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+              })} FCFA ({SENDO_SERVICE_FEES}%)
+            </Text>
+          </View>
+
+          <View style={styles.feeRow}>
+            <Text style={styles.totalLabel}>
+              {t('paymentSimulator.totalAmount')}
+            </Text>
             <Text style={styles.totalAmount}>
-              {totalAmount.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, " ")} XAF
+              {conversionData.data.result.totalAmount.toLocaleString('fr-FR', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+              })} FCFA
             </Text>
           </View>
         </View>
 
         <View style={styles.disclaimerContainer}>
-            <View style={styles.disclaimerContent}>
-                <Text style={styles.disclaimerText}>
-                Les frais de change sont mis à jour chaque semaine et différent de ceux des sites de conversion,
-                car ils incluent le coût d'achat de la devise étrangère auprès des banques.
-                </Text>
-            </View>
-            </View>
-             {/* Add the simulate payment button */}
-             <TouchableOpacity 
-            style={styles.simulateButton}
-            onPress={handleSimulatePayment}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <Loader color="#fff" />
-            ) : (
-              <Text style={styles.simulateButtonText}>Estimateur de paiement</Text>
-            )}
-          </TouchableOpacity>
+          <View style={styles.disclaimerContent}>
+            <Text style={styles.disclaimerText}>
+              {t('paymentSimulator.disclaimer')}
+            </Text>
+          </View>
         </View>
-      
+
+        <TouchableOpacity 
+          style={styles.simulateButton}
+          onPress={handleRecharge}
+          disabled={isCalculating}
+        >
+          <Text style={styles.simulateButtonText}>
+            {t('paymentSimulator.rechargeButton')}
+          </Text>
+        </TouchableOpacity>
+      </View>
     </KeyboardAvoidingView>
   );
 };

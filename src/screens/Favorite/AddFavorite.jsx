@@ -78,6 +78,7 @@ const AddFavorite = () => {
 
   // State
   const [filteredContacts, setFilteredContacts] = useState([]);
+   const [currentlyAdding, setCurrentlyAdding] = useState(null);
   const [selectedContact, setSelectedContact] = useState(null);
   const [status, setStatus] = useState('idle');
   const [searchQuery, setSearchQuery] = useState('');
@@ -179,8 +180,6 @@ const AddFavorite = () => {
         const batch = contactsToSync.slice(i, i + batchSize);
         const payload = { contacts: batch };
         
-        console.log('Sending batch to backend:', JSON.stringify(payload, null, 2));
-        
         try {
           const response = await synchronizeContacts(payload).unwrap();
           successfulSyncs += batch.length;
@@ -235,46 +234,77 @@ const AddFavorite = () => {
       setFilteredContacts([]);
     }
   }, [synchronizedContacts, favoritesResponse, searchQuery]);
-
-  // Handle contact selection
-  const handleSelectContact = (contact) => {
-    setSelectedContact(contact);
-    setFormData({
-      name: contact.name || '',
-      phoneNumber: formatPhoneNumber(contact.phone || ''),
-      receptionMethod: 'Orange Money',
-      country: 'Cameroun'
+    const handleAddFavorite = (contact) => {
+    addFavorite({
+      userId,
+      phone: formatPhoneNumber(contact.phone),
+      name: contact.name
+    })
+    .unwrap()
+    .then(() => {
+      Toast.show({
+        type: 'success',
+        text1: 'Success',
+        text2: 'Contact added to favorites'
+      });
+      refetchContacts();
+      refetchFavorites();
+    })
+    .catch(error => {
+      console.log('Error adding favorite:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: error.data?.message || 'Failed to add favorite'
+      });
     });
   };
 
-  // Render contact list item
-  const renderContactItem = ({ item }) => (
-    <TouchableOpacity 
-      className="p-4 border-b border-gray-200 flex-row items-center min-h-16 bg-white"
-      onPress={() => handleSelectContact(item)}
-      activeOpacity={0.7}
-    >
-      <MaterialCommunityIcons 
-        name="account-outline" 
-        size={width * 0.07} 
-        color="#666" 
-        className="mr-3"
-      />
-      <View className="flex-1">
-        <Text className="font-bold text-base text-gray-800">
-          {item.name || t('contacts.noName')}
-        </Text>
-        <Text className="text-gray-600 text-sm mt-1">
-          {formatPhoneNumber(item.phone)}
-        </Text>
+  // Render contact list item with heart icon
+  const renderContactItem = ({ item }) => {
+    const isAdding = currentlyAdding === item.phone;
+    
+    return (
+      <View style={{ 
+        padding: 16, 
+        borderBottomWidth: 1, 
+        borderBottomColor: '#eee',
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        backgroundColor: 'white'
+      }}>
+        <MaterialCommunityIcons 
+          name="account-outline" 
+          size={24} 
+          color="#666" 
+          style={{ marginRight: 12 }}
+        />
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontWeight: 'bold', fontSize: 16, color: '#333' }}>
+            {item.name || t('contacts.noName')}
+          </Text>
+          <Text style={{ color: '#666', fontSize: 14, marginTop: 4 }}>
+            {formatPhoneNumber(item.phone)}
+          </Text>
+        </View>
+        <TouchableOpacity
+          onPress={() => handleAddFavorite(item)}
+          disabled={isAdding}
+          style={{ padding: 8 }}
+        >
+          {isAdding ? (
+            <Loader size="small" color="green" />
+          ) : (
+            <MaterialCommunityIcons 
+              name="heart" 
+              size={24} 
+              color="#f44336" 
+            />
+          )}
+        </TouchableOpacity>
       </View>
-      <MaterialCommunityIcons 
-        name="chevron-right" 
-        size={width * 0.06} 
-        color="#999" 
-      />
-    </TouchableOpacity>
-  );
+    );
+  };
 
   // Render favorite item
   const renderFavoriteItem = ({ item }) => (
@@ -326,7 +356,11 @@ const AddFavorite = () => {
 
   // Loading state
   if (isLoadingContacts || isLoadingFavorites) {
-    return <Loader />;
+   return (
+    <View className="flex-1 justify-center items-center">
+      <Loader size="large" />
+    </View>
+  );
   }
 
   // Empty state for contacts
@@ -350,110 +384,6 @@ const AddFavorite = () => {
           </Text>
         </TouchableOpacity>
       </View>
-    );
-  }
-
-  // Form view
-  if (selectedContact) {
-    return (
-      <>
-        <ScrollView 
-          className="flex-1 bg-white"
-          contentContainerStyle={{ paddingBottom: width * 0.1 }}
-          keyboardShouldPersistTaps="handled"
-        >
-          <View className="p-4">
-            <Text className="text-xl mb-4 font-semibold text-gray-800">
-              {t('contacts.addFavorite')}
-            </Text>
-            
-            <Text className="mb-1 text-base text-gray-600">
-              {t('contacts.beneficiaryName')}
-            </Text>
-            <TextInput
-              className="h-14 border border-gray-300 mb-3 px-3 rounded-lg text-base bg-white"
-              value={formData.name}
-              onChangeText={(text) => setFormData({...formData, name: text})}
-              placeholder={t('contacts.namePlaceholder')}
-              placeholderTextColor="#999"
-            />
-            
-            <Text className="mb-1 text-base text-gray-600">
-              {t('contacts.phoneNumber')}
-            </Text>
-            <TextInput
-              className="h-14 border border-gray-300 mb-3 px-3 rounded-lg text-base bg-white"
-              value={formData.phoneNumber}
-              onChangeText={(text) => setFormData({...formData, phoneNumber: text})}
-              placeholder={t('contacts.phonePlaceholder')}
-              placeholderTextColor="#999"
-              keyboardType="phone-pad"
-            />
-            
-            <Text className="mb-1 text-base text-gray-600">
-              {t('contacts.receptionMethod')}
-            </Text>
-            <View className="w-full mb-5 bg-gray-50 rounded-lg border border-gray-300 overflow-hidden">
-              <Picker
-                selectedValue={formData.receptionMethod}
-                onValueChange={(itemValue) => 
-                  setFormData({...formData, receptionMethod: itemValue})
-                }
-                style={{ height: height * 0.06 }}
-                dropdownIconColor="#666"
-              >
-                <Picker.Item label="Orange Money" value="Orange Money" />
-                <Picker.Item label="MTN Mobile Money" value="MTN Mobile Money" />
-                <Picker.Item label={t('contacts.bankAccount')} value="Bank Account" />
-              </Picker>
-            </View>
-            
-            <View className="flex-row justify-between mt-4">
-              <TouchableOpacity 
-                className="flex-1 mx-1 py-3 rounded-lg items-center bg-red-500"
-                onPress={() => setSelectedContact(null)}
-                activeOpacity={0.7}
-              >
-                <Text className="text-white text-base font-semibold">
-                  {t('common.cancel')}
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                className="flex-1 mx-1 py-3 rounded-lg items-center bg-green-500"
-                onPress={() => {
-                  addFavorite({
-                    userId,
-                    phone: formatPhoneNumber(formData.phoneNumber)
-                  })
-                  .unwrap()
-                  .then(() => {
-                    Toast.show({
-                      type: 'success',
-                      text1: 'Success',
-                      text2: 'Contact added to favorites'
-                    });
-                    navigation.goBack();
-                  })
-                  .catch(error => {
-                    Toast.show({
-                      type: 'error',
-                      text1: 'Error',
-                      text2: error.data?.message || 'Failed to add favorite'
-                    });
-                  });
-                }}
-                disabled={isAddingFavorite}
-                activeOpacity={0.7}
-              >
-                <Text className="text-white text-base font-semibold">
-                  {isAddingFavorite ? t('common.processing') : t('contacts.addToFavorites')}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </ScrollView>
-        <Toast />
-      </>
     );
   }
 
@@ -527,7 +457,7 @@ const AddFavorite = () => {
           ListEmptyComponent={
             <View className="items-center p-8 justify-center">
               <Text className="text-base text-gray-600">
-                No favorites yet
+               {t('contacts.noFavorites')}
               </Text>
             </View>
           }

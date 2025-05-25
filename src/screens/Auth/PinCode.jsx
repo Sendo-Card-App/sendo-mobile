@@ -3,25 +3,26 @@ import { StatusBar, Platform, View, Text, TouchableOpacity, Image, SafeAreaView,
 import { useCreatePasscodeMutation } from '../../services/Auth/authAPI';
 import { useSelector, useDispatch } from 'react-redux';
 import { setPasscode, incrementAttempt, resetAttempts, lockPasscode, toggleBiometric, clearPasscode, setIsNewUser } from '../../features/Auth/passcodeSlice';
-import { getData, clearStorage } from '../../services/storage'; // Updated import
+import { getData, removeData, storeData } from "../../services/storage";
 import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
-import { clearAuth } from '../../features/Auth/authSlice'; // Add this import
+import { clearAuth } from '../../features/Auth/authSlice';
 import Loader from "../../components/Loader";
 import Toast from 'react-native-toast-message';
 import * as LocalAuthentication from 'expo-local-authentication';
-import { useTranslation } from 'react-i18next'; // Add for translations
+import { useTranslation } from 'react-i18next';
 
 const PinCode = ({ navigation, route }) => {
-  const { t } = useTranslation(); // Initialize translation
+  const { t } = useTranslation();
   const [pin, setPin] = useState('');
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [biometricAvailable, setBiometricAvailable] = useState(false);
+  const [biometricType, setBiometricType] = useState(null);
+   const [authData, setAuthData] = useState(null);
   
   const dispatch = useDispatch();
   const [createPasscode] = useCreatePasscodeMutation();
   
-  // Get state from Redux
   const {
     passcode: currentPasscode,
     attempts,
@@ -29,7 +30,6 @@ const PinCode = ({ navigation, route }) => {
     biometricEnabled
   } = useSelector(state => state.passcode);
   
-  // Get user profile
   const { 
     data: userProfile, 
     isLoading: isProfileLoading, 
@@ -43,45 +43,86 @@ const PinCode = ({ navigation, route }) => {
   // Clear session function
   const clearSession = async () => {
     try {
-      await clearStorage(); // Clear all storage
-      dispatch(clearAuth()); // Clear auth state
-      dispatch(clearPasscode()); // Clear passcode state
+      await clearStorage();
+      dispatch(clearAuth());
+      dispatch(clearPasscode());
     } catch (error) {
       console.error('Error clearing session:', error);
     }
   };
+
   const showToast = (type, title, message) => {
-  Toast.show({
-    type: type,
-    text1: title,
-    text2: message,
-    visibilityTime: 4000,
-    autoHide: true,
-    topOffset: 30,
-  });
-};
+    Toast.show({
+      type: type,
+      text1: title,
+      text2: message,
+      visibilityTime: 4000,
+      autoHide: true,
+      topOffset: 30,
+    });
+  };
+
+   useEffect(() => {
+      const loadAuthData = async () => {
+        const data = await getData('@authData');
+        setAuthData(data);
+        setIsAuthenticated(!!data);
+        setAuthChecked(true);
+      };
+      loadAuthData();
+    }, []);
+
   // Check for biometric availability
   useEffect(() => {
     const checkBiometrics = async () => {
-      const hasHardware = await LocalAuthentication.hasHardwareAsync();
-      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
-      setBiometricAvailable(hasHardware && isEnrolled);
+      try {
+        const hasHardware = await LocalAuthentication.hasHardwareAsync();
+        const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+        const supportedTypes = await LocalAuthentication.supportedAuthenticationTypesAsync();
+        
+        setBiometricAvailable(hasHardware && isEnrolled);
+        
+        if (supportedTypes.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION)) {
+          setBiometricType('face');
+        } else if (supportedTypes.includes(LocalAuthentication.AuthenticationType.FINGERPRINT)) {
+          setBiometricType('fingerprint');
+        }
+      } catch (error) {
+        console.error('Error checking biometrics:', error);
+      }
     };
+    
     checkBiometrics();
   }, []);
+
+  // Auto-trigger biometric auth when component mounts if enabled
+  useEffect(() => {
+    if (biometricEnabled && biometricAvailable && !isSetup && !isLocked) {
+      handleBiometricAuth();
+    }
+  }, [biometricEnabled, biometricAvailable, isSetup, isLocked]);
 
   // Handle biometric authentication
   const handleBiometricAuth = async () => {
     try {
-      const { success } = await LocalAuthentication.authenticateAsync({
+      const authResult = await LocalAuthentication.authenticateAsync({
         promptMessage: t('pin.biometricPrompt'),
-        fallbackLabel: t('pin.usePinInstead')
+        fallbackLabel: t('pin.usePinInstead'),
+        disableDeviceFallback: false // Allow device passcode fallback
       });
-      if (success) {
+
+      if (authResult.success) {
         dispatch(resetAttempts());
         navigation.navigate('Main');
+      } else if (authResult.error === 'user_cancel') {
+        // User canceled, do nothing
+      } else if (authResult.error === 'not_enrolled') {
+        showToast('error', t('errors.title'), t('pin.biometricNotEnrolled'));
+      } else {
+        setError(t('pin.biometricFailed'));
       }
     } catch (err) {
+      console.error('Biometric auth error:', err);
       setError(t('pin.biometricFailed'));
     }
   };
@@ -119,15 +160,22 @@ const PinCode = ({ navigation, route }) => {
           dispatch(incrementAttempt());
   
           if (attempts + 1 >= 3) {
-            dispatch(lockPasscode());
-            await clearSession(); // Clear session when locked out
+            const lockTime = new Date();
+            lockTime.setMinutes(lockTime.getMinutes() + 5); // Lock for 5 minutes
+            dispatch(lockPasscode(lockTime.toISOString()));
+            
             Alert.alert(
               t('pin.accountLocked'),
-              t('pin.tooManyAttempts'),
+              t('pin.lockedFor5Minutes'),
               [
                 { 
-                  text: 'OK', 
-                  onPress: () => navigation.navigate('SignIn') 
+                  text: t('common.ok'), 
+                  onPress: () => {
+                    // Offer biometric unlock if available
+                    if (biometricAvailable) {
+                      handleBiometricAuth();
+                    }
+                  }
                 }
               ]
             );
@@ -138,6 +186,7 @@ const PinCode = ({ navigation, route }) => {
         if (result.status === 200) {
           dispatch(setPasscode(enteredPin));
           dispatch(setIsNewUser(false));
+          
           navigation.navigate('Main');
         } else {
           setError(t('pin.validationError'));
@@ -146,10 +195,8 @@ const PinCode = ({ navigation, route }) => {
       }
     } catch (error) {
       console.log("Error:", error);
-      showToast('error', t('errors.title'), error.data?.message );
+      showToast('error', t('errors.title'), error.data?.message || t('errors.general'));
       setPin('');
-      
-       
     } finally {
       setIsLoading(false);
     }
@@ -173,27 +220,58 @@ const PinCode = ({ navigation, route }) => {
   );
 
   const handleForgotPin = async () => {
-    Alert.alert(
-      t('pin.forgotPin'),
-      t('pin.forgotPinMessage'),
-      [
-        {
-          text: t('common.cancel'),
-          style: 'cancel',
-        },
-        {
-          text: t('common.signIn'),
-          onPress: async () => {
-            await clearSession(); // Clear session when forgetting PIN
-            navigation.navigate('SignIn');
-          },
-          style: 'default',
-        },
-      ]
-    );
+  Alert.alert(
+    t('pin.forgotPin'),
+    t('pin.forgotPinMessage'),
+    [
+      {
+        text: t('common.cancel'),
+        style: 'cancel',
+        onPress: () => console.log('Cancel pressed') // Optional logging
+      },
+      {
+        text: t('common.signIn'),
+        onPress: async () => {
+          try {
+            // Clear authentication data
+            await removeData('@authData');
+            
+            // Update state
+            setAuthData(null);
+            
+            // Navigate to sign in after a slight delay for better UX
+            setTimeout(() => {
+              navigation.navigate('SignIn', { 
+                screen: 'Auth',
+                params: { showForgotPinMessage: true }
+              });
+            });
+            
+          } catch (error) {
+            console.error('Error clearing auth data:', error);
+            Toast.show({
+              type: 'error',
+              text1: t('common.error'),
+              text2: t('pin.clearDataError')
+            });
+          }
+        }
+      },
+    ],
+    { cancelable: false } // Prevent dismissing by tapping outside
+  );
+};
+
+  // Get appropriate biometric icon
+  const getBiometricIcon = () => {
+    if (biometricType === 'face') {
+      return require('../../Images/face-id.png');
+    } else if (biometricType === 'fingerprint') {
+      return require('../../Images/fingerprint.png');
+    }
+    return require('../../Images/fingerprint.png'); // Default
   };
 
-  // Updated keypad with biometric option
   const keypad = [
     ['1', '2', '3'],
     ['4', '5', '6'],
@@ -246,60 +324,73 @@ const PinCode = ({ navigation, route }) => {
           )}
           
           {isLocked && (
-            <Text style={{ color: 'red', marginTop: 10 }}>
-              {t('pin.accountLocked')}
-            </Text>
+            <View style={{ alignItems: 'center' }}>
+              <Text style={{ color: 'red', marginTop: 10 }}>
+                {t('pin.accountLocked')}
+              </Text>
+              {biometricAvailable && (
+                <TouchableOpacity 
+                  onPress={handleBiometricAuth}
+                  style={{ marginTop: 15 }}
+                >
+                  <Image
+                    source={getBiometricIcon()}
+                    style={{ width: 50, height: 50 }}
+                  />
+                  <Text style={{ color: '#0D1C6A', marginTop: 5 }}>
+                    {t('pin.unlockWithBiometric')}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
           )}
         </View>
 
-        <View style={{ alignItems: 'center' }}>
-          {keypad.map((row, rowIndex) => (
-            <View key={rowIndex} style={{ flexDirection: 'row', marginVertical: 10 }}>
-              {row.map((item, index) => (
-                item ? (
-                  <TouchableOpacity
-                    key={index}
-                    onPress={() => handlePress(item)}
-                    style={{
-                      width: 80,
-                      height: 60,
-                      borderRadius: 30,
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      marginHorizontal: 10,
-                      backgroundColor: '#F1F1F1',
-                      opacity: isLocked ? 0.5 : 1,
-                    }}
-                    disabled={isLocked || isLoading}
-                  >
-                    {item === 'biometric' ? (
-                      <Image
-                        source={
-                          Platform.OS === 'ios' 
-                            ? require('../../Images/face-id.png')
-                            : require('../../Images/fingerprint.png')
-                        }
-                        style={{ width: 30, height: 30 }}
-                      />
-                    ) : (
-                      <Text style={{ fontSize: 20, color: '#0D1C6A' }}>
-                        {item === 'del' ? '⌫' : item}
-                      </Text>
-                    )}
-                  </TouchableOpacity>
-                ) : (
-                  <View key={index} style={{ width: 80, marginHorizontal: 10 }} />
-                )
-              ))}
-            </View>
-          ))}
+        {!isLocked && (
+          <View style={{ alignItems: 'center' }}>
+            {keypad.map((row, rowIndex) => (
+              <View key={rowIndex} style={{ flexDirection: 'row', marginVertical: 10 }}>
+                {row.map((item, index) => (
+                  item ? (
+                    <TouchableOpacity
+                      key={index}
+                      onPress={() => handlePress(item)}
+                      style={{
+                        width: 80,
+                        height: 60,
+                        borderRadius: 30,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        marginHorizontal: 10,
+                        backgroundColor: '#F1F1F1',
+                      }}
+                      disabled={isLoading}
+                    >
+                      {item === 'biometric' ? (
+                        <Image
+                          source={getBiometricIcon()}
+                          style={{ width: 30, height: 30 }}
+                        />
+                      ) : (
+                        <Text style={{ fontSize: 20, color: '#0D1C6A' }}>
+                          {item === 'del' ? '⌫' : item}
+                        </Text>
+                      )}
+                    </TouchableOpacity>
+                  ) : (
+                    <View key={index} style={{ width: 80, marginHorizontal: 10 }} />
+                  )
+                ))}
+              </View>
+            ))}
 
-          <TouchableOpacity onPress={handleForgotPin} disabled={isLocked || isLoading}>
-            <Text style={{ color: isLocked ? '#ccc' : '#999', marginTop: 30 }}>
-              {t('pin.forgotPinQuestion')}
-            </Text>
-          </TouchableOpacity>
-        </View>
+            <TouchableOpacity onPress={handleForgotPin} disabled={isLoading}>
+              <Text style={{ color: '#999', marginTop: 30 }}>
+                {t('pin.forgotPinQuestion')}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
     </SafeAreaView>
   );
