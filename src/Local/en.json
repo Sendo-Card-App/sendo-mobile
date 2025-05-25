@@ -1,5 +1,21 @@
 {
-
+  "welcome": "Welcome!",
+  "chooseCountry": "Choose a country to make a transfer.",
+  "searchPlaceholder": "Search by country",
+  "cameroon": "Cameroon",
+  "canada": "Canada",
+  "my_destinataires": "My Destinators",
+  "transfer_fee": "Transfer Fee",
+  "total_to_send": "Total to Send",
+  "choose_beneficiary": "Choose a beneficiary",
+  "add_new_beneficiary": "Add new beneficiary",
+  "adding": "Adding...",
+  "search_beneficiaries": "Search beneficiaries",
+  "error_loading_contacts": "Error loading contacts",
+  "no_contacts_found": "No contacts found",
+  "conversionRateCAD": "1.00 CAD = {{value}} FCFA",
+  "conversionRateXAF": "{{value}} FCFA = 1.00 CAD",
+  "securityWarning": "Do not share your personal information...",
   "available_balance": "Available balance",
   "wallet_id_label": "Recipient wallet ID",
   "wallet_id_placeholder": "Enter recipient wallet ID",
@@ -7,6 +23,16 @@
   "description_label": "Description (optional)",
   "description_placeholder": "Ex: Transfer for purchase",
   "submit_button": "Submit Transfer",
+  "amount_cad": "Amount (CAD)",
+  "amount_xaf": "Amount (XAF)",
+  "error_conversion": "Error",
+  "conversion_failed": "Failed to convert currency",
+  "promo_code": "PROMO CODE",
+  "ok": "OK",
+  "sending_money_to": "Sending money to {{country}} is easy",
+  "fast_and_free": "Super fast and free for mobile wallets",
+  "next": "Next",
+  "disclaimer": "Do not share your personal information...",
 "security": "Security",
 "biometrics": "Biometrics",
 "biometric_not_available": "Biometric authentication is not available",
@@ -557,7 +583,6 @@
     "setupPin": "Set up your PIN code",
     "enterPin": "Enter your PIN to unlock the application",
     "incorrectPin": "Incorrect PIN",
-    "accountLocked": "Account locked",
     "tooManyAttempts": "Too many attempts. Please sign in again.",
     "validationError": "Validation error",
     "generalError": "An error occurred",
@@ -566,6 +591,8 @@
     "forgotPinQuestion": "Forgot your PIN?",
     "biometricPrompt": "Biometric verification required",
     "usePinInstead": "Use PIN instead",
+     "accountLocked": "Account Locked",
+    "lockedFor5Minutes": "Your account is locked for 5 minutes due to multiple failed attempts",
     "biometricFailed": "Biometric authentication failed"
   },
   "common": {
@@ -574,6 +601,7 @@
      "error": "Error",
     "success": "Success",
     "retry": "Retry",
+    "ok": "OK",
     "processing": "Processing..."
   },
   "forgotPassword": {
@@ -779,7 +807,116 @@
     "disclaimer": "Exchange rates are updated weekly and differ from conversion websites, as they include the cost of purchasing foreign currency from banks.",
     "rechargeButton": "Recharge my card",
     "closeButton": "Close"
+  },
+  "walletConfirm": {
+    "title": "Wallet Recharge",
+    "secureEncryption": "Secured by bank-level encryption",
+    "accountNumber": "Your account number *",
+    "verificationWarning": "Please verify your Sendo account number, we probably won't be able to refund you once the transfer is sent",
+    "privacyNotice": "Do not share your personal information..."
+  },
+  "commons": {
+    "loading": "Loading...",
+    "ok": "OK",
+    "securityNotice": "Your security is our priority"
+  },
+   "walletWithdrawal": {
+    "title": "Make a withdrawal",
+    "secureNote": "Secured by bank-level encryption",
+    "accountNumber": "Your account number",
+    "amount": "Amount",
+    "fullName": "Full name",
+    "email": "Email",
+    "cancel": "CANCEL",
+    "valid": "VALIDE",
+    "address": "Address",
+    "confirmationNote": "Please verify your Sendo account number before confirming.",
+    "confirmButton": "Confirm",
+    "securityWarning": "Do not share your personal information..."
+  },
+    "walletRecharge": {
+    "title": "Make a withdrawal",
+    "secureNote": "Secured by bank-level encryption",
+    "accountNumber": "Your account number",
+    "amount": "Amount",
+    "fullName": "Full name",
+    "email": "Email",
+    "message": "Your request has been initiated. You will receive a notification once the transfer is completed.",
+    "cancel": "CANCEL",
+    "valid": "VALIDE",
+    "address": "Address",
+    "confirmationNote": "Please verify your mobile money account number before confirming.",
+    "confirmButton": "Confirm",
+    "securityWarning": "Do not share your personal information..."
+  },
+  "addressScreen": {
+    "title": "Your Residential Address",
+    "fields": {
+      "firstname": "Firstname",
+      "lastname": "Lastname",
+      "phone": "Phone",
+      "country": "Country",
+      "email": "Email",
+      "address": "Address",
+      "description": "Description"
+    },
+    "placeholders": {
+      "firstname": "Enter your firstname",
+      "lastname": "Enter your lastname",
+      "phone": "Enter your phone",
+      "country": "Enter your country",
+      "email": "Enter your email",
+      "address": "Enter your address",
+      "description": "Enter a description (optional)"
+    },
+    "amount": "Amount (XAF)",
+    "nextButton": "Next",
+    "footerNote": "Do not share your personal information…"
+  },
+  "addContactScreen": {
+    "mobileNumber": "Mobile Number",
+    "phonePlaceholder": "Phone number",
+    "modal": {
+      "selectCode": "Select country code"
+    },
+    "recommendation": "1. We recommend using a MoMo/OM number",
+    "labelPrompt": "Add a name or label for this number",
+    "example": "[Eg: Nandi]",
+    "contactNamePlaceholder": "Contact name",
+    "saveButton": "Save"
+  },
+  "paymentMethodScreen": {
+    "title": "Payment Method",
+    "choosePayment": "Choose payment method",
+    "orangeMoney": "Orange Money",
+    "mtnMoney": "MTN Mobile Money",
+    "securityNote": "Do not share your personal information..."
+  },
+  "confirmeTheTransfer": {
+    "title": "Transfer Confirmation",
+    "interacInstructions": "Please use the following information to transfer funds to your account via INTERAC:",
+    "interacPhone": "Phone number:  506 233 2921",
+    "fullname": "Full Name",
+    "lastname": "Last Name",
+    "phone": "Phone",
+    "country": "Country",
+    "address": "Address",
+    "amountSent": "Amount Sent",
+    "transferFee": "Transfer Fee",
+    "exchangeRate": "Exchange Rate",
+    "convertedAmount": "Converted Amount",
+    "totalDebited": "Total Debited",
+    "paymentMethod": "Payment Method",
+    "processingNote": "Your transfer should be processed within a few minutes.",
+    "confirmButton": "Confirm and Continue",
+    "secureData": "Your data is secure.",
+    "successTitle": "Transfer Initiated",
+    "successMessage": "Please check the history to track the status.",
+    "errorTitle": "Error",
+    "errorMessage": "An error occurred."
   }
+
+
 
 
 

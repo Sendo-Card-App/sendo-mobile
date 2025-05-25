@@ -23,12 +23,7 @@ const TAG_TYPES = {
   PROFILE: 'Profile',
 };
 
-// Endpoints requiring passcode
-const PASSCODE_REQUIRED_ENDPOINTS = [
-  '/users/update-password',
-  '/users/second-phone',
-  '/users/' 
-];
+
 
 export const authApi = createApi({
   reducerPath: 'authApi',

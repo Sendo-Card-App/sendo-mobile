@@ -139,7 +139,7 @@ const handleVerifyOtp = async (codeToVerify = otp) => {
       Toast.show({
         type: 'success',
         text1: response.message || 'OTP verified successfully',
-        visibilityTime: 2000
+       
       });
       navigation.navigate("SignIn"); // Navigate immediately
     }

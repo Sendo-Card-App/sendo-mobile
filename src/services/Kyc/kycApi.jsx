@@ -18,7 +18,7 @@ export const kycApi = createApi({
       return headers;
     },
   }),
-  tagTypes: ['KYC'],
+  tagTypes: ['KYC', 'Requests'],
   
   endpoints: (builder) => ({
     submitKYC: builder.mutation({
