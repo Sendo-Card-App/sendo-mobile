@@ -4,13 +4,15 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 const WALLET_ENDPOINTS = {
   BALANCE: '/wallet/balance',
   TRANSFER: '/wallet/transfer-funds',
-  RECHARGE: '/wallet/recharge',
+  RECHARGE: '/mobile-money/init/deposit',
+  WITHDRAWAL: '/mobile-money/init/withdrawal',
   HISTORY: '/wallet/transactions',
 };
 
 const TAG_TYPES = {
   WALLET: 'Wallet',
   TRANSACTIONS: 'Transactions',
+  TRANSFERS: 'Transfers',
 };
 
 // Endpoints requiring passcode
@@ -65,10 +67,21 @@ export const walletApi = createApi({
     }),
 
     rechargeWallet: builder.mutation({
-      query: (rechargeData) => ({
+      query: (payload) => ({
         url: WALLET_ENDPOINTS.RECHARGE,
         method: 'POST',
-        body: rechargeData,
+        body: payload,
+         providesTags: [TAG_TYPES.WALLET],
+      }),
+      invalidatesTags: [TAG_TYPES.WALLET],
+    }),
+
+    withdrawalWallet: builder.mutation({
+      query: (payload) => ({
+        url: WALLET_ENDPOINTS.WITHDRAWAL,
+        method: 'POST',
+        body: payload,
+         providesTags: [TAG_TYPES.WALLET],
       }),
       invalidatesTags: [TAG_TYPES.WALLET],
     }),
@@ -110,6 +123,13 @@ export const walletApi = createApi({
       }),
       providesTags: [TAG_TYPES.WALLET],
     }),
+
+     checkTransactionStatus: builder.query({
+      query: ({ trid, type, transactionId }) => ({
+        url: `/mobile-money/check?trid=${trid}&type=${type}&transactionId=${transactionId}`,
+        method: 'GET',
+      }),
+    }),
     
     simulatePayment: builder.mutation({
       query: ({ amount, currency }) => ({
@@ -119,14 +139,45 @@ export const walletApi = createApi({
       }),
       providesTags: [TAG_TYPES.WALLET],
     }),
+
+     getTransfers: builder.query({
+      query: () => '/transfer-money/list',
+       providesTags: [TAG_TYPES.TRANSFERS],
+      }),
+    
+    // Initialize new transfer
+    initTransfer: builder.mutation({
+      query: (payload) => ({
+        url: '/transfer-money/init',
+        method: 'POST',
+        body: payload,
+        providesTags: [TAG_TYPES.TRANSFERS],
+      }),
+      invalidatesTags: [TAG_TYPES.TRANSFERS],
+    }),
+
+    initTransferToDestinataire: builder.mutation({
+      query: ({ destinataireId, amount, description = '' }) => ({
+        url: '/transfer-money/init-to-know-destinataire',
+        method: 'POST',
+        body: { destinataireId, amount, description },
+         providesTags: [TAG_TYPES.TRANSFERS],
+      }),
+      invalidatesTags: [TAG_TYPES.TRANSFERS],
+    }),
   }),
 });
 
 export const {
   useGetBalanceQuery,
   useRechargeWalletMutation,
+  useWithdrawalWalletMutation,
   useTransferFundsMutation,
   useGetTransactionHistoryQuery,
   useSimulatePaymentMutation,
+  useCheckTransactionStatusQuery,
   useGetWalletDetailsQuery,
+  useGetTransfersQuery,
+   useInitTransferMutation,
+   useInitTransferToDestinataireMutation,
 } = walletApi;

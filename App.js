@@ -28,6 +28,10 @@ import AddBeneficiary from "./src/screens/Solde/AddBeneficiary";
 import AddFavorite from "./src/screens/Favorite/AddFavorite";
 import SelectMethod from "./src/screens/Wallet/SelectMethod";
 import BankDepositRecharge from "./src/screens/Wallet/BankDepositRecharge";
+import WalletRecharge from "./src/screens/Wallet/WalletRecharge ";
+import WalletWithdrawal from "./src/screens/Wallet/WalletWithdrawal";
+import WalletOk from "./src/screens/Wallet/WalletOk";
+import WalletConfirm from "./src/screens/Wallet/WalletConfirm";
 import ChatScreen from "./src/screens/Chat/ChatScreen";
 import AddContact from "./src/screens/Solde/AddContact";
 import TransfertFund from "./src/screens/Wallet/TransfertFund";
@@ -45,7 +49,7 @@ import BeneficiarySelection from "./src/screens/Transfert/BeneficiarySelection";
 import BeneficiaryDetails from "./src/screens/Transfert/BeneficiaryDetails";
 import BankCard from "./src/screens/VirtualCard/BankCard";
 import BankCard1 from "./src/screens/Transfert/BankCard1";
-import ConﬁrmeTheTransfer from "./src/screens/Transfert/ConﬁrmeTheTransfer";
+import Confirme from "./src/screens/Transfert/Confirme";
 import Success from "./src/screens/Transfert/Success";
 import NiuRequest from "./src/screens/Profile/NiuRequest";
 import AboutUs from "./src/screens/Setting/AboutUs";
@@ -318,7 +322,11 @@ function MainStack() {
       <Stack.Screen name="WalletTransfer" component={WalletTransfer} options={{ headerTitle: t('screens.walletTransfer') }} />
       <Stack.Screen name="AddContact" component={AddContact} options={{ headerTitle: t('screens.addContact') }} />
       <Stack.Screen name="AddFavorite" component={AddFavorite} options={{ headerTitle: t('screens.addFavorite') }} />
-      <Stack.Screen name="ConﬁrmeTheTransfer" component={ConﬁrmeTheTransfer} options={{ headerShown: false }} />
+      <Stack.Screen name="WalletRecharge" component={WalletRecharge} options={{ headerShown: false }} />
+      <Stack.Screen name="WalletWithdrawal" component={WalletWithdrawal} options={{ headerShown: false }} />
+      <Stack.Screen name="WalletConfirm" component={WalletConfirm} options={{ headerShown: false }} />
+      <Stack.Screen name="WalletOk" component={WalletOk} options={{ headerShown: false }} />
+      <Stack.Screen name="Confirme" component={Confirme} options={{ headerShown: false }} />
       <Stack.Screen name="Success" component={Success} options={{ headerShown: false }} />
       <Stack.Screen name="Support" component={Support} options={{ headerTitle: t('screens.support') }}/>
       <Stack.Screen name="ChatScreen" component={ChatScreen} options={{ headerTitle: t('screens.chat') }} />
@@ -378,12 +386,12 @@ function DrawerNavigator() {
 export default function App() {
  
   // Register for push notifications once on mount
-  // useEffect(() => {
-  //   registerForPushNotificationsAsync().then((token) => {
-  //     console.log("Expo Push Token:", token);
-  //     // TODO: send token to your backend here if needed
-  //   });
-  // }, []);
+  useEffect(() => {
+    registerForPushNotificationsAsync().then((token) => {
+      console.log("Expo Push Token:", token);
+      // TODO: send token to your backend here if needed
+    });
+  }, []);
   return (
     <Provider store={store}>
       <NetworkProvider>

@@ -43,7 +43,9 @@ const MethodType = ({navigation}) => {
           {t('method.send_to_mobile')}
         </Text>
 
-        <TouchableOpacity style={{
+        <TouchableOpacity 
+        onPress={() => navigation.navigate("WalletRecharge")}
+        style={{
             flexDirection: 'row',
             alignItems: 'center',
             backgroundColor: '#F1F1F1',

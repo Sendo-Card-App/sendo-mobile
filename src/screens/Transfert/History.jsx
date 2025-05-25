@@ -22,13 +22,12 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import moment from 'moment';
 import Loader from "../../components/Loader";
 
-// Get screen dimensions
 const { width } = Dimensions.get('window');
-const isSmallScreen = width < 375; // iPhone SE and similar small devices
+const isSmallScreen = width < 375;
 
-const HistoryCard = ({ transaction, onPress }) => {
+const HistoryCard = ({ transaction, user, onPress }) => {
   const { t } = useTranslation();
-  
+
   const getStatusColor = (status) => {
     switch(status?.toUpperCase()) {
       case 'COMPLETED': return 'text-green-600';
@@ -51,8 +50,8 @@ const HistoryCard = ({ transaction, onPress }) => {
   const getMethodIcon = () => {
     switch(transaction.method?.toUpperCase()) {
       case 'MOBILE_MONEY':
-        return transaction.recipient_number?.includes('2376') ? 
-          OrangeMoney : require('../../images/om.png');
+        return transaction.provider?.includes('Orange') ? 
+          OrangeMoney : require('../../images/mtn.png');
       case 'BANK_TRANSFER':
         return require('../../images/RoyalBank.png');
       default:
@@ -72,17 +71,20 @@ const HistoryCard = ({ transaction, onPress }) => {
           resizeMode="contain"
         />
         <View className="flex-1">
-          <Text className="text-gray-600 text-sm">
-            {transaction.recipient_name || transaction.recipient_number || t('history1.unknownRecipient')}
-          </Text>
           <Text className="text-gray-600 text-sm font-bold">
+            {user?.firstname} {user?.lastname}
+          </Text>
+          <Text className="text-gray-600 text-xs">
+            {transaction.transactionId || t('history1.unknownTransaction')}
+          </Text>
+          <Text className="text-gray-600 text-sm">
             {getTypeLabel(transaction.type)}
           </Text>
         </View>
       </View>
       <View className="flex-row justify-between items-center pt-2">
         <Text className="text-gray-600 text-lg font-bold">
-          {transaction.amount?.toLocaleString()} FCFA
+          {transaction.amount?.toLocaleString()} {transaction.currency}
         </Text>
         <View className="items-end">
           <Text className="text-gray-600 text-sm">
@@ -264,7 +266,7 @@ const FilterModal = ({ visible, onClose, filters, setFilters, applyFilters }) =>
               className="px-4 py-3 bg-gray-200 rounded-full flex-1 mr-2"
               onPress={() => {
                 setFilters({
-                  dateRange: 'today', // Reset to today
+                  dateRange: 'today',
                   method: null,
                   type: null,
                   status: null,
@@ -326,7 +328,6 @@ const History = () => {
   const userIdFromProfile = userProfile?.data?.id;
   const userId = userIdFromRedux || userIdFromProfile;
 
-  // Initialize filters with today as default
   const [filters, setFilters] = useState({
     dateRange: 'today',
     method: null,
@@ -353,6 +354,7 @@ const History = () => {
     },
     { skip: !userId }
   );
+    //console.log('Transaction History Data:', JSON.stringify(data, null, 2));
 
   if (!userId) {
     return (
@@ -372,7 +374,6 @@ const History = () => {
       ...(filters.status && { status: filters.status }),
     };
     
-    // Apply date filters based on selection
     if (filters.dateRange) {
       switch(filters.dateRange) {
         case 'today':
@@ -393,7 +394,6 @@ const History = () => {
           break;
       }
     } else {
-      // Default to today if no date range is selected
       params.startDate = moment().startOf('day').format('YYYY-MM-DD');
       params.endDate = moment().endOf('day').format('YYYY-MM-DD');
     }
@@ -440,10 +440,10 @@ const History = () => {
     );
   }
 
-  const transactions = data?.data?.items || [];
-  const pagination = data?.data?.pagination || { page: 1, totalItems: 0, totalPages: 1 };
+  const transactions = data?.data?.transactions?.items || [];
+  const userData = data?.data?.user || {};
+  const pagination = data?.data?.transactions || { page: 1, totalItems: 0, totalPages: 1 };
 
-  // Check if we're showing today's transactions and there are none
   const isShowingToday = appliedFilters.startDate === moment().startOf('day').format('YYYY-MM-DD') && 
                          appliedFilters.endDate === moment().endOf('day').format('YYYY-MM-DD');
   const noTransactionsToday = isShowingToday && transactions.length === 0;
@@ -474,8 +474,12 @@ const History = () => {
             data={transactions}
             renderItem={({ item }) => (
               <HistoryCard 
-                transaction={item} 
-                onPress={() => navigation.navigate('Receipt', { transaction: item })}
+                transaction={item}
+                user={userData}
+                onPress={() => navigation.navigate('Receipt', { 
+                  transaction: item,
+                  user: userData 
+                })}
               />
             )}
             keyExtractor={(item) => item.id.toString()}
@@ -522,7 +526,6 @@ const History = () => {
               className="mt-4 px-4 py-2 bg-green-500 rounded"
               onPress={() => {
                 setCurrentPage(1);
-                // Reset to show today's transactions
                 setAppliedFilters({ 
                   page: 1, 
                   limit: 10,

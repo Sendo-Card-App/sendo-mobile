@@ -234,7 +234,8 @@ const AddFavorite = () => {
       setFilteredContacts([]);
     }
   }, [synchronizedContacts, favoritesResponse, searchQuery]);
-    const handleAddFavorite = (contact) => {
+  
+  const handleAddFavorite = (contact) => {
     addFavorite({
       userId,
       phone: formatPhoneNumber(contact.phone),

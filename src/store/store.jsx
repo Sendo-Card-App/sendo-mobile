@@ -8,6 +8,8 @@ import { paymentSimulatorAPI } from '../services/Pay/paymentSimulatorAPI';
 import { notificationApi } from '../services/Notification/notificationApi';
 import kycReducer from '../features/Kyc/kycReducer'; // Updated path (note capital K in Kyc)
 import { configApi } from '../services/Config/configApi';
+import { transferApi } from '../services/Transfer/transferApi';
+import { chatApi } from '../services/Chat/ChatApi';
 import { contactsApi } from '../services/Contact/contactsApi';
 import passcodeReducer from '../features/Auth/passcodeSlice';
 import { config } from 'dotenv';
@@ -24,6 +26,8 @@ export const store = configureStore({
      [notificationApi.reducerPath]: notificationApi.reducer,
      [configApi.reducerPath]: configApi.reducer,
      [contactsApi.reducerPath]: contactsApi.reducer,
+    [chatApi.reducerPath]: chatApi.reducer,
+    [transferApi.reducerPath]: transferApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
@@ -34,5 +38,7 @@ export const store = configureStore({
       notificationApi.middleware,
       configApi.middleware, 
       contactsApi.middleware,
+      chatApi.middleware,
+      transferApi.middleware,
     ),
 });

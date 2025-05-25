@@ -1,48 +1,55 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Modal, FlatList, TouchableWithoutFeedback } from 'react-native';
-import { useGetNotificationsQuery, useMarkAsReadMutation } from '../services/Notification/notificationApi';
+import { 
+  View, 
+  Text, 
+  TouchableOpacity, 
+  StyleSheet, 
+  Modal, 
+  FlatList, 
+  TouchableWithoutFeedback 
+} from 'react-native';
+import { useGetNotificationsQuery, useMarkAsReadMutation, useClearAllNotificationsMutation } from '../services/Notification/notificationApi';
 import { useGetUserProfileQuery } from "../services/Auth/authAPI";
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
 const NotificationComponent = () => {
   const [modalVisible, setModalVisible] = useState(false);
   
-  // 1. Get user profile first
-  const { data: userProfile, isLoading: isProfileLoading } = useGetUserProfileQuery();
+  // Get user profile first
+  const { data: userProfile } = useGetUserProfileQuery();
   const userId = userProfile?.data?.id;
 
-  // 2. Only fetch notifications if userId exists
+  // Only fetch notifications if userId exists
   const { 
     data: notifications = [], 
     isLoading, 
     isError,
     refetch,
-    error: notificationError // Add error tracking
+    error: notificationError
   } = useGetNotificationsQuery(userId, {
-    skip: !userId // Skip if no userId
+    skip: !userId
   });
 
   const [markAsRead] = useMarkAsReadMutation();
 
+
   // Debug logs
   useEffect(() => {
-    console.log('Current User ID:', userId);
-    console.log('Notifications data:', notifications);
     if (notificationError) {
       console.log('Notification error:', notificationError);
     }
-  }, [userId, notifications, notificationError]);
+  }, [notificationError]);
 
   // Get unread count
   const unreadCount = notifications?.filter(n => !n?.isRead)?.length || 0;
 
   // Refresh notifications periodically
   useEffect(() => {
-    if (!userId) return; // Don't refresh if no userId
+    if (!userId) return;
 
     const interval = setInterval(() => {
       refetch();
-    }, 30000);
+    }, 30000); // 30 seconds
 
     return () => clearInterval(interval);
   }, [userId, refetch]);
@@ -50,11 +57,26 @@ const NotificationComponent = () => {
   const handleNotificationPress = async (notification) => {
     if (!notification.isRead) {
       await markAsRead(notification.id);
-      refetch(); // Refresh notifications after marking as read
+      refetch();
     }
     // Handle navigation based on notification type
     // setModalVisible(false);
     // navigation.navigate(notification.type);
+  };
+
+ 
+
+  const getIconName = (type) => {
+    const icons = {
+      payment: 'payment',
+      transaction: 'swap-horiz',
+      account: 'account-circle',
+      message: 'message',
+      alert: 'warning',
+      success: 'check-circle',
+      default: 'notifications'
+    };
+    return icons[type] || icons.default;
   };
 
   const renderItem = ({ item }) => (
@@ -81,35 +103,11 @@ const NotificationComponent = () => {
     </TouchableOpacity>
   );
 
-  // Helper function to get icon based on notification type
-  const getIconName = (type) => {
-    switch(type) {
-      case 'payment': return 'payment';
-      case 'transaction': return 'swap-horiz';
-      case 'account': return 'account-circle';
-      default: return 'notifications';
-    }
-  };
-
   if (isLoading) return null;
   if (isError) return null;
 
   return (
     <>
-      {/* Notification Bell Icon with Badge */}
-      <TouchableOpacity 
-        style={styles.bellContainer}
-        onPress={() => setModalVisible(true)}
-      >
-        <Icon name="notifications" size={24} color="#000" />
-        {unreadCount > 0 && (
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>
-              {unreadCount > 9 ? '9+' : unreadCount}
-            </Text>
-          </View>
-        )}
-      </TouchableOpacity>
 
       {/* Notification Modal */}
       <Modal
@@ -123,15 +121,11 @@ const NotificationComponent = () => {
         </TouchableWithoutFeedback>
 
         <View style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Notifications</Text>
-            <TouchableOpacity onPress={() => setModalVisible(false)}>
-              <Icon name="close" size={24} color="#000" />
-            </TouchableOpacity>
-          </View>
+
 
           {notifications.length === 0 ? (
             <View style={styles.emptyContainer}>
+              <Icon name="notifications-off" size={40} color="#ccc" />
               <Text style={styles.emptyText}>No notifications yet</Text>
             </View>
           ) : (
@@ -140,6 +134,8 @@ const NotificationComponent = () => {
               renderItem={renderItem}
               keyExtractor={item => item.id}
               contentContainerStyle={styles.listContent}
+              refreshing={isLoading}
+              onRefresh={refetch}
             />
           )}
         </View>
@@ -193,9 +189,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
   },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 20,
+  },
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
+  },
+  clearText: {
+    color: '#0D1C6A',
+    fontSize: 16,
   },
   listContent: {
     paddingBottom: 20,
@@ -204,10 +209,13 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    padding: 20,
   },
   emptyText: {
     fontSize: 16,
     color: '#888',
+    marginTop: 10,
+    textAlign: 'center',
   },
 
   // Notification Item Styles

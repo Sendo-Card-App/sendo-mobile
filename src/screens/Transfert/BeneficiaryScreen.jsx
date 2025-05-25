@@ -17,9 +17,24 @@ import Cameroon from "../../images/Cameroon.png";
 import Canada from "../../images/Canada.png";
 import { StatusBar } from "expo-status-bar";
 import { useNavigation } from "@react-navigation/native";
+import { useGetConfigQuery } from '../../services/Config/configApi';
+import { useTranslation } from 'react-i18next';
 
 const BeneficiaryScreen = () => {
   const navigation = useNavigation();
+  const { t } = useTranslation();
+  const { 
+    data: configData, 
+    isLoading: isConfigLoading,
+    error: configError
+  } = useGetConfigQuery();
+  
+  const getConfigValue = (name) => {
+    const configItem = configData?.data?.find(item => item.name === name);
+    return configItem ? configItem.value : null;
+  };
+
+  const CAD_REAL_TIME_VALUE = getConfigValue('CAD_REAL_TIME_VALUE');
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#0D0D0D" }}>
@@ -60,10 +75,10 @@ const BeneficiaryScreen = () => {
           marginBottom: 10,
           fontWeight: "bold",
         }}>
-          Bienvenue!
+          {t('welcome')}
         </Text>
         <Text style={{ color: "white", fontSize: 16, marginBottom: 20 }}>
-          Choisissez un pays pour effectuer un transfert.
+          {t('chooseCountry')}
         </Text>
 
         {/* Search Input */}
@@ -77,7 +92,7 @@ const BeneficiaryScreen = () => {
             color: "black",
             backgroundColor: "white",
           }}
-          placeholder="Recherche par pays"
+          placeholder={t('searchPlaceholder')}
           placeholderTextColor="#aaa"
         />
 
@@ -90,9 +105,10 @@ const BeneficiaryScreen = () => {
               paddingVertical: 15,
             }}
             onPress={() => navigation.navigate("Curency", {
-              countryName: "Cameroun",
-              conversionRate: "1,00 CAD = 439,10 CFA",
-              flagImage: Cameroon // Sending the image source
+              countryName: "Cameroon",
+              conversionRate: t('conversionRateCAD', { value: CAD_REAL_TIME_VALUE }),
+              cadRealTimeValue: CAD_REAL_TIME_VALUE,
+              flagImage: Cameroon
             })}
           >
             <Image
@@ -100,9 +116,9 @@ const BeneficiaryScreen = () => {
               resizeMode="contain"
               style={{ width: 50, height: 50 }}
             />
-            <Text style={{ color: "white", marginLeft: 10 }}>Cameroun</Text>
+            <Text style={{ color: "white", marginLeft: 10 }}>{t('cameroon')}</Text>
             <Text style={{ color: "white", marginLeft: "auto" }}>
-              1,00 CAD = 439,10 CFA
+              {t('conversionRateCAD', { value: CAD_REAL_TIME_VALUE })}
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -113,8 +129,9 @@ const BeneficiaryScreen = () => {
             }}
             onPress={() => navigation.navigate("Curency", {
               countryName: "Canada",
-              conversionRate: "439,10 CFA = 1,00 CAD",
-              flagImage: Canada // Sending the image source
+              conversionRate: t('conversionRateXAF', { value: CAD_REAL_TIME_VALUE }),
+              cadRealTimeValue: CAD_REAL_TIME_VALUE,
+              flagImage: Canada
             })}
           >
             <Image
@@ -122,9 +139,9 @@ const BeneficiaryScreen = () => {
               resizeMode="contain"
               style={{ width: 50, height: 50 }}
             />
-            <Text style={{ color: "white", marginLeft: 10 }}>Canada</Text>
+            <Text style={{ color: "white", marginLeft: 10 }}>{t('canada')}</Text>
             <Text style={{ color: "white", marginLeft: "auto" }}>
-              439,10 CFA = 1,00 CAD
+              {t('conversionRateXAF', { value: CAD_REAL_TIME_VALUE })}
             </Text>
           </TouchableOpacity>
         </ScrollView>
@@ -135,7 +152,7 @@ const BeneficiaryScreen = () => {
         <View style={{ flexDirection: "row", justifyContent: "center", alignItems: "center" }}>
           <Ionicons name="shield-checkmark" size={18} color="orange" />
           <Text style={{ color: "white", fontSize: 12, marginLeft: 5 }}>
-            Ne partagez pas vos informations personnelles…
+            {t('securityWarning')}
           </Text>
         </View>
       </View>

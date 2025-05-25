@@ -1,28 +1,68 @@
-import React, { useEffect, useState } from 'react';
-import { View, TextInput, TouchableOpacity, FlatList, Text, Image } from 'react-native';
+// src/screens/ChatScreen.tsx
+import React, { useState, useRef, useEffect } from 'react';
+import {
+  View,
+  TextInput,
+  TouchableOpacity,
+  FlatList,
+  Text,
+  Image,
+  ActivityIndicator,
+  StyleSheet,
+} from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
+import { useSendMessageMutation, useGetConversationMessagesQuery, useCreateConversationMutation } from '../../services/Chat/ChatApi';
 import { initSocket, getSocket } from '../../utils/socket';
 
-const ChatScreen = ({ token, conversationId }) => {
-  const [messages, setMessages] = useState([]);
+interface Attachment {
+  uri: string;
+  name: string;
+  type: string;
+}
+
+interface Message {
+  id: string;
+  content: string;
+  senderType: 'CUSTOMER' | 'ADMIN';
+  userId: number;
+  conversationId: number;
+  read: boolean;
+  attachments: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+const ChatScreen = ({ route, navigation }) => {
   const [input, setInput] = useState('');
-  const [attachments, setAttachments] = useState([]);
+  const [attachments, setAttachments] = useState([]); // Remove <Attachment[]>
+  const flatListRef = useRef(null); // Remove <FlatList>
+  const [sending, setSending] = useState(false);
+  
 
-  useEffect(() => {
-    const socket = initSocket(token);
-    socket.emit('join_conversation', conversationId);
+  // RTK Query hooks
+  const { data: messages = [], isLoading, refetch } = useGetConversationMessagesQuery();
+  const [sendMessage] = useSendMessageMutation();
+  const [createConversation] = useCreateConversationMutation();
 
-    socket.on('new_message', (message) => {
-      setMessages(prev => [...prev, message]);
-    });
+  // Socket.io setup
+  // useEffect(() => {
+  //   const socket = getSocket();
+  //   if (!socket) return;
 
-    return () => {
-      socket.emit('leave_conversation', conversationId);
-      socket.off('new_message');
-    };
-  }, [conversationId, token]);
+  //   socket.emit('join_conversation', conversationId);
+
+  //   socket.on('new_message', (newMessage: Message) => {
+  //     // RTK Query will automatically refetch and update the cache
+  //     refetch();
+  //   });
+
+  //   return () => {
+  //     socket.emit('leave_conversation', conversationId);
+  //     socket.off('new_message');
+  //   };
+  // }, [conversationId, refetch]);
 
   const pickDocument = async () => {
     try {
@@ -30,11 +70,11 @@ const ChatScreen = ({ token, conversationId }) => {
         type: ['application/pdf', 'image/*'],
       });
       
-      if (!result.canceled) {
-        setAttachments([...attachments, {
+      if (!result.canceled && result.assets[0]) {
+        setAttachments(prev => [...prev, {
           uri: result.assets[0].uri,
           name: result.assets[0].name,
-          type: result.assets[0].mimeType
+          type: result.assets[0].mimeType || 'application/octet-stream'
         }]);
       }
     } catch (err) {
@@ -50,11 +90,11 @@ const ChatScreen = ({ token, conversationId }) => {
         quality: 0.7,
       });
       
-      if (!result.canceled) {
-        setAttachments([...attachments, {
+      if (!result.canceled && result.assets[0]) {
+        setAttachments(prev => [...prev, {
           uri: result.assets[0].uri,
           name: `image_${Date.now()}.jpg`,
-          type: 'image/jpeg'
+          type: result.assets[0].mimeType || 'image/jpeg'
         }]);
       }
     } catch (err) {
@@ -62,115 +102,131 @@ const ChatScreen = ({ token, conversationId }) => {
     }
   };
 
-  const removeAttachment = (index) => {
-    const newAttachments = [...attachments];
-    newAttachments.splice(index, 1);
-    setAttachments(newAttachments);
+  const removeAttachment = (index: number) => {
+    setAttachments(prev => prev.filter((_, i) => i !== index));
   };
 
-  const sendMessage = () => {
-    if (input.trim() === '' && attachments.length === 0) return;
+  const handleSend = async () => {
+    if ((input.trim() === '' && attachments.length === 0) || sending) return;
 
-    const socket = getSocket();
-    if (socket) {
-      socket.emit('send_message', {
+    try {
+      setSending(true);
+      
+      // Prepare message data
+      const messageData = {
         conversationId,
         content: input,
-        attachments,
-      });
+        senderType: 'CUSTOMER',
+        attachments: attachments.map(a => a.uri), // In real app, upload these first
+      };
+
+      // Send via RTK Query mutation
+      await createConversation(messageData).unwrap();
+
+      // Clear input
       setInput('');
       setAttachments([]);
+      
+      // Scroll to bottom
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+    } catch (error) {
+      console.error('Failed to send message:', error);
+    } finally {
+      setSending(false);
     }
   };
 
+  const renderMessage = ({ item }: { item: Message }) => (
+    <View style={[
+      styles.messageContainer,
+      item.senderType === 'ADMIN' ? styles.receivedMessage : styles.sentMessage
+    ]}>
+      <Text style={[
+        styles.messageText,
+        item.senderType === 'ADMIN' ? styles.receivedText : styles.sentText
+      ]}>
+        {item.content}
+      </Text>
+      
+      {item.attachments?.map((attachment, index) => (
+        <View key={index} style={styles.attachmentContainer}>
+          {attachment.includes('/images/') ? (
+            <Image 
+              source={{ uri: attachment }} 
+              style={styles.imageAttachment}
+              resizeMode="contain"
+            />
+          ) : (
+            <View style={styles.fileAttachment}>
+              <Icon name="insert-drive-file" size={24} color="#555" />
+              <Text style={styles.fileName} numberOfLines={1}>
+                {attachment.split('/').pop()}
+              </Text>
+            </View>
+          )}
+        </View>
+      ))}
+      
+      <Text style={styles.messageTime}>
+        {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+      </Text>
+    </View>
+  );
+
+  const renderAttachmentPreview = () => (
+    <View style={styles.attachmentsPreview}>
+      {attachments.map((file, index) => (
+        <View key={index} style={styles.attachmentPreview}>
+          {file.type.startsWith('image/') ? (
+            <Image 
+              source={{ uri: file.uri }} 
+              style={styles.previewImage}
+            />
+          ) : (
+            <Icon name="insert-drive-file" size={30} color="#555" />
+          )}
+          <Text style={styles.previewText} numberOfLines={1}>
+            {file.name}
+          </Text>
+          <TouchableOpacity onPress={() => removeAttachment(index)}>
+            <Icon name="close" size={18} color="#ff4444" />
+          </TouchableOpacity>
+        </View>
+      ))}
+    </View>
+  );
+
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#007bff" />
+      </View>
+    );
+  }
+
   return (
-    <View style={{ flex: 1, backgroundColor: '#f8f9fa', padding: 10 }}>
-      {/* Messages List */}
+    <View style={styles.container}>
       <FlatList
+        ref={flatListRef}
         data={messages}
         keyExtractor={item => item.id}
-        contentContainerStyle={{ paddingBottom: 10 }}
-        renderItem={({ item }) => (
-          <View style={{
-            alignSelf: item.senderType === 'ADMIN' ? 'flex-start' : 'flex-end',
-            marginBottom: 8,
-            maxWidth: '80%'
-          }}>
-            <View style={{
-              backgroundColor: item.senderType === 'ADMIN' ? '#e9ecef' : '#007bff',
-              padding: 12,
-              borderRadius: 18,
-              borderBottomLeftRadius: item.senderType === 'ADMIN' ? 4 : 18,
-              borderBottomRightRadius: item.senderType === 'ADMIN' ? 18 : 4,
-            }}>
-              <Text style={{
-                color: item.senderType === 'ADMIN' ? '#212529' : '#fff',
-                fontSize: 16
-              }}>
-                {item.content}
-              </Text>
-            </View>
-          </View>
-        )}
+        renderItem={renderMessage}
+        contentContainerStyle={styles.messagesList}
+        inverted={false}
+        onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+        onLayout={() => flatListRef.current?.scrollToEnd({ animated: true })}
       />
 
-      {/* Attachments Preview */}
-      {attachments.length > 0 && (
-        <View style={{
-          flexDirection: 'row',
-          flexWrap: 'wrap',
-          marginBottom: 8,
-          paddingHorizontal: 5
-        }}>
-          {attachments.map((file, index) => (
-            <View key={index} style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              backgroundColor: '#e9ecef',
-              borderRadius: 15,
-              padding: 8,
-              marginRight: 8,
-              marginBottom: 8,
-              maxWidth: '45%',
-            }}>
-              {file.type.startsWith('image/') ? (
-                <Image 
-                  source={{ uri: file.uri }} 
-                  style={{ width: 30, height: 30, borderRadius: 4, marginRight: 8 }}
-                />
-              ) : (
-                <Icon name="insert-drive-file" size={30} color="#555" />
-              )}
-              <Text style={{ flex: 1, fontSize: 12, marginRight: 8 }} numberOfLines={1}>
-                {file.name}
-              </Text>
-              <TouchableOpacity onPress={() => removeAttachment(index)}>
-                <Icon name="close" size={18} color="#ff4444" />
-              </TouchableOpacity>
-            </View>
-          ))}
-        </View>
-      )}
+      {attachments.length > 0 && renderAttachmentPreview()}
 
-      {/* Input Area */}
-      <View style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#fff',
-        borderRadius: 25,
-        paddingVertical: 8,
-        paddingHorizontal: 12,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 2,
-      }}>
-        <TouchableOpacity onPress={pickImage} style={{ padding: 8, marginRight: 5 }}>
+      <View style={styles.inputContainer}>
+        <TouchableOpacity onPress={pickImage} style={styles.attachmentButton}>
           <Icon name="image" size={24} color="#555" />
         </TouchableOpacity>
         
-        <TouchableOpacity onPress={pickDocument} style={{ padding: 8, marginRight: 5 }}>
+        <TouchableOpacity onPress={pickDocument} style={styles.attachmentButton}>
           <Icon name="insert-drive-file" size={24} color="#555" />
         </TouchableOpacity>
         
@@ -178,34 +234,158 @@ const ChatScreen = ({ token, conversationId }) => {
           value={input}
           onChangeText={setInput}
           placeholder="Type a message..."
-          style={{
-            flex: 1,
-            minHeight: 40,
-            maxHeight: 100,
-            paddingHorizontal: 12,
-            fontSize: 16,
-          }}
+          style={styles.textInput}
           multiline
         />
         
         <TouchableOpacity 
-          onPress={sendMessage}
-          disabled={input.trim() === '' && attachments.length === 0}
-          style={{
-            backgroundColor: input.trim() === '' && attachments.length === 0 ? '#cccccc' : '#007bff',
-            borderRadius: 20,
-            width: 40,
-            height: 40,
-            justifyContent: 'center',
-            alignItems: 'center',
-            marginLeft: 5,
-          }}
+          onPress={handleSend}
+          disabled={(input.trim() === '' && attachments.length === 0) || sending}
+          style={[
+            styles.sendButton,
+            (input.trim() === '' && attachments.length === 0) || sending ? styles.disabledButton : null
+          ]}
         >
-          <Icon name="send" size={24} color="#fff" />
+          {sending ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Icon name="send" size={24} color="#fff" />
+          )}
         </TouchableOpacity>
       </View>
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f8f9fa',
+    padding: 10,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  messagesList: {
+    paddingBottom: 10,
+  },
+  messageContainer: {
+    maxWidth: '80%',
+    padding: 12,
+    borderRadius: 18,
+    marginBottom: 8,
+  },
+  sentMessage: {
+    alignSelf: 'flex-end',
+    backgroundColor: 'green',
+    borderBottomRightRadius: 4,
+  },
+  receivedMessage: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#e9ecef',
+    borderBottomLeftRadius: 4,
+  },
+  messageText: {
+    fontSize: 16,
+  },
+  sentText: {
+    color: '#fff',
+  },
+  receivedText: {
+    color: '#212529',
+  },
+  messageTime: {
+    fontSize: 12,
+    marginTop: 4,
+    textAlign: 'right',
+    color: 'rgba(255,255,255,0.7)',
+  },
+  attachmentContainer: {
+    marginTop: 8,
+  },
+  imageAttachment: {
+    width: 200,
+    height: 200,
+    borderRadius: 8,
+  },
+  fileAttachment: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    padding: 8,
+    borderRadius: 8,
+  },
+  fileName: {
+    color: '#fff',
+    marginLeft: 8,
+    flexShrink: 1,
+  },
+  attachmentsPreview: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 8,
+    paddingHorizontal: 5,
+  },
+  attachmentPreview: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#e9ecef',
+    borderRadius: 15,
+    padding: 8,
+    marginRight: 8,
+    marginBottom: 8,
+    maxWidth: '45%',
+  },
+  previewImage: {
+    width: 30,
+    height: 30,
+    borderRadius: 4,
+    marginRight: 8,
+  },
+  previewText: {
+    flex: 1,
+    fontSize: 12,
+    marginRight: 8,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 25,
+    marginBottom: 30,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  attachmentButton: {
+    padding: 8,
+    marginRight: 5,
+  },
+  textInput: {
+    flex: 1,
+    minHeight: 40,
+    maxHeight: 100,
+    paddingHorizontal: 12,
+    fontSize: 16,
+  },
+  sendButton: {
+    backgroundColor: 'green',
+    borderRadius: 20,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 5,
+  },
+  disabledButton: {
+    backgroundColor: '#cccccc',
+  },
+});
 
 export default ChatScreen;
