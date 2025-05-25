@@ -224,7 +224,7 @@ const Curency = () => {
 
         <View style={{ borderColor: 'gray', borderWidth: 1, borderStyle: 'dashed', marginTop: 20, marginBottom: 4 }} />
 
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 20 }}>
+        {/* <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 20 }}>
           <Text style={{ color: 'white', marginRight: 8 }}>{t('promo_code')}</Text>
           <TextInput
             style={{
@@ -248,9 +248,9 @@ const Curency = () => {
           }}>
             <Text style={{ color: 'black' }}>{t('ok')}</Text>
           </TouchableOpacity>
-        </View>
+        </View> */}
 
-        <View style={{ borderColor: 'gray', borderWidth: 1, borderStyle: 'dashed', marginTop: 20, marginBottom: 4 }} />
+        {/* <View style={{ borderColor: 'gray', borderWidth: 1, borderStyle: 'dashed', marginTop: 20, marginBottom: 4 }} /> */}
 
         <View style={{ backgroundColor: '#333', borderRadius: 16, padding: 24, marginLeft: 5, marginTop: 50 }}>
           <Text style={{ color: 'white', fontSize: 14, textAlign: 'center' }}>

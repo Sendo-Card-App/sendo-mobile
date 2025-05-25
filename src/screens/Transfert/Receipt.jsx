@@ -20,6 +20,7 @@ import * as FileSystem from 'expo-file-system';
 const ReceiptScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
+  const user = route.params?.user;
   const transaction = route.params?.transaction;
   const [isGenerating, setIsGenerating] = React.useState(false);
 
@@ -64,7 +65,7 @@ const ReceiptScreen = () => {
     }
   };
 
-  const generateReceiptHTML = (transaction) => {
+  const generateReceiptHTML = (transaction, user) => {
     return `
       <html>
         <head>
@@ -100,15 +101,15 @@ const ReceiptScreen = () => {
             <div class="section-title">Bénéficiaire</div>
             <div class="row">
               <span>Nom:</span>
-              <span>${transaction.recipient_name || 'N/A'}</span>
+              <span>${user?.firstname} ${user?.lastname}</span>
             </div>
             <div class="row">
               <span>Numéro:</span>
-              <span>${transaction.recipient_number ? transaction.recipient_number.replace(/(\d{3})\d+(\d{3})/, '$1*****$2') : 'N/A'}</span>
+              <span>${user?.phone}</span>
             </div>
             <div class="row">
               <span>Méthode:</span>
-              <span>${transaction.method || 'N/A'}</span>
+              <span>${transaction.provider || 'N/A'}</span>
             </div>
             <div class="row">
               <span>Type:</span>
@@ -217,20 +218,18 @@ const ReceiptScreen = () => {
           {/* Bénéficiaire Info */}
           <Text className="text-gray-600 text-sm">
             Bénéficiaire :{" "}
-            <Text className="font-semibold">{transaction.recipient_name?.toUpperCase() || 'N/A'}</Text>
+            <Text className="font-semibold">{user?.firstname} {user?.lastname}</Text>
           </Text>
-          <Text className="text-gray-600 text-sm">Methode de Paiement : {transaction.method || 'N/A'}</Text>
+          <Text className="text-gray-600 text-sm">Methode de Paiement : {transaction.provider || 'N/A'}</Text>
            <Text className="text-gray-600 text-sm">Type de Paiement : {transaction.type || 'N/A'}</Text>
           <Text className="text-gray-600 text-sm mb-2">
-            Numéro : {transaction.recipient_number ? 
-              transaction.recipient_number.replace(/(\d{3})\d+(\d{3})/, '$1*****$2') : 
-              'N/A'}
+            Numéro : {user?.phone}
           </Text>
 
           {/* Détails Reçu */}
           <Text className="text-green-600 font-semibold my-1">Reçu</Text>
           <Text className="text-gray-600 text-sm">Montant du transfert: {transaction.amount } {transaction.currency }</Text>
-          <Text className="text-gray-600 text-sm">Frais de transfert: {transaction.partnerFees || 0} {transaction.currency }</Text>
+          <Text className="text-gray-600 text-sm">Frais de transfert: ${transaction.sendoFees || 0} CAD</Text>
           <Text className="text-gray-600 text-sm mb-2">
             Total: {transaction.totalAmount } {transaction.currency }
           </Text>
@@ -256,7 +255,7 @@ const ReceiptScreen = () => {
               <Loader color="white" />
             ) : (
               <Text className="text-white font-bold">
-                {transaction.status === 'SUCCESS' ? 'TÉLÉCHARGER LE REÇU' : 'REÇU INDISPONIBLE'}
+                {transaction.status === 'COMPLETED' ? 'TÉLÉCHARGER LE REÇU' : 'REÇU INDISPONIBLE'}
               </Text>
             )}
           </TouchableOpacity>

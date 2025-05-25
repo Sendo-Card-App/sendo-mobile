@@ -7,6 +7,7 @@ import {
   SafeAreaView,
   StatusBar,
   FlatList,
+  Alert,
   Image,
   ActivityIndicator
 } from 'react-native';
@@ -190,33 +191,52 @@ const BeneficiarySelection = ({ route }) => {
     </TouchableOpacity>
   );
 
-  const renderTransfer = ({ item }) => {
-    const receiver = item.destinataire;
-    if (!receiver) return null;
+ const renderTransfer = ({ item }) => {
+  const receiver = item.destinataire;
+  if (!receiver) return null;
 
-    const fullName = `${receiver.firstname || ''} ${receiver.lastname || ''}`.trim();
+  const fullName = `${receiver.firstname || ''} ${receiver.lastname || ''}`.trim();
 
-    return (
-      <TouchableOpacity
-        className="flex-row items-center py-4 border-b border-gray-700 px-5"
-        onPress={() => handleInitTransfer(receiver, receiver.id)}
-        disabled={isTransferLoading}
-      >
-        <View className="w-10 h-10 rounded-full bg-white justify-center items-center mr-3">
-          <Text className="text-gray-700 text-lg font-semibold">
-            {fullName.charAt(0).toUpperCase()}
-          </Text>
-        </View>
-        <View className="flex-1">
-          <Text className="text-white text-base">{fullName}</Text>
-          <Text className="text-gray-400 text-sm mt-1">{receiver.phone}</Text>
-        </View>
-        {selectedReceiverId === receiver.id && (
-          <ActivityIndicator size="small" color="#7ddd7d" />
-        )}
-      </TouchableOpacity>
+  const confirmTransfer = () => {
+    Alert.alert(
+      'Confirmer le transfert',
+      `Voulez-vous envoyer ${totalAmount} ${toCurrency} à ${fullName} ?`,
+      [
+        {
+          text: 'Annuler',
+          style: 'cancel',
+        },
+        {
+          text: 'Confirmer',
+          onPress: () => handleInitTransfer(receiver, receiver.id),
+        },
+      ],
+      { cancelable: true }
     );
   };
+
+  return (
+    <TouchableOpacity
+      className="flex-row items-center py-4 border-b border-gray-700 px-5"
+      onPress={confirmTransfer}
+      disabled={isTransferLoading}
+    >
+      <View className="w-10 h-10 rounded-full bg-white justify-center items-center mr-3">
+        <Text className="text-gray-700 text-lg font-semibold">
+          {fullName.charAt(0).toUpperCase()}
+        </Text>
+      </View>
+      <View className="flex-1">
+        <Text className="text-white text-base">{fullName}</Text>
+        <Text className="text-gray-400 text-sm mt-1">{receiver.phone}</Text>
+      </View>
+      {selectedReceiverId === receiver.id && (
+        <ActivityIndicator size="small" color="#7ddd7d" />
+      )}
+    </TouchableOpacity>
+  );
+};
+
 
   return (
     <SafeAreaView className="flex-1 bg-black">

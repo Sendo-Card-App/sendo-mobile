@@ -3,9 +3,11 @@ import React from 'react';
 import { View, StyleSheet, Text, ActivityIndicator } from 'react-native';
 import PropTypes from 'prop-types';
 
+const PRIMARY_COLOR = '#7ddd7d';
+
 const SkeletonLoader = ({
   skeletonEnabled = true,
-  skeletonDuration = 3000,
+  skeletonDuration = 10000,
   skeletonType = 'list',
   fallbackToSpinner = true,
   isLoading,
@@ -14,19 +16,19 @@ const SkeletonLoader = ({
 }) => {
   const [showSkeleton, setShowSkeleton] = React.useState(true);
   const [slowConnection, setSlowConnection] = React.useState(false);
-  
+
   React.useEffect(() => {
     let skeletonTimer;
     let slowConnectionTimer;
-    
+
     if (isLoading && skeletonEnabled) {
       setShowSkeleton(true);
-      
+
       // Slow connection timer
       slowConnectionTimer = setTimeout(() => {
         setSlowConnection(true);
       }, 10000);
-      
+
       // Skeleton duration timer
       skeletonTimer = setTimeout(() => {
         setShowSkeleton(false);
@@ -35,13 +37,13 @@ const SkeletonLoader = ({
       setShowSkeleton(false);
       setSlowConnection(false);
     }
-    
+
     return () => {
       clearTimeout(skeletonTimer);
       clearTimeout(slowConnectionTimer);
     };
   }, [isLoading, skeletonEnabled, skeletonDuration]);
-  
+
   if (error) {
     return (
       <View style={styles.errorMessage}>
@@ -49,7 +51,7 @@ const SkeletonLoader = ({
       </View>
     );
   }
-  
+
   if (slowConnection) {
     return (
       <View style={styles.slowConnectionMessage}>
@@ -57,7 +59,7 @@ const SkeletonLoader = ({
       </View>
     );
   }
-  
+
   if (isLoading && showSkeleton) {
     return (
       <View style={[styles.skeletonContainer, styles[skeletonType]]}>
@@ -65,15 +67,15 @@ const SkeletonLoader = ({
       </View>
     );
   }
-  
+
   if (isLoading && !showSkeleton && fallbackToSpinner) {
     return (
       <View style={styles.spinnerFallback}>
-        <ActivityIndicator size="large" color="#FF69B4" />
+        <ActivityIndicator size="large" color={PRIMARY_COLOR} />
       </View>
     );
   }
-  
+
   return children;
 };
 
@@ -112,11 +114,12 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   skeletonItem: {
-    backgroundColor: '#e0e0e0',
+    backgroundColor: PRIMARY_COLOR, // 👈 Brand color
     borderRadius: 4,
     marginBottom: 8,
     position: 'relative',
     overflow: 'hidden',
+    opacity: 0.3, // Optional: for a softer, "ghost" look
   },
   skeletonListItem: {
     height: 80,
@@ -124,7 +127,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   skeletonCard: {
-    backgroundColor: '#f0f0f0',
+    backgroundColor: `${PRIMARY_COLOR}50`, // Slightly transparent brand color
     borderRadius: 8,
     padding: 16,
     marginBottom: 16,
@@ -132,21 +135,24 @@ const styles = StyleSheet.create({
   skeletonCardHeader: {
     height: 20,
     width: '60%',
-    backgroundColor: '#e0e0e0',
+    backgroundColor: PRIMARY_COLOR,
     marginBottom: 16,
     borderRadius: 4,
+    opacity: 0.3,
   },
   skeletonCardContent: {
     height: 100,
-    backgroundColor: '#e0e0e0',
+    backgroundColor: PRIMARY_COLOR,
     marginBottom: 16,
     borderRadius: 4,
+    opacity: 0.3,
   },
   skeletonCardFooter: {
     height: 15,
     width: '30%',
-    backgroundColor: '#e0e0e0',
+    backgroundColor: PRIMARY_COLOR,
     borderRadius: 4,
+    opacity: 0.3,
   },
   errorMessage: {
     padding: 16,

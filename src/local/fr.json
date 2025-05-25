@@ -242,7 +242,7 @@
     "recipient_id": "Numéro de compte",
     "recipient_name": "Nom du bénéficiaire",
      "recipient_not_found": "Bénéficiaire non retrouve",
-    "recipient_placeholder": "Entrez le matricule du portefeuille",
+    "recipient_placeholder": "Entrez le numéro de compte",
     "amount": "Montant (FCFA)",
     "amount_placeholder": "0.0",
     "description": "Description (optionnel)",
@@ -594,6 +594,7 @@
   
   "common": {
     "cancel": "Annuler",
+    "close": "Fermer",
     "signIn": "Se connecter",
     "error": "Erreur",
     "success": "Succès",
@@ -847,7 +848,7 @@
     "securityWarning": "Ne partagez pas vos informations personnelles..."
   },
    "addressScreen": {
-    "title": "Votre Adresse de résidence",
+    "title": "Informations du receveur",
     "fields": {
       "firstname": "Prénom",
       "lastname": "Nom",
@@ -891,7 +892,7 @@
   },
   "confirmeTheTransfer": {
     "title": "Confirmation du Transfert",
-    "interacInstructions": "Veuillez utiliser les informations suivantes pour transférer des fonds sur votre compte par INTERAC :",
+    "interacInstructions": "Veuillez utiliser les informations suivantes pour transférer des fonds sur notre compte INTERAC :",
     "interacPhone": "Numéro de téléphone :  506 233 2921",
     "fullname": "Nom complet",
     "lastname": "Nom",
@@ -902,7 +903,7 @@
     "transferFee": "Frais de transfert",
     "exchangeRate": "Taux de change",
     "convertedAmount": "Montant converti",
-    "totalDebited": "Total débité",
+    "totalDebited": "Total envoyé",
     "paymentMethod": "Méthode de paiement",
     "processingNote": "Votre transfert devrait passer d’ici quelques minutes.",
     "confirmButton": "Confirmer et continuer",
