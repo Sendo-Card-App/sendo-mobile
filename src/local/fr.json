@@ -1,5 +1,22 @@
 {
   "available_balance": "Solde disponible",
+  "welcome": "Bienvenue!",
+  "chooseCountry": "Choisissez un pays pour effectuer un transfert.",
+  "searchPlaceholder": "Recherche par pays",
+  "cameroon": "Cameroun",
+  "canada": "Canada",
+  "my_destinataires": "Mes Destinataires",
+  "transfer_fee": "Frais de transfert",
+"total_to_send": "Total à envoyer",
+  "conversionRateCAD": "1,00 CAD = {{value}} FCFA",
+  "conversionRateXAF": "{{value}} FCFA = 1,00 CAD",
+  "securityWarning": "Ne partagez pas vos informations personnelles...",
+  "choose_beneficiary": "Choisir un bénéficiaire",
+  "add_new_beneficiary": "Ajouter un nouveau bénéficiaire",
+  "adding": "Ajout en cours...",
+  "search_beneficiaries": "Rechercher des bénéficiaires",
+  "error_loading_contacts": "Erreur de chargement des contacts",
+  "no_contacts_found": "Aucun contact trouvé",
   "wallet_id_label": "Matricule du portefeuille destinataire",
   "wallet_id_placeholder": "Entrez le matricule du portefeuille",
   "amount_label": "Montant à transférer (FCFA)",
@@ -10,6 +27,16 @@
   "biometrics": "Biométriques",
   "unlock_app": "Déverrouillez l’appli en utilisant votre visage {\n} ou votre empreinte",
   "biometric_not_available": "L'authentification biométrique n'est pas disponible",
+  "amount_cad": "Montant en $ CAD",
+  "amount_xaf": "Montant en XAF",
+  "error_conversion": "Erreur",
+  "conversion_failed": "Échec de la conversion de la devise",
+  "promo_code": "CODE PROMO",
+  "ok": "OK",
+  "sending_money_to": "Envoyer de l'argent vers {{country}} est facile",
+  "fast_and_free": "Super rapide et gratuit pour les portefeuilles mobiles",
+  "next": "Suivant",
+  "disclaimer": "Ne partagez pas vos informations personnelles...",
   "Weak": "Faible",
 "Medium": "Moyen",
 "Strong": "Fort",
@@ -215,7 +242,7 @@
     "recipient_id": "Numéro de compte",
     "recipient_name": "Nom du bénéficiaire",
      "recipient_not_found": "Bénéficiaire non retrouve",
-    "recipient_placeholder": "Entrez le matricule du portefeuille",
+    "recipient_placeholder": "Entrez le numéro de compte",
     "amount": "Montant (FCFA)",
     "amount_placeholder": "0.0",
     "description": "Description (optionnel)",
@@ -561,11 +588,13 @@
     "forgotPinQuestion": "J'ai oublié mon code PIN ?",
     "biometricPrompt": "Vérification biométrique requise",
     "usePinInstead": "Utiliser le code PIN",
-    "biometricFailed": "Échec de l'authentification biométrique"
+    "biometricFailed": "Échec de l'authentification biométrique",
+    "lockedFor5Minutes": "Votre compte est bloqué pendant 5 minutes en raison de multiples tentatives échouées"
   },
   
   "common": {
     "cancel": "Annuler",
+    "close": "Fermer",
     "signIn": "Se connecter",
     "error": "Erreur",
     "success": "Succès",
@@ -574,7 +603,7 @@
   },
   "forgotPassword": {
     "title": "Mot de passe oublié",
-    "subtitle": "Entrez votre numéro de téléphone pour recevoir un code OTP",
+    "subtitle": "Entrez votre email  pour recevoir un code OTP",
     "phonePlaceholder": "Entrez votre numéro de téléphone",
     "sendOtp": "Envoyer",
     "backToSignIn": "Retour à la connexion",
@@ -776,6 +805,113 @@
     "disclaimer": "Les frais de change sont mis à jour chaque semaine et différent de ceux des sites de conversion, car ils incluent le coût d'achat de la devise étrangère auprès des banques.",
     "rechargeButton": "Recharger ma carte",
     "closeButton": "Fermer"
+  },
+  "walletConfirm": {
+    "title": "Recharge de votre Wallet",
+    "secureEncryption": "Sécurisé par un cryptage au niveau de la banque",
+    "accountNumber": "Numéro de votre compte *",
+    "verificationWarning": "Merci de vérifier le numéro de votre compte Sendo, nous ne serons probablement pas en mesure de vous rembourser une fois le transfert envoyé",
+    "privacyNotice": "Ne partagez pas vos informations personnelles..."
+  },
+  "commons": {
+    "loading": "Chargement...",
+    "ok": "OK",
+    "securityNotice": "Votre sécurité est notre priorité"
+  },
+  "walletWithdrawal": {
+    "title": "Effectuer un retrait",
+    "secureNote": "Sécurisé par un cryptage bancaire",
+    "accountNumber": "Numéro de votre compte",
+    "amount": "Montant",
+    "fullName": "Nom complet",
+    "email": "Email",
+    "cancel": "ANNULER",
+    "valid": "VALIDER",
+    "address": "Adresse",
+    "confirmationNote": "Merci de vérifier le numéro de votre compte Sendo avant la validation.",
+    "confirmButton": "Confirmer",
+    "securityWarning": "Ne partagez pas vos informations personnelles..."
+  },
+  "walletRecharge": {
+    "title": "Effectuer un dépôt",
+    "secureNote": "Sécurisé par un cryptage bancaire",
+    "accountNumber": "Numéro de votre compte",
+    "amount": "Montant",
+    "fullName": "Nom complet",
+    "email": "Email",
+    "message": "Votre depôt a ete initialisé avec succès. Veuillez suivre les instructions ci-dessous pour effectuer le paiement.",
+    "cancel": "ANNULER",
+    "valid": "VALIDER",
+    "address": "Adresse",
+    "confirmationNote": "Merci de vérifier le numéro de votre compte mobile money avant la validation.",
+    "confirmButton": "Confirmer",
+    "securityWarning": "Ne partagez pas vos informations personnelles..."
+  },
+   "addressScreen": {
+    "title": "Informations du receveur",
+    "fields": {
+      "firstname": "Prénom",
+      "lastname": "Nom",
+      "phone": "Téléphone",
+      "country": "Pays",
+      "email": "Email",
+      "address": "Adresse",
+      "description": "Description"
+    },
+    "placeholders": {
+      "firstname": "Entrez votre prénom",
+      "lastname": "Entrez votre nom",
+      "phone": "Entrez votre téléphone",
+      "country": "Entrez votre pays",
+      "email": "Entrez votre email",
+      "address": "Entrez votre adresse",
+      "description": "Entrez une description (optionnel)"
+    },
+    "amount": "Montant (XAF)",
+    "nextButton": "Suivant",
+    "footerNote": "Ne partagez pas vos informations personnelles…"
+  },
+  "addContactScreen": {
+    "mobileNumber": "Numéro de mobile",
+    "phonePlaceholder": "Numéro de téléphone",
+    "modal": {
+      "selectCode": "Sélectionnez l'indicatif du pays"
+    },
+    "recommendation": "1. Nous vous recommandons d'utiliser un numéro MoMo/OM",
+    "labelPrompt": "Ajouter un nom ou une étiquette à ce numéro",
+    "example": "[Eg: Nandi]",
+    "contactNamePlaceholder": "Nom du contact",
+    "saveButton": "Enregistrer"
+  },
+  "paymentMethodScreen": {
+    "title": "Méthode de paiement",
+    "choosePayment": "Choisissez une méthode de paiement",
+    "orangeMoney": "Orange Money",
+    "mtnMoney": "MTN Mobile Money",
+    "securityNote": "Ne partagez pas vos informations personnelles..."
+  },
+  "confirmeTheTransfer": {
+    "title": "Confirmation du Transfert",
+    "interacInstructions": "Veuillez utiliser les informations suivantes pour transférer des fonds sur notre compte INTERAC :",
+    "interacPhone": "Numéro de téléphone :  506 233 2921",
+    "fullname": "Nom complet",
+    "lastname": "Nom",
+    "phone": "Téléphone",
+    "country": "Pays",
+    "address": "Adresse",
+    "amountSent": "Montant envoyé",
+    "transferFee": "Frais de transfert",
+    "exchangeRate": "Taux de change",
+    "convertedAmount": "Montant converti",
+    "totalDebited": "Total envoyé",
+    "paymentMethod": "Méthode de paiement",
+    "processingNote": "Votre transfert devrait passer d’ici quelques minutes.",
+    "confirmButton": "Confirmer et continuer",
+    "secureData": "Vos données sont sécurisées.",
+    "successTitle": "Transfert initié",
+    "successMessage": "Veuillez suivre l’évolution du statut dans l’historique.",
+    "errorTitle": "Erreur",
+    "errorMessage": "Une erreur est survenue."
   }
 
 

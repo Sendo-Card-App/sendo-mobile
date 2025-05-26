@@ -34,7 +34,9 @@ const SelectMethod = ({navigation}) => {
           {t('select_method.send_to_mobile')}
         </Text>
 
-        <TouchableOpacity style={{
+        <TouchableOpacity 
+        onPress={() => navigation.navigate("WalletWithdrawal")}
+        style={{
           flexDirection: 'row',
           alignItems: 'center',
           backgroundColor: '#F1F1F1',

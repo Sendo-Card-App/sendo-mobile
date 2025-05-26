@@ -4,22 +4,37 @@ import { AntDesign } from '@expo/vector-icons';
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { MaterialIcons } from '@expo/vector-icons';
 import HomeImage from "../../Images/HomeImage2.png";
+import { useTranslation } from 'react-i18next';
+
 import button from "../../Images/ButtomLogo.png";
-import Visa from "../../Images/Visa.png"; // Make sure to import your images
-import om from "../../Images/om.png"; // Import respective logos
-import mtn from "../../Images/mtn.png"; // Import respective logos
-import { useNavigation } from '@react-navigation/native';
+import Visa from "../../Images/Visa.png";
+import om from "../../Images/om.png";
+import mtn from "../../Images/mtn.png";
+import { useNavigation, useRoute } from '@react-navigation/native';
 
 const PaymentMethod = () => {
   const [selectedBank, setSelectedBank] = useState('');
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const navigation = useNavigation();
+  const { t } = useTranslation();
+  const route = useRoute();
+  
+  const { 
+    contact,
+    amount,
+    convertedAmount,
+    totalAmount,
+    transferFee,
+    fromCurrency,
+    toCurrency,
+    countryName,
+    cadRealTimeValue
+  } = route.params;
 
   // Bank Data with logos
   const banks = [
-    { id: '1', name: 'Bank Card', logo: Visa },
-    { id: '2', name: 'Orange Money', logo: om },
-    { id: '3', name: 'Mobile Money', logo: mtn },
+    { id: '2', name: 'Orange Money', logo: om, provider: 'Orange Money' },
+    { id: '3', name: 'MTN Mobile Money', logo: mtn, provider: 'MTN Mobile Money' },
   ];
 
   const toggleDropdown = () => {
@@ -29,6 +44,21 @@ const PaymentMethod = () => {
   const selectBank = (bank) => {
     setSelectedBank(bank.name);
     setDropdownVisible(false);
+    
+    // Navigate to appropriate screen based on payment method
+      navigation.navigate("Address", { 
+        contact,
+        amount,
+        convertedAmount,
+        totalAmount,
+        transferFee,
+        fromCurrency,
+        toCurrency,
+        countryName,
+        cadRealTimeValue,
+        provider: bank.provider
+      });
+    
   };
 
   return (
@@ -36,8 +66,8 @@ const PaymentMethod = () => {
       <StatusBar barStyle="light-content" />
       {/* Header */}
       <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
-        <TouchableOpacity>
-          <AntDesign name="arrowleft" size={24} color="white" onPress={() => navigation.goBack()} />
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <AntDesign name="arrowleft" size={24} color="white" />
         </TouchableOpacity>
 
         <Image
@@ -53,8 +83,9 @@ const PaymentMethod = () => {
         <MaterialIcons name="menu" size={24} color="white" style={{ marginLeft: "auto" }} onPress={() => navigation.openDrawer()} />
       </View>
       <View style={{ borderColor: 'gray', borderWidth: 1, borderStyle: 'dashed', marginBottom: 4 }} />
-      <Text style={{ color: 'white', fontSize: 25, marginBottom: 10, marginLeft: 40, fontWeight: "bold" }}>Moyen de paiement</Text>
+      <Text style={{ color: 'white', fontSize: 25, marginBottom: 10, marginLeft: 40, fontWeight: "bold" }}> {t("paymentMethodScreen.title")}</Text>
 
+     
       {/* Dropdown */}
       <TouchableOpacity
         style={{
@@ -63,19 +94,19 @@ const PaymentMethod = () => {
           padding: 15,
           borderRadius: 8,
           backgroundColor: 'white',
-          marginTop: 30,
+          marginTop: 10,
         }}
         onPress={toggleDropdown}
       >
-        <Text>{selectedBank || 'Choisissez une banque'}</Text>
+        <Text>{selectedBank || t("paymentMethodScreen.choosePayment")}</Text>
       </TouchableOpacity>
 
       {dropdownVisible && (
         <View
           style={{
-            marginTop: -5,
+            marginTop: 5,
             borderRadius: 8,
-            backgroundColor: 'rgba(255, 255, 255, 0.7)',
+            backgroundColor: 'rgba(255, 255, 255, 0.9)',
             zIndex: 2,
             position: "relative",
             padding: 10,
@@ -98,39 +129,22 @@ const PaymentMethod = () => {
                 onPress={() => selectBank(item)}
               >
                 <Image
-                  source={item.logo} // Display each bank logo
+                  source={item.logo}
                   style={{ width: 30, height: 30, marginRight: 10, borderRadius: 5 }}
                 />
-                <Text style={{ color: "black", fontSize: 20 }}>{item.name}</Text>
+                <Text style={{ color: "black", fontSize: 16 }}>{item.name}</Text>
               </TouchableOpacity>
             )}
           />
         </View>
       )}
 
-      {/* Next Button */}
-      <TouchableOpacity
-        style={{
-          marginTop: 200,
-          padding: 10,
-          backgroundColor: 'green',
-          borderRadius: 8,
-          alignItems: 'center',
-          width: 150,
-          marginLeft: 'auto',
-          marginRight: 'auto',
-        }}
-        onPress={() => navigation.navigate("BeneficiaryDetails")}
-      >
-        <Text style={{ color: 'black', fontSize: 16, fontWeight: 'bold' }}>SUIVANT</Text>
-      </TouchableOpacity>
-
       {/* Footer (fixed to the bottom) */}
       <View style={{ flex: 1, justifyContent: 'flex-end', marginBottom: 20 }}>
         <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
           <Ionicons name="shield-checkmark" size={18} color="orange" />
           <Text style={{ color: 'white', marginLeft: 5, fontSize: 12 }}>
-            Ne partagez pas vos informations personnelles…
+            {t("paymentMethodScreen.securityNote")}
           </Text>
         </View>
       </View>

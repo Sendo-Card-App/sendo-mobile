@@ -62,10 +62,10 @@ module.exports = {
     ],
     extra: {
       eas: {
-        projectId: "3c5e2368-a9f0-420d-aebf-8265754fe6a8",
-        apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL
+        apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL,
+        projectId: "08a59933-10e3-45bc-b064-54b97ea7eca9"
       }
     },
-    owner: "migueljunior",
+    owner: "sfesendo",
   }
 };

@@ -21,19 +21,16 @@ import { useNavigation } from "@react-navigation/native";
 const Home = () => {
   const { height } = Dimensions.get("window");
   const navigation = useNavigation();
-
   const [isClickedOne, setisClickedOne] = useState(false);
   const [isClickedTwo, setisClickedTwo] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(); // Replace with actual data
 
   const platformFont = Platform.OS === "ios" ? "HelveticaNeue" : "Roboto";
 
   const onRefresh = () => {
     setRefreshing(true);
-
-    // Simule un fetch ou une actualisation
     setTimeout(() => {
-      // Tu peux ici recharger des données si nécessaire
       setRefreshing(false);
     }, 1000);
   };
@@ -56,15 +53,19 @@ const Home = () => {
                 className="h-[50px] w-[150px]"
               />
               <View className="flex-row items-center gap-4">
-                {/* Notification Icon with Badge */}
+                {/* Notification Bell with Badge */}
                 <TouchableOpacity 
+                  className="relative p-2"
                   onPress={() => navigation.navigate("NotificationComponent")}
-                  className="relative"
                 >
                   <MaterialIcons name="notifications" size={24} color="black" />
-                  <View className="absolute -top-1 -right-1 bg-red-500 rounded-full w-4 h-4 items-center justify-center">
-                    <Text className="text-white text-xs">3</Text>
-                  </View>
+                  {unreadCount > 0 && (
+                    <View className="absolute top-1 right-1 bg-red-500 rounded-full min-w-[20px] h-[20px] justify-center items-center px-1">
+                      <Text className="text-white text-xs font-bold">
+                        {unreadCount > 9 ? '9+' : unreadCount}
+                      </Text>
+                    </View>
+                  )}
                 </TouchableOpacity>
                 
                 <TouchableOpacity onPress={() => navigation.openDrawer()}>
@@ -193,7 +194,7 @@ const Home = () => {
                       fontWeight: "800",
                     }}
                   >
-                    D’argent
+                    D'argent
                   </Text>
                 </View>
               </View>
@@ -213,7 +214,7 @@ const Home = () => {
                   fontFamily: platformFont,
                 }}
               >
-                TRANSFÉREZ DE L’ARGENT
+                TRANSFÉREZ DE L'ARGENT
               </Text>
               <Text
                 style={{
@@ -239,7 +240,7 @@ const Home = () => {
               >
                 <Text style={{ color: "#7ddd7d" }}>Bon à savoir :</Text> Nous
                 facilitons les transactions ﬁnancières internationales pour les
-                étudiants étrangers, en particulier ceux originaires d’Afrique,
+                étudiants étrangers, en particulier ceux originaires d'Afrique,
                 qui souhaitent étudier au Canada.
               </Text>
 
@@ -252,7 +253,7 @@ const Home = () => {
                   fontFamily: platformFont,
                 }}
               >
-                Vos transferts d’argent simpliﬁés avec notre application.
+                Vos transferts d'argent simpliﬁés avec notre application.
                 Proﬁtez de transferts rapide entre le Cameroun et le Canada.
                 Suivez vos transferts en temps réel avec Sendo.
               </Text>

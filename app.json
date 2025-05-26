@@ -58,8 +58,8 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "3c5e2368-a9f0-420d-aebf-8265754fe6a8",
-       "API_URL": "http://api.sf-e.ca/api"
+       "API_URL": "http://api.sf-e.ca/api",
+       "projectId": "08a59933-10e3-45bc-b064-54b97ea7eca9"
       }
     }
   }
