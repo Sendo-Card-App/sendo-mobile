@@ -4,7 +4,7 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 const SHARED_EXPENSE_ENDPOINTS = {
   CREATE: '/shared-expense/create',
   LIST: '/shared-expense/list',
-  DETAILS: '/shared-expense/details',
+  DETAILS: '/shared-expense',
   SETTLE: '/shared-expense/settle',
 };
 
@@ -47,9 +47,19 @@ export const sharedExpenseApi = createApi({
       invalidatesTags: [TAG_TYPES.SHARED_EXPENSE],
     }),
 
+      deleteSharedExpense: builder.mutation({
+        query: (expenseId) => ({
+          url: `/shared-expense/${expenseId}/close`,
+          method: 'DELETE',
+           providesTags: [TAG_TYPES.SHARED_EXPENSE],
+        }),
+        invalidatesTags: [TAG_TYPES.SHARED_EXPENSE],
+      }),
+
+
     getSharedExpenses: builder.query({
-      query: ({ status, page = 1, limit = 10 }) => ({
-        url: SHARED_EXPENSE_ENDPOINTS.LIST,
+      query: ({ userId, status, page = 1, limit = 10 }) => ({
+        url: `/shared-expense/${userId}/list`,
         method: 'GET',
         params: {
           status,
@@ -59,6 +69,7 @@ export const sharedExpenseApi = createApi({
       }),
       providesTags: [TAG_TYPES.SHARED_EXPENSE],
     }),
+
 
     getSharedExpenseDetails: builder.query({
       query: (expenseId) => ({
@@ -101,6 +112,7 @@ export const sharedExpenseApi = createApi({
 export const {
   useCreateSharedExpenseMutation,
   useGetSharedExpensesQuery,
+  useDeleteSharedExpenseMutation,
   useGetSharedExpenseDetailsQuery,
   useSettleSharedExpenseMutation,
   useValidateAmountDistributionMutation,

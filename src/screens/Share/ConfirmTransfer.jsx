@@ -12,6 +12,12 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import TopLogo from "../../images/TopLogo.png";
 import Loader from "../../components/Loader";
 import { StatusBar } from "expo-status-bar";
+import { 
+  sendPushNotification,
+  sendPushTokenToBackend,
+  registerForPushNotificationsAsync
+} from '../../services/notificationService';
+import { TypesNotification } from "../../utils/constants";
 import { useCreateSharedExpenseMutation } from "../../services/Shared/sharedExpenseApi";
 import { useTranslation } from "react-i18next";
 import Toast from "react-native-toast-message";
@@ -24,37 +30,80 @@ const ConfirmationScreen = () => {
   const [reason, setReason] = useState(route.params.description || "");
 
   const handleConfirm = async () => {
+  try {
+    const payload = {
+      totalAmount: route.params.totalAmount,
+      description: reason,
+      limitDate: route.params.limitDate,
+      includeMyself: route.params.includeSelf,
+      methodCalculatingShare: route.params.methodCalculatingShare,
+      participants: route.params.participants.map((p) => ({
+        matriculeWallet: p.matriculeWallet,
+        ...(route.params.methodCalculatingShare === "manual" && {
+          amount: p.amount,
+        }),
+      })),
+    };
+
+    const response = await createSharedExpense(payload).unwrap();
+
+   
+    const notificationContent = {
+      title: "Dépense Partagée Créée",
+      body: `Une nouvelle dépense de ${route.params.totalAmount} FCFA a été créée.`,
+      type: "SHARED_EXPENSE_CREATED",
+    };
+
     try {
-      const payload = {
-        totalAmount: route.params.totalAmount,
-        description: reason,
-        limitDate: route.params.limitDate,
-        includeMyself: route.params.includeSelf,
-        methodCalculatingShare: route.params.methodCalculatingShare,
-        participants: route.params.participants.map((p) => ({
-          matriculeWallet: p.matriculeWallet,
-          ...(route.params.methodCalculatingShare === "manual" && {
-            amount: p.amount,
-          }),
-        })),
-      };
+      let pushToken = await getStoredPushToken();
+      if (!pushToken) {
+        pushToken = await registerForPushNotificationsAsync();
+      }
 
-      const response = await createSharedExpense(payload).unwrap();
+      if (pushToken) {
+        await sendPushTokenToBackend(
+          pushToken,
+          notificationContent.title,
+          notificationContent.body,
+          notificationContent.type,
+          {
+            amount: route.params.totalAmount,
+            description: reason,
+            limitDate: route.params.limitDate,
+            timestamp: new Date().toISOString(),
+          }
+        );
+      }
+    } catch (notificationError) {
+      await sendPushNotification(
+        notificationContent.title,
+        notificationContent.body,
+        {
+          data: {
+            type: notificationContent.type,
+            amount: route.params.totalAmount,
+            description: reason,
+          },
+        }
+      );
+    }
 
+    
     navigation.navigate("SuccessSharing", {
       transactionDetails: "La dépense partagée a été créée avec succès.",
     });
 
-    } catch (error) {
-      Toast.show({
-        type: "error",
-        text1: "Erreur",
-        text2:
-          error?.data?.message ||
-          "Échec de la création de la dépense partagée",
-      });
-    }
-  };
+  } catch (error) {
+    Toast.show({
+      type: "error",
+      text1: "Erreur",
+      text2:
+        error?.data?.message ||
+        "Échec de la création de la dépense partagée",
+    });
+  }
+};
+
 
   return (
     <View className="bg-[#181e25] flex-1 pt-0 relative">

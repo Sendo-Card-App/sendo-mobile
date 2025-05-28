@@ -993,6 +993,29 @@
     "description": "Your sharing request has been successfully completed.",
     "notify": "Your friends will be notified.",
     "backButton": "Back"
+  },
+   "historique": {
+   "history": "History",
+  "filter": "Filter",
+  "filterTransactions": "Filter Transactions",
+  "status": "Status",
+  "all": "All",
+  "pending": "Pending",
+  "complete": "Complete",
+  "declined": "Declined",
+  "startDate": "Start Date",
+  "endDate": "End Date",
+  "select": "Select",
+  "reset": "Reset",
+  "apply": "Apply",
+  "noTitle": "Untitled",
+  "errorLoading": "Error while loading.",
+  "noHistoryFound": "No history found.",
+   "statuses": {
+      "pending": "Pending",
+      "complete": "Complete",
+      "declined": "Declined"
+    }
   }
 
 
