@@ -191,6 +191,7 @@
 "history": "History",
 "pay_bills": "Pay Bills",
 "account": "Account",
+ "share": "Share between friends",
 "favorite": "Favorite contact",
  "request": "KYC verification",
     "sub": "Submit your KYC documents",
@@ -238,7 +239,7 @@
 "wallet_transfer": {
 "title": "Wallet Transfer",
 "available_balance": "Available Balance",
-"recipient_id": "Account Number",
+ "recipient_id": "Recipient ID",
 "recipient_name": "Name of beneficiary",
 "recipient_info": "Recipient Information",
  "recipient_not_found": "Beneficiary not found",
@@ -247,9 +248,12 @@
 "amount_placeholder": "0.0",
 "description": "Description (optional)",
 "description_placeholder": "Ex: Transfer for purchase",
-"your_matricule": "Your Account Number",
+"your_matricule": "Your Recipient ID",
 "transfer_button": "Make Transfer"
 },
+"select_service": "Select a service",
+  "service_om": "Orange Money",
+  "service_mtn": "MTN Mobile Money",
 "select_method": {
 "withdrawal_limit": "📊 Withdrawal limit",
 "send_to_mobile": "Send money to your MOMO or OM accounts",
@@ -273,7 +277,10 @@
 "account_number": "Account Number",
 "account_name": "Account Name",
 "full_iban": "Full IBAN",
-"bic_swift": "BIC/SWIFT"
+"bic_swift": "BIC/SWIFT",
+"select_service": "Select a service",
+  "service_om": "Orange Money",
+  "service_mtn": "MTN Mobile Money"
 },
 "wallet_balance": {
 "title": "Balance",
@@ -455,6 +462,7 @@
 "nextButton": "NEXT",
 "securityNotice": "Do not share your personal information...",
 "alreadyVerifiedMessage": "Your KYC documents have already been submitted.",
+"kycRequiredMessage": "You cannot perform any transactions without completing the KYC verification.",
 "alreadyVerifiedButton": "Already submitted"
 },
 "payment2": {
@@ -915,7 +923,78 @@
     "successMessage": "Please check the history to track the status.",
     "errorTitle": "Error",
     "errorMessage": "An error occurred."
+  },
+  "welcomeShare": {
+    "title": "Split the bill!",
+    "subtitle": "Request and receive money contributions instantly from your friends",
+    "continue": "Continue"
+  },
+   "createShare": {
+    "title": "Friend Sharing",
+    "new": "Create a new share",
+    "friends": "Share with friends",
+    "history": "History"
+  },
+   "request": {
+    "createRequest": "Create the request",
+    "totalAmount": "Total amount",
+    "amountPlaceholder": "Enter the amount...",
+    "reason": "Reason",
+    "reasonPlaceholder": "Enter the text...",
+    "deadline": "Deadline",
+    "defaultDatePlaceholder": "--/--/--",
+    "next": "Next",
+    "step": {
+      "one": "1",
+      "two": "2",
+      "three": "3"
+    }
+  },
+   "destinators": {
+    "title": "Choose recipients",
+    "includeSelf": "Include myself in the list",
+    "searchPlaceholder": "Search for a friend…",
+    "friendsLabel": "Friends",
+    "noFriends": "No friends found.",
+    "step1": "1",
+    "step2": "2",
+    "step3": "3",
+    "next": "Next",
+    "pleaseWait": "Please wait..."
+  },
+   "distributionMethod": {
+    "title": "How would you like to split the amount?",
+    "automatic": {
+      "title": "Automatically",
+      "description": "The amount will be equally divided among each recipient"
+    },
+    "manual": {
+      "title": "Manually",
+      "description": "Assign a different amount to each participant"
+    }
+  },
+   "amountDistribution": {
+    "title": "Divide the amount between each recipient",
+    "totalAmount": "Total amount",
+    "remaining": "Remaining",
+    "nextButton": "Next"
+  },
+  "confirmation": {
+    "title": "Confirm the information",
+    "totalAmount": "Total amount",
+    "reason": "Reason",
+    "reasonPlaceholder": "Enter the reason...",
+    "deadline": "Deadline",
+    "participants": "Recipients",
+    "confirmButton": "Confirm and send"
+  },
+  "successSharing": {
+    "title": "Share Successful 🎉",
+    "description": "Your sharing request has been successfully completed.",
+    "notify": "Your friends will be notified.",
+    "backButton": "Back"
   }
+
 
 
 

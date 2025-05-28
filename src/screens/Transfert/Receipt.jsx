@@ -5,17 +5,16 @@ import {
   TouchableOpacity,
   ScrollView,
   SafeAreaView,
-  Linking,
-  ActivityIndicator,
   Alert
 } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import moment from "moment";
 import * as Print from 'expo-print';
-import Loader from "../../components/Loader";
-import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
+import { Asset } from 'expo-asset';
+import Loader from "../../components/Loader";
 
 const ReceiptScreen = () => {
   const navigation = useNavigation();
@@ -38,40 +37,54 @@ const ReceiptScreen = () => {
     );
   }
 
-  const handleDownloadReceipt = async () => {
-    if (transaction.status !== 'COMPLETED') {
-      Alert.alert(
-        "Reçu indisponible",
-        "Le reçu est uniquement disponible pour les transactions réussies"
-      );
-      return;
-    }
+ const handleDownloadReceipt = async () => {
+  if (transaction.status !== 'COMPLETED') {
+    Alert.alert(
+      "Reçu indisponible",
+      "Le reçu est uniquement disponible pour les transactions réussies"
+    );
+    return;
+  }
 
-    setIsGenerating(true);
-    try {
-      const html = generateReceiptHTML(transaction);
-      await Print.printAsync({
-        html,
-        orientation: 'portrait'
-      });
-    } catch (error) {
-      Alert.alert(
-        "Erreur",
-        "Échec de génération du reçu. Veuillez réessayer."
-      );
-      console.error(error);
-    } finally {
-      setIsGenerating(false);
-    }
-  };
+  setIsGenerating(true);
+  try {
+    const [asset] = await Asset.loadAsync(require('../../images/LogoSendo.png'));
+    const base64Logo = await FileSystem.readAsStringAsync(asset.localUri, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
+    const logoDataUri = `data:image/png;base64,${base64Logo}`;
 
-  const generateReceiptHTML = (transaction, user) => {
+    const html = generateReceiptHTML(transaction, user, logoDataUri);
+
+    const file = await Print.printToFileAsync({
+      html,
+      base64: false
+    });
+
+    const fileUri = `${FileSystem.documentDirectory}Reçu transaction Sendo.pdf`;
+    await FileSystem.moveAsync({
+      from: file.uri,
+      to: fileUri
+    });
+
+    await Sharing.shareAsync(fileUri);
+  } catch (error) {
+    Alert.alert("Erreur", "Échec de génération du reçu. Veuillez réessayer.");
+    console.error(error);
+  } finally {
+    setIsGenerating(false);
+  }
+};
+
+
+  const generateReceiptHTML = (transaction, user, logoUri) => {
     return `
       <html>
         <head>
           <style>
             body { font-family: Arial, sans-serif; padding: 20px; }
             .header { text-align: center; margin-bottom: 20px; }
+            .logo { width: 100px; margin: 0 auto; }
             .title { font-size: 18px; font-weight: bold; margin: 10px 0; }
             .section { margin-bottom: 15px; }
             .section-title { font-weight: bold; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
@@ -81,10 +94,11 @@ const ReceiptScreen = () => {
         </head>
         <body>
           <div class="header">
+            <img src="${logoUri}" alt="Logo Sendo" class="logo" />
             <div class="title">Reçu de transfert Sendo</div>
-            <div>Reference de transaction: ${transaction.transactionReference}</div>
+            <div>Référence de transaction: ${transaction.transactionId}</div>
           </div>
-          
+
           <div class="section">
             <div class="section-title">Détails de la transaction</div>
             <div class="row">
@@ -96,7 +110,7 @@ const ReceiptScreen = () => {
               <span>${transaction.status}</span>
             </div>
           </div>
-          
+
           <div class="section">
             <div class="section-title">Bénéficiaire</div>
             <div class="row">
@@ -116,12 +130,12 @@ const ReceiptScreen = () => {
               <span>${transaction.type || 'N/A'}</span>
             </div>
           </div>
-          
+
           <div class="section">
             <div class="section-title">Montant</div>
             <div class="row">
               <span>Montant envoyé:</span>
-              <span>${transaction.amount}  ${transaction.currency }</span>
+              <span>${transaction.amount} ${transaction.currency}</span>
             </div>
             <div class="row">
               <span>Frais:</span>
@@ -129,10 +143,10 @@ const ReceiptScreen = () => {
             </div>
             <div class="row">
               <span>Total:</span>
-              <span>${transaction.totalAmount } ${transaction.currency }</span>
+              <span>${transaction.totalAmount} ${transaction.currency}</span>
             </div>
           </div>
-          
+
           <div class="footer">
             Ce reçu est généré automatiquement et peut être utilisé comme justificatif.
           </div>
@@ -143,47 +157,43 @@ const ReceiptScreen = () => {
 
   const getStatusSteps = () => {
     const formatDate = (date) => date ? moment(date).format('DD/MM/YYYY HH:mm') : 'N/A';
-  
-    
+
     return [
-     {
-      status: "Transmis",
-      description: "Transfert initié avec succès",
-      completed: true,
-      time: formatDate(transaction.createdAt),
-      icon: "checkmark-circle" // Example icon name
-    },
-       {
-      status: "En traitement",
-      description: "Vérification en cours",
-      completed: transaction.status !== 'PENDING' && transaction.status !== 'FAILED',
-      time: transaction.processedAt ? formatDate(transaction.processedAt) : 'En attente',
-      icon: "time" // Example icon name
-    },
-    {
-      status: transaction.status === 'COMPLETED' ? "Terminé" : "Échec",
-      description: transaction.status === 'COMPLETED' 
-        ? "Le transfert a réussi" 
-        : "Le transfert a échoué",
-      completed: transaction.status === 'COMPLETED',
-      time: transaction.updatedAt ? formatDate(transaction.updatedAt) : 'N/A',
-      icon: transaction.status === 'COMPLETED' ? "checkmark-done" : "close-circle" // Example icons
-    }
+      {
+        status: "Transmis",
+        description: "Transfert initié avec succès",
+        completed: true,
+        time: formatDate(transaction.createdAt),
+        icon: "checkmark-circle"
+      },
+      {
+        status: "En traitement",
+        description: "Vérification en cours",
+        completed: transaction.status !== 'PENDING' && transaction.status !== 'FAILED',
+        time: transaction.processedAt ? formatDate(transaction.processedAt) : 'En attente',
+        icon: "time"
+      },
+      {
+        status: transaction.status === 'COMPLETED' ? "Terminé" : "Échec",
+        description: transaction.status === 'COMPLETED'
+          ? "Le transfert a réussi"
+          : "Le transfert a échoué",
+        completed: transaction.status === 'COMPLETED',
+        time: transaction.updatedAt ? formatDate(transaction.updatedAt) : 'N/A',
+        icon: transaction.status === 'COMPLETED' ? "checkmark-done" : "close-circle"
+      }
     ];
   };
 
   return (
     <SafeAreaView className="flex-1 bg-white">
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
-        {/* Title */}
         <View className="items-center my-4 px-4">
           <Text className="text-lg font-semibold text-gray-700">
             Transferts récents
           </Text>
-          
         </View>
 
-        {/* Card */}
         <View className="bg-white mx-4 mt-5 p-4 rounded-xl shadow-md border border-gray-100">
           <View className="items-center mb-4">
             <View className="bg-[#7ddd7d] w-20 h-20 rounded-full justify-center items-center">
@@ -191,7 +201,6 @@ const ReceiptScreen = () => {
             </View>
           </View>
 
-          {/* Status Steps */}
           <View className="mb-4">
             {getStatusSteps().map((step, index) => (
               <View key={index} className="flex-row items-start mb-2">
@@ -210,42 +219,27 @@ const ReceiptScreen = () => {
             ))}
           </View>
 
-          {/* Confirmation message */}
           <Text className="text-gray-800 font-semibold text-sm mb-2">
             {transaction.recipient_name || 'Le bénéficiaire'} a reçu votre transfert.
           </Text>
 
-          {/* Bénéficiaire Info */}
           <Text className="text-gray-600 text-sm">
             Bénéficiaire :{" "}
             <Text className="font-semibold">{user?.firstname} {user?.lastname}</Text>
           </Text>
           <Text className="text-gray-600 text-sm">Methode de Paiement : {transaction.provider || 'N/A'}</Text>
-           <Text className="text-gray-600 text-sm">Type de Paiement : {transaction.type || 'N/A'}</Text>
-          <Text className="text-gray-600 text-sm mb-2">
-            Numéro : {user?.phone}
-          </Text>
+          <Text className="text-gray-600 text-sm">Type de Paiement : {transaction.type || 'N/A'}</Text>
+          <Text className="text-gray-600 text-sm mb-2">Numéro : {user?.phone}</Text>
 
-          {/* Détails Reçu */}
           <Text className="text-green-600 font-semibold my-1">Reçu</Text>
-          <Text className="text-gray-600 text-sm">Montant du transfert: {transaction.amount } {transaction.currency }</Text>
+          <Text className="text-gray-600 text-sm">Montant du transfert: {transaction.amount} {transaction.currency}</Text>
           <Text className="text-gray-600 text-sm">Frais de transfert: ${transaction.sendoFees || 0} CAD</Text>
-          <Text className="text-gray-600 text-sm mb-2">
-            Total: {transaction.totalAmount } {transaction.currency }
-          </Text>
+          <Text className="text-gray-600 text-sm mb-2">Total: {transaction.totalAmount} {transaction.currency}</Text>
 
-          {/* Autres détails */}
-          <Text className="text-green-600 font-semibold mt-2">
-            Détails du transfert
-          </Text>
-          <Text className="text-gray-600 text-sm">
-            Envoyé : {transaction.createdAt ? moment(transaction.createdAt).format('DD/MM/YYYY HH:mm') : 'N/A'}
-          </Text>
-          <Text className="text-gray-600 text-sm">
-            Reference du transfert : {transaction.transactionReference}
-          </Text>
+          <Text className="text-green-600 font-semibold mt-2">Détails du transfert</Text>
+          <Text className="text-gray-600 text-sm">Envoyé : {transaction.createdAt ? moment(transaction.createdAt).format('DD/MM/YYYY HH:mm') : 'N/A'}</Text>
+          <Text className="text-gray-600 text-sm">Reference du transfert : {transaction.transactionId}</Text>
 
-          {/* Télécharger le reçu */}
           <TouchableOpacity
             onPress={handleDownloadReceipt}
             disabled={isGenerating || transaction.status !== 'COMPLETED'}
@@ -261,7 +255,6 @@ const ReceiptScreen = () => {
           </TouchableOpacity>
         </View>
 
-        {/* Afficher tous les transferts */}
         <TouchableOpacity
           onPress={() => navigation.navigate("History")}
           className="items-center mt-6"

@@ -1,11 +1,24 @@
 import React, { useState } from 'react';
-import { AntDesign, Ionicons } from "@expo/vector-icons";
-import { View, Text, TouchableOpacity, Image, SafeAreaView, StatusBar } from 'react-native';
+import { AntDesign } from "@expo/vector-icons";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Image,
+  SafeAreaView,
+  StatusBar,
+  Modal,
+  Pressable
+} from 'react-native';
 import { useTranslation } from 'react-i18next';
 
-const MethodType = ({navigation}) => {
+import om from "../../images/om.png";
+import mtn from "../../images/mtn.png";
+
+const MethodType = ({ navigation }) => {
   const { t } = useTranslation();
   const [showBankDetails, setShowBankDetails] = useState(false);
+  const [showServiceModal, setShowServiceModal] = useState(false);
 
   const bankDetails = {
     bankName: "Royal Bank International",
@@ -19,10 +32,10 @@ const MethodType = ({navigation}) => {
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff', paddingTop: StatusBar.currentHeight || 20 }}>
       <View style={{ flex: 1, paddingHorizontal: 20 }}>
 
-        {/* Header row */}
+        {/* Header */}
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
-            <AntDesign name="" size={24} color="#0D1C6A" />
+           
           </TouchableOpacity>
           <TouchableOpacity style={{
             flexDirection: 'row',
@@ -38,135 +51,185 @@ const MethodType = ({navigation}) => {
           </TouchableOpacity>
         </View>
 
-        {/* Section 1 */}
+        {/* Mobile Transfer Section */}
         <Text style={{ fontSize: 16, fontWeight: '500', marginBottom: 10 }}>
           {t('method.send_to_mobile')}
         </Text>
 
-        <TouchableOpacity 
-        onPress={() => navigation.navigate("WalletRecharge")}
-        style={{
+        <TouchableOpacity
+          onPress={() => setShowServiceModal(true)}
+          style={{
             flexDirection: 'row',
             alignItems: 'center',
             backgroundColor: '#F1F1F1',
             borderRadius: 10,
             padding: 15,
             marginBottom: 20,
-            }}>
-            <AntDesign name="mobile1" size={50} color="#999" style={{ marginRight: 5 }} />
-            <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#0D1C6A', marginLeft: 10, flex: 1 }}>
-                {t('method.transfer_to_mobile')}
-            </Text>
-            <Text style={{ fontSize: 12, color: '#999' }}>{t('method.transfer_fee')}</Text>
+          }}>
+          <AntDesign name="mobile1" size={50} color="#999" style={{ marginRight: 5 }} />
+          <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#0D1C6A', marginLeft: 10, flex: 1 }}>
+            {t('method.transfer_to_mobile')}
+          </Text>
+          <Text style={{ fontSize: 12, color: '#999' }}>{t('method.transfer_fee')}</Text>
         </TouchableOpacity>
 
-        {/* Section 2 */}
+        {/* Bank Transfer Section */}
         <Text style={{ fontSize: 16, fontWeight: '500', marginBottom: 10 }}>
           {t('method.send_to_friends')}
         </Text>
 
-        <View>
-          <TouchableOpacity 
-              onPress={() => setShowBankDetails(!showBankDetails)}
+        <TouchableOpacity
+          onPress={() => setShowBankDetails(!showBankDetails)}
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            backgroundColor: '#F1F1F1',
+            borderRadius: 10,
+            padding: 15,
+          }}>
+          <AntDesign name="bank" size={50} color="#999" style={{ marginRight: 5 }} />
+          <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#0D1C6A', marginLeft: 10, flex: 1 }}>
+            {t('method.sendo_transfer')}
+          </Text>
+          <Text style={{ fontSize: 12, color: '#999' }}>{t('method.no_fee')}</Text>
+          <AntDesign
+            name={showBankDetails ? "up" : "down"}
+            size={16}
+            color="#666"
+            style={{ marginLeft: 10 }}
+          />
+        </TouchableOpacity>
+
+        {showBankDetails && (
+          <View style={{
+            backgroundColor: '#F8F8F8',
+            borderRadius: 10,
+            padding: 15,
+            marginTop: 5,
+            borderWidth: 1,
+            borderColor: '#EEE'
+          }}>
+            <TouchableOpacity
+              onPress={() => navigation.navigate("BankDepositRecharge", {
+                methodType: "BANK_TRANSFER"
+              })}
               style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  backgroundColor: '#F1F1F1',
-                  borderRadius: 10,
-                  padding: 15,
-              }}>
-              <AntDesign name="bank" size={50} color="#999" style={{ marginRight: 5 }} />
-              <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#0D1C6A', marginLeft: 10, flex: 1 }}>
-                  {t('method.sendo_transfer')}
+                backgroundColor: '#7ddd7d',
+                borderRadius: 8,
+                padding: 12,
+                alignItems: 'center',
+                marginBottom: 15
+              }}
+            >
+              <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 16 }}>
+                {t('method.make_transfer')}
               </Text>
-              <Text style={{ fontSize: 12, color: '#999' }}>{t('method.no_fee')}</Text>
-              <AntDesign 
-                name={showBankDetails ? "up" : "down"} 
-                size={16} 
-                color="#666" 
-                style={{ marginLeft: 10 }}
-              />
-          </TouchableOpacity>
+            </TouchableOpacity>
 
-          {showBankDetails && (
-            <View style={styles.bankDetailsContainer}>
-              <TouchableOpacity 
-                onPress={() => navigation.navigate("BankDepositRecharge", { 
-                  methodType: "BANK_TRANSFER" 
-                })}
-                style={styles.transferButton}
+            {[
+              { label: t('method.bank_name'), value: bankDetails.bankName },
+              { label: t('method.account_number'), value: bankDetails.accountNumber },
+              { label: t('method.account_name'), value: bankDetails.accountName },
+              { label: t('method.full_iban'), value: bankDetails.iban },
+              { label: t('method.bic_swift'), value: bankDetails.bic },
+            ].map((item, index) => (
+              <View
+                key={index}
+                style={{
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  marginBottom: 10
+                }}
               >
-                <Text style={styles.transferButtonText}>{t('method.make_transfer')}</Text>
-              </TouchableOpacity>
+                <Text style={{ fontSize: 14, color: '#666', fontWeight: '500' }}>{item.label}:</Text>
+                <Text style={{ fontSize: 14, color: '#333', fontWeight: 'bold' }}>{item.value}</Text>
+              </View>
+            ))}
+          </View>
+        )}
 
-              <View style={styles.bankDetailRow}>
-                <Text style={styles.bankDetailLabel}>{t('method.bank_name')}:</Text>
-                <Text style={styles.bankDetailValue}>{bankDetails.bankName}</Text>
-              </View>
-              
-              <View style={styles.bankDetailRow}>
-                <Text style={styles.bankDetailLabel}>{t('method.account_number')}:</Text>
-                <Text style={styles.bankDetailValue}>{bankDetails.accountNumber}</Text>
-              </View>
-              
-              <View style={styles.bankDetailRow}>
-                <Text style={styles.bankDetailLabel}>{t('method.account_name')}:</Text>
-                <Text style={styles.bankDetailValue}>{bankDetails.accountName}</Text>
-              </View>
-              
-              <View style={styles.bankDetailRow}>
-                <Text style={styles.bankDetailLabel}>{t('method.full_iban')}:</Text>
-                <Text style={styles.bankDetailValue}>{bankDetails.iban}</Text>
-              </View>
-              
-              <View style={styles.bankDetailRow}>
-                <Text style={styles.bankDetailLabel}>{t('method.bic_swift')}:</Text>
-                <Text style={styles.bankDetailValue}>{bankDetails.bic}</Text>
+        {/* Service Selection Modal */}
+        <Modal
+          transparent
+          animationType="fade"
+          visible={showServiceModal}
+          onRequestClose={() => setShowServiceModal(false)}
+        >
+          <Pressable
+            style={{
+              flex: 1,
+              backgroundColor: 'rgba(0,0,0,0.5)',
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
+            onPress={() => setShowServiceModal(false)}
+          >
+            <View
+              style={{
+                backgroundColor: '#fff',
+                padding: 20,
+                borderRadius: 12,
+                width: 300,
+                alignItems: 'center',
+              }}
+            >
+              <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 20 }}>
+                {t('method.select_service')}
+              </Text>
+
+              {/* Services Grid */}
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%' }}>
+                {/* Orange Money */}
+                <TouchableOpacity
+                  style={{
+                    width: 120,
+                    height: 120,
+                    backgroundColor: '#F5F5F5',
+                    borderRadius: 12,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    marginRight: 10,
+                  }}
+                  onPress={() => {
+                    setShowServiceModal(false);
+                    navigation.navigate("WalletRecharge", { service: 'OM' });
+                  }}
+                >
+                  <Image source={om} style={{ width: 50, height: 50, marginBottom: 8 }} />
+                  <Text style={{ fontSize: 14, fontWeight: '500', textAlign: 'center' }}>
+                    {t('method.service_om')}
+                  </Text>
+                </TouchableOpacity>
+
+                {/* MTN Mobile Money */}
+                <TouchableOpacity
+                  style={{
+                    width: 120,
+                    height: 120,
+                    backgroundColor: '#F5F5F5',
+                    borderRadius: 12,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                  }}
+                  onPress={() => {
+                    setShowServiceModal(false);
+                    navigation.navigate("WalletRecharge", { service: 'MTN' });
+                  }}
+                >
+                  <Image source={mtn} style={{ width: 50, height: 50, marginBottom: 8 }} />
+                  <Text style={{ fontSize: 14, fontWeight: '500', textAlign: 'center' }}>
+                    {t('method.service_mtn')}
+                  </Text>
+                </TouchableOpacity>
               </View>
             </View>
-          )}
-        </View>
+          </Pressable>
+        </Modal>
+
+
       </View>
     </SafeAreaView>
   );
-};
-
-const styles = {
-  bankDetailsContainer: {
-    backgroundColor: '#F8F8F8',
-    borderRadius: 10,
-    padding: 15,
-    marginTop: 5,
-    borderWidth: 1,
-    borderColor: '#EEE'
-  },
-  bankDetailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 10
-  },
-  bankDetailLabel: {
-    fontSize: 14,
-    color: '#666',
-    fontWeight: '500'
-  },
-  bankDetailValue: {
-    fontSize: 14,
-    color: '#333',
-    fontWeight: 'bold'
-  },
-  transferButton: {
-    backgroundColor: '#7ddd7d',
-    borderRadius: 8,
-    padding: 12,
-    alignItems: 'center',
-    marginBottom: 15
-  },
-  transferButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
-    fontSize: 16
-  }
 };
 
 export default MethodType;

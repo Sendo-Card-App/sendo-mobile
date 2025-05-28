@@ -103,30 +103,48 @@ const PinCode = ({ navigation, route }) => {
   }, [biometricEnabled, biometricAvailable, isSetup, isLocked]);
 
   // Handle biometric authentication
-  const handleBiometricAuth = async () => {
-    try {
-      const authResult = await LocalAuthentication.authenticateAsync({
-        promptMessage: t('pin.biometricPrompt'),
-        fallbackLabel: t('pin.usePinInstead'),
-        disableDeviceFallback: false // Allow device passcode fallback
-      });
+ const handleBiometricAuth = async () => {
+  try {
+    const authResult = await LocalAuthentication.authenticateAsync({
+      promptMessage: t('pin.biometricPrompt'),
+      fallbackLabel: t('pin.usePinInstead'),
+      disableDeviceFallback: false
+    });
 
-      if (authResult.success) {
-        dispatch(resetAttempts());
-        navigation.navigate('Main');
-      } else if (authResult.error === 'user_cancel') {
-        // User canceled, do nothing
-      } else if (authResult.error === 'not_enrolled') {
-        showToast('error', t('errors.title'), t('pin.biometricNotEnrolled'));
+    if (authResult.success) {
+      dispatch(resetAttempts());
+      
+      // Check if this is for a transfer confirmation
+      if (route.params?.onSuccess) {
+        try {
+          await route.params.onSuccess('biometric_auth');
+          
+          navigation.goBack();
+        } catch (error) {
+          console.error('Transfer failed after biometric auth:', error);
+          showToast('error',error.message || "error occurred");
+        }
       } else {
-        setError(t('pin.biometricFailed'));
+        // Regular authentication flow
+        navigation.navigate('Main');
       }
-    } catch (err) {
-      console.error('Biometric auth error:', err);
+    } else if (authResult.error === 'user_cancel') {
+      // User canceled, do nothing
+    } else if (authResult.error === 'not_enrolled') {
+      showToast('error', t('errors.title'), t('pin.biometricNotEnrolled'));
+    } else {
       setError(t('pin.biometricFailed'));
     }
-  };
-
+  } catch (err) {
+    console.error('Biometric auth error:', err);
+    setError(t('pin.biometricFailed'));
+    
+    // If this was for a transfer, show the error
+    if (route.params?.onSuccess) {
+      showToast('error', t('errors.title'), t('pin.biometricFailed'));
+    }
+  }
+};
   // Handle PIN input
   useEffect(() => {
     if (pin.length === 4) {
@@ -147,60 +165,66 @@ const PinCode = ({ navigation, route }) => {
     }
   };
 
-  const handleComplete = async (enteredPin) => {
-    setIsLoading(true);
-    try {
-      if (currentPasscode) {
-        if (enteredPin === currentPasscode) {
-          dispatch(resetAttempts());
-          navigation.navigate('Main');
+const handleComplete = async (enteredPin) => {
+  setIsLoading(true);
+  try {
+    if (currentPasscode) {
+      if (enteredPin === currentPasscode) {
+        dispatch(resetAttempts());
+        
+        // Check if we have an onSuccess callback (from transfer confirmation)
+        if (route.params?.onSuccess) {
+          await route.params.onSuccess(enteredPin);
+         navigation.navigate('Main', {  screen: 'Success',}); // Go back after successful transfer
         } else {
-          setError(t('pin.incorrectPin'));
-          setPin('');
-          dispatch(incrementAttempt());
-  
-          if (attempts + 1 >= 3) {
-            const lockTime = new Date();
-            lockTime.setMinutes(lockTime.getMinutes() + 5); // Lock for 5 minutes
-            dispatch(lockPasscode(lockTime.toISOString()));
-            
-            Alert.alert(
-              t('pin.accountLocked'),
-              t('pin.lockedFor5Minutes'),
-              [
-                { 
-                  text: t('common.ok'), 
-                  onPress: () => {
-                    // Offer biometric unlock if available
-                    if (biometricAvailable) {
-                      handleBiometricAuth();
-                    }
-                  }
-                }
-              ]
-            );
-          }
+          navigation.navigate('Main');
         }
       } else {
-        const result = await createPasscode({ passcode: enteredPin }).unwrap();
-        if (result.status === 200) {
-          dispatch(setPasscode(enteredPin));
-          dispatch(setIsNewUser(false));
+        setError(t('pin.incorrectPin'));
+        setPin('');
+        dispatch(incrementAttempt());
+
+        if (attempts + 1 >= 3) {
+          const lockTime = new Date();
+          lockTime.setMinutes(lockTime.getMinutes() + 5);
+          dispatch(lockPasscode(lockTime.toISOString()));
           
-          navigation.navigate('Main');
-        } else {
-          setError(t('pin.validationError'));
-          setPin('');
+          Alert.alert(
+            t('pin.accountLocked'),
+            t('pin.lockedFor5Minutes'),
+            [
+              { 
+                text: t('common.ok'), 
+                onPress: () => {
+                  if (biometricAvailable) {
+                    handleBiometricAuth();
+                  }
+                }
+              }
+            ]
+          );
         }
       }
-    } catch (error) {
-      console.log("Error:", error);
-      showToast('error', t('errors.title'), error.data?.message || t('errors.general'));
-      setPin('');
-    } finally {
-      setIsLoading(false);
+    } else {
+      const result = await createPasscode({ passcode: enteredPin }).unwrap();
+      if (result.status === 200) {
+        dispatch(setPasscode(enteredPin));
+        dispatch(setIsNewUser(false));
+        
+        navigation.navigate('Main');
+      } else {
+        setError(t('pin.validationError'));
+        setPin('');
+      }
     }
-  };
+  } catch (error) {
+    console.log("Error:", error);
+    showToast('error', t('errors.title'), error.data?.message || "compte supendu");
+    setPin('');
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   const renderDots = () => (
     <View style={{ flexDirection: 'row', justifyContent: 'center', marginVertical: 20 }}>
@@ -265,11 +289,11 @@ const PinCode = ({ navigation, route }) => {
   // Get appropriate biometric icon
   const getBiometricIcon = () => {
     if (biometricType === 'face') {
-      return require('../../Images/face-id.png');
+      return require('../../images/face-id.png');
     } else if (biometricType === 'fingerprint') {
-      return require('../../Images/fingerprint.png');
+      return require('../../images/fingerprint.png');
     }
-    return require('../../Images/fingerprint.png'); // Default
+    return require('../../images/fingerprint.png'); // Default
   };
 
   const keypad = [
@@ -300,7 +324,7 @@ const PinCode = ({ navigation, route }) => {
       <View style={{ padding: 20, flex: 1, justifyContent: 'space-between' }}>
         <View style={{ alignItems: 'center' }}>           
           <Image
-            source={require('../../Images/LogoSendo.png')}
+            source={require('../../images/LogoSendo.png')}
             style={{
               width: 100,
               height: 100,

@@ -3,13 +3,13 @@ import { View, Text, TouchableOpacity, FlatList, Image, StatusBar } from 'react-
 import { AntDesign } from '@expo/vector-icons';
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { MaterialIcons } from '@expo/vector-icons';
-import HomeImage from "../../Images/HomeImage2.png";
+import HomeImage from "../../images/HomeImage2.png";
 import { useTranslation } from 'react-i18next';
 
-import button from "../../Images/ButtomLogo.png";
-import Visa from "../../Images/Visa.png";
-import om from "../../Images/om.png";
-import mtn from "../../Images/mtn.png";
+import button from "../../images/ButtomLogo.png";
+import Visa from "../../images/Visa.png";
+import om from "../../images/om.png";
+import mtn from "../../images/mtn.png";
 import { useNavigation, useRoute } from '@react-navigation/native';
 
 const PaymentMethod = () => {

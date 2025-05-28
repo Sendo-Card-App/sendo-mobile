@@ -1,188 +1,134 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Image } from 'react-native';
+import * as DocumentPicker from 'expo-document-picker';
 import { useTranslation } from 'react-i18next';
-import { Ionicons, AntDesign } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
 import Loader from "../../components/Loader";
 import { useRechargeWalletMutation } from '../../services/WalletApi/walletApi';
 import PinVerificationModal from '../../components/PinVerificationModal';
-import { useVerifyPasscodeMutation } from '../../services/Auth/authAPI'; // Import the new hook
+import { useVerifyPasscodeMutation } from '../../services/Auth/authAPI';
 
-const BankDepositRecharge = ({ navigation, route }) => {
-  const { methodType = "BANK_TRANSFER" } = route.params || {};
-  const [formData, setFormData] = useState({
-    amount: '',
-    transactionReference: '',
-    bankName: '',
-    accountNumber: '',
-    methodType: methodType
-  });
+const BankDepositRecharge = ({ navigation }) => {
+  const [amount, setAmount] = useState('');
+  const [file, setFile] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPinModal, setShowPinModal] = useState(false);
   const { t } = useTranslation();
   const [rechargeWallet] = useRechargeWalletMutation();
-  const [verifyPasscode] = useVerifyPasscodeMutation(); // Use the new hook
+  const [verifyPasscode] = useVerifyPasscodeMutation();
 
-  const handleChange = (name, value) => {
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
+  const handleDocumentPick = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['application/pdf', 'image/*'],
+        copyToCacheDirectory: true,
+        multiple: false
+      });
 
-  const handleSubmit = async () => {
-    const { amount, transactionReference, bankName, accountNumber, methodType } = formData;
-
-    if (!amount || !transactionReference || !bankName || !accountNumber) {
+      if (result?.assets?.length > 0) {
+        setFile(result.assets[0]);
+      }
+    } catch (error) {
       Toast.show({
         type: 'error',
         text1: 'Error',
-        text2: 'Please fill all fields'
+        text2: 'Failed to pick file.'
+      });
+    }
+  };
+
+  const handleSubmit = () => {
+    if (!amount || !file) {
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Please enter amount and upload a file'
       });
       return;
     }
-
     setShowPinModal(true);
   };
 
   const handlePinVerified = async (pin) => {
     try {
-      // Verify PIN using the API mutation
-      const verificationResponse = await verifyPasscode(pin).unwrap();
-      
-      if (!verificationResponse) {
-        Toast.show({
-          type: 'error',
-          text1: 'Error',
-          text2: 'Invalid PIN'
-        });
-        return;
-      }
+      const verification = await verifyPasscode(pin).unwrap();
+      if (!verification) throw new Error('Invalid PIN');
 
       setIsSubmitting(true);
       setShowPinModal(false);
-      
-      const rechargeData = {
-        method: methodType,
-        amount: Number(formData.amount),
-        transactionReference: formData.transactionReference,
-        bankName: formData.bankName,
-        accountNumber: formData.accountNumber,
-        pin
-      };
 
-      const response = await rechargeWallet(rechargeData).unwrap();
-      
-      if (response) {
-        Toast.show({
-          type: 'success',
-          text1: 'Success',
-          text2: 'Recharge completed successfully'
-        });
-        navigation.goBack();
-      }
+      const formData = new FormData();
+      formData.append('amount', amount);
+      formData.append('pin', pin);
+      formData.append('file', {
+        uri: file.uri,
+        name: file.name || 'upload.pdf',
+        type: file.mimeType || 'application/octet-stream'
+      });
+
+      const response = await rechargeWallet(formData).unwrap();
+
+      Toast.show({
+        type: 'success',
+        text1: 'Success',
+        text2: 'Recharge completed'
+      });
+      navigation.goBack();
     } catch (error) {
-      console.error('Transaction error:', error);
-      let errorMessage = 'Error during transaction';
-      
-      if (error.status === 400) {
-        errorMessage = 'Insufficient balance';
-      } else if (error.status === 403) {
-        errorMessage = 'Missing KYC Documents';
-      } else if (error.status === 404) {
-        errorMessage = 'Wallet not found';
-      } else if (error.data?.message) {
-        errorMessage = error.data.message;
-      }
-      
+      const message = error?.data?.message || 'Transaction failed';
       Toast.show({
         type: 'error',
         text1: 'Error',
-        text2: errorMessage
+        text2: message
       });
     } finally {
       setIsSubmitting(false);
     }
   };
+
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>
-        Method: {methodType}
+    <ScrollView contentContainerStyle={{ flexGrow: 1, padding: 20, backgroundColor: '#fff' }}>
+      <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#0D1C6A', marginBottom: 30, textAlign: 'center' }}>
+        {t('bank_deposit.title') || 'Bank Deposit'}
       </Text>
-      
+
       {/* Amount Input */}
-      <View style={styles.inputContainer}>
-        <Text style={styles.label}>{t('bank_deposit.amount')}</Text>
-        <View style={styles.inputWrapper}>
-          <Ionicons name="cash-outline" size={20} color="#666" style={styles.icon} />
+      <View style={{ marginBottom: 20 }}>
+        <Text style={{ fontSize: 14, color: '#666', marginBottom: 8 }}>{t('bank_deposit.amount')}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#ddd', borderRadius: 10, paddingHorizontal: 15, backgroundColor: '#f9f9f9' }}>
           <TextInput
-            style={styles.input}
+            style={{ flex: 1, height: 50, color: '#333', fontSize: 16 }}
             placeholder={t('bank_deposit.amount_placeholder')}
             placeholderTextColor="#999"
             keyboardType="numeric"
-            value={formData.amount}
-            onChangeText={(text) => handleChange('amount', text)}
+            value={amount}
+            onChangeText={setAmount}
           />
         </View>
       </View>
-      
-      {/* Transaction Reference */}
-      <View style={styles.inputContainer}>
-        <Text style={styles.label}>{t('bank_deposit.reference')}</Text>
-        <View style={styles.inputWrapper}>
-          <Ionicons name="receipt-outline" size={20} color="#666" style={styles.icon} />
-          <TextInput
-            style={styles.input}
-            placeholder={t('bank_deposit.reference_placeholder')}
-            placeholderTextColor="#999"
-            value={formData.transactionReference}
-            onChangeText={(text) => handleChange('transactionReference', text)}
-          />
-        </View>
-      </View>
-      
-      {/* Bank Name */}
-      <View style={styles.inputContainer}>
-        <Text style={styles.label}>{t('bank_deposit.bank_name')}</Text>
-        <View style={styles.inputWrapper}>
-          <AntDesign name="bank" size={20} color="#666" style={styles.icon} />
-          <TextInput
-            style={styles.input}
-            placeholder={t('bank_deposit.bank_placeholder')}
-            placeholderTextColor="#999"
-            value={formData.bankName}
-            onChangeText={(text) => handleChange('bankName', text)}
-          />
-        </View>
-      </View>
-      
-      {/* Account Number */}
-      <View style={styles.inputContainer}>
-        <Text style={styles.label}>{t('bank_deposit.account_number')}</Text>
-        <View style={styles.inputWrapper}>
-          <Ionicons name="card-outline" size={20} color="#666" style={styles.icon} />
-          <TextInput
-            style={styles.input}
-            placeholder={t('bank_deposit.account_placeholder')}
-            placeholderTextColor="#999"
-            keyboardType="numeric"
-            value={formData.accountNumber}
-            onChangeText={(text) => handleChange('accountNumber', text)}
-          />
-        </View>
-      </View>
-      
+
+      {/* File Upload */}
       <TouchableOpacity
-        style={styles.submitButton}
+        onPress={handleDocumentPick}
+        style={{ padding: 15, backgroundColor: '#eee', borderRadius: 10, alignItems: 'center', marginBottom: 10 }}
+      >
+        <Text style={{ color: '#333' }}>
+          {file ? file.name : 'Upload PDF or Image'}
+        </Text>
+      </TouchableOpacity>
+
+      {file?.mimeType?.startsWith('image') && (
+        <Image source={{ uri: file.uri }} style={{ width: '100%', height: 200, marginBottom: 20, borderRadius: 10 }} resizeMode="contain" />
+      )}
+
+      <TouchableOpacity
+        style={{ backgroundColor: '#7ddd7d', borderRadius: 10, padding: 15, alignItems: 'center', marginTop: 20 }}
         onPress={handleSubmit}
         disabled={isSubmitting}
       >
-        {isSubmitting ? (
-          <Loader color="white" />
-        ) : (
-          <Text style={styles.submitButtonText}>{t('bank_deposit.submit')}</Text>
-        )}
+        {isSubmitting ? <Loader color="white" /> : <Text style={{ color: 'white', fontSize: 16, fontWeight: 'bold' }}>{t('bank_deposit.submit')}</Text>}
       </TouchableOpacity>
+
       <PinVerificationModal
         visible={showPinModal}
         onClose={() => setShowPinModal(false)}
@@ -193,59 +139,5 @@ const BankDepositRecharge = ({ navigation, route }) => {
     </ScrollView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
-    padding: 20,
-    backgroundColor: '#fff',
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#0D1C6A',
-    marginBottom: 30,
-    textAlign: 'center',
-  },
-  inputContainer: {
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 8,
-    fontWeight: '500',
-  },
-  inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 10,
-    paddingHorizontal: 15,
-    backgroundColor: '#f9f9f9',
-  },
-  icon: {
-    marginRight: 10,
-  },
-  input: {
-    flex: 1,
-    height: 50,
-    color: '#333',
-    fontSize: 16,
-  },
-  submitButton: {
-    backgroundColor: '#7ddd7d',
-    borderRadius: 10,
-    padding: 15,
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  submitButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-});
 
 export default BankDepositRecharge;

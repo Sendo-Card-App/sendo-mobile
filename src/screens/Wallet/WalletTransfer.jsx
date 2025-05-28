@@ -6,20 +6,28 @@ import {
   TouchableOpacity,
   SafeAreaView,
   StatusBar,
-  ActivityIndicator
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
 } from 'react-native';
-import { 
+import {
   sendPushNotification,
   sendPushTokenToBackend,
-  registerForPushNotificationsAsync
+  registerForPushNotificationsAsync,
 } from '../../services/notificationService';
-import { useGetBalanceQuery, useTransferFundsMutation, useGetWalletDetailsQuery } from '../../services/WalletApi/walletApi';
+import {
+  useGetBalanceQuery,
+  useTransferFundsMutation,
+  useGetWalletDetailsQuery,
+} from '../../services/WalletApi/walletApi';
 import { useGetUserProfileQuery } from '../../services/Auth/authAPI';
 import Toast from 'react-native-toast-message';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
-import { showErrorToast } from '../../utils/errorHandler'; 
-import Loader from "../../components/Loader";
+import { showErrorToast } from '../../utils/errorHandler';
+import Loader from '../../components/Loader';
+import PinVerificationModal from '../../components/PinVerificationModal'; // ✅ PIN modal
 
 const WalletTransfer = ({ navigation }) => {
   const { t } = useTranslation();
@@ -27,285 +35,333 @@ const WalletTransfer = ({ navigation }) => {
   const [walletId, setWalletId] = useState('');
   const [description, setDescription] = useState('');
   const [userWalletId, setUserWalletId] = useState('');
-   const [recipientName, setRecipientName] = useState('');
-  const [debouncedWalletId, setDebouncedWalletId] = useState(''); // Added missing state declaration
-  
-   // Debounce walletId input to prevent rapid API calls
+  const [recipientName, setRecipientName] = useState('');
+  const [debouncedWalletId, setDebouncedWalletId] = useState('');
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [pendingTransferData, setPendingTransferData] = useState(null);
+
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedWalletId(walletId);
-    }, 500); // 500ms delay
-
+    }, 500);
     return () => clearTimeout(timer);
   }, [walletId]);
 
   const { data: userProfile, isLoading: isProfileLoading } = useGetUserProfileQuery();
   const userId = userProfile?.data?.id;
-  
-  const { 
-    data: balanceData, 
+
+  const {
+    data: balanceData,
     isLoading: isBalanceLoading,
     error: balanceError,
-    isError: isBalanceError
-  } = useGetBalanceQuery(userId, {
-    skip: !userId
-  });
+    isError: isBalanceError,
+  } = useGetBalanceQuery(userId, { skip: !userId });
 
- const { 
-    data: recipientData, 
+  const {
+    data: recipientData,
     isLoading: isRecipientLoading,
     isError: isRecipientError,
-    error: recipientError,
-    refetch: refetchRecipient
-  } = useGetWalletDetailsQuery(debouncedWalletId, {
-    skip: !debouncedWalletId,
-  });
-  
+  } = useGetWalletDetailsQuery(debouncedWalletId, { skip: !debouncedWalletId });
 
-useEffect(() => {
-  if (recipientData?.data?.user) {
-    const { firstname, lastname } = recipientData.data.user;
-    setRecipientName(`${firstname} ${lastname}`);
-  } else if (isRecipientError) {
-    setRecipientName(t('wallet_transfer.recipient_not_found'));
-  } else if (!debouncedWalletId) {
-    setRecipientName('');
-  }
-}, [recipientData, isRecipientError, debouncedWalletId, t]);
+  useEffect(() => {
+    if (recipientData?.data?.user) {
+      const { firstname, lastname } = recipientData.data.user;
+      setRecipientName(`${firstname} ${lastname}`);
+    } else if (isRecipientError) {
+      setRecipientName(t('wallet_transfer.recipient_not_found'));
+    } else if (!debouncedWalletId) {
+      setRecipientName('');
+    }
+  }, [recipientData, isRecipientError, debouncedWalletId, t]);
 
-useEffect(() => {
-  const walletId = userProfile?.data?.wallet?.matricule || 
-                  userProfile?.data?.walletId;
-  if (walletId) {
-    setUserWalletId(walletId);
-  } else {
-    console.warn('No wallet ID found in profile:', userProfile?.data);
-  }
-}, [userProfile]);
+  useEffect(() => {
+    const walletId = userProfile?.data?.wallet?.matricule || userProfile?.data?.walletId;
+    if (walletId) {
+      setUserWalletId(walletId);
+    }
+  }, [userProfile]);
 
   const [transferFunds, { isLoading: isTransferring }] = useTransferFundsMutation();
 
-  const handleTransfer = async () => {
-    if (!walletId) {
-     showErrorToast('ACTION_FAILED', 'Veuillez fournir un matricule de portefeuille valide.');
-    return;
-    }
-
+  const validateAndOpenPinModal = () => {
     const transferAmount = parseFloat(amount);
-    if (isNaN(transferAmount)) {
-     showErrorToast('ACTION_FAILED', 'Veuillez entrer un montant valide.');
-    return;
-    }
-
-    if (transferAmount <= 0) {
-       showErrorToast('ACTION_FAILED', 'Le montant doit être supérieur à 0.');
-    return;
-    }
-
-    if (balanceData?.data?.balance && transferAmount > balanceData.data.balance) {
-      showErrorToast('ACTION_FAILED', 'Votre solde est insuffisant pour effectuer ce transfert.');
-    return;
+    if (!walletId || isNaN(transferAmount) || transferAmount <= 0) {
+      showErrorToast('ACTION_FAILED', 'Veuillez fournir un matricule valide et un montant supérieur à 0.');
       return;
     }
 
-     try {
-    // Process the transfer
-    await transferFunds({
+    if (transferAmount > (balanceData?.data?.balance || 0)) {
+      showErrorToast('ACTION_FAILED', 'Votre solde est insuffisant pour effectuer ce transfert.');
+      return;
+    }
+
+    setPendingTransferData({
       fromWallet: userWalletId,
       toWallet: walletId,
       amount: transferAmount,
-      transfer_description: description
-    }).unwrap();
+      description,
+    });
+    setShowPinModal(true);
+  };
 
-    // Prepare notification content
-    const notificationContent = {
-      title: "Transfer Successful",
-      body: `You sent ${transferAmount} FCFA to ${recipientName || walletId}`,
-      type: "TRANSFER_SUCCESS"
-    };
+  const handlePinVerified = async () => {
+    if (!pendingTransferData) return;
+    const { fromWallet, toWallet, amount: transferAmount, description } = pendingTransferData;
 
     try {
-      // Try to get stored token first
-      let pushToken = await getStoredPushToken();
-      
-      // If no token, register for new one
-      if (!pushToken) {
-        pushToken = await registerForPushNotificationsAsync();
-      }
+      await transferFunds({
+        fromWallet,
+        toWallet,
+        amount: transferAmount,
+        transfer_description: description,
+      }).unwrap();
 
-      if (pushToken) {
-        await sendPushTokenToBackend(
-          pushToken,
+      const notificationContent = {
+        title: 'Transfert effectué',
+        body: `Vous avez envoyé ${transferAmount} FCFA à ${recipientName || walletId}`,
+        type: 'TRANSFER_SUCCESS',
+      };
+
+      try {
+        let pushToken = await getStoredPushToken();
+        if (!pushToken) {
+          pushToken = await registerForPushNotificationsAsync();
+        }
+
+        if (pushToken) {
+          await sendPushTokenToBackend(
+            pushToken,
+            notificationContent.title,
+            notificationContent.body,
+            notificationContent.type,
+            {
+              amount: transferAmount,
+              recipient: recipientName || walletId,
+              timestamp: new Date().toISOString(),
+            }
+          );
+        }
+      } catch (notificationError) {
+        await sendPushNotification(
           notificationContent.title,
           notificationContent.body,
-          notificationContent.type
+          {
+            data: {
+              type: notificationContent.type,
+              amount: transferAmount,
+              recipient: recipientName || walletId,
+            },
+          }
         );
       }
-    } catch (notificationError) {
-      console.warn("Remote notification failed:", notificationError);
-      // Fallback to local notification
-      await sendPushNotification(
-        notificationContent.title,
-        notificationContent.body
-      );
-    }
 
-    navigation.navigate('Success', {
-      message: 'Transfer completed successfully!',
-      nextScreen: 'MainTabs'
-    });
+      setShowPinModal(false);
+      setPendingTransferData(null);
+
+      navigation.navigate('Success', {
+        message: 'Transfer completed successfully!',
+        nextScreen: 'MainTabs',
+      });
     } catch (error) {
-      let errorMessage = 'Une erreur est survenue. Veuillez réessayer.';
       const status = error?.status;
-      
-      if (error?.status === 503) {
-      showErrorToast('SERVICE_UNAVAILABLE');
-    } else if (error?.status === 500) {
-      showErrorToast('ACTION_FAILED', 'Erreur serveur lors du transfert');
-    } else if (error?.status === 400) {
-      showErrorToast('ACTION_FAILED', 'Veuillez remplir tous les champs.');
-    } else if (error?.status === 404) {
-      showErrorToast('ACTION_FAILED', 'Portefeuille introuvable');
-    } else {
-      showErrorToast('ACTION_FAILED', error?.data?.message || 'Une erreur est survenue. Veuillez réessayer.');
-    }
+
+      if (status === 503) showErrorToast('SERVICE_UNAVAILABLE');
+      else if (status === 500) showErrorToast('ACTION_FAILED', 'Erreur serveur lors du transfert');
+      else if (status === 400) showErrorToast('ACTION_FAILED', 'Veuillez remplir tous les champs.');
+      else if (status === 404) showErrorToast('ACTION_FAILED', 'Portefeuille introuvable');
+      else showErrorToast('ACTION_FAILED', error?.data?.message || 'Une erreur est survenue.');
+
+      try {
+        await sendPushNotification(
+          'Échec du transfert',
+          error?.data?.message || 'Le transfert a échoué.',
+          {
+            data: {
+              type: 'TRANSFER_FAILED',
+              amount: transferAmount,
+              recipient: recipientName || walletId,
+            },
+          }
+        );
+      } catch (pushError) {
+        console.warn("Notification d'erreur non envoyée:", pushError);
+      }
+
+      setShowPinModal(false);
+      setPendingTransferData(null);
     }
   };
 
- const isLoading = isProfileLoading || isBalanceLoading;
+  const isLoading = isProfileLoading || isBalanceLoading;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff', paddingTop: StatusBar.currentHeight }}>
-       {/* Floating Home Button */}
-      <TouchableOpacity 
-        onPress={() => navigation.navigate('MainTabs')}
-        style={styles.floatingHomeButton}
-      >
-        <Ionicons name="home" size={44} color="#7ddd7d" />
-      </TouchableOpacity>
-      
-      <View style={{ flex: 1, paddingHorizontal: 20 }}>
-        {/* Balance Display */}
-        <View style={{ backgroundColor: '#F1F1F1', borderRadius: 10, padding: 15, marginBottom: 20, marginTop: 20 }}>
-          <Text style={{ fontSize: 16, color: '#666' }}>{t('wallet_transfer.available_balance')}</Text>
-          {isLoading ? (
-            <ActivityIndicator size="small" color="#0D1C6A" />
-          ) : isBalanceError ? (
-            <Text style={{ color: 'red' }}>{t('wallet_transfer.balance_error')}</Text>
-          ) : (
-            <>
-              <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#0D1C6A' }}>
-                {balanceData?.data?.balance?.toFixed(2) || '0.00'} FCFA
-              </Text>
-              {userWalletId && (
-                <Text style={{ fontSize: 14, color: '#666', marginTop: 5 }}>
-                  {t('wallet_transfer.your_matricule')}: {userWalletId}
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView contentContainerStyle={{ paddingHorizontal: '5%', paddingBottom: 50 }}>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('MainTabs')}
+            style={{
+              position: 'absolute',
+              top: StatusBar.currentHeight + 600,
+              right: 20,
+              zIndex: 999,
+              backgroundColor: 'rgba(235, 248, 255, 0.9)',
+              padding: 10,
+              borderRadius: 20,
+              elevation: 3,
+            }}
+          >
+            <Ionicons name="home" size={44} color="#7ddd7d" />
+          </TouchableOpacity>
+
+          <View style={{ backgroundColor: '#F1F1F1', borderRadius: 10, padding: 15, marginVertical: 20 }}>
+            <Text style={{ fontSize: 16, color: '#666' }}>{t('wallet_transfer.available_balance')}</Text>
+            {isLoading ? (
+              <ActivityIndicator size="small" color="#0D1C6A" />
+            ) : isBalanceError ? (
+              <Text style={{ color: 'red' }}>{t('wallet_transfer.balance_error')}</Text>
+            ) : (
+              <>
+                <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#0D1C6A' }}>
+                  {balanceData?.data?.balance?.toFixed(2) || '0.00'} FCFA
                 </Text>
-              )}
+                {userWalletId && (
+                  <Text style={{ fontSize: 14, color: '#666', marginTop: 5 }}>
+                    {t('wallet_transfer.your_matricule')}: {userWalletId}
+                  </Text>
+                )}
+              </>
+            )}
+          </View>
+
+          <Text style={{ fontSize: 16, color: '#666', marginBottom: 5 }}>
+            {t('wallet_transfer.recipient_id')}
+          </Text>
+          <TextInput
+            style={{
+              borderWidth: 1,
+              borderColor: '#E0E0E0',
+              borderRadius: 10,
+              padding: 15,
+              fontSize: 16,
+              marginBottom: 20,
+              backgroundColor: '#fff',
+            }}
+            placeholder={t('wallet_transfer.recipient_placeholder')}
+            value={walletId}
+            onChangeText={setWalletId}
+          />
+          {walletId ? (
+            <>
+              <Text style={{ fontSize: 16, color: '#666', marginBottom: 5 }}>
+                {t('wallet_transfer.recipient_name')}
+              </Text>
+              <View style={{ position: 'relative', marginBottom: 20 }}>
+                <TextInput
+                  style={{
+                    borderWidth: 1,
+                    borderColor: '#E0E0E0',
+                    borderRadius: 10,
+                    padding: 15,
+                    fontSize: 16,
+                    backgroundColor: '#f9f9f9',
+                    color: isRecipientError ? 'red' : '#333',
+                  }}
+                  value={
+                    isRecipientLoading
+                      ? t('wallet_transfer.loading_recipient') // Define this in i18n or replace with "Chargement..."
+                      : recipientName || t('wallet_transfer.recipient_info')
+                  }
+                  editable={false}
+                />
+                {isRecipientLoading && (
+                  <Loader
+                    size="small"
+                    color="#0D1C6A"
+                    style={{ position: 'absolute', right: 15, top: 15 }}
+                  />
+                )}
+              </View>
             </>
-          )}
-        </View>
+          ) : null}
 
-        {/* Recipient Wallet ID */}
-        <Text style={{ fontSize: 16, color: '#666', marginBottom: 5 }}>{t('wallet_transfer.recipient_id')}</Text>
-        <TextInput
-          style={styles.input}
-          placeholder={t('wallet_transfer.recipient_placeholder')}
-          value={walletId}
-          onChangeText={setWalletId}
-        />
 
-        {/* Recipient Name (Read-only) */}
-        {walletId && (
-          <>
-            <Text style={{ fontSize: 16, color: '#666', marginBottom: 5 }}>{t('wallet_transfer.recipient_name')}</Text>
-            <TextInput
-              style={[
-                styles.input, 
-                { 
-                  backgroundColor: '#f9f9f9',
-                  color: isRecipientError ? 'red' : '#333'
-                }
-              ]}
-              value={
-                isRecipientLoading ? t('common.loading') : 
-                recipientName || t('wallet_transfer.recipient_info')
-              }
-              editable={false}
-            />
-          </>
-        )}
+          <Text style={{ fontSize: 16, color: '#666', marginBottom: 5 }}>
+            {t('wallet_transfer.amount')}
+          </Text>
+          <TextInput
+            style={{
+              borderWidth: 1,
+              borderColor: '#E0E0E0',
+              borderRadius: 10,
+              padding: 15,
+              fontSize: 16,
+              marginBottom: 20,
+              backgroundColor: '#fff',
+            }}
+            keyboardType="numeric"
+            placeholder={t('wallet_transfer.amount_placeholder')}
+            value={amount}
+            onChangeText={setAmount}
+          />
 
-        {/* Amount Input */}
-        <Text style={{ fontSize: 16, color: '#666', marginBottom: 5 }}>{t('wallet_transfer.amount')}</Text>
-        <TextInput
-          style={styles.input}
-          keyboardType="numeric"
-          placeholder={t('wallet_transfer.amount_placeholder')}
-          value={amount}
-          onChangeText={setAmount}
-        />
+          <Text style={{ fontSize: 16, color: '#666', marginBottom: 5 }}>
+            {t('wallet_transfer.description')}
+          </Text>
+          <TextInput
+            style={{
+              borderWidth: 1,
+              borderColor: '#E0E0E0',
+              borderRadius: 10,
+              padding: 15,
+              fontSize: 16,
+              marginBottom: 20,
+              height: 100,
+              textAlignVertical: 'top',
+              backgroundColor: '#fff',
+            }}
+            multiline
+            placeholder={t('wallet_transfer.description_placeholder')}
+            value={description}
+            onChangeText={setDescription}
+          />
 
-        {/* Description */}
-        <Text style={{ fontSize: 16, color: '#666', marginBottom: 5 }}>{t('wallet_transfer.description')}</Text>
-        <TextInput
-          style={[styles.input, { height: 100, textAlignVertical: 'top' }]}
-          placeholder={t('wallet_transfer.description_placeholder')}
-          multiline
-          value={description}
-          onChangeText={setDescription}
-        />
+          <TouchableOpacity
+            onPress={validateAndOpenPinModal}
+            disabled={isTransferring || isLoading || !userWalletId}
+            style={{
+              backgroundColor: '#7ddd7d',
+              padding: 15,
+              borderRadius: 10,
+              alignItems: 'center',
+              marginTop: 10,
+              opacity: isTransferring ? 0.7 : 1,
+            }}
+          >
+            {isTransferring ? (
+              <Loader color="#fff" />
+            ) : (
+              <Text style={{ color: '#fff', fontSize: 18, fontWeight: 'bold' }}>
+                {t('wallet_transfer.transfer_button')}
+              </Text>
+            )}
+          </TouchableOpacity>
+        </ScrollView>
+      </KeyboardAvoidingView>
 
-        {/* Submit Button */}
-        <TouchableOpacity
-          style={[styles.button, { opacity: isTransferring ? 0.7 : 1 }]}
-          onPress={handleTransfer}
-          disabled={isTransferring || isLoading || !userWalletId}
-        >
-          {isTransferring ? (
-            <Loader color="#fff" />
-          ) : (
-            <Text style={styles.buttonText}>{t('wallet_transfer.transfer_button')}</Text>
-          )}
-        </TouchableOpacity>
-      </View>
+      {/* 🔐 PIN Modal */}
+      <PinVerificationModal
+        visible={showPinModal}
+        onClose={() => {
+          setShowPinModal(false);
+          setPendingTransferData(null);
+        }}
+        onVerify={handlePinVerified}
+        title="Confirm Transaction"
+        subtitle="Enter your PIN to confirm the wallet transfer"
+      />
     </SafeAreaView>
   );
-};
-const styles = {
-  input: {
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    borderRadius: 10,
-    padding: 15,
-    fontSize: 16,
-    marginBottom: 20
-  },
-  button: {
-    backgroundColor: '#7ddd7d',
-    padding: 15,
-    borderRadius: 10,
-    alignItems: 'center',
-    marginTop: 10
-  },
-  floatingHomeButton: {
-    position: 'absolute',
-    top: StatusBar.currentHeight + 600,
-    right: 20,
-    zIndex: 999,
-    backgroundColor: 'rgba(235, 248, 255, 0.9)',
-    padding: 10,
-    borderRadius: 20,
-    elevation: 3,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold'
-  }
 };
 
 export default WalletTransfer;

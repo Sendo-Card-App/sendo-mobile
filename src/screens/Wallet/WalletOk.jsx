@@ -7,7 +7,7 @@ import {
 import React from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
-import TopLogo from "../../Images/TopLogo.png";
+import TopLogo from "../../images/TopLogo.png";
 import { useTranslation } from 'react-i18next';
 
 const WalletOk = ({ navigation, route }) => {

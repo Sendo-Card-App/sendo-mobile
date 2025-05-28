@@ -17,8 +17,9 @@ import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import Toast from 'react-native-toast-message';
 import Loader from '../../components/Loader';
-import HomeImage from "../../Images/HomeImage2.png";
-import button from "../../Images/ButtomLogo.png";
+import SkeletonLoader from "../../components/SkeletonLoader";
+import HomeImage from "../../images/HomeImage2.png";
+import button from "../../images/ButtomLogo.png";
 import {  Feather as MaterialIcons } from '@expo/vector-icons';
 import {
   useGetFavoritesQuery
@@ -302,7 +303,7 @@ const BeneficiarySelection = ({ route }) => {
       <View className="flex-1">
         {activeTab === 'contacts' ? (
           isLoadingFavorites ? (
-            <Loader />
+            <SkeletonLoader />
           ) : isFavoritesError ? (
             <Text className="text-red-500 text-center mt-20">{t('error_loading_contacts')}</Text>
           ) : (
@@ -317,7 +318,7 @@ const BeneficiarySelection = ({ route }) => {
           )
         ) : (
           isLoadingTransfers ? (
-            <Loader />
+            <SkeletonLoader />
           ) : isTransfersError ? (
             <Text className="text-red-500 text-center mt-20">{t('error_loading_transfers')}</Text>
           ) : (

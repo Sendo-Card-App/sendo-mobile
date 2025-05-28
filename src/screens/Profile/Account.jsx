@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { AntDesign, EvilIcons, Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
-import Avatar from "../../Images/Avatar.png";
+import Avatar from "../../images/Avatar.png";
 import AddSecondPhoneModal from '../../components/AddSecondPhoneModal'; 
 import KeyboardAvoidinWrapper from "../../components/KeyboardAvoidinWrapper";
 import { 

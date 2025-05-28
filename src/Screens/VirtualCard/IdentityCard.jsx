@@ -2,7 +2,7 @@ import { View, Text, TouchableOpacity, Image, Dimensions, ScrollView } from "rea
 import React from "react";
 import { AntDesign, Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
-import TopLogo from "../../Images/TopLogo.png";
+import TopLogo from "../../images/TopLogo.png";
 import { useDispatch, useSelector } from 'react-redux';
 import KycTab from "../../components/KycTab";
 import { setIdentityDocumentType, setIdentityDocumentFront, setIdentityDocumentBack } from '../../features/Kyc/kycReducer';

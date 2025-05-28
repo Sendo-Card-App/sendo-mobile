@@ -176,7 +176,7 @@ const Log = () => {
 
           {/* Logo */}
           <Image 
-            source={require("../../Images/LogoSendo.png")} 
+            source={require("../../images/LogoSendo.png")} 
             className="w-24 h-24 mb-8" 
           />
 

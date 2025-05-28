@@ -10,6 +10,7 @@ import kycReducer from '../features/Kyc/kycReducer'; // Updated path (note capit
 import { configApi } from '../services/Config/configApi';
 import { transferApi } from '../services/Transfer/transferApi';
 import { chatApi } from '../services/Chat/ChatApi';
+import { sharedExpenseApi } from '../services/Shared/sharedExpenseApi';
 import { contactsApi } from '../services/Contact/contactsApi';
 import passcodeReducer from '../features/Auth/passcodeSlice';
 import { config } from 'dotenv';
@@ -28,6 +29,7 @@ export const store = configureStore({
      [contactsApi.reducerPath]: contactsApi.reducer,
     [chatApi.reducerPath]: chatApi.reducer,
     [transferApi.reducerPath]: transferApi.reducer,
+    [sharedExpenseApi.reducerPath]: sharedExpenseApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
@@ -40,5 +42,6 @@ export const store = configureStore({
       contactsApi.middleware,
       chatApi.middleware,
       transferApi.middleware,
+      sharedExpenseApi.middleware,
     ),
 });

@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   skeletonItem: {
-    backgroundColor: PRIMARY_COLOR, // 👈 Brand color
+    backgroundColor: PRIMARY_COLOR, //  Brand color
     borderRadius: 4,
     marginBottom: 8,
     position: 'relative',
@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
     opacity: 0.3,
   },
   skeletonCardContent: {
-    height: 100,
+    height: 50,
     backgroundColor: PRIMARY_COLOR,
     marginBottom: 16,
     borderRadius: 4,

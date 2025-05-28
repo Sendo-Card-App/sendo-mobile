@@ -153,7 +153,7 @@ const AddSecondPhoneModal = ({
             <>
               <Image
                 className="w-40 h-40"
-                source={require("../Images/Artboard 5.png")}
+                source={require("../images/Artboard 5.png")}
               />
               <Text style={{ fontSize: 18, marginBottom: 10 }}>
                 {t('addSecondPhone.otpTitle', { phone: `${selectedCountry.code}${phone}` })}
