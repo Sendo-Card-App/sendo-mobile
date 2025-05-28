@@ -9,7 +9,7 @@ import {
 import React, { useEffect, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
-import TopLogo from "../../Images/TopLogo.png";
+import TopLogo from "../../images/TopLogo.png";
 import { useTranslation } from "react-i18next";
 import { useNavigation } from "@react-navigation/native";
 import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
@@ -31,6 +31,7 @@ const WalletWithdrawal = () => {
   const [address, setAddress] = useState("");
   const [userWalletId, setUserWalletId] = useState("");
   const [checkParams, setCheckParams] = useState(null);
+  const [isButtonDisabled, setIsButtonDisabled] = useState(false);
   const [transactionStatus, setTransactionStatus] = useState(null);
 
   const { data: userProfile } = useGetUserProfileQuery();
@@ -74,7 +75,7 @@ const WalletWithdrawal = () => {
       ? trimmedPhone
       : trimmedPhone.startsWith("237")
       ? `+${trimmedPhone}`
-      : `+237${trimmedPhone}`;
+      : `237${trimmedPhone}`;
 
     if (!trimmedPhone || isNaN(amount) || parseFloat(amount) < 500) {
       Toast.show({
@@ -134,14 +135,48 @@ const WalletWithdrawal = () => {
         });
       }
     } catch (error) {
-      Toast.show({
-        type: "error",
-        text1: "Erreur",
-        text2:
-          error?.data?.message ||
-          "Échec de l’initiation du retrait. Veuillez réessayer.",
-      });
-    }
+        const status = error?.status;
+    
+        // Error model 1
+        const respCode = error?.data?.data?.details?.respCode;
+        const usrMsg1 = error?.data?.data?.details?.usrMsg;
+    
+        // Error model 2
+        const devMsg = error?.data?.data?.detaila?.devMsg;
+        const customerMsgs = error?.data?.data?.detaila?.customerMsg;
+        const userMsg2 = customerMsgs?.find((msg) => msg.language === 'fr')?.content;
+    
+        if (status === 500 && respCode === 4204) {
+          showErrorToast('Numéro invalide', usrMsg1 || 'Le numéro de téléphone est invalide.');
+        } else if (status === 500 && userMsg2) {
+          showErrorToast('Erreur technique', userMsg2);
+        }  else if (status === 400) {
+          showErrorToast('ACTION_FAILED', 'Veuillez remplir tous les champs.');
+        } else if (status === 404) {
+          showErrorToast('ACTION_FAILED', 'Portefeuille introuvable');
+        } else {
+          showErrorToast('ACTION_FAILED', error?.data?.message || 'Une erreur est survenue.');
+        }
+    
+        try {
+          await sendPushNotification(
+            'Échec du transfert',
+            userMsg2 || usrMsg1 || error?.data?.message ,
+            {
+              data: {
+                type: 'TRANSFER_FAILED',
+                amount: transferAmount,
+                recipient: recipientName || walletId,
+              },
+            }
+          );
+        } catch (pushError) {
+          console.warn("Notification d'erreur non envoyée:", pushError);
+        }
+    
+        setShowPinModal(false);
+        setPendingTransferData(null);
+      }
   };
 
   return (
@@ -267,7 +302,7 @@ const WalletWithdrawal = () => {
               shadowOpacity: 0.3,
               shadowRadius: 4,
             }}
-            disabled={isRecharging}
+            disabled={isButtonDisabled || isRecharging}
           >
             {isRecharging ? (
               <Loader size="small" />

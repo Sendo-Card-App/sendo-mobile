@@ -3,7 +3,7 @@ import React from "react";
 import { StatusBar } from "expo-status-bar";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import ButtomLogo from "../../Images/ButtomLogo.png";
+import ButtomLogo from "../../images/ButtomLogo.png";
 import { useNavigation, useRoute } from "@react-navigation/native";
 
 const Success = () => {

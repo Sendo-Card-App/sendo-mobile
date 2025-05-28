@@ -24,9 +24,9 @@ import {
 } from '../../services/notificationService';
 import { TypesNotification } from "../../utils/constants";
 
-import TopLogo from "../../Images/TopLogo.png";
-import om from "../../Images/om.png";
-import mtn from "../../Images/mtn.png";
+import TopLogo from "../../images/TopLogo.png";
+import om from "../../images/om.png";
+import mtn from "../../images/mtn.png";
 
 const ConfirmeTheTransfer = () => {
   const navigation = useNavigation();
@@ -54,101 +54,118 @@ const ConfirmeTheTransfer = () => {
       ? mtn
       : null;
 
- const handleConfirmPress = async (pin) => {
-  const notificationData = {
-    title: "Transfert Initié",
-    body: `Vous avez envoyé ${totalAmount} ${toCurrency} via ${provider}.`,
-    type: "SUCCESS_TRANSFER_FUNDS",
-  };
+const handleConfirmPress = () => {
+  navigation.navigate('Auth', {
+    screen: 'PinCode',
+    params: {
+      onSuccess: async (pin) => {
+        const notificationData = {
+          title: "Transfert Initié",
+          body: `Vous avez envoyé ${totalAmount} ${toCurrency} via ${provider}.`,
+          type: "SUCCESS_TRANSFER_FUNDS",
+        };
 
-  try {
-    const response = await initTransfer({
-      firstname: formData.firstname,
-      lastname: formData.lastname,
-      email: formData.email,
-      phone: formData.phone,
-      country: formData.country,
-      address: formData.address,
-      description: formData.description,
-      amount: totalAmount,
-      provider,
-    }).unwrap();
+        try {
+          const response = await initTransfer({
+            firstname: formData.firstname,
+            lastname: formData.lastname,
+            email: formData.email,
+            phone: formData.phone,
+            country: formData.country,
+            address: formData.address,
+            description: formData.description,
+            amount: totalAmount,
+            provider,
+            pin,
+          }).unwrap();
 
-    //console.log("response", response);
+          if (response.status === 200 && response.data) {
+            Toast.show({
+              type: "success",
+              text1: "Transfert initié",
+              text2: "Veuillez suivre l'évolution du statut dans l'historique.",
+            });
 
-    if (response.status === 200 && response.data) {
-      Toast.show({
-        type: "success",
-        text1: "Transfert initié",
-        text2: "Veuillez suivre l’évolution du statut dans l’historique.",
-      });
+            try {
+              let pushToken = await getStoredPushToken();
+              if (!pushToken) {
+                pushToken = await registerForPushNotificationsAsync();
+              }
 
-      try {
-        let pushToken = await getStoredPushToken();
-        if (!pushToken) {
-          pushToken = await registerForPushNotificationsAsync();
-        }
-
-        if (pushToken) {
-          await sendPushTokenToBackend(
-            pushToken,
-            notificationData.title,
-            notificationData.body,
-            notificationData.type,
-            {
-              ...formData,
-              amount: totalAmount,
-              provider,
-              timestamp: new Date().toISOString(),
+              if (pushToken) {
+                await sendPushTokenToBackend(
+                  pushToken,
+                  notificationData.title,
+                  notificationData.body,
+                  notificationData.type,
+                  {
+                    ...formData,
+                    amount: totalAmount,
+                    provider,
+                    timestamp: new Date().toISOString(),
+                  }
+                );
+              }
+            } catch (notificationError) {
+              console.warn("Remote notification failed:", notificationError);
+              await sendPushNotification(notificationData.title, notificationData.body, {
+                data: {
+                  ...formData,
+                  type: notificationData.type,
+                  amount: totalAmount,
+                  provider,
+                },
+              });
             }
-          );
+
+            navigation.navigate("Success", { result: response.data });
+          } else {
+            throw new Error(response.message || "Une erreur est survenue.");
+          }
+        } catch (error) {
+
+          const status = error?.status || error?.data?.status;
+          const detaila = error?.data?.data?.detaila;
+          const responseCode = detaila?.response;
+          const devMsg = detaila?.devMsg;
+          const customerMsgs = detaila?.customerMsg;
+          const frCustomerMsg = customerMsgs?.find((msg) => msg.language === "fr")?.content;
+
+          if (status === 500 && responseCode === 40002) {
+            Toast.show({
+              type: "error",
+              text1: "Erreur technique",
+              text2: frCustomerMsg || devMsg || "Une erreur technique est survenue.",
+            });
+          } else {
+            Toast.show({
+              type: "error",
+              text1: "Erreur",
+              text2: error.message || "Une erreur est survenue.",
+            });
+          }
+
+          try {
+            await sendPushNotification(
+              "Échec du transfert",
+              frCustomerMsg || error.message || "Impossible d'envoyer les fonds.",
+              {
+                data: {
+                  ...formData,
+                  type: "PAYMENT_FAILED",
+                  amount: totalAmount,
+                  provider,
+                },
+              }
+            );
+          } catch (pushError) {
+          }
         }
-      } catch (notificationError) {
-        console.warn("Remote notification failed:", notificationError);
-        // Fallback to local push
-        await sendPushNotification(notificationData.title, notificationData.body, {
-          data: {
-            ...formData,
-            type: notificationData.type,
-            amount: totalAmount,
-            provider,
-          },
-        });
       }
-
-      navigation.navigate("Success", { result: response.data });
-    } else {
-      throw new Error(response.message || "Une erreur est survenue.");
     }
-  } catch (error) {
-    console.log("message", error);
-
-    Toast.show({
-      type: "error",
-      text1: "Erreur",
-      text2: error.message || "Une erreur est survenue.",
-    });
-
-    try {
-      await sendPushNotification(
-        "Échec du transfert",
-        error.message || "Impossible d’envoyer les fonds.",
-        {
-          data: {
-            ...formData,
-            type: "PAYMENT_FAILED",
-            amount: totalAmount,
-            provider,
-          },
-        }
-      );
-    } catch (pushError) {
-      console.warn("Notification d'erreur non envoyée:", pushError);
-    }
-  } finally {
-    setShowPinModal(false);
-  }
+  });
 };
+
 
 
   return (
@@ -203,7 +220,7 @@ const ConfirmeTheTransfer = () => {
             },
             {
               label: t("confirmeTheTransfer.exchangeRate"),
-              value: `1 ${fromCurrency} = ${cadRealTimeValue} ${toCurrency}`,
+              value: `$1 ${fromCurrency} = ${cadRealTimeValue} ${toCurrency}`,
             },
             {
               label: t("confirmeTheTransfer.convertedAmount"),

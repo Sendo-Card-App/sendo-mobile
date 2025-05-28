@@ -8,7 +8,7 @@ import {
 import React, { useEffect, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
-import TopLogo from "../../Images/TopLogo.png";
+import TopLogo from "../../images/TopLogo.png";
 import { useTranslation } from "react-i18next";
 import { useNavigation } from "@react-navigation/native";
 import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
@@ -34,6 +34,7 @@ const WalletRecharge = () => {
   const [amount, setAmount] = useState("");
   const [userWalletId, setUserWalletId] = useState("");
   const [checkParams, setCheckParams] = useState(null);
+  const [isButtonDisabled, setIsButtonDisabled] = useState(false);
 
   const { data: userProfile } = useGetUserProfileQuery();
   const [rechargeWallet, { isLoading: isRecharging }] = useRechargeWalletMutation();
@@ -63,14 +64,24 @@ const WalletRecharge = () => {
     }
   }, [statusData]);
 
-  const handleRecharge = async () => {
+ const handleRecharge = async () => {
   const trimmedPhone = phone.trim();
   const normalizedPhone = trimmedPhone.startsWith("+237")
     ? trimmedPhone
     : trimmedPhone.startsWith("237")
     ? `+${trimmedPhone}`
-    : `+237${trimmedPhone}`;
+    : `237${trimmedPhone}`;
 
+  if (normalizedPhone.length !== 12) {
+    Toast.show({
+      type: "error",
+      text1: "Numéro invalide",
+      text2: "Le numéro doit contenir exactement 12 caractères au format +237XXXXXXXXX.",
+    });
+    return;
+  }
+
+ 
   if (!trimmedPhone || isNaN(amount) || parseFloat(amount) < 500) {
     Toast.show({
       type: "error",
@@ -80,6 +91,7 @@ const WalletRecharge = () => {
     return;
   }
 
+ 
   if (!userWalletId) {
     Toast.show({
       type: "error",
@@ -110,7 +122,6 @@ const WalletRecharge = () => {
         text2: "Transaction initiée, vérification du statut...",
       });
 
-      // 🔔 Prepare notification content
       const notificationContent = {
         title: "Recharge Initiée",
         body: `Vous avez initié une recharge de ${amount} FCFA.`,
@@ -138,8 +149,6 @@ const WalletRecharge = () => {
           );
         }
       } catch (notificationError) {
-        console.warn("Remote notification failed:", notificationError);
-        // 📱 Fallback local push
         await sendPushNotification(
           notificationContent.title,
           notificationContent.body,
@@ -167,31 +176,43 @@ const WalletRecharge = () => {
         text2: "Une erreur s'est produite. Veuillez réessayer.",
       });
     }
-  } catch (error) {
-    Toast.show({
-      type: "error",
-      text1: "Erreur",
-      text2: error?.data?.message || "Échec de la recharge.",
-    });
+      } catch (error) {
+        console.log(error)
+      const status = error?.data?.status;
+      const respCode = error?.data?.data?.details?.respCode || error?.data?.data?.detaila?.response;
+      const usrMsg = error?.data?.data?.details?.usrMsg;
+      const customerMsgs = error?.data?.data?.detaila?.customerMsg;
 
-    // Optional: Send notification for failure
-    try {
-      await sendPushNotification(
-        "Échec de la recharge",
-        error?.data?.message || "Impossible de recharger le wallet.",
-        {
-          data: {
-            phone: normalizedPhone,
-            amount: parseFloat(amount),
-            type: "WALLET_RECHARGE_FAILED",
-          },
-        }
-      );
-    } catch (pushError) {
-      console.warn("Notification d'erreur non envoyée:", pushError);
+      // Try to get a localized French error message
+      let localizedMsg;
+      if (Array.isArray(customerMsgs)) {
+        const frMsg = customerMsgs.find(msg => msg.language === 'fr');
+        localizedMsg = frMsg?.content;
+      }
+
+      if (status === 500 && respCode === 4204) {
+        Toast.show({
+          type: "error",
+          text1: "Numéro invalide",
+          text2: usrMsg || "Le numéro de téléphone est invalide.",
+        });
+      } else if (status === 500 && respCode === 40002) {
+        Toast.show({
+          type: "error",
+          text1: "Erreur technique",
+          text2: localizedMsg || "Une erreur technique est survenue. Veuillez contacter le support.",
+        });
+      } else {
+        Toast.show({
+          type: "error",
+          text1: "Erreur",
+          text2: error?.data?.message || "Échec de la recharge.",
+        });
+      }
     }
-  }
+
 };
+
 
     
 
@@ -265,7 +286,7 @@ const WalletRecharge = () => {
             shadowOpacity: 0.3,
             shadowRadius: 4,
           }}
-          disabled={isRecharging}
+          disabled={isButtonDisabled || isRecharging}
         >
           {isRecharging ? (
             <Loader size="small" />

@@ -152,7 +152,7 @@ const ChatScreen = ({ route, navigation }) => {
       
       {item.attachments?.map((attachment, index) => (
         <View key={index} style={styles.attachmentContainer}>
-          {attachment.includes('/Images/') ? (
+          {attachment.includes('/images/') ? (
             <Image 
               source={{ uri: attachment }} 
               style={styles.imageAttachment}

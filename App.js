@@ -4,7 +4,7 @@ import { Colors } from './src/constants/colors'; // Adjust the path as needed
 
 import { StyleSheet, View, Text, TouchableOpacity,Platform } from "react-native";
 import { Provider } from "react-redux";
-import { store } from "./src/Store/store";
+import { store } from "./src/store/store";
 import Toast from "react-native-toast-message";
 import { useTranslation } from 'react-i18next'; 
 import './i18n';
@@ -21,65 +21,79 @@ import { registerForPushNotificationsAsync } from "./src/services/notificationSe
 import app from "./src/configs/firebaseConfig";
 
 // Screens & Components
-import Home from "./src/Screens/Home/Home";
-import WelcomeScreen from "./src/Screens/Auth/WelcomeScreen";
-import PinCode from "./src/Screens/Auth/PinCode";
-import AddBeneficiary from "./src/Screens/Solde/AddBeneficiary";
-import AddFavorite from "./src/Screens/Favorite/AddFavorite";
-import SelectMethod from "./src/Screens/Wallet/SelectMethod";
-import BankDepositRecharge from "./src/Screens/Wallet/BankDepositRecharge";
-import WalletRecharge from "./src/Screens/Wallet/WalletRecharge ";
-import WalletWithdrawal from "./src/Screens/Wallet/WalletWithdrawal";
-import WalletOk from "./src/Screens/Wallet/WalletOk";
-import WalletConfirm from "./src/Screens/Wallet/WalletConfirm";
-import AddContact from "./src/Screens/Solde/AddContact";
-import TransfertFund from "./src/Screens/Wallet/TransfertFund";
-import WalletTransfer from "./src/Screens/Wallet/WalletTransfer";
-import MethodType from "./src/Screens/Wallet/MethodType";
-import PaymentSimulator from "./src/Screens/Solde/PaymentSimulator";
-import LogIn from "./src/Screens/Auth/LogIn";
-import SignIn from "./src/Screens/Auth/SignIn";
-import Signup from "./src/Screens/Auth/Signup";
-import OtpVerification from "./src/Screens/Auth/OtpVerification";
-import GuestLogin from "./src/Screens/Auth/GuestLogin";
-import ResetPassword from "./src/Screens/Auth/ResetPassword";
-import ForgetPassword from "./src/Screens/Auth/ForgetPassword";
-import BeneficiarySelection from "./src/Screens/Transfert/BeneficiarySelection";
-import BeneficiaryDetails from "./src/Screens/Transfert/BeneficiaryDetails";
-import BankCard from "./src/Screens/VirtualCard/BankCard";
-import BankCard1 from "./src/Screens/Transfert/BankCard1";
-import Confirme from "./src/Screens/Transfert/Confirme";
-import Success from "./src/Screens/Transfert/Success";
-import NiuRequest from "./src/Screens/Profile/NiuRequest";
-import AboutUs from "./src/Screens/Setting/AboutUs";
-import BeneficiaryScreen from "./src/Screens/Transfert/BeneficiaryScreen";
-import Curency from "./src/Screens/Transfert/Curency";
-import PaymentMethod from "./src/Screens/Transfert/PaymentMethod";
-import Support from "./src/Screens/Setting/Support";
-import Payment from "./src/Screens/VirtualCard/Payment";
+import Home from "./src/screens/Home/Home";
+import WelcomeScreen from "./src/screens/Auth/WelcomeScreen";
+import PinCode from "./src/screens/Auth/PinCode";
+import AddBeneficiary from "./src/screens/Solde/AddBeneficiary";
+import AddFavorite from "./src/screens/Favorite/AddFavorite";
+import SelectMethod from "./src/screens/Wallet/SelectMethod";
+import BankDepositRecharge from "./src/screens/Wallet/BankDepositRecharge";
+import WalletRecharge from "./src/screens/Wallet/WalletRecharge ";
+import WalletWithdrawal from "./src/screens/Wallet/WalletWithdrawal";
+import WalletOk from "./src/screens/Wallet/WalletOk";
+import WalletConfirm from "./src/screens/Wallet/WalletConfirm";
+import AddContact from "./src/screens/Solde/AddContact";
+
+import WalletTransfer from "./src/screens/Wallet/WalletTransfer";
+import MethodType from "./src/screens/Wallet/MethodType";
+import PaymentSimulator from "./src/screens/Solde/PaymentSimulator";
+import LogIn from "./src/screens/Auth/LogIn";
+import SignIn from "./src/screens/Auth/SignIn";
+import Signup from "./src/screens/Auth/Signup";
+import OtpVerification from "./src/screens/Auth/OtpVerification";
+import GuestLogin from "./src/screens/Auth/GuestLogin";
+import ResetPassword from "./src/screens/Auth/ResetPassword";
+import ForgetPassword from "./src/screens/Auth/ForgetPassword";
+import BeneficiarySelection from "./src/screens/Transfert/BeneficiarySelection";
+import BeneficiaryDetails from "./src/screens/Transfert/BeneficiaryDetails";
+import BankCard from "./src/screens/VirtualCard/BankCard";
+import BankCard1 from "./src/screens/Transfert/BankCard1";
+import Confirme from "./src/screens/Transfert/Confirme";
+import Success from "./src/screens/Transfert/Success";
+import NiuRequest from "./src/screens/Profile/NiuRequest";
+import AboutUs from "./src/screens/Setting/AboutUs";
+import BeneficiaryScreen from "./src/screens/Transfert/BeneficiaryScreen";
+import Curency from "./src/screens/Transfert/Curency";
+import PaymentMethod from "./src/screens/Transfert/PaymentMethod";
+import Support from "./src/screens/Setting/Support";
+import Payment from "./src/screens/VirtualCard/Payment";
 import DrawerComponent from "./src/components/DrawerComponent";
 import NotificationComponent from "./src/components/NotificationComponent"
-import History from "./src/Screens/Transfert/History";
-import Receipt from "./src/Screens/Transfert/Receipt";
-import Account from "./src/Screens/Profile/Account";
-import Settings from "./src/Screens/Setting/Settings";
-import MonSolde from "./src/Screens/Solde/MonSolde";
-import CreateVirtualCard from "./src/Screens/VirtualCard/CreateVirtualCard";
-import VerifyIdentity from "./src/Screens/VirtualCard/VerifyIdentity";
-import ManageVirtualCard from "./src/Screens/VirtualCard/ManageVirtualCard";
-import KycResume from "./src/Screens/VirtualCard/KycResume";
-import KycSelfie from "./src/Screens/VirtualCard/KycSelfie";
-import PersonalDetail from "./src/Screens/VirtualCard/PersonalDetail";
-import NIU from "./src/Screens/VirtualCard/NIU";
-import Addresse from "./src/Screens/VirtualCard/Adresse";
-import IdentityCard from "./src/Screens/VirtualCard/IdentityCard";
-import IdentityVerification from "./src/Screens/VirtualCard/IdentityVerification";
-import AddressSelect from "./src/Screens/VirtualCard/AddressSelect";
-import AddressConfirm from "./src/Screens/VirtualCard/AddressConfirm";
-import Address from "./src/Screens/Transfert/Address";
-import Camera from "./src/Screens/VirtualCard/Camera";
-import ChangePassword from "./src/Screens/Setting/ChangePassword";
-import ChatScreen from "./src/Screens/Chat/ChatScreen";
+import History from "./src/screens/Transfert/History";
+import Receipt from "./src/screens/Transfert/Receipt";
+import Account from "./src/screens/Profile/Account";
+import Settings from "./src/screens/Setting/Settings";
+import MonSolde from "./src/screens/Solde/MonSolde";
+import CreateVirtualCard from "./src/screens/VirtualCard/CreateVirtualCard";
+import VerifyIdentity from "./src/screens/VirtualCard/VerifyIdentity";
+import ManageVirtualCard from "./src/screens/VirtualCard/ManageVirtualCard";
+import KycResume from "./src/screens/VirtualCard/KycResume";
+import KycSelfie from "./src/screens/VirtualCard/KycSelfie";
+import PersonalDetail from "./src/screens/VirtualCard/PersonalDetail";
+import NIU from "./src/screens/VirtualCard/NIU";
+import Addresse from "./src/screens/VirtualCard/Adresse";
+import IdentityCard from "./src/screens/VirtualCard/IdentityCard";
+import IdentityVerification from "./src/screens/VirtualCard/IdentityVerification";
+import AddressSelect from "./src/screens/VirtualCard/AddressSelect";
+import AddressConfirm from "./src/screens/VirtualCard/AddressConfirm";
+import Address from "./src/screens/Transfert/Address";
+import Camera from "./src/screens/VirtualCard/Camera";
+import ChangePassword from "./src/screens/Setting/ChangePassword";
+import ChatScreen from "./src/screens/Chat/ChatScreen";
+
+// Partager entre amis 
+import WelcomeShare from "./src/screens/Share/WelcomeShare";
+import Request from "./src/screens/Share/Request";
+import CreateShare from "./src/screens/Share/CreateShare";
+import SuccessSharing from "./src/screens/Share/SuccessSharing";
+import DistributionMethod from "./src/screens/Share/DistributionMethod";
+import Destinators from "./src/screens/Share/Destinators";
+import ConfirmTransfer from "./src/screens/Share/ConfirmTransfer";
+import AmountDistribution from "./src/screens/Share/AmountDistribution";
+import Historique from "./src/screens/Share/Historique";
+import BuySharing from "./src/screens/Share/BuySharing";
+import DetailScreen from "./src/screens/Share/DetailScreen";
+
 
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -316,7 +330,6 @@ function MainStack() {
         options={{ headerTitle: t('screens.selectMethod') }} 
       />
       <Stack.Screen name="BankDepositRecharge" component={BankDepositRecharge} options={{ headerTitle: t('screens.bankDeposit') }}/>
-      <Stack.Screen name="TransfertFund" component={TransfertFund} options={{ headerTitle: t('screens.transferFunds') }} />
       <Stack.Screen name="PaymentSimulator" component={PaymentSimulator} options={{ headerTitle: t('screens.paymentSimulator') }} />
       <Stack.Screen name="MethodType" component={MethodType} options={{ headerTitle: t('screens.selectMethod') }} />
       <Stack.Screen name="WalletTransfer" component={WalletTransfer} options={{ headerTitle: t('screens.walletTransfer') }} />
@@ -350,6 +363,18 @@ function MainStack() {
       <Stack.Screen name="AddressConfirm" component={AddressConfirm} options={{ headerShown: false }} />
       <Stack.Screen name="Address" component={Address} options={{ headerShown: false }} />
       <Stack.Screen name="Camera" component={Camera} options={{ headerShown: false }} />
+
+      <Stack.Screen name="WelcomeShare" component={WelcomeShare} options={{ headerShown: false }} />
+      <Stack.Screen name="Destinators" component={Destinators} options={{ headerShown: false }} />
+      <Stack.Screen name="Request" component={Request} options={{ headerShown: false }} />
+      <Stack.Screen name="SuccessSharing" component={SuccessSharing} options={{ headerShown: false }} />
+      <Stack.Screen name="CreateShare" component={CreateShare} options={{ headerShown: false }} />
+      <Stack.Screen name="DistributionMethod" component={DistributionMethod} options={{ headerShown: false }} />
+      <Stack.Screen name="AmountDistribution" component={AmountDistribution} options={{ headerShown: false }} />
+      <Stack.Screen name="ConfirmTransfer" component={ConfirmTransfer} options={{ headerShown: false }} />
+      <Stack.Screen name="Historique" component={Historique} options={{ headerShown: false }} />
+      <Stack.Screen name="BuySharing" component={BuySharing} options={{ headerShown: false }} />
+       <Stack.Screen name="DetailScreen" component={DetailScreen } options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 }

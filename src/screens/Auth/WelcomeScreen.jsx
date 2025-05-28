@@ -3,8 +3,8 @@ import { getData } from '../../services/storage';
 import { useDispatch } from 'react-redux';
 import { loginSuccess } from '../../features/Auth/authSlice';
 import { View, Text, Image, StyleSheet, Animated, Easing, Dimensions } from 'react-native';
-import LogoSendo from '../../Images/LogoSendo.png';
-import WorldMap from '../../Images/WorldMap.png';
+import LogoSendo from '../../images/LogoSendo.png';
+import WorldMap from '../../images/WorldMap.png';
 import Loader from "../../components/Loader"
 
 const { width, height } = Dimensions.get('window');
@@ -21,26 +21,26 @@ const SplashScreen = ({ navigation }) => {
   const dotAnims = Array.from({ length: 5 }, () => useRef(new Animated.Value(0)).current); 
   // 5 dots (you can add more)
   
-  useEffect(() => {
-      const checkAuthData = async () => {
-        try {
-          const authData = await getData('@authData');
-          if (authData?.accessToken) {
-            dispatch(loginSuccess(authData));
-            navigation.replace("PinCode");
-          } else {
-            navigation.replace("SignIn");
-          }
-        } catch (error) {
-          console.log("Error checking auth data:", error);
-          navigation.replace("SignIn");
-        } finally {
-          setLoading(false); // stop loader once done
-        }
-      };
-    
-      checkAuthData();
-    }, []);
+   useEffect(() => {
+       const checkAuthData = async () => {
+         try {
+           const authData = await getData('@authData');
+           if (authData?.accessToken) {
+             dispatch(loginSuccess(authData));
+             navigation.replace("PinCode");
+           } else {
+             navigation.replace("AUTH");
+           }
+         } catch (error) {
+           console.log("Error checking auth data:", error);
+           navigation.replace("Auth");
+         } finally {
+           setLoading(false); // stop loader once done
+         }
+       };
+     
+       checkAuthData();
+     }, [])
   
   
   useEffect(() => {

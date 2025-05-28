@@ -1,7 +1,7 @@
 import { View, Text, TouchableOpacity, Image, ScrollView, Dimensions } from "react-native";
 import React from "react";
 import KycTab from "../../components/KycTab";
-import TopLogo from "../../Images/TopLogo.png";
+import TopLogo from "../../images/TopLogo.png";
 import { AntDesign, Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 import { useDispatch } from 'react-redux';
@@ -84,7 +84,7 @@ const AddressSelect = ({ navigation, route }) => {
             >
               <View className="flex-row items-center bg-gray-200 rounded-lg p-3">
                 <Image
-                  source={require("../../Images/Localisation.png")}
+                  source={require("../../images/Localisation.png")}
                   className="w-[80%] mx-auto"
                   style={{ height: Dimensions.get('window').width * 0.45 }}
                   resizeMode="contain"
@@ -102,7 +102,7 @@ const AddressSelect = ({ navigation, route }) => {
             >
               <View className="flex-row items-center bg-gray-200 rounded-lg p-3">
                 <Image
-                  source={require("../../Images/Facture.png")}
+                  source={require("../../images/Facture.png")}
                   className="w-[80%] mx-auto"
                   style={{ height: Dimensions.get('window').width * 0.45 }}
                   resizeMode="contain"

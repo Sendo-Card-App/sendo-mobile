@@ -1,6 +1,6 @@
 import { View, Text, Image, TouchableOpacity, Dimensions, Alert } from "react-native";
 import React, { useState } from "react";
-import TopLogo from "../../Images/TopLogo.png";
+import TopLogo from "../../images/TopLogo.png";
 import { useTranslation } from 'react-i18next';
 import { AntDesign, Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";

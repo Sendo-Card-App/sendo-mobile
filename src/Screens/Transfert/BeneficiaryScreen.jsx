@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -11,14 +11,15 @@ import {
 import { AntDesign } from "@expo/vector-icons";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { MaterialIcons } from "@expo/vector-icons";
-import HomeImage from "../../Images/HomeImage2.png";
-import button from "../../Images/ButtomLogo.png";
-import Cameroon from "../../Images/Cameroon.png";
-import Canada from "../../Images/Canada.png";
+import HomeImage from "../../images/HomeImage2.png";
+import button from "../../images/ButtomLogo.png";
+import Cameroon from "../../images/Cameroon.png";
+import Canada from "../../images/Canada.png";
 import { StatusBar } from "expo-status-bar";
 import { useNavigation } from "@react-navigation/native";
 import { useGetConfigQuery } from '../../services/Config/configApi';
 import { useTranslation } from 'react-i18next';
+import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
 
 const BeneficiaryScreen = () => {
   const navigation = useNavigation();
@@ -28,6 +29,8 @@ const BeneficiaryScreen = () => {
     isLoading: isConfigLoading,
     error: configError
   } = useGetConfigQuery();
+    const [showVerifiedMessage, setShowVerifiedMessage] = useState(false);
+   const { data: userProfile, isLoading: isProfileLoading } = useGetUserProfileQuery();
   
   const getConfigValue = (name) => {
     const configItem = configData?.data?.find(item => item.name === name);
@@ -35,6 +38,17 @@ const BeneficiaryScreen = () => {
   };
 
   const CAD_REAL_TIME_VALUE = getConfigValue('CAD_REAL_TIME_VALUE');
+   
+
+    useEffect(() => {
+      if (userProfile?.data?.isVerifiedKYC) {
+        setShowVerifiedMessage(false);
+        const timer = setTimeout(() => {
+          setShowVerifiedMessage(false);
+        }, 10000); // 20 seconds
+        return () => clearTimeout(timer);
+      }
+    }, [userProfile]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#0D0D0D" }}>
@@ -68,6 +82,13 @@ const BeneficiaryScreen = () => {
             onPress={() => navigation.openDrawer()}
           />
         </View>
+        {showVerifiedMessage && (
+          <View className="bg-green-100 p-3 rounded-md mb-4">
+            <Text className="text-green-800 text-center font-bold text-lg">
+              {t('verifyIdentity.kycRequiredMessage')}
+            </Text>
+          </View>
+        )}
 
         <Text style={{
           color: "white",
@@ -121,7 +142,7 @@ const BeneficiaryScreen = () => {
               {t('conversionRateCAD', { value: CAD_REAL_TIME_VALUE })}
             </Text>
           </TouchableOpacity>
-          <TouchableOpacity
+          {/* <TouchableOpacity
             style={{
               flexDirection: "row",
               alignItems: "center",
@@ -143,7 +164,7 @@ const BeneficiaryScreen = () => {
             <Text style={{ color: "white", marginLeft: "auto" }}>
               {t('conversionRateXAF', { value: CAD_REAL_TIME_VALUE })}
             </Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </ScrollView>
       </View>
 

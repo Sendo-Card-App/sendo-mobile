@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   ScrollView,
   Platform,
+  Image,
   RefreshControl,
   SafeAreaView,
 } from "react-native";
@@ -22,6 +23,7 @@ import { incrementAttempt, resetAttempts, lockPasscode } from '../features/Auth/
 import { useTranslation } from "react-i18next";
 import { useGetUserProfileQuery, useLogoutMutation } from "../services/Auth/authAPI";
 import Loader from "./Loader";
+import shareImage from "../images/icones/shareImage.png"; // Adjust the path as necessary
 import { Share } from 'react-native';
 import { getData, removeData, storeData } from "../services/storage";
 import Toast from "react-native-toast-message";
@@ -339,6 +341,23 @@ const DrawerComponent = ({ navigation }) => {
               </Text>
             </View>
           </TouchableOpacity>
+           <TouchableOpacity
+              className="flex-row gap-2 my-2 mb-5"
+              onPress={() => navigation2.navigate("WelcomeShare")}
+            >
+              <Image
+                source={shareImage}
+                style={{
+                  width: Platform.OS === "ios" ? 32 : 24,
+                  height: Platform.OS === "ios" ? 32 : 24,
+                  resizeMode: "contain",
+                  color:"gray"
+                }}
+              />
+              <View>
+                <Text className="font-bold text-gray-500">{t("drawer.share")}</Text>
+              </View>
+            </TouchableOpacity>
            <TouchableOpacity
                       className="flex-row gap-2 my-2 mb-5"
                       onPress={() => navigation2.navigate("VerifyIdentity")}
