@@ -994,6 +994,29 @@
     "description": "Votre demande de partage a été effectuée avec succès.",
     "notify": "Vos amis seront notifiés.",
     "backButton": "Retour"
+  },
+     "historique": {
+   "history": "Historique",
+  "filter": "Filtrer",
+  "filterTransactions": "Filtrer les transactions",
+  "status": "Statut",
+  "all": "Tous",
+  "pending": "En attente",
+  "complete": "Complétée",
+  "declined": "Refusée",
+  "startDate": "Date de début",
+  "endDate": "Date de fin",
+  "select": "Sélectionner",
+  "reset": "Réinitialiser",
+  "apply": "Appliquer",
+  "noTitle": "Sans titre",
+  "errorLoading": "Erreur lors du chargement.",
+  "noHistoryFound": "Aucun historique trouvé.",
+   "statuses": {
+      "pending": "En attente",
+      "complete": "Complété",
+      "declined": "Refusé"
+    }
   }
   
 
