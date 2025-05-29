@@ -78,6 +78,15 @@ export const sharedExpenseApi = createApi({
       }),
       providesTags: [TAG_TYPES.SHARED_EXPENSE],
     }),
+    updateSharedExpense: builder.mutation({
+      query: ({ id, ...body }) => ({
+        url: `/shared-expense/${id}`,
+        method: 'PUT',
+        body,
+      }),
+      invalidatesTags: [TAG_TYPES.SHARED_EXPENSE],
+    }),
+
 
     settleSharedExpense: builder.mutation({
       query: ({ expenseId, participantId }) => ({
@@ -90,6 +99,28 @@ export const sharedExpenseApi = createApi({
       }),
       invalidatesTags: [TAG_TYPES.SHARED_EXPENSE],
     }),
+
+    paySharedExpense: builder.mutation({
+      query: ({ expenseId }) => ({
+        url: `/shared-expense/${expenseId}/pay`,
+        method: 'POST',
+         providesTags: [TAG_TYPES.SHARED_EXPENSE],
+      }),
+      invalidatesTags: [TAG_TYPES.SHARED_EXPENSE],
+    }),
+    
+    cancelSharedExpense: builder.mutation({
+      query: ({ id, cancelReason }) => ({
+        url: `/shared-expense/${id}/cancel`,
+        method: 'PATCH',
+        body: {
+          cancelReason,
+        },
+      }),
+      invalidatesTags: [TAG_TYPES.SHARED_EXPENSE],
+    }),
+
+
 
     // For manual amount distribution validation
     validateAmountDistribution: builder.mutation({
@@ -113,6 +144,9 @@ export const {
   useCreateSharedExpenseMutation,
   useGetSharedExpensesQuery,
   useDeleteSharedExpenseMutation,
+  usePaySharedExpenseMutation,
+  useCancelSharedExpenseMutation,
+  useUpdateSharedExpenseMutation,
   useGetSharedExpenseDetailsQuery,
   useSettleSharedExpenseMutation,
   useValidateAmountDistributionMutation,

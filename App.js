@@ -93,6 +93,7 @@ import AmountDistribution from "./src/screens/Share/AmountDistribution";
 import Historique from "./src/screens/Share/Historique";
 import BuySharing from "./src/screens/Share/BuySharing";
 import DetailScreen from "./src/screens/Share/DetailScreen";
+import DemandDetailScreen from "./src/screens/Share/DemandDetailScreen";
 
 
 const Stack = createNativeStackNavigator();
@@ -374,7 +375,8 @@ function MainStack() {
       <Stack.Screen name="ConfirmTransfer" component={ConfirmTransfer} options={{ headerShown: false }} />
       <Stack.Screen name="Historique" component={Historique} options={{ headerShown: false }} />
       <Stack.Screen name="BuySharing" component={BuySharing} options={{ headerShown: false }} />
-       <Stack.Screen name="DetailScreen" component={DetailScreen } options={{ headerShown: false }} />
+      <Stack.Screen name="DetailScreen" component={DetailScreen } options={{ headerShown: false }} />
+       <Stack.Screen name="DemandDetailScreen" component={DemandDetailScreen } options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 }
