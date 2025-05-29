@@ -62,11 +62,11 @@ const SuccessSharing = () => {
 
         <View className="w-full px-4 pb-10">
           <TouchableOpacity
-            onPress={() => navigation.goBack()}
+             onPress={() => navigation.navigate("CreateShare")}
             className="bg-[#4CAF50] py-4 rounded-xl items-center justify-center shadow"
           >
             <Text className="text-white text-base font-semibold">
-              {t("successSharing.back")}
+              {t("successSharing.backButton")}
             </Text>
           </TouchableOpacity>
         </View>

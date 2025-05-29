@@ -1017,8 +1017,35 @@
       "complete": "Complété",
       "declined": "Refusé"
     }
+  },
+  "his": {
+  "title": "Historique",
+  "filter": "Filtrer",
+  "loading": "Chargement...",
+  "no_data": "Aucune dépense partagée trouvée.",
+  "payer": "Payer",
+  "status": {
+    "pending": "En attente",
+    "paid": "Payé",
+    "cancelled": "Annulé",
+    "completed": "Complété"
   }
-  
+},
+ "demandDetail": {
+    "title": "Détails de la demande",
+    "initiator": "Initiateur",
+    "totalAmount": "Montant Total",
+    "reason": "Motif",
+    "date": "Date",
+    "requiredAmount": "Montant Requis",
+    "pay": "Payer",
+    "decline": "Décliner",
+    "declineReasonTitle": "Raison du refus",
+    "declinePlaceholder": "Entrez la raison ici...",
+    "cancel": "Annuler",
+    "confirm": "Confirmer"
+  }
+
 
     
     

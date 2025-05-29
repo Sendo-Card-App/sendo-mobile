@@ -1016,6 +1016,32 @@
       "complete": "Complete",
       "declined": "Declined"
     }
+  },
+  "his": {
+  "title": "History",
+  "filter": "Filter",
+  "loading": "Loading...",
+  "no_data": "No shared expenses found.",
+  "payer": "Pay",
+  "status": {
+    "pending": "Pending",
+    "paid": "Paid",
+    "cancelled": "Cancelled",
+     "completed": "Complete"
+  },
+   "demandDetail": {
+    "title": "Request Details",
+    "initiator": "Initiator",
+    "totalAmount": "Total Amount",
+    "reason": "Reason",
+    "date": "Date",
+    "requiredAmount": "Required Amount",
+    "pay": "Pay",
+    "decline": "Decline",
+    "declineReasonTitle": "Decline Reason",
+    "declinePlaceholder": "Enter reason here...",
+    "cancel": "Cancel",
+    "confirm": "Confirm"
   }
 
 

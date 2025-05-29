@@ -50,7 +50,6 @@ const HistoryScreen = () => {
   const [selectedStatus, setSelectedStatus] = useState("");
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
-
   const [showStartDatePicker, setShowStartDatePicker] = useState(false);
   const [showEndDatePicker, setShowEndDatePicker] = useState(false);
 
@@ -70,37 +69,69 @@ const HistoryScreen = () => {
     return (
       <TouchableOpacity
         onPress={() => handleTransactionPress(item)}
-        className="bg-white rounded-xl p-4 mb-3 shadow-sm border border-gray-200"
+        className="bg-white rounded-xl p-4 mb-3 shadow-sm border border-gray-200 relative"
       >
-        <View className="flex-row justify-between items-start">
-          <Text className="font-bold text-base text-black flex-1">
+     
+        <View className="flex-row items-center justify-between">
+          <Text className="font-bold text-base text-black w-1/3">
             {item.description || t("noTitle")}
           </Text>
-          <View className="items-center">
+          <View className="w-1/3 items-center">
             <Text className="font-bold text-sm text-black">
-              {item.totalAmount} XAF
-            </Text>
-            <Text className="text-gray-500 text-xs font-bold mt-1">
-              {item.participants?.map((p) => p.initials).join(" ")} {item.initiator?.firstname}
+              {item.totalAmount} {item.currency}
             </Text>
           </View>
+          <View className="w-1/3" /> 
         </View>
 
-        <Text className="text-gray-600 text-sm mt-1">
-          {new Date(item.createdAt).toLocaleDateString()}
-        </Text>
+     
+        <View className="flex-row items-center justify-between mt-1">
+          <Text className="text-gray-600 text-sm w-1/3">
+            {new Date(item.createdAt).toLocaleDateString()}
+          </Text>
+          <View className="w-1/3 items-center">
+            <View className="flex-row flex-wrap items-center gap-1 mt-1">
+              {item.participants?.slice(0, 5).map((p, index) => {
+                const first = p.user?.firstname?.charAt(0) || "";
+                const last = p.user?.lastname?.charAt(0) || "";
+                const initials = first + last;
 
-        <View className="mt-2">
-          <Text className={`self-end px-3 py-1 rounded-full text-xs font-medium ${statusStyle}`}>
-            {item.status}
+                return (
+                  <View
+                    key={index}
+                    className="bg-gray-300 rounded-full h-6 w-6 items-center justify-center"
+                  >
+                    <Text className="text-xs font-bold text-white">{initials}</Text>
+                  </View>
+                );
+              })}
+              {item.participants?.length > 5 && (
+                <Text className="text-xs font-bold text-gray-500 ml-1">
+                  +{item.participants.length - 4}
+                </Text>
+              )}
+            </View>
+          </View>
+          <View className="w-1/3" />
+        </View>
+
+       
+        <View className="absolute right-4 top-5 -translate-y-1/2">
+          <Text
+            className={`px-3 py-1 rounded-full text-xs font-medium ${statusStyle}`}
+          >
+            {t(`historique.statuses.${item.status?.toLowerCase()}`)}
           </Text>
         </View>
       </TouchableOpacity>
+
+
     );
   };
 
   return (
     <View className="flex-1 bg-[#e8f5e9]">
+      {/* Header */}
       <View className="flex-row items-center justify-between px-5 pt-14 pb-4 bg-[#7ddd7d]">
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color="black" />
@@ -148,7 +179,8 @@ const HistoryScreen = () => {
           <View className="bg-white rounded-t-2xl p-5">
             <Text className="text-lg font-bold mb-3">{t("historique.filterTransactions")}</Text>
 
-           <View className="mb-4">
+            {/* Status Filter */}
+            <View className="mb-5">
               <Text className="text-sm mb-1 text-gray-700">{t("historique.status")}</Text>
               {["", "PENDING", "COMPLETE", "DECLINED"].map((status) => (
                 <Pressable
@@ -165,7 +197,7 @@ const HistoryScreen = () => {
               ))}
             </View>
 
-
+            {/* Start Date Picker */}
             <View className="mb-4">
               <Text className="text-sm text-gray-700">{t("historique.startDate")}</Text>
               <TouchableOpacity onPress={() => setShowStartDatePicker(true)}>
@@ -186,6 +218,7 @@ const HistoryScreen = () => {
               )}
             </View>
 
+            {/* End Date Picker */}
             <View className="mb-4">
               <Text className="text-sm text-gray-700">{t("historique.endDate")}</Text>
               <TouchableOpacity onPress={() => setShowEndDatePicker(true)}>
@@ -206,6 +239,7 @@ const HistoryScreen = () => {
               )}
             </View>
 
+            {/* Actions */}
             <View className="flex-row justify-between mt-5">
               <TouchableOpacity
                 onPress={() => {
