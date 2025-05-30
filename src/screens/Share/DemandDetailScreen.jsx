@@ -16,7 +16,7 @@ import TopLogo from "../../images/TopLogo.png";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import {
   useCancelSharedExpenseMutation,
-  usePaySharedExpenseMutation, 
+  usePaySharedExpenseMutation,
 } from "../../services/Shared/sharedExpenseApi";
 import Toast from "react-native-toast-message";
 import { useTranslation } from "react-i18next";
@@ -32,7 +32,7 @@ const DemandDetailScreen = () => {
   const [cancelReason, setCancelReason] = useState("");
 
   const [cancelSharedExpense, { isLoading: isCancelLoading }] = useCancelSharedExpenseMutation();
-  const [paySharedExpense, { isLoading: isPaying }] = usePaySharedExpenseMutation(); // <-- Hook
+  const [paySharedExpense, { isLoading: isPaying }] = usePaySharedExpenseMutation();
 
   const showToast = (message, type = "success") => {
     Toast.show({
@@ -46,11 +46,11 @@ const DemandDetailScreen = () => {
 
   const handlePay = async () => {
     try {
-      await paySharedExpense({ expenseId: item.id }).unwrap(); 
-      
+      await paySharedExpense({ expenseId: item.id }).unwrap();
       navigation.navigate("SuccessSharing", {
       transactionDetails: "Paiement effectué avec succès.",
     });
+
     } catch (error) {
       console.log("Pay error:", error);
       showToast("Erreur lors du paiement.", "error");
@@ -89,6 +89,8 @@ const DemandDetailScreen = () => {
   const currency = item.currency ?? "";
   const description = item.description ?? "N/A";
   const formattedDate = new Date(item.createdAt).toLocaleDateString("fr-FR");
+
+  const isActionAvailable = ["PENDING", "IN_PROGRESS"].includes(item.paymentStatus);
 
   return (
     <View style={{ flex: 1, backgroundColor: "#0e1316" }}>
@@ -129,8 +131,7 @@ const DemandDetailScreen = () => {
       >
         <Image source={TopLogo} style={{ height: 140, width: 160 }} resizeMode="contain" />
       </View>
-       <View className="border border-dashed border-gray-300" />
-
+        <View className="border border-dashed border-gray-300" />
       {/* Content */}
       <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 60 }}>
         <Text
@@ -142,60 +143,70 @@ const DemandDetailScreen = () => {
             textAlign: "center",
           }}
         >
-        {t("demandDetail.title")}
+          {t("demandDetail.title")}
         </Text>
 
         <View style={{ backgroundColor: "#fff", borderRadius: 16, padding: 20 }}>
           <DetailRow label={t("demandDetail.initiator")} value={initiatorName} />
           <Divider />
           <DetailRow label={t("demandDetail.totalAmount")} value={`${item.totalAmount} ${currency}`} />
-         <DetailRow label={t("demandDetail.reason")} value={description} />
+           <Divider />
+          <DetailRow label={t("demandDetail.reason")} value={description} />
           <Divider />
-         <DetailRow label={t("demandDetail.date")} value={formattedDate} />
+          <DetailRow label={t("demandDetail.date")} value={formattedDate} />
           <Divider />
-        <DetailRow label={t("demandDetail.requiredAmount")} value={`${amount} ${currency}`} />
+          <DetailRow label={t("demandDetail.requiredAmount")} value={`${amount} ${currency}`} />
 
-          {/* Pay Button */}
-          <TouchableOpacity
-            style={{
-              backgroundColor: "#7ddd7d",
-              borderRadius: 25,
-              paddingVertical: 12,
-              alignItems: "center",
-              marginTop: 20,
-              marginBottom: 10,
-              flexDirection: "row",
-              justifyContent: "center",
-              opacity: isPaying ? 0.7 : 1,
-            }}
-            onPress={handlePay}
-            disabled={isPaying}
-          >
-            {isPaying ? (
-              <Loader color="#000" size="small" />
-            ) : (
-              <>
-                <Text style={{ fontWeight: "bold", color: "#000", marginRight: 6 }}>  {t("demandDetail.pay")}</Text>
-                <Ionicons name="card" size={20} color="#000" />
-              </>
-            )}
-          </TouchableOpacity>
+          {/* Conditional Action Buttons */}
+          {isActionAvailable && (
+            <>
+              {/* Pay Button */}
+              <TouchableOpacity
+                style={{
+                  backgroundColor: "#7ddd7d",
+                  borderRadius: 25,
+                  paddingVertical: 12,
+                  alignItems: "center",
+                  marginTop: 20,
+                  marginBottom: 10,
+                  flexDirection: "row",
+                  justifyContent: "center",
+                  opacity: isPaying ? 0.7 : 1,
+                }}
+                onPress={handlePay}
+                disabled={isPaying}
+              >
+                {isPaying ? (
+                  <Loader color="#000" size="small" />
+                ) : (
+                  <>
+                    <Text style={{ fontWeight: "bold", color: "#000", marginRight: 6 }}>
+                      {t("demandDetail.pay")}
+                    </Text>
+                    <Ionicons name="card" size={20} color="#000" />
+                  </>
+                )}
+              </TouchableOpacity>
 
-          {/* Decline Button */}
-          <TouchableOpacity
-            style={{
-              backgroundColor: "#ff4d4d",
-              borderRadius: 25,
-              paddingVertical: 12,
-              alignItems: "center",
-              flexDirection: "row",
-              justifyContent: "center",
-            }}
-            onPress={() => setModalVisible(true)}
-          >
-            <Text style={{ fontWeight: "bold", color: "#fff", marginRight: 6 }}>  {t("demandDetail.decline")}</Text>
-            <Ionicons name="trash" size={20} color="#fff" />
-          </TouchableOpacity>
+              {/* Decline Button */}
+              <TouchableOpacity
+                style={{
+                  backgroundColor: "#ff4d4d",
+                  borderRadius: 25,
+                  paddingVertical: 12,
+                  alignItems: "center",
+                  flexDirection: "row",
+                  justifyContent: "center",
+                }}
+                onPress={() => setModalVisible(true)}
+              >
+                <Text style={{ fontWeight: "bold", color: "#fff", marginRight: 6 }}>
+                  {t("demandDetail.decline")}
+                </Text>
+                <Ionicons name="trash" size={20} color="#fff" />
+              </TouchableOpacity>
+            </>
+          )}
         </View>
       </ScrollView>
 

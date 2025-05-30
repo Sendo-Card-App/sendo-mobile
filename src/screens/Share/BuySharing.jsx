@@ -24,19 +24,19 @@ export default function Historique({ navigation }) {
     data: sharedExpensesData,
     isLoading: expensesLoading,
   } = useGetSharedExpensesQuery(userId ? { userId } : skipToken);
-
+  //console.log(JSON.stringify(sharedExpensesData, null, 2));
   const sharedExpenses = sharedExpensesData?.data || [];
 
   const getStatusColor = (status) => {
     switch (status) {
       case "PENDING":
-        return "#FFA500"; // Orange
+        return "#FFA500";
       case "PAID":
-        return "#4CAF50"; // Green
+        return "#4CAF50";
       case "CANCELLED":
-        return "#F44336"; // Red
+        return "#F44336";
       default:
-        return "#9E9E9E"; // Grey
+        return "#9E9E9E";
     }
   };
 
@@ -57,11 +57,9 @@ export default function Historique({ navigation }) {
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color="black" />
         </TouchableOpacity>
-
         <Text style={{ fontSize: 18, fontWeight: "bold", color: "#000" }}>
           {t("his.title")}
         </Text>
-
         <TouchableOpacity onPress={() => navigation.openDrawer()}>
           <Ionicons name="menu-outline" size={24} color="black" />
         </TouchableOpacity>
@@ -122,7 +120,6 @@ export default function Historique({ navigation }) {
                       paddingVertical: 2,
                     }}
                   >
-                    {/* Current user's part */}
                     {item.participants.map((p) => {
                       if (p.userId === userId) {
                         return (
@@ -136,43 +133,31 @@ export default function Historique({ navigation }) {
                   </View>
                 </View>
 
-                {/* Status Display */}
+                
+                {/* Status Display (per participant) */}
                 <View style={{ marginTop: 5, marginBottom: 8 }}>
-                  <Text
-                    style={{
-                      color: "#000",
-                      fontSize: 13,
-                      fontWeight: "600",
-                      backgroundColor: getStatusColor(item.status),
-                      paddingHorizontal: 8,
-                      paddingVertical: 4,
-                      borderRadius: 5,
-                      alignSelf: "flex-start",
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    {t(`his.status.${item.status.toLowerCase()}`) || item.status}
-                  </Text>
-                </View>
-
-                {/* Participants */}
-                <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 6, marginTop: 4 }}>
-                  {item.participants.map((p, index) => (
-                    <View
-                      key={index}
-                      style={{
-                        backgroundColor: "#E0F7E9",
-                        paddingHorizontal: 8,
-                        paddingVertical: 4,
-                        borderRadius: 15,
-                        marginRight: 6,
-                        marginBottom: 6,
-                      }}
-                    >
-                      <Text style={{ fontSize: 12, color: "#333" }}>{p.user.firstname}</Text>
-                    </View>
+                  {item.participants
+                    .filter((p) => p.userId === userId)
+                    .map((p) => (
+                      <Text
+                        key={p.userId}
+                        style={{
+                          color: "#000",
+                          fontSize: 13,
+                          fontWeight: "600",
+                          backgroundColor: getStatusColor(p.paymentStatus),
+                          paddingHorizontal: 8,
+                          paddingVertical: 4,
+                          borderRadius: 5,
+                          alignSelf: "flex-start",
+                          textTransform: "uppercase",
+                        }}
+                      >
+                        {t(`his.status.${p.paymentStatus.toLowerCase()}`) || p.paymentStatus}
+                      </Text>
                   ))}
                 </View>
+
 
                 {/* Date */}
                 <View style={{ flexDirection: "row", justifyContent: "flex-end" }}>
@@ -181,9 +166,8 @@ export default function Historique({ navigation }) {
                   </Text>
                 </View>
 
-                {/* Pay Button - only if not CANCELLED */}
-               {item.status !== "CANCELLED" && item.status !== "COMPLETED" && (
-
+                {/* Pay Button */}
+                {item.status !== "CANCELLED" && item.status !== "COMPLETED" && (
                   <TouchableOpacity
                     onPress={() => navigation.navigate("DemandDetailScreen", { item })}
                     style={{

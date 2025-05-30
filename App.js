@@ -95,6 +95,16 @@ import BuySharing from "./src/screens/Share/BuySharing";
 import DetailScreen from "./src/screens/Share/DetailScreen";
 import DemandDetailScreen from "./src/screens/Share/DemandDetailScreen";
 
+//DEMANDE DE FONDS
+import WelcomeDemand from "./src/screens/Demand/WelcomeDemand";
+import CreateRequest from "./src/screens/Demand/CreateRequest";
+import AddRecipient from "./src/screens/Demand/AddRecipient";
+import DemandList from "./src/screens/Demand/DemandList";
+import ConfirmInformation from "./src/screens/Demand/ConfirmInformation";
+import RequestPay from "./src/screens/Demand/RequestPay";
+import SelectRecipients from "./src/screens/Demand/SelectRecipients";
+import DetailsList from "./src/screens/Demand/DetailsList";
+
 
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -376,7 +386,17 @@ function MainStack() {
       <Stack.Screen name="Historique" component={Historique} options={{ headerShown: false }} />
       <Stack.Screen name="BuySharing" component={BuySharing} options={{ headerShown: false }} />
       <Stack.Screen name="DetailScreen" component={DetailScreen } options={{ headerShown: false }} />
-       <Stack.Screen name="DemandDetailScreen" component={DemandDetailScreen } options={{ headerShown: false }} />
+      <Stack.Screen name="DemandDetailScreen" component={DemandDetailScreen } options={{ headerShown: false }} />
+      
+      <Stack.Screen name="AddRecipient" component={AddRecipient } options={{ headerShown: false }} />
+      <Stack.Screen name="CreateRequest" component={CreateRequest } options={{ headerShown: false }} />
+      <Stack.Screen name="DetailsList" component={DetailsList } options={{ headerShown: false }} />
+      <Stack.Screen name="RequestPay" component={RequestPay } options={{ headerShown: false }} />
+      <Stack.Screen name="SelectRecipients" component={SelectRecipients } options={{ headerShown: false }} />
+      <Stack.Screen name="WelcomeDemand" component={WelcomeDemand } options={{ headerShown: false }} />
+      <Stack.Screen name="DemandList" component={DemandList } options={{ headerShown: false }} />
+      <Stack.Screen name="ConfirmInformation" component={ConfirmInformation } options={{ headerShown: false }} />
+      
     </Stack.Navigator>
   );
 }

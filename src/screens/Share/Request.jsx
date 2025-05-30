@@ -100,7 +100,7 @@ const Request = ({ navigation }) => {
           <Ionicons name="menu-outline" size={24} color="white" />
         </TouchableOpacity>
       </View>
-
+       <View className="border border-dashed border-gray-300 " />
       {/* Stepper */}
       <View className="flex-row items-center justify-center px-4 my-4 space-x-2">
         <Text className="w-6 h-6 text-white text-center rounded-full bg-[#7ddd7d] leading-6">

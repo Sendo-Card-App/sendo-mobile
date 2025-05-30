@@ -10,6 +10,7 @@ import kycReducer from '../features/Kyc/kycReducer'; // Updated path (note capit
 import { configApi } from '../services/Config/configApi';
 import { transferApi } from '../services/Transfer/transferApi';
 import { chatApi } from '../services/Chat/ChatApi';
+import { fundRequestApi } from '../services/Fund/fundApi';
 import { sharedExpenseApi } from '../services/Shared/sharedExpenseApi';
 import { contactsApi } from '../services/Contact/contactsApi';
 import passcodeReducer from '../features/Auth/passcodeSlice';
@@ -30,6 +31,7 @@ export const store = configureStore({
     [chatApi.reducerPath]: chatApi.reducer,
     [transferApi.reducerPath]: transferApi.reducer,
     [sharedExpenseApi.reducerPath]: sharedExpenseApi.reducer,
+    [fundRequestApi.reducerPath]: fundRequestApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
@@ -43,5 +45,6 @@ export const store = configureStore({
       chatApi.middleware,
       transferApi.middleware,
       sharedExpenseApi.middleware,
+      fundRequestApi.middleware,
     ),
 });

@@ -236,38 +236,45 @@ const DrawerComponent = ({ navigation }) => {
   return (
     <SafeAreaView className="flex-1">
       {/* Header */}
-      <View style={{ backgroundColor: '#7ddd7d', padding: 10 }}>
-        {isLoading ? (
-          <View className="flex-row justify-between items-center py-4">
-            <Loader/>
-            <TouchableOpacity onPress={() => navigation.closeDrawer()}>
-              <AntDesign name="arrowleft" size={24} color="white" />
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <>
-            <View className="flex-row justify-between items-center mt-10">
-              <Text className="text-white font-bold text-xl">
-                {userProfile?.data?.firstname} {userProfile?.data?.lastname}
-              </Text>
-              <TouchableOpacity onPress={() => navigation.closeDrawer()}>
-                <AntDesign name="arrowleft" size={24} color="white" />
-              </TouchableOpacity>
-            </View>
-            <View className="mt-2 bg-gray-800 px-4 py-3 rounded-md flex-row justify-between items-center">
-              <View>
-                <Text className="text-white">{userProfile?.data?.email}</Text>
-                <Text className="text-white">{userProfile?.data?.phone}</Text>
-              </View>
-              {userProfile?.data?.isVerifiedEmail && (
-                <Text className="text-green-600 bg-green-100 px-2 py-1 rounded-full">
-                  ✅ Verified
-                </Text>
-              )}
-            </View>
-          </>
+     <View style={{ 
+  backgroundColor: '#7ddd7d', 
+  padding: 20, 
+  borderBottomLeftRadius: 30, 
+  borderBottomRightRadius: 30 
+}}>
+  {isLoading ? (
+    <View className="flex-row justify-between items-center py-4">
+      <Loader/>
+      <TouchableOpacity onPress={() => navigation.closeDrawer()}>
+        <AntDesign name="arrowleft" size={24} color="white" />
+      </TouchableOpacity>
+    </View>
+  ) : (
+    <>
+      <View className="flex-row justify-between items-center mt-10">
+        <Text className="text-white font-bold text-xl">
+          {userProfile?.data?.firstname} {userProfile?.data?.lastname}
+        </Text>
+        <TouchableOpacity onPress={() => navigation.closeDrawer()}>
+          <AntDesign name="arrowleft" size={24} color="white" />
+        </TouchableOpacity>
+      </View>
+
+      <View className="mt-2 bg-gray-800 px-4 py-3 rounded-md flex-row justify-between items-center">
+        <View>
+          <Text className="text-white">{userProfile?.data?.email}</Text>
+          <Text className="text-white">{userProfile?.data?.phone}</Text>
+        </View>
+        {userProfile?.data?.isVerifiedEmail && (
+          <Text className="text-green-600 bg-green-100 px-2 py-1 rounded-full">
+            ✅ Verified
+          </Text>
         )}
       </View>
+    </>
+  )}
+</View>
+
 
       {/* Body */}
       <View className="flex-1 mx-8">
@@ -345,19 +352,30 @@ const DrawerComponent = ({ navigation }) => {
               className="flex-row gap-2 my-2 mb-5"
               onPress={() => navigation2.navigate("WelcomeShare")}
             >
-              <Image
-                source={shareImage}
-                style={{
-                  width: Platform.OS === "ios" ? 32 : 24,
-                  height: Platform.OS === "ios" ? 32 : 24,
-                  resizeMode: "contain",
-                  color:"gray"
-                }}
+              <MaterialCommunityIcons
+                name="account-multiple-outline" // ou "chart-pie", "share-variant"
+                size={Platform.OS === "ios" ? 32 : 24}
+                color="gray"
               />
               <View>
                 <Text className="font-bold text-gray-500">{t("drawer.share")}</Text>
               </View>
             </TouchableOpacity>
+
+            <TouchableOpacity
+                className="flex-row gap-2 my-2 mb-5"
+                onPress={() => navigation2.navigate("WelcomeDemand")}
+              >
+                <MaterialCommunityIcons
+                  name="hand-coin-outline" // ou "cash-send"
+                  size={Platform.OS === "ios" ? 32 : 24}
+                  color="gray"
+                />
+                <View>
+                  <Text className="font-bold text-gray-500">{t("drawer.demand")}</Text>
+                </View>
+              </TouchableOpacity>
+
            <TouchableOpacity
                       className="flex-row gap-2 my-2 mb-5"
                       onPress={() => navigation2.navigate("VerifyIdentity")}
