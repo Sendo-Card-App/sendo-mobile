@@ -62,7 +62,7 @@ const SuccessSharing = () => {
 
         <View className="w-full px-4 pb-10">
           <TouchableOpacity
-             onPress={() => navigation.navigate("CreateShare")}
+             onPress={() => navigation.navigate("MainTabs")}
             className="bg-[#4CAF50] py-4 rounded-xl items-center justify-center shadow"
           >
             <Text className="text-white text-base font-semibold">

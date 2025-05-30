@@ -190,6 +190,7 @@
     "pay_bills": "Payer les factures",
     "account": "Compte",
     "share": "Partage Entre Amis",
+     "demand": "Demande de fond",
     "favorite": "Contact favori",
     "request": "KYC vérification",
     "sub": "Veuillez soumettre vos documents du KYC",
@@ -990,7 +991,7 @@
     "confirmButton": "Confirmer et envoyer"
   },
    "successSharing": {
-    "title": "Partage Réussi 🎉",
+    "title": "Réussi 🎉",
     "description": "Votre demande de partage a été effectuée avec succès.",
     "notify": "Vos amis seront notifiés.",
     "backButton": "Retour"
@@ -1003,7 +1004,7 @@
   "all": "Tous",
   "pending": "En attente",
   "complete": "Complétée",
-  "declined": "Refusée",
+  "cancelled": "Refusée",
   "startDate": "Date de début",
   "endDate": "Date de fin",
   "select": "Sélectionner",
@@ -1014,24 +1015,43 @@
   "noHistoryFound": "Aucun historique trouvé.",
    "statuses": {
       "pending": "En attente",
-      "complete": "Complété",
-      "declined": "Refusé"
+      "completed": "Complété",
+      "cancelled": "Refusé"
     }
   },
-  "his": {
-  "title": "Historique",
-  "filter": "Filtrer",
-  "loading": "Chargement...",
-  "no_data": "Aucune dépense partagée trouvée.",
-  "payer": "Payer",
-  "status": {
-    "pending": "En attente",
-    "paid": "Payé",
-    "cancelled": "Annulé",
-    "completed": "Complété"
-  }
-},
- "demandDetail": {
+       "detail": {
+   "totalAmount": "Montant total",
+  "description": "Motif",
+  "initiator": "Initiateur",
+  "limitDate": "Délai",
+  "recipients": "Destinataires",
+  "save": "Enregistrer",
+  "saving": "Enregistrement...",
+  "delete": "Supprimer",
+  "deleting": "Suppression...",
+  "editAmount": "Modifier le montant",
+  "confirm": "Confirmer",
+  "cancel": "Annuler",
+  "transactionNotFound": "Données de transaction introuvables.",
+  "deleteTransactionQuestion": "Supprimer cette transaction ?"
+  },
+   "his": {
+    "title": "Historique",
+    "filter": "Filtre",
+    "payer": "Payer",
+    "your_part": "Votre part",
+    "participants": "Participants",
+    "loading": "Chargement...",
+    "no_data": "Aucune dépense partagée trouvée.",
+    "date": "Date",
+      "status": {
+      "pending": "En attente",
+      "payed": "Payer",
+      "refused": "Refusé",
+       "late": "En retard"
+    }
+  },
+   "demandDetail": {
     "title": "Détails de la demande",
     "initiator": "Initiateur",
     "totalAmount": "Montant Total",
@@ -1044,8 +1064,47 @@
     "declinePlaceholder": "Entrez la raison ici...",
     "cancel": "Annuler",
     "confirm": "Confirmer"
+  },
+   "createRequest": {
+ "create_request": "Créez la demande",
+  "amount": "Montant",
+  "enter_amount_placeholder": "Entrez la somme....",
+  "description": "Description du service",
+  "description_placeholder": "Saisissez le texte......",
+  "deadline": "Délai",
+  "choose_date": "Choisir une date",
+  "next": "Suivant",
+  "error_title": "Informations manquantes",
+  "fill_all_fields": "Veuillez remplir tous les champs.",
+  "success_title": "Informations complètes",
+  "proceed_select_recipients": "Passage à la sélection des destinataires."
+  },
+   "selectRecipient": {
+   "choose_recipients": "Choisissez les bénéficiaires",
+  "add_manually": "Ajouter manuellement",
+  "search_contact": "Rechercher un contact...",
+  "no_recipients_selected": "Aucun bénéficiaire sélectionné",
+  "select_at_least_one": "Veuillez sélectionner au moins un bénéficiaire",
+  "error": "Erreur",
+  "something_went_wrong": "Une erreur s'est produite. Veuillez réessayer.",
+  "please_wait": "Veuillez patienter...",
+  "next": "Suivant"
+  },
+     "confirmDemand": {
+ "confirm_information": "Confirmer les informations",
+  "total_amount": "Montant total",
+  "service_description": "Description du service",
+  "deadline": "Date limite",
+  "recipients": "Bénéficiaires",
+  "no_recipients": "Aucun bénéficiaire sélectionné.",
+  "confirm": "Confirmer et continuer",
+  "success_title": "Succès",
+  "success_message": "Votre demande a été envoyée avec succès !",
+  "error_title": "Erreur",
+  "error_message": "Une erreur s'est produite. Veuillez réessayer."
   }
 
+  
 
     
     

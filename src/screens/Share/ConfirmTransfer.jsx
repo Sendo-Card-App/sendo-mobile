@@ -121,7 +121,7 @@ const ConfirmationScreen = () => {
           <Ionicons name="menu-outline" size={24} color="white" />
         </TouchableOpacity>
       </View>
-
+       <View className="border border-dashed border-gray-300 " />
       <Text className="text-xl font-bold text-center text-green-600 mb-3">
         {t("confirmation.title")}
       </Text>

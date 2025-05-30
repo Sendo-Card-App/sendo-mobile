@@ -192,6 +192,7 @@
 "pay_bills": "Pay Bills",
 "account": "Account",
  "share": "Share between friends",
+ "demand": "Demande de fond",
 "favorite": "Favorite contact",
  "request": "KYC verification",
     "sub": "Submit your KYC documents",
@@ -1002,7 +1003,7 @@
   "all": "All",
   "pending": "Pending",
   "complete": "Complete",
-  "declined": "Declined",
+  "cancelled": "Declined",
   "startDate": "Start Date",
   "endDate": "End Date",
   "select": "Select",
@@ -1013,21 +1014,41 @@
   "noHistoryFound": "No history found.",
    "statuses": {
       "pending": "Pending",
-      "complete": "Complete",
-      "declined": "Declined"
+      "completed": "Complete",
+      "cancelled": "Declined"
     }
   },
+     "detail": {
+   "totalAmount": "Total Amount",
+  "description": "Description",
+  "initiator": "Initiator",
+  "limitDate": "Limit Date",
+  "recipients": "Recipients",
+  "save": "Save Changes",
+  "saving": "Saving...",
+  "delete": "Delete",
+  "deleting": "Deleting...",
+  "editAmount": "Edit Amount",
+  "confirm": "Confirm",
+  "cancel": "Cancel",
+  "transactionNotFound": "Transaction data not found.",
+  "deleteTransactionQuestion": "Delete this transaction?"
+  },
   "his": {
-  "title": "History",
-  "filter": "Filter",
-  "loading": "Loading...",
-  "no_data": "No shared expenses found.",
-  "payer": "Pay",
-  "status": {
-    "pending": "Pending",
-    "paid": "Paid",
-    "cancelled": "Cancelled",
-     "completed": "Complete"
+    "title": "History",
+    "filter": "Filter",
+    "payer": "Pay",
+    "your_part": "Your part",
+    "participants": "Participants",
+    "loading": "Loading...",
+    "no_data": "No shared expenses found.",
+    "date": "Date",
+    "status": {
+      "pending": "Pending",
+      "payed": "Payed",
+      "refused": "Refused",
+       "late": "Late"
+    }
   },
    "demandDetail": {
     "title": "Request Details",
@@ -1042,6 +1063,47 @@
     "declinePlaceholder": "Enter reason here...",
     "cancel": "Cancel",
     "confirm": "Confirm"
+  },
+   "createRequest": {
+  "create_request": "Create Request",
+  "amount": "Amount",
+  "enter_amount_placeholder": "Enter the amount...",
+  "description": "Service Description",
+  "description_placeholder": "Type your message...",
+  "deadline": "Deadline",
+  "choose_date": "Choose a date",
+  "next": "Next",
+  "error_title": "Missing Information",
+  "fill_all_fields": "Please fill in all fields before proceeding.",
+  "success_title": "Info Complete",
+  "proceed_select_recipients": "Proceeding to select recipients."
+  },
+   "selectRecipient": {
+   "choose_recipients": "Choose Recipients",
+  "add_manually": "Add Manually",
+  "search_contact": "Search contact...",
+  "no_recipients_selected": "No recipients selected",
+  "select_at_least_one": "Please select at least one recipient",
+  "error": "Error",
+  "something_went_wrong": "Something went wrong. Please try again.",
+  "please_wait": "Please wait...",
+  "next": "Next"
+  },
+    "confirmDemand": {
+  "confirm_information": "Confirm Information",
+  "total_amount": "Total Amount",
+  "service_description": "Service Description",
+  "deadline": "Deadline",
+  "recipients": "Recipients",
+  "no_recipients": "No recipients selected.",
+  "confirm": "Confirm",
+  "success_title": "Success",
+  "success_message": "Your request has been sent successfully!",
+  "error_title": "Error",
+  "error_message": "Something went wrong. Please try again."
+  }
+
+  
   }
 
 
@@ -1061,4 +1123,4 @@
   
 
 
-}
+

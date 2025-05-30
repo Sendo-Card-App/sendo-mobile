@@ -39,7 +39,7 @@ const HistoryScreen = () => {
     isLoading,
     isError,
   } = useGetSharedExpensesQuery({ userId, page: 1, limit: 100 });
-
+console.log(JSON.stringify(sharedData, null, 2));
   const transactions = sharedData?.data || [];
 
   const handleTransactionPress = (transaction) => {
