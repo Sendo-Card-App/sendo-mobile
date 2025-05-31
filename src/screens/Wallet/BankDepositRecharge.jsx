@@ -4,9 +4,9 @@ import * as DocumentPicker from 'expo-document-picker';
 import { useTranslation } from 'react-i18next';
 import Toast from 'react-native-toast-message';
 import Loader from "../../components/Loader";
-import { useRechargeWalletMutation } from '../../services/WalletApi/walletApi';
-import PinVerificationModal from '../../components/PinVerificationModal';
-import { useVerifyPasscodeMutation } from '../../services/Auth/authAPI';
+import { useBankrechargeMutation
+ } from '../../services/WalletApi/walletApi';
+
 
 const BankDepositRecharge = ({ navigation }) => {
   const [amount, setAmount] = useState('');
@@ -14,8 +14,8 @@ const BankDepositRecharge = ({ navigation }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPinModal, setShowPinModal] = useState(false);
   const { t } = useTranslation();
-  const [rechargeWallet] = useRechargeWalletMutation();
-  const [verifyPasscode] = useVerifyPasscodeMutation();
+  const [bankRecharge] = useBankrechargeMutation();
+
 
   const handleDocumentPick = async () => {
     try {
@@ -37,54 +37,51 @@ const BankDepositRecharge = ({ navigation }) => {
     }
   };
 
-  const handleSubmit = () => {
-    if (!amount || !file) {
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: 'Please enter amount and upload a file'
-      });
-      return;
-    }
-    setShowPinModal(true);
-  };
+const handleSubmit = async () => {
+  if (!amount || !file) {
+    Toast.show({
+      type: 'error',
+      text1: 'Error',
+      text2: 'Please enter amount and upload a file',
+    });
+    return;
+  }
 
-  const handlePinVerified = async (pin) => {
-    try {
-      const verification = await verifyPasscode(pin).unwrap();
-      if (!verification) throw new Error('Invalid PIN');
+  setIsSubmitting(true); // Ajoute ça pour indiquer le chargement si besoin
 
-      setIsSubmitting(true);
-      setShowPinModal(false);
+  try {
+    const formData = new FormData();
+    formData.append('method', 'BANK_TRANSFER');
+    formData.append('amount', amount);
+    // Suppression du champ PIN
+    formData.append('bankFile', {
+      uri: file.uri,
+      name: file.name || 'upload.pdf',
+      type: file.mimeType || 'application/octet-stream',
+    });
 
-      const formData = new FormData();
-      formData.append('amount', amount);
-      formData.append('pin', pin);
-      formData.append('file', {
-        uri: file.uri,
-        name: file.name || 'upload.pdf',
-        type: file.mimeType || 'application/octet-stream'
-      });
+    const response = await bankRecharge(formData).unwrap();
 
-      const response = await rechargeWallet(formData).unwrap();
+    Toast.show({
+      type: 'success',
+      text1: 'Succès',
+      text2: 'Virement bancaire envoyé avec succès.',
+    });
+    navigation.goBack();
+  } catch (error) {
+    console.error(error);
+    const message = error?.data?.message || 'Échec de la transaction';
+    Toast.show({
+      type: 'error',
+      text1: 'Erreur',
+      text2: message,
+    });
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
-      Toast.show({
-        type: 'success',
-        text1: 'Success',
-        text2: 'Recharge completed'
-      });
-      navigation.goBack();
-    } catch (error) {
-      const message = error?.data?.message || 'Transaction failed';
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: message
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+
 
   return (
     <ScrollView contentContainerStyle={{ flexGrow: 1, padding: 20, backgroundColor: '#fff' }}>
@@ -128,14 +125,6 @@ const BankDepositRecharge = ({ navigation }) => {
       >
         {isSubmitting ? <Loader color="white" /> : <Text style={{ color: 'white', fontSize: 16, fontWeight: 'bold' }}>{t('bank_deposit.submit')}</Text>}
       </TouchableOpacity>
-
-      <PinVerificationModal
-        visible={showPinModal}
-        onClose={() => setShowPinModal(false)}
-        onVerify={handlePinVerified}
-        title="Confirm Transaction"
-        subtitle="Enter your PIN to confirm the bank deposit"
-      />
     </ScrollView>
   );
 };

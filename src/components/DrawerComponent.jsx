@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
+import { useFocusEffect } from '@react-navigation/native';
 import {
   View,
   Text,
@@ -51,7 +52,12 @@ const DrawerComponent = ({ navigation }) => {
 
   const [logout, { isLoading: isLoggingOut }] = useLogoutMutation();
   const isLoading = isProfileLoading || isProfileFetching;
-
+   
+   useFocusEffect(
+      useCallback(() => {
+        refetchProfile(); // force une requête au backend
+      }, [])
+    );
   // Load stored auth data once on mount
   useEffect(() => {
     const loadAuthData = async () => {

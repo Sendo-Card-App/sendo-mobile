@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import { View, Text, TouchableOpacity, Image, ScrollView } from 'react-native';
 import { CheckBox } from 'react-native-elements';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -36,7 +37,7 @@ const NiuRequest = () => {
     });
   };
 
-  const { data: userProfile, isLoading: isProfileLoading } = useGetUserProfileQuery();
+  const { data: userProfile, isLoading: isProfileLoading, refetch } = useGetUserProfileQuery();
   const userId = userProfile?.data.id;
   const [niuRequest, { isLoading: isSubmitting }] = useNiuResquestMutation();
 
@@ -54,7 +55,11 @@ const NiuRequest = () => {
   } = useGetConfigQuery();
   const niuConfig = configData?.data?.find(item => item.id === 12);
   const feeAmount = niuConfig?.value || 3000;
-   
+     useFocusEffect(
+      useCallback(() => {
+        refetch(); // force une requête au backend
+      }, [])
+    );
   useEffect(() => {
     if (configError) {
       console.error('Config fetch error:', configError);
