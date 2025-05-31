@@ -54,7 +54,9 @@ const ConfirmeTheTransfer = () => {
       ? mtn
       : null;
 
+
 const handleConfirmPress = () => {
+
   navigation.navigate('Auth', {
     screen: 'PinCode',
     params: {

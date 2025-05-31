@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect , useCallback} from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import { StatusBar, Platform, View, Text, TouchableOpacity, Image, SafeAreaView, Alert } from 'react-native';
 import { useCreatePasscodeMutation } from '../../services/Auth/authAPI';
 import { useSelector, useDispatch } from 'react-redux';
@@ -33,7 +34,8 @@ const PinCode = ({ navigation, route }) => {
   const { 
     data: userProfile, 
     isLoading: isProfileLoading, 
-    error: profileError 
+    error: profileError,
+    refetch 
   } = useGetUserProfileQuery();
   
   const isNewUser = useSelector((state) => state.auth.isNewUser);
@@ -61,7 +63,11 @@ const PinCode = ({ navigation, route }) => {
       topOffset: 30,
     });
   };
-
+    useFocusEffect(
+         useCallback(() => {
+           refetch(); // force une requête au backend
+         }, [])
+       );
    useEffect(() => {
       const loadAuthData = async () => {
         const data = await getData('@authData');

@@ -57,7 +57,7 @@ const SuccessSharing = () => {
         )}
 
         <Text className="text-sm text-center text-[#888] mb-10">
-          {t("successSharing.note")}
+          {t("successSharing.notify")}
         </Text>
 
         <View className="w-full px-4 pb-10">

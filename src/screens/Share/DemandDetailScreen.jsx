@@ -18,6 +18,8 @@ import {
   useCancelSharedExpenseMutation,
   usePaySharedExpenseMutation,
 } from "../../services/Shared/sharedExpenseApi";
+import { useGetBalanceQuery } from '../../services/WalletApi/walletApi';
+import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
 import Toast from "react-native-toast-message";
 import { useTranslation } from "react-i18next";
 import Loader from "../../components/Loader";
@@ -27,10 +29,19 @@ const DemandDetailScreen = () => {
   const { t } = useTranslation();
   const route = useRoute();
   const { item } = route.params;
-
+   console.log(item)
   const [modalVisible, setModalVisible] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
+   const { data: userProfile, isLoading: isProfileLoading } = useGetUserProfileQuery();
+    const userId = userProfile?.data.id;
 
+   const { 
+      data: balanceData, 
+      error: balanceError,
+      isLoading: isBalanceLoading
+    } = useGetBalanceQuery(userId, { skip: !userId });
+    const balance = balanceData?.balance || 0;
+  console.log(balanceData)
   const [cancelSharedExpense, { isLoading: isCancelLoading }] = useCancelSharedExpenseMutation();
   const [paySharedExpense, { isLoading: isPaying }] = usePaySharedExpenseMutation();
 
@@ -45,17 +56,24 @@ const DemandDetailScreen = () => {
   };
 
   const handlePay = async () => {
-    try {
-      await paySharedExpense({ expenseId: item.id }).unwrap();
-      navigation.navigate("SuccessSharing", {
+  // Vérifie que le solde est suffisant
+  const requiredAmount = parseFloat(amount);
+  if (balance < requiredAmount) {
+    showToast("Solde insuffisant pour effectuer ce paiement.", "error");
+    return;
+  }
+
+  try {
+    await paySharedExpense({ expenseId: item.id }).unwrap();
+    navigation.navigate("SuccessSharing", {
       transactionDetails: "Paiement effectué avec succès.",
     });
+  } catch (error) {
+    console.log("Pay error:", error);
+    showToast("Erreur lors du paiement.", "error");
+  }
+};
 
-    } catch (error) {
-      console.log("Pay error:", error);
-      showToast("Erreur lors du paiement.", "error");
-    }
-  };
 
   const handleDecline = async () => {
     if (!cancelReason.trim()) {
@@ -90,7 +108,7 @@ const DemandDetailScreen = () => {
   const description = item.description ?? "N/A";
   const formattedDate = new Date(item.createdAt).toLocaleDateString("fr-FR");
 
-  const isActionAvailable = ["PENDING", "IN_PROGRESS"].includes(item.paymentStatus);
+  const isActionAvailable = ["PAYED"].includes(item.initiatorPart.status);
 
   return (
     <View style={{ flex: 1, backgroundColor: "#0e1316" }}>
@@ -158,8 +176,7 @@ const DemandDetailScreen = () => {
           <DetailRow label={t("demandDetail.requiredAmount")} value={`${amount} ${currency}`} />
 
           {/* Conditional Action Buttons */}
-          {isActionAvailable && (
-            <>
+         
               {/* Pay Button */}
               <TouchableOpacity
                 style={{
@@ -205,8 +222,7 @@ const DemandDetailScreen = () => {
                 </Text>
                 <Ionicons name="trash" size={20} color="#fff" />
               </TouchableOpacity>
-            </>
-          )}
+            
         </View>
       </ScrollView>
 

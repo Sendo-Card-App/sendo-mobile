@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -16,40 +16,63 @@ import Loader from "../../components/Loader";
 
 const ConfirmInformation = ({ navigation, route }) => {
   const { t } = useTranslation();
-  const { amount, description, deadline, recipients } = route.params || {};
+  const initialParams = route.params || {};
+
+  const [amount, setAmount] = useState(initialParams.amount);
+  const [description, setDescription] = useState(initialParams.description);
+  const [deadline, setDeadline] = useState(initialParams.deadline);
+  const [recipients, setRecipients] = useState(initialParams.recipients || []);
+
   const [createFundRequest, { isLoading }] = useCreateFundRequestMutation();
 
+  useEffect(() => {
+    if (route.params?.editedField && route.params?.value !== undefined) {
+      switch (route.params.editedField) {
+        case "amount":
+          setAmount(route.params.value);
+          break;
+        case "description":
+          setDescription(route.params.value);
+          break;
+        case "deadline":
+          setDeadline(route.params.value);
+          break;
+        case "recipients":
+          setRecipients(route.params.value);
+          break;
+      }
+      navigation.setParams({ editedField: undefined, value: undefined });
+    }
+  }, [route.params]);
+
   const handleSubmit = async () => {
-  try {
-    const payload = {
-      amount: parseFloat(amount),
-      description,
-      deadline,
-      recipients: recipients.map(r => ({
-        matriculeWallet: r.matriculeWallet,
-      })),
-    };
+    try {
+      const payload = {
+        amount: parseFloat(amount),
+        description,
+        deadline,
+        recipients: recipients.map((r) => ({
+          matriculeWallet: r.matriculeWallet,
+        })),
+      };
 
-    await createFundRequest(payload).unwrap();
+      await createFundRequest(payload).unwrap();
 
-
-    navigation.navigate("SuccessSharing", {
-      transactionDetails: "Votre demande de fond a été créée avec succès.",
-    });
-  } catch (error) {
-    Toast.show({
-      type: "error",
-      text1: t("confirmDemand.error_title"),
-      text2: error?.data?.message || t("confirmDemand.error_message"),
-    });
-  }
-};
+      navigation.navigate("SuccessSharing", {
+        transactionDetails: "Votre demande de fond a été créée avec succès.",
+      });
+    } catch (error) {
+      Toast.show({
+        type: "error",
+        text1: t("confirmDemand.error_title"),
+        text2: error?.data?.message || t("confirmDemand.error_message"),
+      });
+    }
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: "#151c1f" }}>
       <StatusBar style="light" />
-
-      {/* Header */}
       <View
         style={{
           height: 100,
@@ -71,7 +94,6 @@ const ConfirmInformation = ({ navigation, route }) => {
         </TouchableOpacity>
       </View>
 
-      {/* Logo */}
       <View
         style={{
           position: "absolute",
@@ -88,65 +110,116 @@ const ConfirmInformation = ({ navigation, route }) => {
         />
       </View>
        <View className="border border-dashed border-gray-300" />
-      {/* Content */}
-      <ScrollView
-        contentContainerStyle={{
-          padding: 20,
-          marginTop: 80,
-          backgroundColor: "#fff",
-          borderRadius: 20,
-          marginHorizontal: 20,
-        }}
-      >
-        <Text
+      <Text
           style={{
             fontSize: 22,
             fontWeight: "bold",
-            marginBottom: 20,
-            color: "#151c1f",
+            marginBottom: 2,
+            marginTop:20,
+            color: "#7ddd7d",
           }}
         >
           {t("confirmDemand.confirm_information")}
         </Text>
 
+      <ScrollView
+        contentContainerStyle={{
+          padding: 20,
+          marginTop: 20,
+          backgroundColor: "#fff",
+          borderRadius: 20,
+          marginHorizontal: 20,
+        }}
+      >
         {/* Amount */}
-        <View style={{ marginBottom: 16 }}>
-          <Text style={{ fontWeight: "bold", marginBottom: 4 }}>
-            {t("confirmDemand.total_amount")}
-          </Text>
-          <Text>{amount ? `${amount} XAF` : "N/A"}</Text>
+        <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 16 }}>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontWeight: "bold", marginBottom: 4 }}>
+              {t("confirmDemand.total_amount")}
+            </Text>
+            <Text style={{ fontWeight: "bold", color: "green" }}>
+              {amount ? `${amount} XAF` : "N/A"}
+            </Text>
+          </View>
+          <TouchableOpacity
+            onPress={() =>
+              navigation.navigate("EditFundFieldScreen", {
+                field: "amount",
+                value: amount,
+              })
+            }
+          >
+            <Ionicons name="create-outline" size={20} color="gray" />
+          </TouchableOpacity>
         </View>
 
         {/* Description */}
-        <View style={{ marginBottom: 16 }}>
-          <Text style={{ fontWeight: "bold", marginBottom: 4 }}>
-            {t("confirmDemand.service_description")}
-          </Text>
-          <Text>{description || "N/A"}</Text>
+        <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 16 }}>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontWeight: "bold", marginBottom: 4 }}>
+              {t("confirmDemand.service_description")}
+            </Text>
+            <Text>{description || "N/A"}</Text>
+          </View>
+          <TouchableOpacity
+            onPress={() =>
+              navigation.navigate("EditFundField", {
+                field: "description",
+                value: description,
+              })
+            }
+          >
+            <Ionicons name="create-outline" size={20} color="gray" />
+          </TouchableOpacity>
         </View>
 
         {/* Deadline */}
-        <View style={{ marginBottom: 16 }}>
-          <Text style={{ fontWeight: "bold", marginBottom: 4 }}>
-            {t("confirmDemand.deadline")}
-          </Text>
-          <Text>{deadline || "N/A"}</Text>
+        <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 16 }}>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontWeight: "bold", marginBottom: 4 }}>
+              {t("confirmDemand.deadline")}
+            </Text>
+            <Text>{deadline || "N/A"}</Text>
+          </View>
+          <TouchableOpacity
+            onPress={() =>
+              navigation.navigate("EditFundField", {
+                field: "deadline",
+                value: deadline,
+              })
+            }
+          >
+            <Ionicons name="create-outline" size={20} color="gray" />
+          </TouchableOpacity>
         </View>
+         <Divider />
 
         {/* Recipients */}
-        <View style={{ marginBottom: 16 }}>
-          <Text style={{ fontWeight: "bold", marginBottom: 4 }}>
-            {t("confirmDemand.recipients")}
-          </Text>
-          {recipients && recipients.length > 0 ? (
-            recipients.map((recipient, index) => (
-              <Text key={index}>
-                - {recipient.name} ({recipient.matriculeWallet || "N/A"})
-              </Text>
-            ))
-          ) : (
-            <Text>{t("confirmDemand.no_recipients")}</Text>
-          )}
+        <View style={{ flexDirection: "row", alignItems: "flex-start", marginBottom: 16 }}>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontWeight: "bold", marginBottom: 4 }}>
+              {t("confirmDemand.recipients")}
+            </Text>
+            {recipients && recipients.length > 0 ? (
+              recipients.map((recipient, index) => (
+                <Text key={index}>
+                  {recipient.name} 
+                </Text>
+              ))
+            ) : (
+              <Text>{t("confirmDemand.no_recipients")}</Text>
+            )}
+          </View>
+          <TouchableOpacity
+            onPress={() =>
+              navigation.navigate("SelectRecipients", {
+                fromConfirmScreen: true,
+                currentRecipients: recipients,
+              })
+            }
+          >
+            <Ionicons name="create-outline" size={20} color="gray" />
+          </TouchableOpacity>
         </View>
 
         {/* Confirm Button */}
@@ -161,19 +234,22 @@ const ConfirmInformation = ({ navigation, route }) => {
           }}
         >
           {isLoading ? (
-                        <Loader color="green" />
-                      ) : (
-          <Text style={{ color: "#000", fontWeight: "bold" }}>
-            {t("confirmDemand.confirm")}
-          </Text>
-                      )}
+            <Loader color="green" />
+          ) : (
+            <Text style={{ color: "#000", fontWeight: "bold" }}>
+              {t("confirmDemand.confirm")}
+            </Text>
+          )}
         </TouchableOpacity>
       </ScrollView>
 
-      {/* Toast */}
       <Toast />
     </View>
   );
 };
 
+
+const Divider = () => (
+  <View style={{ borderBottomWidth: 1, borderColor: "#ccc", marginBottom: 12 }} />
+);
 export default ConfirmInformation;

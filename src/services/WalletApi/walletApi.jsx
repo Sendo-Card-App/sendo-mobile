@@ -27,37 +27,30 @@ export const walletApi = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl: process.env.EXPO_PUBLIC_API_URL,
     prepareHeaders: (headers, { getState, endpoint }) => {
-      const { accessToken } = getState().auth;
-      const { passcode } = getState().passcode
-      console.log('Current endpoint:', endpoint); // Debug which endpoint is being called
-      console.log('Passcode available:', passcode);
-      // Set default headers
-      headers.set('Accept', 'application/json');
-      headers.set('Content-Type', 'application/json');
-      
-      if (accessToken) {
-        headers.set('Authorization', `Bearer ${accessToken}`);
-      }
+  const { accessToken } = getState().auth;
+  const { passcode } = getState().passcode;
 
-      if (passcode) {
-        headers.set('X-Passcode', passcode);
-      }
+  headers.set('Accept', 'application/json');
+  headers.set('Content-Type', 'application/json');
 
-      // Check if endpoint requires passcode
-      /*const requiresPasscode = PASSCODE_REQUIRED_ENDPOINTS.some(path => 
-        endpoint.startsWith(path)
-      );
+  if (accessToken) {
+    headers.set('Authorization', `Bearer ${accessToken}`);
+  }
 
-      if (requiresPasscode) {
-        if (!passcode) {
-          console.error('Passcode required but not available for endpoint:', endpoint);
-        } else {
-          headers.set('X-Passcode', passcode);
-        }
-      }*/
+  // ✅ Only add passcode for getBalance or other specific endpoints
+  const passcodeRequiredEndpoints = ['getBalance', 'rechargeWallet', 'transferFunds', 'withdrawalWallet', 'simulatePayment', 'initTransfer', 'bankrecharge'];
 
-      return headers;
-    },
+  if (passcodeRequiredEndpoints.includes(endpoint)) {
+    if (passcode) {
+      headers.set('X-Passcode', passcode);
+    } else {
+      console.warn(`Passcode required but missing for endpoint: ${endpoint}`);
+    }
+  }
+
+  return headers;
+},
+
   }),
   tagTypes: Object.values(TAG_TYPES),
   endpoints: (builder) => ({
@@ -139,6 +132,15 @@ export const walletApi = createApi({
       }),
       providesTags: [TAG_TYPES.WALLET],
     }),
+    bankrecharge: builder.mutation({
+      query: (formData) => ({
+        url: '/wallet/recharge',
+        method: 'POST',
+        body: formData,
+      }),
+      providesTags: [TAG_TYPES.WALLET],
+    }),
+
 
      getTransfers: builder.query({
       query: () => '/transfer-money/list',
@@ -170,6 +172,7 @@ export const walletApi = createApi({
 
 export const {
   useGetBalanceQuery,
+ useBankrechargeMutation,
   useRechargeWalletMutation,
   useWithdrawalWalletMutation,
   useTransferFundsMutation,
