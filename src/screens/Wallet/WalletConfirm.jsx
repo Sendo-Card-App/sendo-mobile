@@ -2,8 +2,8 @@ import { View, Text, Image, TouchableOpacity } from "react-native";
 import React from "react";
 import { Ionicons,AntDesign } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
-import TopLogo from "../../images/TopLogo.png";
-//import InfoIcon from "../../images/InfoIcon.png"; // Your green info icon
+import TopLogo from "../../Images/TopLogo.png";
+//import InfoIcon from "../../Images/InfoIcon.png"; // Your green info icon
 import { useTranslation } from 'react-i18next';
 
 const walletConfirm = ({ navigation }) => {

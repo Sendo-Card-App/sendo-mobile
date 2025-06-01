@@ -289,11 +289,11 @@ const handleComplete = async (enteredPin) => {
   // Get appropriate biometric icon
   const getBiometricIcon = () => {
     if (biometricType === 'face') {
-      return require('../../images/face-id.png');
+      return require('../../Images/face-id.png');
     } else if (biometricType === 'fingerprint') {
-      return require('../../images/fingerprint.png');
+      return require('../../Images/fingerprint.png');
     }
-    return require('../../images/fingerprint.png'); // Default
+    return require('../../Images/fingerprint.png'); // Default
   };
 
   const keypad = [
@@ -324,7 +324,7 @@ const handleComplete = async (enteredPin) => {
       <View style={{ padding: 20, flex: 1, justifyContent: 'space-between' }}>
         <View style={{ alignItems: 'center' }}>           
           <Image
-            source={require('../../images/LogoSendo.png')}
+            source={require('../../Images/LogoSendo.png')}
             style={{
               width: 100,
               height: 100,

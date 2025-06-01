@@ -1,4 +1,4 @@
-// src/screens/ChatScreen.tsx
+// src/Screens/ChatScreen.tsx
 import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
@@ -152,7 +152,7 @@ const ChatScreen = ({ route, navigation }) => {
       
       {item.attachments?.map((attachment, index) => (
         <View key={index} style={styles.attachmentContainer}>
-          {attachment.includes('/images/') ? (
+          {attachment.includes('/Images/') ? (
             <Image 
               source={{ uri: attachment }} 
               style={styles.imageAttachment}

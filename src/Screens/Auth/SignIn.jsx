@@ -230,7 +230,7 @@ const SignIn = () => {
         </TouchableOpacity>
 
         <Image
-          source={require("../../images/LogoSendo.png")}
+          source={require("../../Images/LogoSendo.png")}
           className="mt-3 mb-3 w-28 h-28"
         />
 

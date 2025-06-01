@@ -14,8 +14,8 @@ import { useTranslation } from "react-i18next";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { StatusBar } from "expo-status-bar";
 
-import button from "../../images/ButtomLogo.png";
-import HomeImage from "../../images/HomeImage2.png";
+import button from "../../Images/ButtomLogo.png";
+import HomeImage from "../../Images/HomeImage2.png";
 
 const Address = () => {
   const route = useRoute();

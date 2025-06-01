@@ -17,12 +17,12 @@ import { useTranslation } from 'react-i18next';
 import { useGetConfigQuery } from '../../services/Config/configApi';
 import Loader from '../../components/Loader';
 
-import HomeImage from '../../images/HomeImage2.png';
-import button from '../../images/ButtomLogo.png';
-import ArrowGoRound from '../../images/ArrowGoRound.png';
-import person from '../../images/person.png';
-import mtn from '../../images/mtn.png';
-import om from '../../images/om.png';
+import HomeImage from '../../Images/HomeImage2.png';
+import button from '../../Images/ButtomLogo.png';
+import ArrowGoRound from '../../Images/ArrowGoRound.png';
+import person from '../../Images/person.png';
+import mtn from '../../Images/mtn.png';
+import om from '../../Images/om.png';
 
 const Curency = () => {
   const navigation = useNavigation();

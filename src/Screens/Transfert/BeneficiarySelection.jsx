@@ -18,8 +18,8 @@ import { useTranslation } from 'react-i18next';
 import Toast from 'react-native-toast-message';
 import Loader from '../../components/Loader';
 import SkeletonLoader from "../../components/SkeletonLoader";
-import HomeImage from "../../images/HomeImage2.png";
-import button from "../../images/ButtomLogo.png";
+import HomeImage from "../../Images/HomeImage2.png";
+import button from "../../Images/ButtomLogo.png";
 import {  Feather as MaterialIcons } from '@expo/vector-icons';
 import {
   useGetFavoritesQuery

@@ -63,7 +63,7 @@ const GuestLogin = ({ navigation }) => {
         paddingHorizontal: 30 
       }}>
         <Image
-          source={require('../../images/LogoSendo.png')}
+          source={require('../../Images/LogoSendo.png')}
           style={{ 
             width: 100, 
             height: 100, 

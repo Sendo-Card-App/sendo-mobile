@@ -10,7 +10,7 @@ import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
 import { useNiuResquestMutation, useGetUserRequestsQuery } from "../../services/Kyc/kycApi";
 import { useGetConfigQuery } from '../../services/Config/configApi';
 import Toast from 'react-native-toast-message';
-import TopLogo from '../../images/TopLogo.png';
+import TopLogo from '../../Images/TopLogo.png';
 import Loader from "../../components/Loader";
 import PaymentConfirmationModal from '../../components/PaymentConfirmationModal';
 

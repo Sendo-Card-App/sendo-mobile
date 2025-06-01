@@ -11,7 +11,7 @@ import {
   Dimensions
 } from "react-native";
 import React, { useState, useEffect } from "react";
-import OrangeMoney from "../../images/om.png";
+import OrangeMoney from "../../Images/om.png";
 import { useNavigation } from "@react-navigation/native";
 import SkeletonLoader from '../../components/SkeletonLoader';
 import { useGetTransactionHistoryQuery } from "../../services/WalletApi/walletApi";
@@ -51,11 +51,11 @@ const HistoryCard = ({ transaction, user, onPress }) => {
     switch(transaction.method?.toUpperCase()) {
       case 'MOBILE_MONEY':
         return transaction.provider?.includes('Orange') ? 
-          OrangeMoney : require('../../images/mtn.png');
+          OrangeMoney : require('../../Images/mtn.png');
       case 'BANK_TRANSFER':
-        return require('../../images/RoyalBank.png');
+        return require('../../Images/RoyalBank.png');
       default:
-        return require('../../images/transaction.png');
+        return require('../../Images/transaction.png');
     }
   };
 
