@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { useUpdateFundRequestStatusMutation } from '../../services/Fund/fundApi';
+import { useUpdateFundRequestStatusMutation, useDeleteFundRequestMutation  } from '../../services/Fund/fundApi';
 import { useGetUserProfileQuery } from '../../services/Auth/authAPI';
 import Loader from '../../components/Loader';
 const TopLogo = require('../../images/TopLogo.png');
@@ -18,11 +18,12 @@ const DetailsList = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { demand } = route.params;
-
+ //console.log(JSON.stringify(demand, null, 2));
   const { data: userProfile } = useGetUserProfileQuery();
   const currentUserId = userProfile?.data?.id;
 
   const [updateStatus, { isLoading }] = useUpdateFundRequestStatusMutation();
+  const [deleteRequest, { isLoading: isDeleting }] = useDeleteFundRequestMutation();
 
   const getStatusLabel = (status) => {
     switch (status) {
@@ -49,7 +50,7 @@ const DetailsList = () => {
           text: 'Oui',
           onPress: async () => {
             try {
-              await updateStatus({ id: demand.id, status: 'CANCELLED' }).unwrap();
+              await updateStatus({ fundRequestId: demand.id, status: 'CANCELLED' }).unwrap();
               Alert.alert('Succès', 'La demande a été annulée.');
               navigation.goBack();
             } catch (error) {
@@ -61,6 +62,31 @@ const DetailsList = () => {
       ]
     );
   };
+
+  const handleDeleteRequest = () => {
+  Alert.alert(
+    'Confirmation',
+    'Voulez-vous vraiment supprimer cette demande ? Cette action est irréversible.',
+    [
+      { text: 'Annuler', style: 'cancel' },
+      {
+        text: 'Supprimer',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await deleteRequest({fundRequestId:demand.id}).unwrap();
+            Alert.alert('Succès', 'La demande a été supprimée.');
+            navigation.goBack();
+          } catch (error) {
+            console.error(error);
+            Alert.alert('Erreur', "Une erreur s'est produite lors de la suppression.");
+          }
+        },
+      },
+    ]
+  );
+};
+
 
   return (
     <ScrollView
@@ -99,7 +125,7 @@ const DetailsList = () => {
           alignItems: 'center',
         }}
       >
-        <Image source={TopLogo} style={{ height: 120, width: 160 }} resizeMode="contain" />
+        <Image source={TopLogo} style={{ height: 100, width: 120 }} resizeMode="contain" />
       </View>
 
       <View className="border border-dashed border-gray-300 mb-10" />
@@ -184,29 +210,53 @@ const DetailsList = () => {
           </View>
         ))}
 
-        {/* Cancel Button */}
-        {demand.status === 'PENDING' && demand.userId === currentUserId && (
-          <TouchableOpacity
-            onPress={handleCancelRequest}
-            disabled={isLoading}
-            style={{
-              marginTop: 20,
-              backgroundColor: '#DC2626',
-              padding: 12,
-              borderRadius: 8,
-              alignItems: 'center',
-              flexDirection: 'row',
-              justifyContent: 'center',
-            }}
-          >
-            {isLoading ? (
-              <Loader color="#fff" />
-            ) : (
-              <Text style={{ color: '#fff', fontWeight: 'bold' }}>Annuler la demande</Text>
-            )}
-          </TouchableOpacity>
+       {demand.status === 'PENDING' && demand.userId === currentUserId && (
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 20 }}>
+            {/* Bouton Annuler */}
+            <TouchableOpacity
+              onPress={handleCancelRequest}
+              disabled={isLoading}
+              style={{
+                backgroundColor: '#7f1d1d',
+                padding: 12,
+                borderRadius: 8,
+                alignItems: 'center',
+                justifyContent: 'center',
+                flex: 1,
+                marginRight: 8,
+              }}
+            >
+              {isLoading ? (
+                <Loader color="#fff" />
+              ) : (
+                <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 12 }}>Cancelled Statut</Text>
+              )}
+            </TouchableOpacity>
 
+            {/* Bouton Supprimer */}
+            <TouchableOpacity
+              onPress={handleDeleteRequest}
+              disabled={isDeleting}
+              style={{
+                backgroundColor: '#DC2626',
+                padding: 12,
+                borderRadius: 8,
+                alignItems: 'center',
+                justifyContent: 'center',
+                flex: 1,
+                marginLeft: 8,
+              }}
+            >
+              {isDeleting ? (
+                <Loader color="#fff" />
+              ) : (
+                <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 12 }}>Supprimer</Text>
+              )}
+            </TouchableOpacity>
+          </View>
         )}
+
+
       </View>
     </ScrollView>
   );
