@@ -12,6 +12,12 @@ import TopLogo from "../../images/TopLogo.png";
 import { useTranslation } from "react-i18next";
 import Toast from "react-native-toast-message";
 import { useCreateFundRequestMutation } from "../../services/Fund/fundApi";
+import { 
+  sendPushNotification,
+  sendPushTokenToBackend,
+  registerForPushNotificationsAsync
+} from '../../services/notificationService';
+import { TypesNotification } from "../../utils/constants";
 import Loader from "../../components/Loader";
 
 const ConfirmInformation = ({ navigation, route }) => {
@@ -46,29 +52,78 @@ const ConfirmInformation = ({ navigation, route }) => {
   }, [route.params]);
 
   const handleSubmit = async () => {
+  try {
+    const payload = {
+      amount: parseFloat(amount),
+      description,
+      deadline,
+      recipients: recipients.map((r) => ({
+        matriculeWallet: r.matriculeWallet,
+      })),
+    };
+
+    await createFundRequest(payload).unwrap();
+
+    // Notification content
+    const notificationContent = {
+      title: "Demande de fonds créée",
+      body: `Une demande de ${parseFloat(amount)} FCFA a été créée.`,
+      type: "FUND_REQUEST_CREATED",
+    };
+
     try {
-      const payload = {
-        amount: parseFloat(amount),
-        description,
-        deadline,
-        recipients: recipients.map((r) => ({
-          matriculeWallet: r.matriculeWallet,
-        })),
-      };
+      let pushToken = await getStoredPushToken();
+      if (!pushToken) {
+        pushToken = await registerForPushNotificationsAsync();
+      }
 
-      await createFundRequest(payload).unwrap();
+      if (pushToken) {
+        await sendPushTokenToBackend(
+          pushToken,
+          notificationContent.title,
+          notificationContent.body,
+          notificationContent.type,
+          {
+            amount: parseFloat(amount),
+            description,
+            deadline,
+            timestamp: new Date().toISOString(),
+          }
+        );
+      } else {
+        throw new Error("Token de notification indisponible");
+      }
+    } catch (notificationError) {
+      console.warn("Erreur d'envoi via backend :", notificationError?.message);
 
-      navigation.navigate("SuccessSharing", {
-        transactionDetails: "Votre demande de fond a été créée avec succès.",
-      });
-    } catch (error) {
-      Toast.show({
-        type: "error",
-        text1: t("confirmDemand.error_title"),
-        text2: error?.data?.message || t("confirmDemand.error_message"),
-      });
+      // Fallback : notification locale
+      await sendPushNotification(
+        notificationContent.title,
+        notificationContent.body,
+        {
+          data: {
+            type: notificationContent.type,
+            amount: parseFloat(amount),
+            description,
+          },
+        }
+      );
     }
-  };
+
+    // --- Navigation après succès
+    navigation.navigate("SuccessSharing", {
+      transactionDetails: "Votre demande de fond a été créée avec succès.",
+    });
+
+  } catch (error) {
+    Toast.show({
+      type: "error",
+      text1: t("confirmDemand.error_title"),
+      text2: error?.data?.message || t("confirmDemand.error_message"),
+    });
+  }
+};
+
 
   return (
     <View style={{ flex: 1, backgroundColor: "#151c1f" }}>

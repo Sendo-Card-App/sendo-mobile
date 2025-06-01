@@ -1109,6 +1109,11 @@
   "success_message": "Votre demande a été envoyée avec succès !",
   "error_title": "Erreur",
   "error_message": "Une erreur s'est produite. Veuillez réessayer."
+  },
+  "edit": {
+    "modify_field": "Modifier ",
+    "placeholder": "Entrez ",
+    "save": "Enregistrer"
   }
 
   

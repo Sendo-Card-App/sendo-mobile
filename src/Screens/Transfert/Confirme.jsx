@@ -63,7 +63,7 @@ const handleConfirmPress = () => {
       onSuccess: async (pin) => {
         const notificationData = {
           title: "Transfert Initié",
-          body: `Vous avez envoyé ${totalAmount} ${toCurrency} via ${provider}.`,
+          body: `Vous avez envoyé ${totalAmount} ${toCurrency}  a ${formData.firstname} via ${provider}.`,
           type: "SUCCESS_TRANSFER_FUNDS",
         };
 

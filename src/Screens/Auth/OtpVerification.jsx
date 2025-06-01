@@ -15,6 +15,12 @@ import {
   useVerifyOtpMutation,
   useResendOtpMutation,
 } from "../../services/Auth/authAPI";
+import { 
+  sendPushNotification,
+  sendPushTokenToBackend,
+  registerForPushNotificationsAsync
+} from '../../services/notificationService';
+import { TypesNotification } from "../../utils/constants";
 import Toast from "react-native-toast-message";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import Loader from "../../components/Loader";
@@ -29,6 +35,7 @@ const OtpVerification = ({ route, onClose, onResend }) => {
   const [resendOtp] = useResendOtpMutation();
 
   const phone = route?.params?.phone || componentRoute?.params?.phone;
+  const email = route?.params?.email || componentRoute?.params?.email;
   const initialCode = route?.params?.code || componentRoute?.params?.code;
 
   const [otp, setOtp] = useState(initialCode || "");
@@ -60,55 +67,95 @@ const OtpVerification = ({ route, onClose, onResend }) => {
   };
 
   const handleVerifyOtp = async (codeToVerify = otp) => {
-    if (codeToVerify.length !== 6 || isVerifying) return;
+  if (codeToVerify.length !== 6 || isVerifying) return;
 
-    setIsVerifying(true);
-    try {
-      const response = await verifyOtp({ phone, code: codeToVerify }).unwrap();
-      
-      if (response.status === 201) {
-        Toast.show({
-          type: "success",
-          text1: "Vérification réussie",
-          text2: response.message || "Votre compte a été vérifié",
-        });
+  setIsVerifying(true);
+  try {
+    const response = await verifyOtp({ phone, code: codeToVerify }).unwrap();
 
-        navigation.reset({
-          index: 0,
-          routes: [{ name: "SignIn" }],
-        });
+    if (response.status === 201) {
+      Toast.show({
+        type: "success",
+        text1: "Vérification réussie",
+        text2: response.message || "Votre compte a été vérifié",
+      });
+
+      // Notification content
+      const notificationContent = {
+        title: "Compte vérifié",
+        body: "Votre compte a été vérifié avec succès.",
+        type: "SUCCESS_ACCOUNT_VERIFIED",
+      };
+
+      try {
+        let pushToken = await getStoredPushToken();
+        if (!pushToken) {
+          pushToken = await registerForPushNotificationsAsync();
+        }
+
+        if (pushToken) {
+          await sendPushTokenToBackend(
+            pushToken,
+            notificationContent.title,
+            notificationContent.body,
+            notificationContent.type,
+            {
+              phone,
+              timestamp: new Date().toISOString(),
+            }
+          );
+        }
+      } catch (notificationError) {
+        await sendPushNotification(
+          notificationContent.title,
+          notificationContent.body,
+          {
+            data: {
+              type: notificationContent.type,
+              phone,
+            },
+          }
+        );
       }
-    } catch (err) {
-      const status =
-        err?.status || err?.data?.status || err?.data?.data?.status;
-      const errorMessage =
-        err?.data?.message ||
-        err?.data?.data?.message ||
-        "Échec de la vérification OTP";
 
-      if (errorMessage === "Token invalide") {
-        Toast.show({
-          type: "error",
-          text1: "Jeton invalide",
-          text2: "Le jeton de vérification est invalide",
-          visibilityTime: 4000,
-          position: "top",
-        });
-      } else {
-        Toast.show({
-          type: "error",
-          text1: "Erreur",
-          text2: errorMessage,
-        });
-      }
-
-      if ([400, 429].includes(status)) {
-        setOtp("");
-      }
-    } finally {
-      setIsVerifying(false);
+      // Navigate to SignIn
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "SignIn" }],
+      });
     }
-  };
+  } catch (err) {
+    const status =
+      err?.status || err?.data?.status || err?.data?.data?.status;
+    const errorMessage =
+      err?.data?.message ||
+      err?.data?.data?.message ||
+      "Échec de la vérification OTP";
+
+    if (errorMessage === "Token invalide") {
+      Toast.show({
+        type: "error",
+        text1: "Jeton invalide",
+        text2: "Le jeton de vérification est invalide",
+        visibilityTime: 4000,
+        position: "top",
+      });
+    } else {
+      Toast.show({
+        type: "error",
+        text1: "Erreur",
+        text2: errorMessage,
+      });
+    }
+
+    if ([400, 429].includes(status)) {
+      setOtp("");
+    }
+  } finally {
+    setIsVerifying(false);
+  }
+};
+
 
   const handleResendOtp = async () => {
     if (seconds > 0) return;
@@ -144,7 +191,7 @@ const OtpVerification = ({ route, onClose, onResend }) => {
           source={require("../../images/Artboard 5.png")}
         />
         <Text className="mb-4 text-lg text-gray-800 opacity-40 text-center">
-          Enter code sent to {phone}
+          Enter code sent to {email}
         </Text>
 
         <OtpInput

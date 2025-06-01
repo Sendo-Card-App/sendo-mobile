@@ -1108,6 +1108,11 @@
   "success_message": "Your request has been sent successfully!",
   "error_title": "Error",
   "error_message": "Something went wrong. Please try again."
+  },
+  "edit": {
+    "modify_field": "Modify ",
+    "placeholder": "Enter ",
+    "save": "Save"
   }
 
   
