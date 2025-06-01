@@ -94,7 +94,7 @@ const KycResume = ({ navigation }) => {
       formData.append('region', personalDetails.region);
       formData.append('city', personalDetails.city);
       formData.append('district', personalDetails.district);
-  
+       console.log(formData)
       if (selfie) {
         const compressedSelfieUri = await compressImage(selfie.uri);
         const selfieFormData = new FormData();

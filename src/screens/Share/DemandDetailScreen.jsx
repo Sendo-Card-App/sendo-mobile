@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState,useEffect } from "react";
 import {
   View,
   Text,
@@ -40,8 +40,8 @@ const DemandDetailScreen = () => {
       error: balanceError,
       isLoading: isBalanceLoading
     } = useGetBalanceQuery(userId, { skip: !userId });
-    const balance = balanceData?.balance || 0;
-  console.log(balanceData)
+    const balance = balanceData?.data.balance || 0;
+  console.log(balance)
   const [cancelSharedExpense, { isLoading: isCancelLoading }] = useCancelSharedExpenseMutation();
   const [paySharedExpense, { isLoading: isPaying }] = usePaySharedExpenseMutation();
 
@@ -54,25 +54,30 @@ const DemandDetailScreen = () => {
       autoHide: true,
     });
   };
-
-  const handlePay = async () => {
-  // Vérifie que le solde est suffisant
-  const requiredAmount = parseFloat(amount);
-  if (balance < requiredAmount) {
-    showToast("Solde insuffisant pour effectuer ce paiement.", "error");
+useEffect(() => {
+  showToast("Testing toast", "success");
+}, []);
+const handlePay = async () => {
+  if (balance < item.totalAmount) {
+    showToast("Insufficient balance");
     return;
   }
 
   try {
-    await paySharedExpense({ expenseId: item.id }).unwrap();
+    console.log("Sending payment...");
+    const response = await paySharedExpense({ expenseId: item.id }).unwrap();
+    console.log("Payment success:", response);
     navigation.navigate("SuccessSharing", {
-      transactionDetails: "Paiement effectué avec succès.",
+      transactionDetails: t("messages.paymentSuccess"),
     });
   } catch (error) {
     console.log("Pay error:", error);
-    showToast("Erreur lors du paiement.", "error");
+    showToast(t("messages.paymentError"), "error");
   }
 };
+
+
+
 
 
   const handleDecline = async () => {

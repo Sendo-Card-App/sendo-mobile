@@ -187,7 +187,7 @@ const SignIn = () => {
     } catch (err) {
       console.log("Login error:", err);
   
-      let errorMessage = "An error occurred during login.";
+      let errorMessage = "An error on the server.";
   
       if (err?.status === 403) {
         errorMessage = "Account Not Verified.";
