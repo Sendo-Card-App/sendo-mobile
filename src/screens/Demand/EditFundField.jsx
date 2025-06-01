@@ -10,8 +10,10 @@ import {
   TouchableOpacity,
   ScrollView,
 } from "react-native";
+import { useTranslation } from "react-i18next";
 
 const EditFundField = ({ navigation, route }) => {
+  const { t } = useTranslation();
   const { field, value } = route.params;
   const [input, setInput] = useState(value);
 
@@ -45,22 +47,24 @@ const EditFundField = ({ navigation, route }) => {
           <Ionicons name="menu-outline" size={26} color="#fff" />
         </TouchableOpacity>
       </View>
+
       <View
-              style={{
-                position: "absolute",
-                top: -48,
-                left: 0,
-                right: 0,
-                alignItems: "center",
-              }}
-            >
-              <Image
-                source={TopLogo}
-                style={{ height: 140, width: 160 }}
-                resizeMode="contain"
-              />
-            </View>
-             <View className="border border-dashed border-gray-300" />
+        style={{
+          position: "absolute",
+          top: -48,
+          left: 0,
+          right: 0,
+          alignItems: "center",
+        }}
+      >
+        <Image
+          source={TopLogo}
+          style={{ height: 140, width: 160 }}
+          resizeMode="contain"
+        />
+      </View>
+
+      <View className="border border-dashed border-gray-300" />
 
       {/* Content */}
       <ScrollView
@@ -73,13 +77,14 @@ const EditFundField = ({ navigation, route }) => {
         }}
       >
         <Text style={{ fontWeight: "bold", marginBottom: 10 }}>
-          Modify {field}
+          {t("edit.modify_field", { field })}
         </Text>
+
         <TextInput
           value={input}
           onChangeText={setInput}
           keyboardType={field === "amount" ? "numeric" : "default"}
-          placeholder={`Enter ${field}`}
+          placeholder={t("edit.placeholder", { field })}
           style={{
             borderWidth: 1,
             borderColor: "#ccc",
@@ -88,6 +93,7 @@ const EditFundField = ({ navigation, route }) => {
             marginBottom: 20,
           }}
         />
+
         <TouchableOpacity
           onPress={handleSave}
           style={{
@@ -97,7 +103,7 @@ const EditFundField = ({ navigation, route }) => {
             alignItems: "center",
           }}
         >
-          <Text style={{ fontWeight: "bold" }}>Save</Text>
+          <Text style={{ fontWeight: "bold" }}>{t("edit.save")}</Text>
         </TouchableOpacity>
       </ScrollView>
 
