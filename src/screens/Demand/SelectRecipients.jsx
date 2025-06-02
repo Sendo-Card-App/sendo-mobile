@@ -52,7 +52,8 @@ const SelectRecipients = ({ navigation, route }) => {
   };
 
   const handleNext = () => {
-    if (selectedFriends.length === 0 && !includeSelf) {
+    const totalParticipants = selectedFriends.length + (includeSelf ? 1 : 0);
+     if (totalParticipants < 2) { 
       Toast.show({
         type: "error",
         text1: t("selectRecipient.no_recipients_selected"),

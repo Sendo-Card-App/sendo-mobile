@@ -1089,7 +1089,7 @@
   "add_manually": "Ajouter manuellement",
   "search_contact": "Rechercher un contact...",
   "no_recipients_selected": "Aucun bénéficiaire sélectionné",
-  "select_at_least_one": "Veuillez sélectionner au moins un bénéficiaire",
+  "select_at_least_one": "Veuillez sélectionner au moins duex bénéficiaire",
   "error": "Erreur",
   "something_went_wrong": "Une erreur s'est produite. Veuillez réessayer.",
   "please_wait": "Veuillez patienter...",
@@ -1112,8 +1112,53 @@
     "modify_field": "Modifier ",
     "placeholder": "Entrez ",
     "save": "Enregistrer"
+  },
+  "detailsList": {
+    "details": {
+    "title": "Détails de la demande",
+    "invoice": "Facture No.",
+    "descriptionTitle": "Description du service",
+    "status": "Statut",
+    "amount": "Montant total",
+    "deadline": "Délai",
+    "recipients": "Destinataire(s)",
+    "name": "Nom",
+    "email": "Adresse email",
+    "phone": "Numéro de téléphone"
+  },
+  "status": {
+    "pending": "En attente",
+    "paid": "Payé",
+    "cancelled": "Annulé"
+  },
+  "actions": {
+    "cancel": "Annuler la demande",
+    "delete": "Supprimer"
+  },
+  "cancel": {
+    "confirmTitle": "Confirmation",
+    "confirmMessage": "Voulez-vous vraiment annuler cette demande ?",
+    "yes": "Oui",
+    "no": "Non"
+  },
+  "delete": {
+    "confirmTitle": "Confirmation",
+    "confirmMessage": "Voulez-vous vraiment supprimer cette demande ? Cette action est irréversible.",
+    "delete": "Supprimer",
+    "cancel": "Annuler"
   }
-
+  },
+  "demandList": {
+    "createNew": "Créer une nouvelle demande",
+    "history": "Historique",
+    "myRequests": "Mes Demandes",
+    "filter": "Filtrer",
+  "all": "Tous",
+  "paid": "Payé",
+  "pending": "En attente",
+  "completed": "Terminé",
+  "requester": "Demandeur"
+  }
   
 
     

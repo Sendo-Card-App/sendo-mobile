@@ -1111,6 +1111,52 @@
     "modify_field": "Modify ",
     "placeholder": "Enter ",
     "save": "Save"
+  },
+  "detailsList": {
+    "details": {
+    "title": "Request Details",
+    "invoice": "Invoice No.",
+    "descriptionTitle": "Service Description",
+    "status": "Status",
+    "amount": "Total Amount",
+    "deadline": "Deadline",
+    "recipients": "Recipient(s)",
+    "name": "Name",
+    "email": "Email Address",
+    "phone": "Phone Number"
+  },
+  "status": {
+    "pending": "Pending",
+    "paid": "Paid",
+    "cancelled": "Cancelled"
+  },
+  "actions": {
+    "cancel": "Cancel Request",
+    "delete": "Delete"
+  },
+  "cancel": {
+    "confirmTitle": "Confirmation",
+    "confirmMessage": "Do you really want to cancel this request?",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "delete": {
+    "confirmTitle": "Confirmation",
+    "confirmMessage": "Do you really want to delete this request? This action is irreversible.",
+    "delete": "Delete",
+    "cancel": "Cancel"
+  }
+  },
+  "demandList": {
+    "createNew": "Create a new request",
+    "history": "History",
+    "myRequests": "My Requests",
+    "filter": "Filter",
+    "completed": "Completed",
+    "pending": "Pending",
+    "paid": "Paid",
+    "all": "All",
+    "requester": "Requester"
   }
 
   
