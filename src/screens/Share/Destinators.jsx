@@ -55,14 +55,16 @@ const Destinators = () => {
   };
 
   const handleNext = () => {
-    if (selectedFriends.length === 0 && !includeSelf) {
+   const totalParticipants = selectedFriends.length + (includeSelf ? 1 : 0);
+    if (totalParticipants < 2) {
       Toast.show({
         type: "error",
         text1: "Aucun destinataire sélectionné",
-        text2: "Veuillez sélectionner au moins un participant.",
+        text2: "Veuillez sélectionner au moins deux participants.",
       });
       return;
     }
+
 
     setIsSubmitting(true);
 
