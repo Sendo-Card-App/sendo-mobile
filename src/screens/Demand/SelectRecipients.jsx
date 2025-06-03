@@ -71,7 +71,7 @@ const SelectRecipients = ({ navigation, route }) => {
         if (friend) {
           recipients.push({
             id: friend.id,
-            matriculeWallet: friend.user?.wallet?.matricule,
+            matriculeWallet: friend.contactUser?.wallet?.matricule,
             name: friend.name,
           });
         }

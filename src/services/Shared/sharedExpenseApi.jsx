@@ -104,7 +104,7 @@ export const sharedExpenseApi = createApi({
       query: ({ expenseId }) => ({
         url: `/shared-expense/${expenseId}/pay`,
         method: 'POST',
-         providesTags: [TAG_TYPES.SHARED_EXPENSE],
+       
       }),
       invalidatesTags: [TAG_TYPES.SHARED_EXPENSE],
     }),

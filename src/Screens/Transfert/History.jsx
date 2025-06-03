@@ -22,6 +22,7 @@ import { useTranslation } from "react-i18next";
 import DateTimePicker from '@react-native-community/datetimepicker';
 import moment from 'moment';
 import Loader from "../../components/Loader";
+import TransactionSkeleton from "../../components/TransactionSkeleton";
 
 const { width } = Dimensions.get('window');
 const isSmallScreen = width < 375;
@@ -282,7 +283,7 @@ const FilterModal = ({ visible, onClose, filters, setFilters, applyFilters }) =>
                 });
               }}
             >
-              <Text className="text-center">{t('history1.reset')}</Text>
+              <Text className="text-center font-bold">{t('history1.reset')}</Text>
             </TouchableOpacity>
             <TouchableOpacity 
               className="px-4 py-3 bg-green-500 rounded-full flex-1 ml-2"
@@ -291,9 +292,10 @@ const FilterModal = ({ visible, onClose, filters, setFilters, applyFilters }) =>
                 onClose();
               }}
             >
-              <Text className="text-white text-center">{t('history1.apply')}</Text>
+              <Text className="text-center text-white font-bold">{t('history1.apply')}</Text>
             </TouchableOpacity>
           </View>
+
         </View>
       </View>
 
@@ -365,17 +367,13 @@ const History = () => {
 
     if (!userId) {
     return (
-      <View className="flex-1 justify-center items-center w-full px-4">
-        <SkeletonLoader
-          isLoading={true}
-          skeletonType="list"
-          skeletonDuration={10000}
-          fallbackToSpinner={true}
-        >
-          <Text className="mt-4 text-gray-500">{t("history1.noUser")}</Text>
-        </SkeletonLoader>
-        <Text className="mt-4 text-gray-500">{t("history1.loadingUser")}</Text>
-      </View>
+     <FlatList
+          data={[1, 2, 3, 4, 5]}
+          keyExtractor={(item) => item.toString()}
+          renderItem={() => <TransactionSkeleton />}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 20 }}
+          showsVerticalScrollIndicator={false}
+        />
     );
   }
 
@@ -439,17 +437,13 @@ const History = () => {
   );
  if (isLoading && currentPage === 1) {
   return (
-    <View className="flex-1 justify-center items-center w-full px-4">
-      <SkeletonLoader
-        isLoading={true}
-        skeletonType="list"
-        skeletonCount={10}
-        skeletonDuration={10000}
-        fallbackToSpinner={true}
-      >
-        <Text className="mt-4 text-gray-500">{t("history1.loadingTransactions")}</Text>
-      </SkeletonLoader>
-    </View>
+    <FlatList
+          data={[1, 2, 3, 4, 5]}
+          keyExtractor={(item) => item.toString()}
+          renderItem={() => <TransactionSkeleton />}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 20 }}
+          showsVerticalScrollIndicator={false}
+        />
   );
 }
 

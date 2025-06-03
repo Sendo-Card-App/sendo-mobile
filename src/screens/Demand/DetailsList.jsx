@@ -90,32 +90,35 @@ const DetailsList = () => {
     );
   };
 
-  const handleDeleteRequest = () => {
-    Alert.alert(
-      t('detailsList.delete.confirmTitle'),
-      t('detailsList.delete.confirmMessage'),
-      [
-        { text: t('detailsList.delete.cancel'), style: 'cancel' },
-        {
-          text: t('detailsList.delete.delete'),
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await deleteRequest({ fundRequestId: demand.id }).unwrap();
-              Alert.alert('Succès', 'La demande a été supprimée.');
-              navigation.goBack();
-            } catch (error) {
-              console.error(error);
-              Alert.alert(
-                'Erreur',
-                "Une erreur s'est produite lors de la suppression."
-              );
-            }
-          },
+const handleDeleteRequest = () => {
+  Alert.alert(
+    t('detailsList.delete.confirmTitle'),
+    t('detailsList.delete.confirmMessage'),
+    [
+      { text: t('detailsList.delete.cancel'), style: 'cancel' },
+      {
+        text: t('detailsList.delete.delete'),
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await deleteRequest(demand.id).unwrap(); 
+
+            Alert.alert('Succès', 'La demande a été supprimée.');
+            navigation.goBack();
+          } catch (error) {
+            console.error('Error deleting request:', error);
+            Alert.alert(
+              'Erreur',
+              "Une erreur s'est produite lors de la suppression."
+            );
+          }
         },
-      ]
-    );
-  };
+      },
+    ]
+  );
+};
+
+
 
   return (
     <ScrollView

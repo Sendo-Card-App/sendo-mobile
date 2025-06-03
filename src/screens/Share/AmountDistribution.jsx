@@ -19,7 +19,7 @@ const AmountDistribution = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { t } = useTranslation();
-
+  
   const initialParticipants = () => {
     let pts = route.params.participants.map(p => ({ ...p, amount: p.amount || 0 }));
 

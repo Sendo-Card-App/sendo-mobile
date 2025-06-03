@@ -42,7 +42,7 @@ const Addresse = ({ navigation }) => {
           {/* Action Buttons - Kept in English as requested */}
           <View className="flex-row justify-between">
             <TouchableOpacity 
-              onPress={() => navigation.goBack()}
+              onPress={() =>navigation.navigate("KycResume")}
               className="bg-gray-200 px-6 py-3 rounded-lg flex-1 mr-2"
             >
               <Text className="text-gray-800 font-medium text-center">CANCEL</Text>
