@@ -124,7 +124,7 @@ const handlePickDocument = async () => {
         <View className="absolute -top-12 left-0 right-0 items-center justify-center">
           <Image source={TopLogo} className="h-36 w-40" resizeMode="contain" />
         </View>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
+        <TouchableOpacity onPress={() => navigation.navigate("KycResume")}>
           <AntDesign name="arrowleft" size={24} color="white" />
         </TouchableOpacity>
         <TouchableOpacity onPress={() => navigation.openDrawer()} className="ml-auto">

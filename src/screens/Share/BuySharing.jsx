@@ -5,6 +5,7 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
+  FlatList,
   ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -12,6 +13,7 @@ import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
 import { useGetSharedExpensesQuery } from "../../services/Shared/sharedExpenseApi";
 import { skipToken } from "@reduxjs/toolkit/query";
 import { useTranslation } from "react-i18next";
+import TransactionSkeleton from "../../components/TransactionSkeleton";
 
 const { width } = Dimensions.get("window");
 
@@ -24,7 +26,7 @@ export default function Historique({ navigation }) {
     data: sharedExpensesData,
     isLoading: expensesLoading,
   } = useGetSharedExpensesQuery(userId ? { userId } : skipToken);
- // console.log(JSON.stringify(sharedExpensesData, null, 2));
+
   const sharedExpenses = sharedExpensesData?.data || [];
 
   const getStatusColor = (status) => {
@@ -32,6 +34,7 @@ export default function Historique({ navigation }) {
       case "PENDING":
         return "#FFA500";
       case "PAID":
+      case "COMPLETED":
         return "#4CAF50";
       case "CANCELLED":
         return "#F44336";
@@ -41,7 +44,7 @@ export default function Historique({ navigation }) {
   };
 
   const getUserPart = (item) => {
-    const participant = item.participants?.find(p => p.userId === userId);
+    const participant = item.participants?.find((p) => p.userId === userId);
     return participant?.part;
   };
 
@@ -88,15 +91,18 @@ export default function Historique({ navigation }) {
 
       {/* Loading */}
       {(profileLoading || expensesLoading) ? (
-        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-          <ActivityIndicator size="large" color="#7ddd7d" />
-          <Text style={{ marginTop: 10 }}>{t("his.loading")}</Text>
-        </View>
+        <FlatList
+          data={[1, 2, 3, 4, 5]}
+          keyExtractor={(item) => item.toString()}
+          renderItem={() => <TransactionSkeleton />}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 20 }}
+          showsVerticalScrollIndicator={false}
+        />
       ) : (
         <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 20 }}>
           {sharedExpenses.length === 0 ? (
             <Text style={{ textAlign: "center", marginTop: 20, color: "#777" }}>
-              {t("his.no_data")}
+             
             </Text>
           ) : (
             sharedExpenses.map((item) => {
@@ -104,6 +110,8 @@ export default function Historique({ navigation }) {
               const initiatorName = item.initiator
                 ? `${item.initiator.firstname} `
                 : t("his.unknown");
+              const status = item.status;
+              const isPayable = !(status === "CANCELLED" || status === "PAID" || status === "COMPLETED");
 
               return (
                 <View
@@ -140,27 +148,48 @@ export default function Historique({ navigation }) {
                     </View>
                   </View>
 
-                  
-
+                  {/* Participants */}
                   <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 5 }}>
                     <Text style={{ fontWeight: "bold", flex: 1 }}>
                       {item.participants?.length > 0
-                        ? item.participants
-                            .map((p) => `${p.user?.firstname || ""} `)
-                            .join(", ")
+                        ? item.participants.map((p) => `${p.user?.firstname || ""} `).join(", ")
                         : initiatorName}
                     </Text>
                   </View>
 
-
-                  {/* Date */}
-                  <View style={{ flexDirection: "row", justifyContent: "flex-end" }}>
+                  {/* Date and Status */}
+                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
                     <Text style={{ color: "#999", fontSize: 12 }}>
                       {new Date(item.createdAt).toLocaleDateString()}
                     </Text>
+
+                    {!isPayable && (
+                      <View
+                        style={{
+                          backgroundColor: getStatusColor(status),
+                          borderRadius: 10,
+                          paddingHorizontal: 10,
+                          paddingVertical: 4,
+                        }}
+                      >
+                        <Text style={{ color: "#fff", fontSize: 12 }}>
+                          {t(`his.status.${status.toLowerCase()}`)}
+                        </Text>
+                      </View>
+                    )}
                   </View>
 
+                  {/* Cancel Reason */}
+                  {status === "CANCELLED" && item.cancelReason?.trim() !== "" && (
+                    <View style={{ marginTop: 8 }}>
+                      <Text style={{ fontSize: 13, color: "#F44336" }}>
+                        {t("his.cancel_reason")}: {item.cancelReason}
+                      </Text>
+                    </View>
+                  )}
+
                   {/* Pay Button */}
+                  {isPayable && (
                     <TouchableOpacity
                       onPress={() => navigation.navigate("DemandDetailScreen", { item })}
                       style={{
@@ -175,7 +204,7 @@ export default function Historique({ navigation }) {
                         {t("his.payer")}
                       </Text>
                     </TouchableOpacity>
-                  
+                  )}
                 </View>
               );
             })

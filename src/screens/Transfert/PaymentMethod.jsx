@@ -31,7 +31,6 @@ const PaymentMethod = () => {
     cadRealTimeValue
   } = route.params;
 
-  // Bank Data with logos
   const banks = [
     { id: '2', name: 'Orange Money', logo: om, provider: 'Orange Money' },
     { id: '3', name: 'MTN Mobile Money', logo: mtn, provider: 'MTN Mobile Money' },
@@ -44,26 +43,25 @@ const PaymentMethod = () => {
   const selectBank = (bank) => {
     setSelectedBank(bank.name);
     setDropdownVisible(false);
-    
-    // Navigate to appropriate screen based on payment method
-      navigation.navigate("Address", { 
-        contact,
-        amount,
-        convertedAmount,
-        totalAmount,
-        transferFee,
-        fromCurrency,
-        toCurrency,
-        countryName,
-        cadRealTimeValue,
-        provider: bank.provider
-      });
-    
+
+    navigation.navigate("Address", { 
+      contact,
+      amount,
+      convertedAmount,
+      totalAmount,
+      transferFee,
+      fromCurrency,
+      toCurrency,
+      countryName,
+      cadRealTimeValue,
+      provider: bank.provider
+    });
   };
 
   return (
     <View style={{ flex: 1, padding: 20, backgroundColor: '#121212' }}>
       <StatusBar barStyle="light-content" />
+      
       {/* Header */}
       <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
@@ -82,11 +80,13 @@ const PaymentMethod = () => {
         />
         <MaterialIcons name="menu" size={24} color="white" style={{ marginLeft: "auto" }} onPress={() => navigation.openDrawer()} />
       </View>
-      <View style={{ borderColor: 'gray', borderWidth: 1, borderStyle: 'dashed', marginBottom: 4 }} />
-      <Text style={{ color: 'white', fontSize: 25, marginBottom: 10, marginLeft: 40, fontWeight: "bold" }}> {t("paymentMethodScreen.title")}</Text>
 
-     
-      {/* Dropdown */}
+      <View style={{ borderColor: 'gray', borderWidth: 1, borderStyle: 'dashed', marginBottom: 4 }} />
+      <Text style={{ color: 'white', fontSize: 25, marginBottom: 10, marginLeft: 40, fontWeight: "bold" }}>
+        {t("paymentMethodScreen.title")}
+      </Text>
+
+      {/* Dropdown Trigger */}
       <TouchableOpacity
         style={{
           borderWidth: 1,
@@ -101,6 +101,7 @@ const PaymentMethod = () => {
         <Text>{selectedBank || t("paymentMethodScreen.choosePayment")}</Text>
       </TouchableOpacity>
 
+      {/* Dropdown List */}
       {dropdownVisible && (
         <View
           style={{
@@ -128,10 +129,23 @@ const PaymentMethod = () => {
                 }}
                 onPress={() => selectBank(item)}
               >
-                <Image
-                  source={item.logo}
-                  style={{ width: 30, height: 30, marginRight: 10, borderRadius: 5 }}
-                />
+                {/* Square Logo Container */}
+                <View style={{
+                  width: 40,
+                  height: 40,
+                  backgroundColor: 'white',
+                  borderRadius: 8,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  marginRight: 10,
+                  borderWidth: 1,
+                  borderColor: '#ccc',
+                }}>
+                  <Image
+                    source={item.logo}
+                    style={{ width: 25, height: 25, resizeMode: 'contain' }}
+                  />
+                </View>
                 <Text style={{ color: "black", fontSize: 16 }}>{item.name}</Text>
               </TouchableOpacity>
             )}
@@ -139,7 +153,7 @@ const PaymentMethod = () => {
         </View>
       )}
 
-      {/* Footer (fixed to the bottom) */}
+      {/* Footer */}
       <View style={{ flex: 1, justifyContent: 'flex-end', marginBottom: 20 }}>
         <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
           <Ionicons name="shield-checkmark" size={18} color="orange" />

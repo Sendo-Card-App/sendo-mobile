@@ -289,6 +289,7 @@
 "withdraw": "Withdraw",
 "transfer": "Transfer",
 "referral_balance": "Referral Balance",
+"simulator": "Payment Estimator",
 "referral_terms": "You will receive 5.00 CAD and your friend will receive 5.00 CAD on their first transfer. Minimum sending requirements may apply.",
 "terms_conditions": "Subject to conditions.",
 "share_referral": "SHARE YOUR REFERRAL CODE"
@@ -424,25 +425,23 @@
     }
 },
 "personalDetail": {
-"title": "Personal Details",
-"header": "Personal Information",
-"subheader": "Provide your information as it appears on your official documents.",
-"region": "Region",
-"selectRegion": "Select your region",
-"city": "City",
-"country": "Country",
-"selectCountry": " Select your country",
-"selectCity": "Select your city",
-"district": "District",
-"selectDistrict": "Select your district",
-"profession": "Profession",
-"selectProfession": "Select your profession",
-"confidentialNotice": "This information is required to complete your profile and is treated confidentially.",
-"saveButton": "SAVE",
-"closeButton": "Close",
-"securityNotice": "Do not share your personal information",
- "noOptions": "No options available",
-  "noOptionsMsg": "There are no choices available for this field. Please select another category first."
+  "title": "Personal Information",
+  "header": "Please enter your personal details",
+  "subheader": "This helps us verify your identity securely.",
+  "country": "Country",
+  "region": "Region",
+  "city": "City",
+  "district": "District",
+  "profession": "Profession",
+  "enterCountry": "Enter your country",
+  "enterRegion": "Enter your region",
+  "enterCity": "Enter your city",
+  "enterDistrict": "Enter your district",
+  "enterProfession": "Enter your profession",
+  "confidentialNotice": "Your information is confidential and secure.",
+  "saveButton": "Save and Continue",
+  "errorTitle": "Incomplete Fields",
+  "fillAllFields": "Please fill in all fields before continuing."
 },
 "identity_card": {
 "title": "Identity Document",
@@ -1049,12 +1048,16 @@
     "participants": "Participants",
     "loading": "Loading...",
     "no_data": "No shared expenses found.",
+    "cancel_reason": "Reason for cancellation",
     "date": "Date",
     "status": {
       "pending": "Pending",
       "payed": "Payed",
       "refused": "Refused",
-       "late": "Late"
+       "late": "Late",
+       "paid": "Completed",
+    "completed": "Completed",
+    "cancelled": "Cancelled"
     }
   },
    "demandDetail": {
@@ -1113,6 +1116,52 @@
     "modify_field": "Modify ",
     "placeholder": "Enter ",
     "save": "Save"
+  },
+  "detailsList": {
+    "details": {
+    "title": "Request Details",
+    "invoice": "Invoice No.",
+    "descriptionTitle": "Service Description",
+    "status": "Status",
+    "amount": "Total Amount",
+    "deadline": "Deadline",
+    "recipients": "Recipient(s)",
+    "name": "Name",
+    "email": "Email Address",
+    "phone": "Phone Number"
+  },
+  "status": {
+    "pending": "Pending",
+    "paid": "Paid",
+    "cancelled": "Cancelled"
+  },
+  "actions": {
+    "cancel": "Cancel Request",
+    "delete": "Delete"
+  },
+  "cancel": {
+    "confirmTitle": "Confirmation",
+    "confirmMessage": "Do you really want to cancel this request?",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "delete": {
+    "confirmTitle": "Confirmation",
+    "confirmMessage": "Do you really want to delete this request? This action is irreversible.",
+    "delete": "Delete",
+    "cancel": "Cancel"
+  }
+  },
+  "demandList": {
+    "createNew": "Create a new request",
+    "history": "History",
+    "myRequests": "My Requests",
+    "filter": "Filter",
+    "completed": "Completed",
+    "pending": "Pending",
+    "paid": "Paid",
+    "all": "All",
+    "requester": "Requester"
   }
 
   

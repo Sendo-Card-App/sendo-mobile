@@ -13,16 +13,26 @@ const DistributionMethod = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { t } = useTranslation();
-
+  const { 
+  totalAmount, 
+  description, 
+  limitDate, 
+  includeSelf, 
+  methodCalculatingShare, 
+  participants, 
+  userFullName 
+} = route.params;
   const handleMethodSelect = (method) => {
     if (method === "auto") {
-      navigation.navigate("ConfirmTransfer", {
-        ...route.params,
-        methodCalculatingShare: "auto",
-        participants: route.params.participants.map((p) => ({
-          matriculeWallet: p.matriculeWallet,
-        })),
-      });
+    navigation.navigate("ConfirmTransfer", {
+      ...route.params,
+      methodCalculatingShare: "auto",
+      participants: route.params.participants.map((p) => ({
+        id: p.id,
+        matriculeWallet: p.matriculeWallet,
+        name: p.name,
+      })),
+    });
     } else {
       navigation.navigate("AmountDistribution", {
         ...route.params,

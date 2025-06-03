@@ -31,18 +31,8 @@ export async function registerForPushNotificationsAsync() {
       return null;
     }
 
-    let token;
-    if (Platform.OS === 'android') {
-      try {
-        token = (await Notifications.getDevicePushTokenAsync()).data;
-        console.log('FCM Token:', token);
-      } catch (err) {
-        console.warn('FCM token failed, fallback to Expo token:', err);
-        token = (await Notifications.getExpoPushTokenAsync()).data;
-      }
-    } else {
-      token = (await Notifications.getExpoPushTokenAsync()).data;
-    }
+    const token = (await Notifications.getExpoPushTokenAsync()).data;
+    console.log('Expo Token:', token);
 
     if (!token) {
       console.error('No push token retrieved');
@@ -70,7 +60,7 @@ export async function getStoredPushToken() {
   }
 }
 
-export async function sendPushNotification(title: string, body: string) {
+export async function sendPushNotification(title, body) {
   try {
     await Notifications.scheduleNotificationAsync({
       content: {
@@ -87,10 +77,10 @@ export async function sendPushNotification(title: string, body: string) {
 }
 
 export async function sendPushTokenToBackend(
-  title: string,
-  body: string,
-  type: string,
-  metaData: object = {}
+  title,
+  body,
+  type,
+  metaData
 ) {
   try {
     const [authToken, pushToken] = await Promise.all([

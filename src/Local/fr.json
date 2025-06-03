@@ -292,6 +292,7 @@
     "recharge": "Dépôt Sendo",
     "withdraw": "Dépôt sur la carte",
     "transfer": "Transfert",
+     "simulator": "Estimateur de paiement",
     "referral_balance": "Solde parrainage",
     "referral_terms": "Vous recevrez 5.00 CAD et votre ami recevra 5,00 CAD lors de son premier transfert. Des exigences d'envoi minimales peuvent s'appliquer.",
     "terms_conditions": "Sous réserve de conditions.",
@@ -423,27 +424,25 @@
       "message": "Votre demande de NIU a été soumise avec succès"
     }
   },
-  "personalDetail": {
-    "title": "Détails personnels",
-    "header": "Informations personnelles",
-    "subheader": "Renseignez vos informations telles qu'elles apparaissent sur vos documents officiels.",
-    "region": "Région",
-    "selectRegion": "Sélectionnez votre région",
-    "city": "Ville",
-    "country": "Pays",
-    "selectCountry": " Sélectionnez votre pays",
-    "selectCity": "Sélectionnez votre ville",
-    "district": "Quartier",
-    "selectDistrict": "Sélectionnez votre quartier",
-    "profession": "Profession",
-    "selectProfession": "Sélectionnez votre profession",
-    "confidentialNotice": "Ces informations sont requises pour compléter votre profil et sont traitées de manière confidentielle.",
-    "saveButton": "ENREGISTRER",
-    "closeButton": "Fermer",
-    "securityNotice": "Ne partagez pas vos informations personnelles",
-     "noOptions": "Aucune option disponible",
-  "noOptionsMsg": "Aucun choix disponible pour ce champ. Veuillez d'abord sélectionner une autre catégorie."
-  },
+ "personalDetail": {
+  "title": "Informations personnelles",
+  "header": "Veuillez saisir vos informations personnelles",
+  "subheader": "Cela nous aide à vérifier votre identité de manière sécurisée.",
+  "country": "Pays",
+  "region": "Région",
+  "city": "Ville",
+  "district": "Quartier",
+  "profession": "Profession",
+  "enterCountry": "Entrez votre pays",
+  "enterRegion": "Entrez votre région",
+  "enterCity": "Entrez votre ville",
+  "enterDistrict": "Entrez votre quartier",
+  "enterProfession": "Entrez votre profession",
+  "confidentialNotice": "Vos informations sont confidentielles et sécurisées.",
+  "saveButton": "Enregistrer et continuer",
+  "errorTitle": "Champs incomplets",
+  "fillAllFields": "Veuillez remplir tous les champs avant de continuer."
+},
   "identity_card": {
     "title": "Pièce d'identité",
     "document_type": "Type de document",
@@ -1049,13 +1048,17 @@
     "your_part": "Votre part",
     "participants": "Participants",
     "loading": "Chargement...",
+    "cancel_reason": "Raison de l'annulation",
     "no_data": "Aucune dépense partagée trouvée.",
     "date": "Date",
       "status": {
       "pending": "En attente",
       "payed": "Payer",
       "refused": "Refusé",
-       "late": "En retard"
+       "late": "En retard",
+        "paid": "Payée",
+    "completed": "Terminée",
+    "cancelled": "Annulée"
     }
   },
    "demandDetail": {
@@ -1114,8 +1117,53 @@
     "modify_field": "Modifier ",
     "placeholder": "Entrez ",
     "save": "Enregistrer"
+  },
+  "detailsList": {
+    "details": {
+    "title": "Détails de la demande",
+    "invoice": "Facture No.",
+    "descriptionTitle": "Description du service",
+    "status": "Statut",
+    "amount": "Montant total",
+    "deadline": "Délai",
+    "recipients": "Destinataire(s)",
+    "name": "Nom",
+    "email": "Adresse email",
+    "phone": "Numéro de téléphone"
+  },
+  "status": {
+    "pending": "En attente",
+    "paid": "Payé",
+    "cancelled": "Annulé"
+  },
+  "actions": {
+    "cancel": "Annuler la demande",
+    "delete": "Supprimer"
+  },
+  "cancel": {
+    "confirmTitle": "Confirmation",
+    "confirmMessage": "Voulez-vous vraiment annuler cette demande ?",
+    "yes": "Oui",
+    "no": "Non"
+  },
+  "delete": {
+    "confirmTitle": "Confirmation",
+    "confirmMessage": "Voulez-vous vraiment supprimer cette demande ? Cette action est irréversible.",
+    "delete": "Supprimer",
+    "cancel": "Annuler"
   }
-
+  },
+  "demandList": {
+    "createNew": "Créer une nouvelle demande",
+    "history": "Historique",
+    "myRequests": "Mes Demandes",
+    "filter": "Filtrer",
+  "all": "Tous",
+  "paid": "Payé",
+  "pending": "En attente",
+  "completed": "Terminé",
+  "requester": "Demandeur"
+  }
   
 
     

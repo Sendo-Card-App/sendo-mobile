@@ -14,20 +14,34 @@ const VerifyIdentity = ({ navigation }) => {
   const { data: userProfile, isLoading: isProfileLoading, refetch } = useGetUserProfileQuery();
    
    useFocusEffect(
-    useCallback(() => {
-      refetch(); // force une requête au backend
-    }, [])
-    );
+  useCallback(() => {
+    let isActive = true;
 
-  useEffect(() => {
-    if (userProfile?.data?.isVerifiedKYC) {
-      setShowVerifiedMessage(true);
-      const timer = setTimeout(() => {
-        setShowVerifiedMessage(false);
-      }, 3600000); //1hours
-      return () => clearTimeout(timer);
-    }
-  }, [userProfile]);
+    const fetchData = async () => {
+      if (isActive) {
+        await refetch(); // Force une requête
+      }
+    };
+
+    fetchData();
+
+    return () => {
+      isActive = false;
+    };
+  }, [])
+);
+
+
+useEffect(() => {
+  if (userProfile?.data?.isVerifiedKYC) {
+    setShowVerifiedMessage(true);
+    const timer = setTimeout(() => {
+      setShowVerifiedMessage(false);
+    }, 3600000); // 1 hour
+    return () => clearTimeout(timer);
+  }
+}, [userProfile?.data?.isVerifiedKYC]);
+
 
   const handleNextPress = () => {
     if (!userProfile?.data?.isVerifiedKYC) {

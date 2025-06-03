@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState,useEffect } from "react";
 import {
   View,
   Text,
@@ -29,7 +29,6 @@ const DemandDetailScreen = () => {
   const { t } = useTranslation();
   const route = useRoute();
   const { item } = route.params;
-   console.log(item)
   const [modalVisible, setModalVisible] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
    const { data: userProfile, isLoading: isProfileLoading } = useGetUserProfileQuery();
@@ -40,8 +39,8 @@ const DemandDetailScreen = () => {
       error: balanceError,
       isLoading: isBalanceLoading
     } = useGetBalanceQuery(userId, { skip: !userId });
-    const balance = balanceData?.balance || 0;
-  console.log(balanceData)
+    const balance = balanceData?.data.balance || 0;
+
   const [cancelSharedExpense, { isLoading: isCancelLoading }] = useCancelSharedExpenseMutation();
   const [paySharedExpense, { isLoading: isPaying }] = usePaySharedExpenseMutation();
 
@@ -55,24 +54,26 @@ const DemandDetailScreen = () => {
     });
   };
 
-  const handlePay = async () => {
-  // Vérifie que le solde est suffisant
-  const requiredAmount = parseFloat(amount);
-  if (balance < requiredAmount) {
-    showToast("Solde insuffisant pour effectuer ce paiement.", "error");
+const handlePay = async () => {
+  if (balance < item.totalAmount) {
+    showToast("Insufficient balance");
     return;
   }
 
   try {
-    await paySharedExpense({ expenseId: item.id }).unwrap();
+    const response = await paySharedExpense({ expenseId: item.id }).unwrap();
     navigation.navigate("SuccessSharing", {
-      transactionDetails: "Paiement effectué avec succès.",
+      transactionDetails: "Payment completed successfully",
     });
   } catch (error) {
     console.log("Pay error:", error);
-    showToast("Erreur lors du paiement.", "error");
+    showToast("An error occurred while processing the payment", "error");
   }
 };
+
+
+
+
 
 
   const handleDecline = async () => {
