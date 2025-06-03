@@ -289,6 +289,7 @@
 "withdraw": "Withdraw",
 "transfer": "Transfer",
 "referral_balance": "Referral Balance",
+"simulator": "Payment Estimator",
 "referral_terms": "You will receive 5.00 CAD and your friend will receive 5.00 CAD on their first transfer. Minimum sending requirements may apply.",
 "terms_conditions": "Subject to conditions.",
 "share_referral": "SHARE YOUR REFERRAL CODE"
@@ -1047,12 +1048,16 @@
     "participants": "Participants",
     "loading": "Loading...",
     "no_data": "No shared expenses found.",
+    "cancel_reason": "Reason for cancellation",
     "date": "Date",
     "status": {
       "pending": "Pending",
       "payed": "Payed",
       "refused": "Refused",
-       "late": "Late"
+       "late": "Late",
+       "paid": "Completed",
+    "completed": "Completed",
+    "cancelled": "Cancelled"
     }
   },
    "demandDetail": {

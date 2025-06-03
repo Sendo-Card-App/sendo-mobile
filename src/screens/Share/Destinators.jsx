@@ -38,6 +38,7 @@ const Destinators = () => {
     data: contactsData,
     isLoading: isLoadingContacts,
   } = useGetSynchronizedContactsQuery(userId, { skip: !userId });
+ // console.log("🔍 Full response:", JSON.stringify(contactsData, null, 2));
 
   const synchronizedContacts = contactsData?.data ?? [];
 
@@ -69,16 +70,18 @@ const Destinators = () => {
     setIsSubmitting(true);
 
     try {
-      const participants = selectedFriends.map((friendId) => {
+     const participants = selectedFriends.map((friendId) => {
         const friend = synchronizedContacts.find((f) => f.id === friendId);
+        const firstName = friend?.contactUser?.firstname || "";
+        const lastName = friend?.contactUser?.lastname || "";
         return {
           id: friend.id,
-          matriculeWallet: friend.user?.wallet?.matricule,
-          name: friend.name,
+          matriculeWallet: friend?.contactUser?.wallet?.matricule,
+          name: `${firstName} ${lastName}`.trim(),
           amount: 0,
         };
       });
-
+    
       navigation.navigate("DistributionMethod", {
         ...route.params,
         includeSelf,

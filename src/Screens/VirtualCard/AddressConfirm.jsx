@@ -174,7 +174,7 @@ const AddressConfirm = ({ navigation, route }) => {
         </View>
 
         <View className="flex-row items-center justify-between px-5 pt-16">
-          <TouchableOpacity onPress={() => navigation.goBack()}>
+          <TouchableOpacity onPress={() => navigation.navigate("AddressSelect")}>
             <AntDesign name="arrowleft" size={24} color="white" />
           </TouchableOpacity>
           <TouchableOpacity onPress={() => navigation.openDrawer()} className="ml-auto">

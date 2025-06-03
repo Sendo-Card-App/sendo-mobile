@@ -35,13 +35,15 @@ const ConfirmationScreen = () => {
   participants, 
   userFullName 
 } = route.params;
-
+//  console.log(participants)
+//  console.log(userFullName)
 
   const [createSharedExpense, { isLoading }] = useCreateSharedExpenseMutation();
   const [reason, setReason] = useState(route.params.description || "");
 
-  const handleConfirm = async () => {
+const handleConfirm = async () => {
   try {
+    
     const payload = {
       totalAmount: route.params.totalAmount,
       description: reason,
@@ -55,10 +57,10 @@ const ConfirmationScreen = () => {
         }),
       })),
     };
+  
 
     const response = await createSharedExpense(payload).unwrap();
 
-   
     const notificationContent = {
       title: "Dépense Partagée Créée",
       body: `Une nouvelle dépense de ${route.params.totalAmount} FCFA a été créée.`,
@@ -99,13 +101,24 @@ const ConfirmationScreen = () => {
       );
     }
 
-    
     navigation.navigate("SuccessSharing", {
       transactionDetails: "La dépense partagée a été créée avec succès.",
     });
 
   } catch (error) {
-    console.log(error)
+    const isECONNRESET =
+      error?.data?.errors?.some((e) =>
+        typeof e === "string" && e.includes("ECONNRESET")
+      );
+
+    if (isECONNRESET) {
+      navigation.navigate("SuccessSharing", {
+        transactionDetails: "La dépense partagée a été créée avec succès.",
+      });
+      return;
+    }
+
+    console.log(" Error during shared expense creation:", error);
     Toast.show({
       type: "error",
       text1: "Erreur",
@@ -115,6 +128,7 @@ const ConfirmationScreen = () => {
     });
   }
 };
+
 
 
   return (

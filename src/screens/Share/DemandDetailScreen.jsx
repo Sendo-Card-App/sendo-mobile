@@ -29,7 +29,6 @@ const DemandDetailScreen = () => {
   const { t } = useTranslation();
   const route = useRoute();
   const { item } = route.params;
-   console.log(item)
   const [modalVisible, setModalVisible] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
    const { data: userProfile, isLoading: isProfileLoading } = useGetUserProfileQuery();
@@ -41,7 +40,7 @@ const DemandDetailScreen = () => {
       isLoading: isBalanceLoading
     } = useGetBalanceQuery(userId, { skip: !userId });
     const balance = balanceData?.data.balance || 0;
-  console.log(balance)
+
   const [cancelSharedExpense, { isLoading: isCancelLoading }] = useCancelSharedExpenseMutation();
   const [paySharedExpense, { isLoading: isPaying }] = usePaySharedExpenseMutation();
 
@@ -54,9 +53,7 @@ const DemandDetailScreen = () => {
       autoHide: true,
     });
   };
-useEffect(() => {
-  showToast("Testing toast", "success");
-}, []);
+
 const handlePay = async () => {
   if (balance < item.totalAmount) {
     showToast("Insufficient balance");
@@ -64,17 +61,16 @@ const handlePay = async () => {
   }
 
   try {
-    console.log("Sending payment...");
     const response = await paySharedExpense({ expenseId: item.id }).unwrap();
-    console.log("Payment success:", response);
     navigation.navigate("SuccessSharing", {
-      transactionDetails: t("messages.paymentSuccess"),
+      transactionDetails: "Payment completed successfully",
     });
   } catch (error) {
     console.log("Pay error:", error);
-    showToast(t("messages.paymentError"), "error");
+    showToast("An error occurred while processing the payment", "error");
   }
 };
+
 
 
 

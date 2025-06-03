@@ -12,6 +12,7 @@ import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
 import { useGetMyFundRequestsQuery, useGetFundRequestListQuery } from '../../services/Fund/fundApi';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import TransactionSkeleton from '../../components/TransactionSkeleton';
 
 const TopLogo = require('../../images/TopLogo.png');
 import ButtomLogo from "../../images/ButtomLogo.png";
@@ -51,9 +52,9 @@ const DemandList = () => {
         ))}
       </View>
       <View className="absolute right-3 top-3">
-        <View className={`px-3 py-1 rounded-full ${item.status === 'PAID' ? 'bg-green-100' : 'bg-orange-100'}`}>
-          <Text className={`text-xs font-semibold ${item.status === 'PAID' ? 'text-green-500' : 'text-orange-500'}`}>
-            {item.status === 'PAID' ? t('demandList.completed') : t('demandList.pending')}
+        <View className={`px-3 py-1 rounded-full ${item.status === 'ACCEPTED' ? 'bg-green-100' : 'bg-orange-100'}`}>
+          <Text className={`text-xs font-semibold ${item.status === 'ACCEPTED' ? 'text-green-500' : 'text-orange-500'}`}>
+            {item.status === 'ACCEPTED' ? t('demandList.completed') : t('demandList.pending')}
           </Text>
         </View>
       </View>
@@ -152,7 +153,13 @@ const DemandList = () => {
 
       {activeTab === 'historique' ? (
         loadingRequests ? (
-          <ActivityIndicator size="large" color="#fff" />
+           <FlatList
+          data={[1, 2, 3, 4, 5]}
+          keyExtractor={(item) => item.toString()}
+          renderItem={() => <TransactionSkeleton />}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 20 }}
+          showsVerticalScrollIndicator={false}
+        />
         ) : (
           <FlatList
             data={filteredMyRequests}
@@ -163,7 +170,13 @@ const DemandList = () => {
           />
         )
       ) : loadingPublicRequests ? (
-        <ActivityIndicator size="large" color="#fff" />
+        <FlatList
+          data={[1, 2, 3, 4, 5]}
+          keyExtractor={(item) => item.toString()}
+          renderItem={() => <TransactionSkeleton />}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 20 }}
+          showsVerticalScrollIndicator={false}
+        />
       ) : (
         <FlatList
           data={filteredPublicRequests}

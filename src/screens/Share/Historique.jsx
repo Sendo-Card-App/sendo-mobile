@@ -14,6 +14,7 @@ import { useTranslation } from "react-i18next";
 import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
 import { useGetSharedExpensesQuery } from "../../services/Shared/sharedExpenseApi";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import TransactionSkeleton from "../../components/TransactionSkeleton";
 
 const getStatusStyle = (status) => {
   switch (status?.toUpperCase()) {
@@ -23,6 +24,8 @@ const getStatusStyle = (status) => {
       return "bg-orange-100 text-orange-600";
     case "DECLINED":
       return "bg-red-100 text-red-600";
+    case "CANCELLED":
+      return "bg-gray-200 text-gray-500";
     default:
       return "bg-gray-200 text-gray-600";
   }
@@ -39,11 +42,14 @@ const HistoryScreen = () => {
     isLoading,
     isError,
   } = useGetSharedExpensesQuery({ userId, page: 1, limit: 100 });
-//console.log(JSON.stringify(sharedData, null, 2));
+
   const transactions = sharedData?.data || [];
 
   const handleTransactionPress = (transaction) => {
-    navigation.navigate("DetailScreen", { transaction });
+    const status = transaction?.status?.toUpperCase();
+    if (status !== "CANCELLED" && status !== "COMPLETED") {
+      navigation.navigate("DetailScreen", { transaction });
+    }
   };
 
   const [filterVisible, setFilterVisible] = useState(false);
@@ -65,13 +71,18 @@ const HistoryScreen = () => {
 
   const renderTransaction = ({ item }) => {
     const statusStyle = getStatusStyle(item.status);
+    const isDisabled =
+      item.status?.toUpperCase() === "CANCELLED" ||
+      item.status?.toUpperCase() === "COMPLETED";
 
     return (
       <TouchableOpacity
         onPress={() => handleTransactionPress(item)}
-        className="bg-white rounded-xl p-4 mb-3 shadow-sm border border-gray-200 relative"
+        disabled={isDisabled}
+        className={`bg-white rounded-xl p-4 mb-3 shadow-sm border border-gray-200 relative ${
+          isDisabled ? "opacity-50" : ""
+        }`}
       >
-     
         <View className="flex-row items-center justify-between">
           <Text className="font-bold text-base text-black w-1/3">
             {item.description || t("noTitle")}
@@ -81,10 +92,9 @@ const HistoryScreen = () => {
               {item.totalAmount} {item.currency}
             </Text>
           </View>
-          <View className="w-1/3" /> 
+          <View className="w-1/3" />
         </View>
 
-     
         <View className="flex-row items-center justify-between mt-1">
           <Text className="text-gray-600 text-sm w-1/3">
             {new Date(item.createdAt).toLocaleDateString()}
@@ -115,7 +125,6 @@ const HistoryScreen = () => {
           <View className="w-1/3" />
         </View>
 
-       
         <View className="absolute right-4 top-5 -translate-y-1/2">
           <Text
             className={`px-3 py-1 rounded-full text-xs font-medium ${statusStyle}`}
@@ -124,8 +133,6 @@ const HistoryScreen = () => {
           </Text>
         </View>
       </TouchableOpacity>
-
-
     );
   };
 
@@ -144,7 +151,10 @@ const HistoryScreen = () => {
 
       {/* Filter Button */}
       <View className="flex-row justify-end px-4 py-2">
-        <TouchableOpacity className="flex-row items-center space-x-1" onPress={() => setFilterVisible(true)}>
+        <TouchableOpacity
+          className="flex-row items-center space-x-1"
+          onPress={() => setFilterVisible(true)}
+        >
           <Text className="text-gray-700 font-medium">{t("historique.filter")}</Text>
           <Ionicons name="filter" size={18} color="gray" />
         </TouchableOpacity>
@@ -152,9 +162,13 @@ const HistoryScreen = () => {
 
       {/* Content */}
       {isLoading || profileLoading ? (
-        <View className="flex-1 justify-center items-center">
-          <ActivityIndicator size="large" color="#4CAF50" />
-        </View>
+        <FlatList
+          data={[1, 2, 3, 4, 5]}
+          keyExtractor={(item) => item.toString()}
+          renderItem={() => <TransactionSkeleton />}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 20 }}
+          showsVerticalScrollIndicator={false}
+        />
       ) : isError ? (
         <View className="flex-1 justify-center items-center">
           <Text className="text-red-600">{t("historique.errorLoading")}</Text>
@@ -177,16 +191,20 @@ const HistoryScreen = () => {
       <Modal visible={filterVisible} transparent animationType="slide">
         <View className="flex-1 justify-end bg-black/30">
           <View className="bg-white rounded-t-2xl p-5">
-            <Text className="text-lg font-bold mb-3">{t("historique.filterTransactions")}</Text>
+            <Text className="text-lg font-bold mb-3">
+              {t("historique.filterTransactions")}
+            </Text>
 
             {/* Status Filter */}
             <View className="mb-5">
               <Text className="text-sm mb-1 text-gray-700">{t("historique.status")}</Text>
-              {["", "PENDING", "COMPLETED", "DECLINED"].map((status) => (
+              {["", "PENDING", "COMPLETED", "CANCELLED"].map((status) => (
                 <Pressable
                   key={status}
                   onPress={() => setSelectedStatus(status)}
-                  className={`p-2 rounded ${selectedStatus === status ? "bg-green-200" : ""}`}
+                  className={`p-2 rounded ${
+                    selectedStatus === status ? "bg-green-200" : ""
+                  }`}
                 >
                   <Text>
                     {status === ""

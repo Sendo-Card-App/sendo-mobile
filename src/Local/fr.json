@@ -292,6 +292,7 @@
     "recharge": "Dépôt Sendo",
     "withdraw": "Dépôt sur la carte",
     "transfer": "Transfert",
+     "simulator": "Estimateur de paiement",
     "referral_balance": "Solde parrainage",
     "referral_terms": "Vous recevrez 5.00 CAD et votre ami recevra 5,00 CAD lors de son premier transfert. Des exigences d'envoi minimales peuvent s'appliquer.",
     "terms_conditions": "Sous réserve de conditions.",
@@ -1047,13 +1048,17 @@
     "your_part": "Votre part",
     "participants": "Participants",
     "loading": "Chargement...",
+    "cancel_reason": "Raison de l'annulation",
     "no_data": "Aucune dépense partagée trouvée.",
     "date": "Date",
       "status": {
       "pending": "En attente",
       "payed": "Payer",
       "refused": "Refusé",
-       "late": "En retard"
+       "late": "En retard",
+        "paid": "Payée",
+    "completed": "Terminée",
+    "cancelled": "Annulée"
     }
   },
    "demandDetail": {
@@ -1089,7 +1094,7 @@
   "add_manually": "Ajouter manuellement",
   "search_contact": "Rechercher un contact...",
   "no_recipients_selected": "Aucun bénéficiaire sélectionné",
-  "select_at_least_one": "Veuillez sélectionner au moins duex bénéficiaire",
+  "select_at_least_one": "Veuillez sélectionner au moins un bénéficiaire",
   "error": "Erreur",
   "something_went_wrong": "Une erreur s'est produite. Veuillez réessayer.",
   "please_wait": "Veuillez patienter...",

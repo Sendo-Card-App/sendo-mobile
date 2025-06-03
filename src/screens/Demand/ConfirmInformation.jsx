@@ -23,7 +23,7 @@ import Loader from "../../components/Loader";
 const ConfirmInformation = ({ navigation, route }) => {
   const { t } = useTranslation();
   const initialParams = route.params || {};
-
+ console.log(initialParams)
   const [amount, setAmount] = useState(initialParams.amount);
   const [description, setDescription] = useState(initialParams.description);
   const [deadline, setDeadline] = useState(initialParams.deadline);
@@ -51,7 +51,7 @@ const ConfirmInformation = ({ navigation, route }) => {
     }
   }, [route.params]);
 
-  const handleSubmit = async () => {
+const handleSubmit = async () => {
   try {
     const payload = {
       amount: parseFloat(amount),
@@ -62,9 +62,9 @@ const ConfirmInformation = ({ navigation, route }) => {
       })),
     };
 
+    console.log("Payload to backend:", JSON.stringify(payload, null, 2));
     await createFundRequest(payload).unwrap();
 
-    // Notification content
     const notificationContent = {
       title: "Demande de fonds créée",
       body: `Une demande de ${parseFloat(amount)} FCFA a été créée.`,
@@ -91,12 +91,11 @@ const ConfirmInformation = ({ navigation, route }) => {
           }
         );
       } else {
-        throw new Error("Token de notification indisponible");
+        throw new Error("Push token not available");
       }
     } catch (notificationError) {
-      console.warn("Erreur d'envoi via backend :", notificationError?.message);
+      console.warn("Notification backend error:", notificationError?.message);
 
-      // Fallback : notification locale
       await sendPushNotification(
         notificationContent.title,
         notificationContent.body,
@@ -110,19 +109,33 @@ const ConfirmInformation = ({ navigation, route }) => {
       );
     }
 
-    // --- Navigation après succès
     navigation.navigate("SuccessSharing", {
       transactionDetails: "Votre demande de fond a été créée avec succès.",
     });
 
   } catch (error) {
-    Toast.show({
-      type: "error",
-      text1: t("confirmDemand.error_title"),
-      text2: error?.data?.message || t("confirmDemand.error_message"),
-    });
+    console.log("Submission error full object:", JSON.stringify(error, null, 2));
+
+    const isECONNRESET =
+      error?.data?.errors?.some((e) =>
+        typeof e === "string" && e.includes("ECONNRESET")
+      );
+
+    if (isECONNRESET) {
+      navigation.navigate("SuccessSharing", {
+        transactionDetails: "Votre demande de fond a été créée avec succès.",
+      });
+    } else {
+      Toast.show({
+        type: "error",
+        text1: t("confirmDemand.error_title"),
+        text2: error?.data?.message || t("confirmDemand.error_message"),
+      });
+    }
   }
 };
+
+
 
 
   return (

@@ -22,7 +22,7 @@ import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
 const RequestPay = ({ navigation, route }) => {
   const { demand } = route.params;
 
-    console.log(JSON.stringify(demand, null, 2));
+   // console.log(JSON.stringify(demand, null, 2));
   const [updateRecipientStatus, { isLoading: isUpdating }] = useUpdateRecipientStatusMutation();
   const [payFundRequest, { isLoading: isPaying }] = usePayFundRequestMutation();
       const { data: userProfile, isLoading: isProfileLoading } = useGetUserProfileQuery();
@@ -34,7 +34,7 @@ const RequestPay = ({ navigation, route }) => {
          isLoading: isBalanceLoading
        } = useGetBalanceQuery(userId, { skip: !userId });
        const balance = balanceData?.data.balance || 0;
-     console.log(balance)
+    // console.log(balance)
      
   const [modalVisible, setModalVisible] = useState(false);
   const [amountToPay, setAmountToPay] = useState('');
@@ -77,36 +77,46 @@ const RequestPay = ({ navigation, route }) => {
   };
 
   const handlePay = async () => {
-  const amount = parseFloat(amountToPay);
-  if (balance < amount) {
-    Alert.alert('Erreur', 'Solde insuffisant pour effectuer ce paiement.');
-    return;
-  }
+    const amount = parseFloat(amountToPay);
+    if (!amount || amount <= 0) {
+      Alert.alert('Erreur', 'Veuillez entrer un montant valide.');
+      return;
+    }
 
-  const payloadToSend = {
-    amount,
-    fundRequestId: requestFund.id,
-    description: requestFund.description,
-  };
+    if (balance < amount) {
+      Alert.alert('Erreur', 'Solde insuffisant pour effectuer ce paiement.');
+      return;
+    }
 
-  console.log('Payload sent to backend:', {
-    requestRecipientId: currentRecipientId,
-    payload: payloadToSend,
-  });
+    const payloadToSend = {
+      amount,
+      fundRequestId: requestFund.id,
+      description: requestFund.description,
+    };
 
-  try {
-    await payFundRequest({
+    console.log('Payload sent to backend:', {
       requestRecipientId: currentRecipientId,
       payload: payloadToSend,
-    }).unwrap();
+    });
 
-    Alert.alert('Succès', 'Paiement effectué avec succès.');
-    setModalVisible(false);
-  } catch (error) {
-    console.error('Payment error:', error);
-    Alert.alert('Erreur', "Le paiement a échoué.");
-  }
-};
+    try {
+      const res = await payFundRequest({
+        requestRecipientId: currentRecipientId,
+        payload: payloadToSend,
+      }).unwrap();
+
+      Alert.alert('Succès', 'Paiement effectué avec succès.');
+      setModalVisible(false);
+    } catch (error) {
+      console.error('Payment error:', error);
+      if (error?.data?.data?.errors) {
+        const messages = error.data.data.errors.map(e => e.message || JSON.stringify(e)).join('\n');
+        Alert.alert('Erreur', messages);
+      } else {
+        Alert.alert('Erreur', error?.data?.message || 'Le paiement a échoué.');
+      }
+    }
+  };
 
 
   const statusStyle = getStatusLabel(requestFund.status);
