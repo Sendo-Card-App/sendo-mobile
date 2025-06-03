@@ -40,11 +40,9 @@ const WelcomeDemand = ({ navigation }) => {
       {/* Text Block */}
       <View className="px-6 mt-8">
         <Text className="text-[22px] font-bold text-black leading-7">
-          {t("welcomeShare.title")}
+          {t("welcomeShare.til")}
         </Text>
-        <Text className="text-[18px] text-black mt-2 leading-6 font-medium">
-          {t("welcomeShare.subtitle")}
-        </Text>
+       
       </View>
 
       {/* Image Block */}

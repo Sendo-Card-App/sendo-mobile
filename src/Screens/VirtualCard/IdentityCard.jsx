@@ -16,30 +16,13 @@ const IdentityCard = ({ navigation }) => {
   const { t } = useTranslation();
   
   const handleFrontCapture = () => {
-    navigation.navigate("Camera", { 
-      purpose: 'id_front',
-      onCapture: (image) => {
-        dispatch(setIdentityDocumentFront({
-          uri: image.uri,
-          type: 'image/jpeg',
-          name: `id_front_${Date.now()}.jpg`
-        }));
-      }
-    });
-  };
+  navigation.navigate("Camera", { purpose: "id_front" });
+};
 
-  const handleBackCapture = () => {
-    navigation.navigate("Camera", { 
-      purpose: 'id_back',
-      onCapture: (image) => {
-        dispatch(setIdentityDocumentBack({
-          uri: image.uri,
-          type: 'image/jpeg',
-          name: `id_back_${Date.now()}.jpg`
-        }));
-      }
-    });
-  };
+const handleBackCapture = () => {
+  navigation.navigate("Camera", { purpose: "id_back"});
+};
+
   
 
   const handleDocumentTypeChange = (type) => {

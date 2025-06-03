@@ -10,7 +10,7 @@ import {
   Platform,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
-import { Ionicons } from "@expo/vector-icons";
+import { AntDesign, Ionicons, Feather } from "@expo/vector-icons";
 import TopLogo from "../../Images/TopLogo.png";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import Toast from "react-native-toast-message";
@@ -95,8 +95,13 @@ const CreateRequest = ({ navigation }) => {
           />
         </View>
          <View className="border border-dashed border-gray-300" />
+         
+          <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 10 , color:'#7ddd7d', marginTop:30,}}>
+            {t("createRequest.create_request")}
+          </Text>
+
         <ScrollView
-          className="mt-20 bg-white rounded-2xl p-4 mx-4"
+          className="mt-1 bg-white rounded-2xl p-4 mx-4"
           keyboardShouldPersistTaps="handled"
         >
           <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 30 }}>
@@ -154,11 +159,15 @@ const CreateRequest = ({ navigation }) => {
               padding: 16,
               borderRadius: 8,
               marginBottom: 30,
+              flexDirection: "row",
+               paddingVertical: Platform.OS === "ios" ? 12 : 8,
+               justifyContent: "space-between",
             }}
           >
             <Text style={{ fontSize: 16, color: deadline ? "#000" : "#999" }}>
               {deadline ? deadline : t("createRequest.choose_date")}
             </Text>
+            <Feather name="calendar" size={20} color="gray" />
           </TouchableOpacity>
 
           {showDatePicker && (
@@ -184,7 +193,7 @@ const CreateRequest = ({ navigation }) => {
             style={{
               backgroundColor: "#7ddd7d",
               padding: 16,
-              borderRadius: 8,
+              borderRadius: 40,
               alignItems: "center",
               marginBottom: 30,
             }}

@@ -430,6 +430,8 @@
 "region": "Region",
 "selectRegion": "Select your region",
 "city": "City",
+"country": "Country",
+"selectCountry": " Select your country",
 "selectCity": "Select your city",
 "district": "District",
 "selectDistrict": "Select your district",
@@ -438,7 +440,9 @@
 "confidentialNotice": "This information is required to complete your profile and is treated confidentially.",
 "saveButton": "SAVE",
 "closeButton": "Close",
-"securityNotice": "Do not share your personal information"
+"securityNotice": "Do not share your personal information",
+ "noOptions": "No options available",
+  "noOptionsMsg": "There are no choices available for this field. Please select another category first."
 },
 "identity_card": {
 "title": "Identity Document",
@@ -927,6 +931,7 @@
   },
   "welcomeShare": {
     "title": "Split the bill!",
+    "til": "Request and receive funds directly from your phone",
     "subtitle": "Request and receive money contributions instantly from your friends",
     "continue": "Continue"
   },
@@ -1015,7 +1020,9 @@
    "statuses": {
       "pending": "Pending",
       "completed": "Complete",
-      "cancelled": "Declined"
+      "complete": "Complete",
+      "cancelled": "Declined",
+       "declined": "Declined"
     }
   },
      "detail": {
@@ -1071,7 +1078,7 @@
   "description": "Service Description",
   "description_placeholder": "Type your message...",
   "deadline": "Deadline",
-  "choose_date": "Choose a date",
+  "choose_date": "--/--/--",
   "next": "Next",
   "error_title": "Missing Information",
   "fill_all_fields": "Please fill in all fields before proceeding.",
@@ -1094,13 +1101,18 @@
   "total_amount": "Total Amount",
   "service_description": "Service Description",
   "deadline": "Deadline",
-  "recipients": "Recipients",
+  "recipients": "Destinator (s)",
   "no_recipients": "No recipients selected.",
   "confirm": "Confirm",
   "success_title": "Success",
   "success_message": "Your request has been sent successfully!",
   "error_title": "Error",
   "error_message": "Something went wrong. Please try again."
+  },
+  "edit": {
+    "modify_field": "Modify ",
+    "placeholder": "Enter ",
+    "save": "Save"
   }
 
   

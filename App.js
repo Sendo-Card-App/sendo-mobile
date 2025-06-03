@@ -104,6 +104,7 @@ import ConfirmInformation from "./src/Screens/Demand/ConfirmInformation";
 import RequestPay from "./src/Screens/Demand/RequestPay";
 import SelectRecipients from "./src/Screens/Demand/SelectRecipients";
 import DetailsList from "./src/Screens/Demand/DetailsList";
+import EditFundField from "./src/Screens/Demand/EditFundField";
 
 
 const Stack = createNativeStackNavigator();
@@ -396,6 +397,8 @@ function MainStack() {
       <Stack.Screen name="WelcomeDemand" component={WelcomeDemand } options={{ headerShown: false }} />
       <Stack.Screen name="DemandList" component={DemandList } options={{ headerShown: false }} />
       <Stack.Screen name="ConfirmInformation" component={ConfirmInformation } options={{ headerShown: false }} />
+      <Stack.Screen name="EditFundField" component={EditFundField } options={{ headerShown: false }} />
+
       
     </Stack.Navigator>
   );

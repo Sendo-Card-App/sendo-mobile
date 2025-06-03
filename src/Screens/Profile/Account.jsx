@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect,useCallback  } from "react";
+import { useFocusEffect } from '@react-navigation/native';
 import {
   View,
   Text,
@@ -94,6 +95,11 @@ const [
       console.error('Erreur lors de l’envoi:', err);
     }
   };
+  useFocusEffect(
+    useCallback(() => {
+      refetch(); // force une requête au backend
+    }, [])
+  );
 
   useEffect(() => {
     if (userProfile) {

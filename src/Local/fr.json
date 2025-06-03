@@ -430,6 +430,8 @@
     "region": "Région",
     "selectRegion": "Sélectionnez votre région",
     "city": "Ville",
+    "country": "Pays",
+    "selectCountry": " Sélectionnez votre pays",
     "selectCity": "Sélectionnez votre ville",
     "district": "Quartier",
     "selectDistrict": "Sélectionnez votre quartier",
@@ -438,7 +440,9 @@
     "confidentialNotice": "Ces informations sont requises pour compléter votre profil et sont traitées de manière confidentielle.",
     "saveButton": "ENREGISTRER",
     "closeButton": "Fermer",
-    "securityNotice": "Ne partagez pas vos informations personnelles"
+    "securityNotice": "Ne partagez pas vos informations personnelles",
+     "noOptions": "Aucune option disponible",
+  "noOptionsMsg": "Aucun choix disponible pour ce champ. Veuillez d'abord sélectionner une autre catégorie."
   },
   "identity_card": {
     "title": "Pièce d'identité",
@@ -928,6 +932,7 @@
   },
    "welcomeShare": {
     "title": "Partagez la facture !",
+     "til": "Demandez et recevez des fonds directement depuis votre téléphone",
     "subtitle": "Demandez et recevez instantanément des contributions monétaires de vos amis",
     "continue": "Continuer"
   },
@@ -1015,8 +1020,10 @@
   "noHistoryFound": "Aucun historique trouvé.",
    "statuses": {
       "pending": "En attente",
+      "complete": "Complété",
       "completed": "Complété",
-      "cancelled": "Refusé"
+      "cancelled": "Refusé",
+       "declined": "Refusé"
     }
   },
        "detail": {
@@ -1072,7 +1079,7 @@
   "description": "Description du service",
   "description_placeholder": "Saisissez le texte......",
   "deadline": "Délai",
-  "choose_date": "Choisir une date",
+  "choose_date": "--/--/--",
   "next": "Suivant",
   "error_title": "Informations manquantes",
   "fill_all_fields": "Veuillez remplir tous les champs.",
@@ -1094,14 +1101,19 @@
  "confirm_information": "Confirmer les informations",
   "total_amount": "Montant total",
   "service_description": "Description du service",
-  "deadline": "Date limite",
-  "recipients": "Bénéficiaires",
+  "deadline": "Délai",
+  "recipients": "Destinataire (s)",
   "no_recipients": "Aucun bénéficiaire sélectionné.",
   "confirm": "Confirmer et continuer",
   "success_title": "Succès",
   "success_message": "Votre demande a été envoyée avec succès !",
   "error_title": "Erreur",
   "error_message": "Une erreur s'est produite. Veuillez réessayer."
+  },
+  "edit": {
+    "modify_field": "Modifier ",
+    "placeholder": "Entrez ",
+    "save": "Enregistrer"
   }
 
   

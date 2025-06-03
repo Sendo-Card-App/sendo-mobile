@@ -205,13 +205,18 @@ const Signup = () => {
   }, []);
 
   useEffect(() => {
-    if (isSignupSuccess) {
-      setTimeout(() => {
-        navigation.navigate("OtpVerification", { phone: `${selectedCountry.code}${signupDetails.phone}` });
-      }, 1000);
-    }
-    return () => dispatch(resetSignupState());
-  }, [isSignupSuccess]);
+  if (isSignupSuccess) {
+    setTimeout(() => {
+      navigation.navigate("OtpVerification", {
+        phone: `${selectedCountry.code}${signupDetails.phone}`,
+        email: signupDetails.email,
+      });
+    }, 500);
+  }
+
+  return () => dispatch(resetSignupState());
+}, [isSignupSuccess]);
+
 
   const openModal = () => setIsModalVisible(true);
   const closeModal = () => setIsModalVisible(false);

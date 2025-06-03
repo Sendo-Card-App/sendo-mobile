@@ -10,7 +10,8 @@ import {
   Modal,
   Dimensions
 } from "react-native";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
+import { useFocusEffect } from '@react-navigation/native';
 import OrangeMoney from "../../Images/om.png";
 import { useNavigation } from "@react-navigation/native";
 import SkeletonLoader from '../../components/SkeletonLoader';
@@ -27,7 +28,7 @@ const isSmallScreen = width < 375;
 
 const HistoryCard = ({ transaction, user, onPress }) => {
   const { t } = useTranslation();
-
+  //console.log(transaction)
   const getStatusColor = (status) => {
     switch(status?.toUpperCase()) {
       case 'COMPLETED': return 'text-green-600';
@@ -48,16 +49,22 @@ const HistoryCard = ({ transaction, user, onPress }) => {
   };
 
   const getMethodIcon = () => {
-    switch(transaction.method?.toUpperCase()) {
-      case 'MOBILE_MONEY':
-        return transaction.provider?.includes('Orange') ? 
-          OrangeMoney : require('../../Images/mtn.png');
-      case 'BANK_TRANSFER':
-        return require('../../Images/RoyalBank.png');
-      default:
-        return require('../../Images/transaction.png');
-    }
-  };
+  switch (transaction.method?.toUpperCase()) {
+    case 'MOBILE_MONEY':
+      if (transaction.provider === 'CMORANGEOM') {
+        return require('../../Images/om.png');
+      } else if (transaction.provider === 'MTNMOMO') {
+        return require('../../Images/mtn.png');
+      } else {
+        return require('../../Images/transaction.png'); // fallback générique
+      }
+    case 'BANK_TRANSFER':
+      return require('../../Images/RoyalBank.png');
+    default:
+      return require('../../Images/transaction.png');
+  }
+};
+
 
   return (
     <TouchableOpacity 
@@ -425,6 +432,11 @@ const History = () => {
     refetch();
   }, [appliedFilters, refetch]);
 
+  useFocusEffect(
+    useCallback(() => {
+      refetch(); // force une requête au backend
+    }, [])
+  );
  if (isLoading && currentPage === 1) {
   return (
     <View className="flex-1 justify-center items-center w-full px-4">
@@ -442,6 +454,7 @@ const History = () => {
 }
 
   if (isError) {
+   
     return (
       <View className="flex-1 justify-center items-center">
         <Text className="text-red-500">{t('history1.errorLoading')}</Text>

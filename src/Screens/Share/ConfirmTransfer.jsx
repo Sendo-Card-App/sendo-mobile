@@ -26,6 +26,17 @@ const ConfirmationScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { t } = useTranslation();
+  const { 
+  totalAmount, 
+  description, 
+  limitDate, 
+  includeSelf, 
+  methodCalculatingShare, 
+  participants, 
+  userFullName 
+} = route.params;
+
+
   const [createSharedExpense, { isLoading }] = useCreateSharedExpenseMutation();
   const [reason, setReason] = useState(route.params.description || "");
 
@@ -94,6 +105,7 @@ const ConfirmationScreen = () => {
     });
 
   } catch (error) {
+    console.log(error)
     Toast.show({
       type: "error",
       text1: "Erreur",
@@ -113,10 +125,17 @@ const ConfirmationScreen = () => {
         <Image source={TopLogo} className="h-36 w-40" resizeMode="contain" />
       </View>
 
-      <View className="border-b border-dashed border-white flex-row justify-between py-4 mt-10 items-center mx-5 pt-5">
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <AntDesign name="arrowleft" size={24} color="white" />
-        </TouchableOpacity>
+      <View className="border-b border-dashed border-white flex-row justify-between py-4 mt-20 items-center mx-5 pt-5">
+       <TouchableOpacity
+          hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
+          onPress={() => {
+            console.log("Pressed back button");
+            navigation.goBack();
+          }}
+        >
+  <AntDesign name="arrowleft" size={24} color="white" />
+</TouchableOpacity>
+
         <TouchableOpacity onPress={() => navigation.openDrawer()}>
           <Ionicons name="menu-outline" size={24} color="white" />
         </TouchableOpacity>
@@ -185,7 +204,7 @@ const ConfirmationScreen = () => {
                 className="flex-row justify-between items-center bg-gray-100 p-3 rounded-xl mb-2"
               >
                 <Text className="flex-1 text-base font-medium text-black">
-                  {participant.name || participant.matriculeWallet}
+                  {participant.name || userFullName }
                 </Text>
                 {route.params.methodCalculatingShare === "manual" &&
                 participant.amount != null ? (

@@ -4,6 +4,8 @@ import { StatusBar } from "expo-status-bar";
 import { AntDesign, Feather, Ionicons } from "@expo/vector-icons";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { useTranslation } from 'react-i18next';
+import { useDispatch } from "react-redux";
+import { setIdentityDocumentFront, setIdentityDocumentBack,setSelfie,setNiuDocument,setAddressProof } from "../../features/Kyc/kycReducer";
 
 const Camera = ({ navigation, route }) => {
   const [permission, requestPermission] = useCameraPermissions();
@@ -12,7 +14,8 @@ const Camera = ({ navigation, route }) => {
   const [face, setFace] = useState(false);
   const { height } = Dimensions.get("screen");
   const cameraRef = useRef();
-  const { purpose, onCapture } = route.params || {};
+  const dispatch = useDispatch();
+  const { purpose, onCapture, returnTo, sid } = route.params || {};
   const { t } = useTranslation();
 
   const takePicture = async () => {
@@ -23,13 +26,50 @@ const Camera = ({ navigation, route }) => {
     }
   };
 
-  const handleSubmit = () => {
-    if (picture && onCapture) {
-      onCapture(picture);
-    } else {
+const handleSubmit = () => {
+  if (picture) {
+    const file = {
+      uri: picture.uri,
+      type: 'image/jpeg',
+      name: `${purpose}_${Date.now()}.jpg`
+    };
+
+    switch (purpose) {
+      case 'id_front':
+        dispatch(setIdentityDocumentFront(file));
+        break;
+      case 'id_back':
+        dispatch(setIdentityDocumentBack(file));
+        break;
+      case 'selfie':
+        dispatch(setSelfie(file));
+        break;
+      case 'address_proof':
+        dispatch(setAddressProof(file));
+        break;
+      case 'niu':
+        dispatch(setNiuDocument(file));
+        break;
+      default:
+        console.warn(`Unknown purpose: ${purpose}`);
+    }
+
+    if (purpose === 'selfie') {
+      navigation.navigate("KycResume");
+    } else 
+    if (purpose === 'niu') {
+      navigation.navigate("KycResume");
+    } else
+     if (purpose === 'address_proof') {
+      navigation.navigate("KycResume");
+    } else
+    {
       navigation.goBack();
     }
-  };
+  }
+};
+
+
 
   const getTitle = () => {
     switch (purpose) {

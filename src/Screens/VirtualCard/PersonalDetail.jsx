@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, Image, ScrollView, TextInput, Modal, Alert } from "react-native";
+import { View, Text, TouchableOpacity, Image, ScrollView, Modal, Alert } from "react-native";
 import { useDispatch, useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 import KycTab from "../../components/KycTab";
@@ -8,29 +8,69 @@ import TopLogo from "../../Images/TopLogo.png";
 import { AntDesign, Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 
+const dataByCountry = {
+  Cameroun: {
+    regions: ['Littoral', 'Centre', 'Sud', 'Nord'],
+    cities: {
+      Littoral: ['Douala', 'Bonabéri', 'Nkongsamba'],
+      Centre: ['Yaoundé', 'Mbalmayo'],
+      Sud: ['Ebolowa', 'Kribi'],
+      Nord: ['Garoua', 'Maroua'],
+    },
+    districts: {
+      Douala: ['Bonanjo', 'Bastos', 'Akwa', 'Makepe'],
+      Yaoundé: ['Melen', 'Bastos', 'Nzeng-Ayong'],
+      // ... autres villes et leurs districts
+    },
+    professions: ['Ingénieur', 'Médecin', 'Enseignant', 'Commerçant'],
+  },
+  Canada: {
+    regions: ['Ontario', 'Québec', 'Colombie-Britannique'],
+    cities: {
+      Ontario: ['Toronto', 'Ottawa', 'Hamilton'],
+      Québec: ['Montréal', 'Québec', 'Laval'],
+      'Colombie-Britannique': ['Vancouver', 'Victoria'],
+    },
+    districts: {
+      Toronto: ['Downtown', 'North York', 'Scarborough'],
+      Montréal: ['Plateau', 'Mile End', 'Ville-Marie'],
+     
+    },
+    professions: ['Engineer', 'Doctor', 'Teacher', 'Merchant'],
+  }
+};
+
 const PersonalDetail = ({ navigation }) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const personalDetails = useSelector(state => state.kyc.personalDetails);
-  
+
   const [formData, setFormData] = useState({
-    profession: personalDetails.profession || '',
+    country: personalDetails.country || '',
     region: personalDetails.region || '',
     city: personalDetails.city || '',
     district: personalDetails.district || '',
+    profession: personalDetails.profession || '',
   });
 
   const [toggleDropdown, setToggleDropdown] = useState(false);
   const [currentSelection, setCurrentSelection] = useState([]);
   const [currentCategory, setCurrentCategory] = useState("");
 
-  const regions = ['Littoral', 'Centre', 'Sud', 'Nord'];
-  const cities = ['Douala', 'Yaoundé', 'Kribi', 'Garoua'];
-  const districts = ['Bonanjo', 'Bastos', 'Akwa', 'Makepe'];
-  const professions = ['Ingénieur', 'Médecin', 'Enseignant', 'Commerçant'];
-
   const handleInputChange = (name, value) => {
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData(prev => {
+      // Reset dependent fields if country or region changes
+      if (name === "country") {
+        return { ...prev, country: value, region: '', city: '', district: '' };
+      }
+      if (name === "region") {
+        return { ...prev, region: value, city: '', district: '' };
+      }
+      if (name === "city") {
+        return { ...prev, city: value, district: '' };
+      }
+      return { ...prev, [name]: value };
+    });
   };
 
   const handleSelect = (option) => {
@@ -38,16 +78,43 @@ const PersonalDetail = ({ navigation }) => {
     setToggleDropdown(false);
   };
 
-  const openModal = (category, options) => {
+  const openModal = (category) => {
+    let options = [];
+    const { country, region, city } = formData;
+
+    switch(category) {
+      case 'country':
+        options = Object.keys(dataByCountry);
+        break;
+      case 'region':
+        options = country ? dataByCountry[country]?.regions || [] : [];
+        break;
+      case 'city':
+        options = country && region ? dataByCountry[country]?.cities?.[region] || [] : [];
+        break;
+      case 'district':
+        options = country && region && city ? dataByCountry[country]?.districts?.[city] || [] : [];
+        break;
+      case 'profession':
+        options = country ? dataByCountry[country]?.professions || [] : [];
+        break;
+      default:
+        options = [];
+    }
+
+    if (options.length === 0) {
+      Alert.alert(t('personalDetail.noOptions'), t('personalDetail.noOptionsMsg'));
+      return;
+    }
+
     setCurrentSelection(options);
     setCurrentCategory(category);
     setToggleDropdown(true);
   };
 
   const handleSubmit = () => {
-    // Basic validation (kept in original French as requested)
-    if (!formData.profession || !formData.region || !formData.city || !formData.district) {
-      Alert.alert("Erreur", "Veuillez remplir tous les champs obligatoires");
+    if (!formData.country || !formData.profession || !formData.region || !formData.city || !formData.district) {
+      Alert.alert(t('personalDetail.errorTitle'), t('personalDetail.fillAllFields'));
       return;
     }
 
@@ -89,13 +156,25 @@ const PersonalDetail = ({ navigation }) => {
           
           <View className="border border-dashed border-gray-300 my-2" />
 
+          {/* Country */}
+          <Text className="font-bold text-gray-600 mt-4 mb-2 text-xs">
+            {t('personalDetail.country')}
+          </Text>
+          <TouchableOpacity 
+            className="border border-gray-300 rounded-lg p-4 mb-2"
+            onPress={() => openModal("country")}>
+            <Text className="text-gray-800">
+              {formData.country || t('personalDetail.selectCountry')}
+            </Text>
+          </TouchableOpacity>
+
           {/* Region */}
           <Text className="font-bold text-gray-600 mt-4 mb-2 text-xs">
             {t('personalDetail.region')}
           </Text>
           <TouchableOpacity 
             className="border border-gray-300 rounded-lg p-4 mb-2"
-            onPress={() => openModal("region", regions)}>
+            onPress={() => openModal("region")}>
             <Text className="text-gray-800">
               {formData.region || t('personalDetail.selectRegion')}
             </Text>
@@ -107,7 +186,7 @@ const PersonalDetail = ({ navigation }) => {
           </Text>
           <TouchableOpacity
             className="border border-gray-300 rounded-lg p-4 mb-2"
-            onPress={() => openModal("city", cities)}>
+            onPress={() => openModal("city")}>
             <Text className="text-gray-800">
               {formData.city || t('personalDetail.selectCity')}
             </Text>
@@ -119,7 +198,7 @@ const PersonalDetail = ({ navigation }) => {
           </Text>
           <TouchableOpacity
             className="border border-gray-300 rounded-lg p-4 mb-2"
-            onPress={() => openModal("district", districts)}>
+            onPress={() => openModal("district")}>
             <Text className="text-gray-800">
               {formData.district || t('personalDetail.selectDistrict')}
             </Text>
@@ -131,7 +210,7 @@ const PersonalDetail = ({ navigation }) => {
           </Text>
           <TouchableOpacity
             className="border border-gray-300 rounded-lg p-4 mb-2"
-            onPress={() => openModal("profession", professions)}>
+            onPress={() => openModal("profession")}>
             <Text className="text-gray-800">
               {formData.profession || t('personalDetail.selectProfession')}
             </Text>
@@ -159,24 +238,22 @@ const PersonalDetail = ({ navigation }) => {
           visible={toggleDropdown}
           onRequestClose={() => setToggleDropdown(false)}
         >
-          <View className="flex-1 justify-center items-center bg-black bg-opacity-50">
-            <View className="bg-white rounded-lg w-5/6 max-w-md">
+          <View className="flex-1 justify-center items-center bg-transparent bg-opacity-50">
+            <View className="bg-black rounded-lg w-5/6 max-w-md">
               {currentSelection.map((option, index) => (
                 <TouchableOpacity 
                   key={index} 
                   onPress={() => handleSelect(option)} 
                   className="py-3 px-4 border-b border-gray-200"
                 >
-                  <Text className="text-gray-800">{option}</Text>
+                  <Text className="text-white">{option}</Text>
                 </TouchableOpacity>
               ))}
-              <TouchableOpacity 
-                onPress={() => setToggleDropdown(false)} 
-                className="py-3 px-4 bg-gray-100 rounded-b-lg"
+              <TouchableOpacity
+                onPress={() => setToggleDropdown(false)}
+                className="py-3 px-4 bg-gray-200 rounded-b-lg"
               >
-                <Text className="text-red-500 text-center font-bold">
-                  {t('personalDetail.closeButton')}
-                </Text>
+                <Text className="text-center text-gray-600"> {t('personalDetail.closeButton')} </Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -184,14 +261,6 @@ const PersonalDetail = ({ navigation }) => {
       </ScrollView>
 
       <StatusBar style="light" />
-      
-      {/* Footer */}
-      <View className="py-4 flex-row justify-center items-center gap-2">
-        <Ionicons name="shield-checkmark" size={18} color="orange" />
-        <Text className="text-sm text-white">
-          {t('personalDetail.securityNotice')}
-        </Text>
-      </View>
     </View>
   );
 };

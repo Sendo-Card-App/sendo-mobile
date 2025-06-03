@@ -1,5 +1,6 @@
 import { View, Text, Image, TouchableOpacity } from "react-native";
-import React, { useEffect, useState } from "react";
+import { useFocusEffect } from '@react-navigation/native';
+import React, { useEffect,useCallback, useState } from "react";
 import TopLogo from "../../Images/TopLogo.png";
 import { Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
@@ -10,14 +11,20 @@ import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
 const VerifyIdentity = ({ navigation }) => {
   const { t } = useTranslation();
   const [showVerifiedMessage, setShowVerifiedMessage] = useState(false);
-  const { data: userProfile, isLoading: isProfileLoading } = useGetUserProfileQuery();
+  const { data: userProfile, isLoading: isProfileLoading, refetch } = useGetUserProfileQuery();
+   
+   useFocusEffect(
+    useCallback(() => {
+      refetch(); // force une requête au backend
+    }, [])
+    );
 
   useEffect(() => {
     if (userProfile?.data?.isVerifiedKYC) {
       setShowVerifiedMessage(true);
       const timer = setTimeout(() => {
         setShowVerifiedMessage(false);
-      }, 10000); // 20 seconds
+      }, 3600000); //1hours
       return () => clearTimeout(timer);
     }
   }, [userProfile]);

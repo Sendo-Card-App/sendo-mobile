@@ -24,7 +24,7 @@ export default function Historique({ navigation }) {
     data: sharedExpensesData,
     isLoading: expensesLoading,
   } = useGetSharedExpensesQuery(userId ? { userId } : skipToken);
-  //console.log(JSON.stringify(sharedExpensesData, null, 2));
+ // console.log(JSON.stringify(sharedExpensesData, null, 2));
   const sharedExpenses = sharedExpensesData?.data || [];
 
   const getStatusColor = (status) => {
@@ -38,6 +38,11 @@ export default function Historique({ navigation }) {
       default:
         return "#9E9E9E";
     }
+  };
+
+  const getUserPart = (item) => {
+    const participant = item.participants?.find(p => p.userId === userId);
+    return participant?.part;
   };
 
   return (
@@ -88,103 +93,92 @@ export default function Historique({ navigation }) {
           <Text style={{ marginTop: 10 }}>{t("his.loading")}</Text>
         </View>
       ) : (
-        <ScrollView contentContainerStyle={{ paddingHorizontal: 20 }}>
+        <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 20 }}>
           {sharedExpenses.length === 0 ? (
             <Text style={{ textAlign: "center", marginTop: 20, color: "#777" }}>
               {t("his.no_data")}
             </Text>
           ) : (
-            sharedExpenses.map((item) => (
-              <View
-                key={item.id}
-                style={{
-                  backgroundColor: "#fff",
-                  borderRadius: 10,
-                  padding: 15,
-                  marginBottom: 15,
-                  shadowColor: "#000",
-                  shadowOpacity: 0.1,
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowRadius: 4,
-                  elevation: 2,
-                }}
-              >
-                {/* Title and Amount */}
-                <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 5 }}>
-                  <Text style={{ fontWeight: "bold", fontSize: 16 }}>{item.description}</Text>
-                  <View
-                    style={{
-                      backgroundColor: "#7ddd7d",
-                      borderRadius: 6,
-                      paddingHorizontal: 8,
-                      paddingVertical: 2,
-                    }}
-                  >
-                    {item.participants.map((p) => {
-                      if (p.userId === userId) {
-                        return (
-                          <Text key={p.userId} style={{ color: "#000", fontWeight: "bold", fontSize: 12 }}>
-                            {p.part} {item.currency}
-                          </Text>
-                        );
-                      }
-                      return null;
-                    })}
-                  </View>
-                </View>
+            sharedExpenses.map((item) => {
+              const userPart = getUserPart(item);
+              const initiatorName = item.initiator
+                ? `${item.initiator.firstname} `
+                : t("his.unknown");
 
-                
-                {/* Status Display (per participant) */}
-                <View style={{ marginTop: 5, marginBottom: 8 }}>
-                  {item.participants
-                    .filter((p) => p.userId === userId)
-                    .map((p) => (
-                      <Text
-                        key={p.userId}
-                        style={{
-                          color: "#000",
-                          fontSize: 13,
-                          fontWeight: "600",
-                          backgroundColor: getStatusColor(p.paymentStatus),
-                          paddingHorizontal: 8,
-                          paddingVertical: 4,
-                          borderRadius: 5,
-                          alignSelf: "flex-start",
-                          textTransform: "uppercase",
-                        }}
-                      >
-                        {t(`his.status.${p.paymentStatus.toLowerCase()}`) || p.paymentStatus}
-                      </Text>
-                  ))}
-                </View>
-
-
-                {/* Date */}
-                <View style={{ flexDirection: "row", justifyContent: "flex-end" }}>
-                  <Text style={{ color: "#999", fontSize: 12 }}>
-                    {new Date(item.createdAt).toLocaleDateString()}
-                  </Text>
-                </View>
-
-                {/* Pay Button */}
-                {item.status !== "CANCELLED" && item.status !== "COMPLETED" && (
-                  <TouchableOpacity
-                    onPress={() => navigation.navigate("DemandDetailScreen", { item })}
-                    style={{
-                      backgroundColor: "#7ddd7d",
-                      paddingVertical: 10,
-                      borderRadius: 30,
-                      alignItems: "center",
-                      marginTop: 10,
-                    }}
-                  >
-                    <Text style={{ color: "#000", fontWeight: "bold" }}>
-                      {t("his.payer")}
+              return (
+                <View
+                  key={item.id}
+                  style={{
+                    backgroundColor: "#fff",
+                    borderRadius: 10,
+                    padding: 15,
+                    marginBottom: 15,
+                    shadowColor: "#000",
+                    shadowOpacity: 0.1,
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowRadius: 4,
+                    elevation: 2,
+                  }}
+                >
+                  {/* Description and Amount */}
+                  <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 5 }}>
+                    <Text style={{ fontWeight: "bold", fontSize: 16, flex: 1 }}>
+                      {item.description}
                     </Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-            ))
+                    <View
+                      style={{
+                        backgroundColor: "#7ddd7d",
+                        borderRadius: 6,
+                        paddingHorizontal: 8,
+                        paddingVertical: 2,
+                        marginLeft: 8,
+                      }}
+                    >
+                      <Text style={{ fontWeight: "bold" }}>
+                        {item.totalAmount} {item.currency}
+                      </Text>
+                    </View>
+                  </View>
+
+                  
+
+                  <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 5 }}>
+                    <Text style={{ fontWeight: "bold", flex: 1 }}>
+                      {item.participants?.length > 0
+                        ? item.participants
+                            .map((p) => `${p.user?.firstname || ""} `)
+                            .join(", ")
+                        : initiatorName}
+                    </Text>
+                  </View>
+
+
+                  {/* Date */}
+                  <View style={{ flexDirection: "row", justifyContent: "flex-end" }}>
+                    <Text style={{ color: "#999", fontSize: 12 }}>
+                      {new Date(item.createdAt).toLocaleDateString()}
+                    </Text>
+                  </View>
+
+                  {/* Pay Button */}
+                    <TouchableOpacity
+                      onPress={() => navigation.navigate("DemandDetailScreen", { item })}
+                      style={{
+                        backgroundColor: "#7ddd7d",
+                        paddingVertical: 10,
+                        borderRadius: 30,
+                        alignItems: "center",
+                        marginTop: 10,
+                      }}
+                    >
+                      <Text style={{ color: "#000", fontWeight: "bold" }}>
+                        {t("his.payer")}
+                      </Text>
+                    </TouchableOpacity>
+                  
+                </View>
+              );
+            })
           )}
         </ScrollView>
       )}

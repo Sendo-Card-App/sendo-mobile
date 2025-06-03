@@ -39,7 +39,7 @@ const HistoryScreen = () => {
     isLoading,
     isError,
   } = useGetSharedExpensesQuery({ userId, page: 1, limit: 100 });
-console.log(JSON.stringify(sharedData, null, 2));
+//console.log(JSON.stringify(sharedData, null, 2));
   const transactions = sharedData?.data || [];
 
   const handleTransactionPress = (transaction) => {
@@ -182,7 +182,7 @@ console.log(JSON.stringify(sharedData, null, 2));
             {/* Status Filter */}
             <View className="mb-5">
               <Text className="text-sm mb-1 text-gray-700">{t("historique.status")}</Text>
-              {["", "PENDING", "COMPLETE", "DECLINED"].map((status) => (
+              {["", "PENDING", "COMPLETED", "DECLINED"].map((status) => (
                 <Pressable
                   key={status}
                   onPress={() => setSelectedStatus(status)}

@@ -1,13 +1,39 @@
-import React from "react";
-import { View, Text, TouchableOpacity, Image, ScrollView } from "react-native";
-import { StatusBar } from "expo-status-bar";
-import { Ionicons } from "@expo/vector-icons";
-import TopLogo from "../../Images/TopLogo.png";
+import React from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Image,
+  ScrollView,
+} from 'react-native';
+import { StatusBar } from 'expo-status-bar';
+import { Ionicons } from '@expo/vector-icons';
+import TopLogo from '../../Images/TopLogo.png';
 
-const RequestPay = ({ navigation }) => {
+const RequestPay = ({ navigation, route }) => {
+  const { demand } = route.params;
+
+  const totalPaid = demand.recipients?.reduce((sum, r) => sum + (r.amountPaid || 0), 0);
+  const remaining = demand.amount - totalPaid;
+
+  const getStatusLabel = (status) => {
+    switch (status) {
+      case 'PENDING':
+        return { label: 'En attente', colorBg: '#FFF3CD', colorText: '#856404' };
+      case 'PAID':
+        return { label: 'Payé', colorBg: '#D4EDDA', colorText: '#155724' };
+      case 'CANCELLED':
+        return { label: 'Annulé', colorBg: '#F8D7DA', colorText: '#721C24' };
+      default:
+        return { label: status, colorBg: '#E2E3E5', colorText: '#383D41' };
+    }
+  };
+
+  const statusStyle = getStatusLabel(demand.status);
+
   return (
     <>
-      <StatusBar barStyle="light-content" />
+      <StatusBar style="light" />
 
       {/* Header */}
       <View
@@ -15,10 +41,10 @@ const RequestPay = ({ navigation }) => {
           height: 100,
           paddingHorizontal: 20,
           paddingTop: 48,
-          backgroundColor: "#151c1f",
-          flexDirection: "row",
-          justifyContent: "space-between",
-          alignItems: "center",
+          backgroundColor: '#151c1f',
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'center',
           borderBottomLeftRadius: 16,
           borderBottomRightRadius: 16,
         }}
@@ -31,123 +57,127 @@ const RequestPay = ({ navigation }) => {
         </TouchableOpacity>
       </View>
 
-      {/* Logo */}
+      {/* Top Logo */}
       <View
         style={{
-          position: "absolute",
+          position: 'absolute',
           top: -48,
           left: 0,
           right: 0,
-          alignItems: "center",
-          justifyContent: "center",
+          alignItems: 'center',
         }}
       >
-        <Image source={TopLogo} style={{ height: 140, width: 160 }} resizeMode="contain" />
+        <Image source={TopLogo} style={{ height: 120, width: 160 }} resizeMode="contain" />
       </View>
 
-      <View className="border border-dashed border-gray-300" />
+      {/* Divider */}
+      <View className="border border-dashed border-gray-300 mb-4" />
 
-      {/* Content */}
-      <ScrollView style={{ padding: 20, marginTop: 40 }}>
-        <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 20 }}>
+      <ScrollView style={{ padding: 20, backgroundColor: '#0A0F1F' }}>
+        <Text style={{ color: '#4ade80', fontSize: 20, fontWeight: 'bold', marginBottom: 16 }}>
           Détails de la demande
         </Text>
 
-        {/* Invoice Number */}
-        <Text style={{ fontSize: 18, fontWeight: "bold", marginBottom: 20 }}>
-          Facture No. #lv237
-        </Text>
+        <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 16 }}>
+          <Text style={{ textAlign: 'right', fontWeight: 'bold', fontSize: 12, marginBottom: 8 }}>
+            Facture No.{demand.reference}
+          </Text>
 
-        {/* Service Details Section */}
-        <View style={{ marginBottom: 25 }}>
-          <Text style={{ fontSize: 16, fontWeight: "bold", marginBottom: 10 }}>
+          <Text style={{ fontWeight: 'bold', fontSize: 15, marginBottom: 4, color: '#000' }}>
             Description du service
           </Text>
-          <Text style={{ fontSize: 16, marginBottom: 8 }}>- Dépannage éléctrique</Text>
-          
-          <View style={{ marginBottom: 8 }}>
-            <Text style={{ fontSize: 16, fontWeight: "bold" }}>Statut</Text>
-            <Text style={{ fontSize: 16 }}>- (1) attente</Text>
+          <Text style={{ color: '#444', marginBottom: 12 }}>{demand.description}</Text>
+
+          {/* Status */}
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              marginBottom: 12,
+              justifyContent: 'space-between',
+            }}
+          >
+            <Text style={{ fontWeight: 'bold', color: '#000' }}>Statut</Text>
+            <View
+              style={{
+                backgroundColor: statusStyle.colorBg,
+                borderRadius: 9999,
+                paddingHorizontal: 12,
+                paddingVertical: 4,
+                width: 96,
+                alignItems: 'center',
+              }}
+            >
+              <Text style={{ color: statusStyle.colorText, fontWeight: '600', fontSize: 12 }}>
+                {statusStyle.label}
+              </Text>
+            </View>
           </View>
 
-          <View style={{ marginBottom: 8 }}>
-            <Text style={{ fontSize: 16, fontWeight: "bold" }}>Montant total</Text>
-            <Text style={{ fontSize: 16 }}>200,000 xaf</Text>
+          {/* Amounts */}
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+            <Text style={{ fontWeight: 'bold', color: '#000' }}>Montant total</Text>
+            <Text style={{ color: 'green' }}>{demand.amount.toLocaleString()} XAF</Text>
           </View>
 
-          <View style={{ marginBottom: 8 }}>
-            <Text style={{ fontSize: 16, fontWeight: "bold" }}>Payé</Text>
-            <Text style={{ fontSize: 16 }}>100,000 xaf</Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+            <Text style={{ fontWeight: 'bold', color: '#000' }}>Payé</Text>
+            <Text>{totalPaid.toLocaleString()} XAF</Text>
           </View>
 
-          <View style={{ marginBottom: 8 }}>
-            <Text style={{ fontSize: 16, fontWeight: "bold" }}>Reste</Text>
-            <Text style={{ fontSize: 16 }}>100,000 xaf</Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 }}>
+            <Text style={{ fontWeight: 'bold', color: '#000' }}>Reste</Text>
+            <Text>{remaining.toLocaleString()} XAF</Text>
           </View>
 
-          <View style={{ marginBottom: 8 }}>
-            <Text style={{ fontSize: 16, fontWeight: "bold" }}>Date</Text>
-            <Text style={{ fontSize: 16 }}>27/05/2025</Text>
+          {/* Dates */}
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+            <Text style={{ fontWeight: 'bold', color: '#000' }}>Créé le</Text>
+            <Text>{demand.createdAt?.split('T')[0]}</Text>
           </View>
+          {demand.dueDate && (
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 24 }}>
+              <Text style={{ fontWeight: 'bold', color: '#000' }}>Délai</Text>
+              <Text>{demand.dueDate?.split('T')[0]}</Text>
+            </View>
+          )}
 
-          <View style={{ marginBottom: 15 }}>
-            <Text style={{ fontSize: 16, fontWeight: "bold" }}>Délai</Text>
-            <Text style={{ fontSize: 16 }}>01/06/2025</Text>
-          </View>
-        </View>
-
-        {/* Divider */}
-        <View style={{ height: 1, backgroundColor: "#eee", marginVertical: 10 }} />
-
-        {/* Initiator Section */}
-        <View style={{ marginBottom: 25 }}>
-          <Text style={{ fontSize: 16, fontWeight: "bold", marginBottom: 15 }}>
-            Initiateur
+          {/* Recipients */}
+          <Text
+            style={{
+              fontWeight: 'bold',
+              color: '#000',
+              marginBottom: 8,
+              borderTopWidth: 1,
+              borderTopColor: '#999',
+              borderStyle: 'dashed',
+              paddingTop: 16,
+            }}
+          >
+            Destinataire(s)
           </Text>
-          
-          <View style={{ marginBottom: 8 }}>
-            <Text style={{ fontSize: 16, fontWeight: "bold" }}>Nom</Text>
-            <Text style={{ fontSize: 16 }}>- Yannick</Text>
-            <Text style={{ fontSize: 16 }}>- Jonh Doe</Text>
-          </View>
 
-          <View style={{ marginBottom: 8 }}>
-            <Text style={{ fontSize: 16, fontWeight: "bold" }}>Adresse email</Text>
-            <Text style={{ fontSize: 16 }}>- Yannic@gmail.com</Text>
-          </View>
-
-          <View style={{ marginBottom: 8 }}>
-            <Text style={{ fontSize: 16, fontWeight: "bold" }}>Numéro de téléphone</Text>
-            <Text style={{ fontSize: 16 }}>612-345-678</Text>
-          </View>
-
-          <View style={{ marginBottom: 15 }}>
-            <Text style={{ fontSize: 16, fontWeight: "bold" }}>Adresse physique</Text>
-            <Text style={{ fontSize: 16 }}>- Bonabéri</Text>
-          </View>
+          {demand.recipients?.map((r, i) => (
+            <View key={i} style={{ marginBottom: 16 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+                <Text style={{ fontWeight: '600', color: '#000' }}>Nom</Text>
+                <Text>{r.recipient?.firstname} {r.recipient?.lastname}</Text>
+              </View>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+                <Text style={{ fontWeight: '600', color: '#000' }}>Email</Text>
+                <Text>{r.recipient?.email}</Text>
+              </View>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+                <Text style={{ fontWeight: '600', color: '#000' }}>Téléphone</Text>
+                <Text>{r.recipient?.phone}</Text>
+              </View>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+                <Text style={{ fontWeight: '600', color: '#000' }}>Payé</Text>
+                <Text>{(r.amountPaid || 0).toLocaleString()} XAF</Text>
+              </View>
+            </View>
+          ))}
         </View>
-
-        {/* Divider */}
-        <View style={{ height: 1, backgroundColor: "#eee", marginVertical: 10 }} />
-
-        {/* Pay Button */}
-        <TouchableOpacity
-          style={{
-            backgroundColor: "#151c1f",
-            padding: 16,
-            borderRadius: 8,
-            alignItems: "center",
-            marginTop: 20,
-            flexDirection: "row",
-            justifyContent: "center"
-          }}
-          onPress={() => navigation.navigate("PaymentScreen")}
-        >
-          <Text style={{ color: "white", fontSize: 16, fontWeight: "bold", marginRight: 8 }}>
-            Payer
-          </Text>
-          <Text style={{ color: "white", fontSize: 16 }}>💬</Text>
-        </TouchableOpacity>
       </ScrollView>
     </>
   );

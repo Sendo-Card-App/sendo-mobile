@@ -1,26 +1,84 @@
-import React from "react";
-import { View, Text, TouchableOpacity, Image, ScrollView } from "react-native";
-import { StatusBar } from "expo-status-bar";
-import { Ionicons } from "@expo/vector-icons";
-import TopLogo from "../../Images/TopLogo.png";
+import React from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  Image,
+  TouchableOpacity,
+  Alert,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { useUpdateFundRequestStatusMutation } from '../../services/Fund/fundApi';
+import { useGetUserProfileQuery } from '../../services/Auth/authAPI';
+import Loader from '../../components/Loader';
+const TopLogo = require('../../Images/TopLogo.png');
 
-const DetailsList = ({ navigation }) => {
+const DetailsList = () => {
+  const navigation = useNavigation();
+  const route = useRoute();
+  const { demand } = route.params;
+
+  const { data: userProfile } = useGetUserProfileQuery();
+  const currentUserId = userProfile?.data?.id;
+
+  const [updateStatus, { isLoading }] = useUpdateFundRequestStatusMutation();
+
+  const getStatusLabel = (status) => {
+    switch (status) {
+      case 'PENDING':
+        return { label: 'En attente', colorBg: '#FFF3CD', colorText: '#856404' };
+      case 'PAID':
+        return { label: 'Payé', colorBg: '#D4EDDA', colorText: '#155724' };
+      case 'CANCELLED':
+        return { label: 'Annulé', colorBg: '#F8D7DA', colorText: '#721C24' };
+      default:
+        return { label: status, colorBg: '#E2E3E5', colorText: '#383D41' };
+    }
+  };
+
+  const statusStyle = getStatusLabel(demand.status);
+
+  const handleCancelRequest = async () => {
+    Alert.alert(
+      'Confirmation',
+      'Voulez-vous vraiment annuler cette demande ?',
+      [
+        { text: 'Non', style: 'cancel' },
+        {
+          text: 'Oui',
+          onPress: async () => {
+            try {
+              await updateStatus({ id: demand.id, status: 'CANCELLED' }).unwrap();
+              Alert.alert('Succès', 'La demande a été annulée.');
+              navigation.goBack();
+            } catch (error) {
+              console.error(error);
+              Alert.alert('Erreur', 'Une erreur est survenue lors de l’annulation.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
   return (
-    <>
-      <StatusBar barStyle="light-content" />
-
+    <ScrollView
+      style={{
+        flex: 1,
+        backgroundColor: '#0A0F1F',
+        paddingHorizontal: 16,
+        paddingTop: 40,
+      }}
+    >
       {/* Header */}
       <View
         style={{
-          height: 100,
+          height: 50,
           paddingHorizontal: 20,
-          paddingTop: 48,
-          backgroundColor: "#151c1f",
-          flexDirection: "row",
-          justifyContent: "space-between",
-          alignItems: "center",
-          borderBottomLeftRadius: 16,
-          borderBottomRightRadius: 16,
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'center',
         }}
       >
         <TouchableOpacity onPress={() => navigation.goBack()}>
@@ -34,110 +92,123 @@ const DetailsList = ({ navigation }) => {
       {/* Logo */}
       <View
         style={{
-          position: "absolute",
+          position: 'absolute',
           top: -48,
           left: 0,
           right: 0,
-          alignItems: "center",
-          justifyContent: "center",
+          alignItems: 'center',
         }}
       >
-        <Image source={TopLogo} style={{ height: 140, width: 160 }} resizeMode="contain" />
+        <Image source={TopLogo} style={{ height: 120, width: 160 }} resizeMode="contain" />
       </View>
 
-      <View className="border border-dashed border-gray-300" />
+      <View className="border border-dashed border-gray-300 mb-10" />
 
-      {/* Content */}
-      <ScrollView style={{ padding: 20, marginTop: 40 }}>
-        <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 20 }}>
-          Détails de la demande
+      <Text style={{ color: '#4ade80', fontSize: 20, fontWeight: 'bold', marginBottom: 16 }}>
+        Détails de la demande
+      </Text>
+
+      <View style={{ backgroundColor: 'white', borderRadius: 16, padding: 16 }}>
+        <Text style={{ textAlign: 'right', fontWeight: 'bold', fontSize: 12, marginBottom: 8 }}>
+          Facture No.{demand.reference}
         </Text>
 
-        {/* Invoice Number */}
-        <Text style={{ fontSize: 18, fontWeight: "bold", marginBottom: 20 }}>
-          Facture No. #iv237
+        <Text style={{ fontWeight: 'bold', color: '#000', marginBottom: 4, fontSize: 15 }}>
+          Description du service
         </Text>
+        <Text style={{ color: '#444', marginBottom: 12 }}>{demand.description}</Text>
 
-        {/* Service Description Section */}
-        <View style={{ marginBottom: 30 }}>
-          <Text style={{ fontSize: 16, fontWeight: "bold", marginBottom: 10 }}>
-            Description du service
-          </Text>
-          <Text style={{ fontSize: 16, marginBottom: 10 }}>- Dépannage électrique</Text>
-          
-          <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 20 }}>
-            <Text style={{ fontSize: 16, fontWeight: "bold" }}>Statut: </Text>
-            <Ionicons name="star" size={16} color="#FFD700" />
-            <Ionicons name="star" size={16} color="#FFD700" />
-            <Ionicons name="star" size={16} color="#FFD700" />
-            <Ionicons name="star" size={16} color="#FFD700" />
-            <Ionicons name="star" size={16} color="#FFD700" />
-            <Text style={{ fontSize: 16, marginLeft: 5 }}>(5 étoiles)</Text>
-          </View>
-
-          {/* Payment Table */}
-          <View style={{ borderWidth: 1, borderColor: "#ddd", borderRadius: 8, marginBottom: 20 }}>
-            {/* Table Row */}
-            <View style={{ flexDirection: "row", borderBottomWidth: 1, borderColor: "#ddd", padding: 12 }}>
-              <Text style={{ flex: 1, fontWeight: "bold" }}>Montant total</Text>
-              <Text style={{ flex: 1 }}>200,000 xaf</Text>
-            </View>
-            {/* Table Row */}
-            <View style={{ flexDirection: "row", borderBottomWidth: 1, borderColor: "#ddd", padding: 12 }}>
-              <Text style={{ flex: 1, fontWeight: "bold" }}>Payé</Text>
-              <Text style={{ flex: 1 }}>100,000 xaf</Text>
-            </View>
-            {/* Table Row */}
-            <View style={{ flexDirection: "row", borderBottomWidth: 1, borderColor: "#ddd", padding: 12 }}>
-              <Text style={{ flex: 1, fontWeight: "bold" }}>Reste</Text>
-              <Text style={{ flex: 1 }}>100,000 xaf</Text>
-            </View>
-            {/* Table Row */}
-            <View style={{ flexDirection: "row", borderBottomWidth: 1, borderColor: "#ddd", padding: 12 }}>
-              <Text style={{ flex: 1, fontWeight: "bold" }}>Date</Text>
-              <Text style={{ flex: 1 }}>27/05/2025</Text>
-            </View>
-            {/* Table Row */}
-            <View style={{ flexDirection: "row", padding: 12 }}>
-              <Text style={{ flex: 1, fontWeight: "bold" }}>Délai</Text>
-              <Text style={{ flex: 1 }}>01/06/2025</Text>
-            </View>
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            marginBottom: 12,
+            justifyContent: 'space-between',
+          }}
+        >
+          <Text style={{ fontWeight: 'bold', color: '#000' }}>Statut</Text>
+          <View
+            style={{
+              backgroundColor: statusStyle.colorBg,
+              borderRadius: 9999,
+              paddingHorizontal: 12,
+              paddingVertical: 4,
+              width: 96,
+              alignItems: 'center',
+            }}
+          >
+            <Text style={{ color: statusStyle.colorText, fontWeight: '600', fontSize: 12 }}>
+              {statusStyle.label}
+            </Text>
           </View>
         </View>
 
-        {/* Recipients Section */}
-        <View style={{ marginBottom: 30 }}>
-          <Text style={{ fontSize: 16, fontWeight: "bold", marginBottom: 10 }}>
-            Destinataire(s)
-          </Text>
-          
-          <View style={{ marginBottom: 15 }}>
-            <Text style={{ fontSize: 16, fontWeight: "bold" }}>Nom:</Text>
-            <Text style={{ fontSize: 16, marginLeft: 10 }}>- Yannick</Text>
-            <Text style={{ fontSize: 16, marginLeft: 10 }}>- Jonh Doe</Text>
-          </View>
-
-          {/* Recipient Info Table */}
-          <View style={{ borderWidth: 1, borderColor: "#ddd", borderRadius: 8 }}>
-            {/* Table Row */}
-            <View style={{ flexDirection: "row", borderBottomWidth: 1, borderColor: "#ddd", padding: 12 }}>
-              <Text style={{ flex: 1, fontWeight: "bold" }}>Adresse email</Text>
-              <Text style={{ flex: 1 }}>Yannic@gmail.com</Text>
-            </View>
-            {/* Table Row */}
-            <View style={{ flexDirection: "row", borderBottomWidth: 1, borderColor: "#ddd", padding: 12 }}>
-              <Text style={{ flex: 1, fontWeight: "bold" }}>Numéro de téléphone</Text>
-              <Text style={{ flex: 1 }}>612-345-678</Text>
-            </View>
-            {/* Table Row */}
-            <View style={{ flexDirection: "row", padding: 12 }}>
-              <Text style={{ flex: 1, fontWeight: "bold" }}>Adresse physique</Text>
-              <Text style={{ flex: 1 }}>Bonabéri</Text>
-            </View>
-          </View>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+          <Text style={{ fontWeight: 'bold', color: '#000' }}>Montant total</Text>
+          <Text style={{ color: 'green' }}>{demand.amount.toLocaleString()} XAF</Text>
         </View>
-      </ScrollView>
-    </>
+
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 24 }}>
+          <Text style={{ fontWeight: 'bold', color: '#000' }}>Délai</Text>
+          <Text>{demand.deadline?.substring(0, 10)}</Text>
+        </View>
+
+        <Text
+          style={{
+            fontWeight: 'bold',
+            color: '#000',
+            marginBottom: 8,
+            borderTopWidth: 1,
+            borderTopColor: '#999',
+            borderStyle: 'dashed',
+            paddingTop: 16,
+          }}
+        >
+          Destinataire(s)
+        </Text>
+
+        {demand.recipients?.map((r, index) => (
+          <View key={index} style={{ marginBottom: 16 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+              <Text style={{ fontWeight: '600', color: '#000' }}>Nom</Text>
+              <Text>{r.recipient?.firstname} {r.recipient?.lastname}</Text>
+            </View>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+              <Text style={{ fontWeight: '600', color: '#000' }}>Adresse email</Text>
+              <Text>{r.recipient?.email}</Text>
+            </View>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+              <Text style={{ fontWeight: '600', color: '#000' }}>Numéro de téléphone</Text>
+              <Text>{r.recipient?.phone}</Text>
+            </View>
+          </View>
+        ))}
+
+        {/* Cancel Button */}
+        {demand.status === 'PENDING' && demand.userId === currentUserId && (
+          <TouchableOpacity
+            onPress={handleCancelRequest}
+            disabled={isLoading}
+            style={{
+              marginTop: 20,
+              backgroundColor: '#DC2626',
+              padding: 12,
+              borderRadius: 8,
+              alignItems: 'center',
+              flexDirection: 'row',
+              justifyContent: 'center',
+            }}
+          >
+            {isLoading ? (
+              <Loader color="#fff" />
+            ) : (
+              <Text style={{ color: '#fff', fontWeight: 'bold' }}>Annuler la demande</Text>
+            )}
+          </TouchableOpacity>
+
+        )}
+      </View>
+    </ScrollView>
   );
 };
 
