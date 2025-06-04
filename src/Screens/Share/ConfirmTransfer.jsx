@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { Ionicons, AntDesign } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import TopLogo from "../../Images/TopLogo.png";
+import TopLogo from "../../images/TopLogo.png";
 import Loader from "../../components/Loader";
 import { StatusBar } from "expo-status-bar";
 import { 
@@ -36,7 +36,7 @@ const ConfirmationScreen = () => {
   participants, 
   userFullName 
 } = route.params;
-//  console.log(participants)
+  console.log(participants)
 //  console.log(userFullName)
 
   const [createSharedExpense, { isLoading }] = useCreateSharedExpenseMutation();
@@ -213,22 +213,22 @@ const handleConfirm = async () => {
             <Text className="text-base text-gray-600 mb-2">
               {t("confirmation.participants")}
             </Text>
-            {route.params.participants.map((participant) => (
+            {participants.map((participant) => (
               <View
                 key={participant.matriculeWallet}
                 className="flex-row justify-between items-center bg-gray-100 p-3 rounded-xl mb-2"
               >
                 <Text className="flex-1 text-base font-medium text-black">
-                  {participant.name || userFullName }
+                  {participant.id === 'self' ? userFullName : participant.name}
                 </Text>
-                {route.params.methodCalculatingShare === "manual" &&
-                participant.amount != null ? (
+                {methodCalculatingShare === "manual" && participant.amount != null ? (
                   <Text className="text-base text-black">
                     {participant.amount.toLocaleString()} XAF
                   </Text>
                 ) : null}
               </View>
             ))}
+
           </View>
 
           <TouchableOpacity

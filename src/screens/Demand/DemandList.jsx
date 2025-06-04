@@ -14,8 +14,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import TransactionSkeleton from '../../components/TransactionSkeleton';
 
-const TopLogo = require('../../Images/TopLogo.png');
-import ButtomLogo from "../../Images/ButtomLogo.png";
+const TopLogo = require('../../images/TopLogo.png');
+import ButtomLogo from "../../images/ButtomLogo.png";
 
 const statuses = ['ALL', 'PAID', 'PENDING', 'COMPLETED'];
 

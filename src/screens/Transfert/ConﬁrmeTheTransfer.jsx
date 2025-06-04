@@ -4,11 +4,11 @@ import { StatusBar } from "expo-status-bar";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import Entypo from "@expo/vector-icons/Entypo";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import TopLogo from "../../Images/TopLogo.png";
+import TopLogo from "../../images/TopLogo.png";
 import { useNavigation } from "@react-navigation/native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import RoyalBank from "../../Images/RoyalBank.png";
-import Visa from "../../Images/Visa.png";
+import RoyalBank from "../../images/RoyalBank.png";
+import Visa from "../../images/Visa.png";
 
 const ConﬁrmeTheTransfer = () => {
   const navigation = useNavigation();

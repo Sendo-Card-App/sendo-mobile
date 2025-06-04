@@ -24,9 +24,9 @@ import {
 } from '../../services/notificationService';
 import { TypesNotification } from "../../utils/constants";
 
-import TopLogo from "../../Images/TopLogo.png";
-import om from "../../Images/om.png";
-import mtn from "../../Images/mtn.png";
+import TopLogo from "../../images/TopLogo.png";
+import om from "../../images/om.png";
+import mtn from "../../images/mtn.png";
 
 const ConfirmeTheTransfer = () => {
   const navigation = useNavigation();

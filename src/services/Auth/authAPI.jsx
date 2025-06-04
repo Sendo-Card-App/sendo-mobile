@@ -219,6 +219,28 @@ export const authApi = createApi({
       }),
     }),
     
+   getToken: builder.mutation({
+      query: (userId) => ({
+        url: `/users/token/${userId}`, 
+        method: 'GET', 
+      }),
+    }),
+
+     
+    createToken: builder.mutation({
+      query: ({ userId, token }) => ({
+        url: '/users/token/create-update',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'accept': '*/*',
+        },
+        body: { userId, token },
+      }),
+    }),
+
+     
+    
 
     // Logout
     logout: builder.mutation({
@@ -254,6 +276,8 @@ export const {
   useUpdatePasswordMutation,
   useGetMyProfileQuery,
   useGetUserProfileQuery,
+  useGetTokenMutation,
+  useCreateTokenMutation,
   useUpdateProfileMutation,
   useLogoutMutation,
 } = authApi;

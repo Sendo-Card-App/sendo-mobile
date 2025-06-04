@@ -48,7 +48,7 @@ const ReceiptScreen = () => {
 
   setIsGenerating(true);
   try {
-    const [asset] = await Asset.loadAsync(require('../../Images/LogoSendo.png'));
+    const [asset] = await Asset.loadAsync(require('../../images/LogoSendo.png'));
     const base64Logo = await FileSystem.readAsStringAsync(asset.localUri, {
       encoding: FileSystem.EncodingType.Base64,
     });

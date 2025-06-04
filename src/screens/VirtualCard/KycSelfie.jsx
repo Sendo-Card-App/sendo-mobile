@@ -1,9 +1,9 @@
 import { View, Text, Image, TouchableOpacity, Dimensions } from "react-native";
 import React from "react";
-import TopLogo from "../../Images/TopLogo.png";
+import TopLogo from "../../images/TopLogo.png";
 import { AntDesign, Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
-import IDShoot from "../../Images/IDShoot.png";
+import IDShoot from "../../images/IDShoot.png";
 import KycTab from "../../components/KycTab";
 import { useDispatch } from 'react-redux';
 import { setSelfie } from '../../features/Kyc/kycReducer';
@@ -56,7 +56,7 @@ const KycSelfie = ({ navigation }) => {
         </Text>
         
         <Image
-          source={require("../../Images/IDShoot.png")}
+          source={require("../../images/IDShoot.png")}
           className="w-[80%] mx-auto mt-2"
           style={{ height: width / 1.77 }}
           resizeMode="contain"

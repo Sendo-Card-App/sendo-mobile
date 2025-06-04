@@ -25,6 +25,7 @@ import {
   useGetSynchronizedContactsQuery
 } from '../../services/Contact/contactsApi';
 import Loader from "../../components/Loader";
+import TransactionSkeleton from '../../components/TransactionSkeleton';
 
 const { width, height } = Dimensions.get('window');
 
@@ -294,7 +295,13 @@ const AddFavorite = () => {
           style={{ padding: 8 }}
         >
           {isAdding ? (
-            <Loader size="small" color="green" />
+             <FlatList
+                data={[1, 2, 3, 4, 5]}
+                keyExtractor={(item) => item.toString()}
+                renderItem={() => <TransactionSkeleton />}
+                contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 20 }}
+                showsVerticalScrollIndicator={false}
+              />
           ) : (
             <MaterialCommunityIcons 
               name="heart" 
@@ -358,9 +365,13 @@ const AddFavorite = () => {
   // Loading state
   if (isLoadingContacts || isLoadingFavorites) {
    return (
-    <View className="flex-1 justify-center items-center">
-      <Loader size="large" />
-    </View>
+     <FlatList
+          data={[1, 2, 3, 4, 5]}
+          keyExtractor={(item) => item.toString()}
+          renderItem={() => <TransactionSkeleton />}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 20 }}
+          showsVerticalScrollIndicator={false}
+        />
   );
   }
 
