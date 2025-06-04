@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
-import TopLogo from "../../Images/TopLogo.png";
+import TopLogo from "../../images/TopLogo.png";
 import { useTranslation } from "react-i18next";
 import Toast from "react-native-toast-message";
 import { useCreateFundRequestMutation } from "../../services/Fund/fundApi";
@@ -23,7 +23,7 @@ import Loader from "../../components/Loader";
 const ConfirmInformation = ({ navigation, route }) => {
   const { t } = useTranslation();
   const initialParams = route.params || {};
- console.log(initialParams)
+ //console.log(initialParams)
   const [amount, setAmount] = useState(initialParams.amount);
   const [description, setDescription] = useState(initialParams.description);
   const [deadline, setDeadline] = useState(initialParams.deadline);

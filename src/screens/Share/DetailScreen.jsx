@@ -13,7 +13,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useDeleteSharedExpenseMutation, useUpdateSharedExpenseMutation } from "../../services/Shared/sharedExpenseApi";
-import TopLogo from "../../Images/TopLogo.png";
+import TopLogo from "../../images/TopLogo.png";
 import { useTranslation } from "react-i18next";
 import Toast from "react-native-toast-message";
 

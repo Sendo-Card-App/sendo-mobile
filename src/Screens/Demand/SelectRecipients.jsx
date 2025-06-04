@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
-import TopLogo from "../../Images/TopLogo.png";
+import TopLogo from "../../images/TopLogo.png";
 import Toast from "react-native-toast-message";
 import { useTranslation } from "react-i18next";
 import Loader from "../../components/Loader";
@@ -39,11 +39,17 @@ const SelectRecipients = ({ navigation, route }) => {
 
   const synchronizedContacts = contactsData?.data ?? [];
 
-  const filteredContacts = useMemo(() => {
-    return synchronizedContacts.filter((friend) =>
-      friend?.name?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [searchQuery, synchronizedContacts]);
+const filteredContacts = useMemo(() => {
+  if (!synchronizedContacts) return [];
+
+  return synchronizedContacts.filter((friend) => {
+    const friendName = friend?.name?.toLowerCase() || '';
+    const contactUserId = friend?.contactUser?.id;
+
+    return contactUserId !== userId && friendName.includes(searchQuery.toLowerCase());
+  });
+}, [searchQuery, synchronizedContacts, userId]);
+
 
   const toggleFriend = (id) => {
     setSelectedFriends((prev) =>

@@ -9,12 +9,21 @@ import {
   Image,
   ActivityIndicator,
   StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
-import { useSendMessageMutation, useGetConversationMessagesQuery, useCreateConversationMutation } from '../../services/Chat/ChatApi';
-import { initSocket, getSocket } from '../../utils/socket';
+import { 
+  useSendMessageMutation, 
+  useGetConversationMessagesQuery, 
+  useCreateConversationMutation,
+  useGetConversationsQuery 
+} from '../../services/Chat/ChatApi';
+import Toast from 'react-native-toast-message';
+import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
+import TransactionSkeleton from '../../components/TransactionSkeleton';
 
 interface Attachment {
   uri: string;
@@ -27,42 +36,49 @@ interface Message {
   content: string;
   senderType: 'CUSTOMER' | 'ADMIN';
   userId: number;
-  conversationId: number;
+  conversationId: string;
   read: boolean;
   attachments: string[];
   createdAt: string;
   updatedAt: string;
+  user?: {
+    id: number;
+    firstname: string;
+    lastname: string;
+  };
 }
 
 const ChatScreen = ({ route, navigation }) => {
   const [input, setInput] = useState('');
-  const [attachments, setAttachments] = useState([]); // Remove <Attachment[]>
-  const flatListRef = useRef(null); // Remove <FlatList>
+  const [attachments, setAttachments] = useState([]);
+  const flatListRef = useRef(null);
   const [sending, setSending] = useState(false);
-  
+  const [conversationId, setConversationId] = useState(null);
 
-  // RTK Query hooks
-  const { data: messages = [], isLoading, refetch } = useGetConversationMessagesQuery();
+  const { data: userProfile } = useGetUserProfileQuery();
+  const userId = userProfile?.data?.id;
+  const { data: conversations } = useGetConversationsQuery(userId, {
+    skip: !userId
+  });
+
+  const { data: messagesResponse, isLoading, refetch } = useGetConversationMessagesQuery(conversationId, {
+    skip: !conversationId
+  });
+  const messages = messagesResponse?.data || [];
+
   const [sendMessage] = useSendMessageMutation();
   const [createConversation] = useCreateConversationMutation();
 
-  // Socket.io setup
-  // useEffect(() => {
-  //   const socket = getSocket();
-  //   if (!socket) return;
+  useEffect(() => {
+    if (messages.length > 0) {
+    }
+  }, [messages]);
 
-  //   socket.emit('join_conversation', conversationId);
-
-  //   socket.on('new_message', (newMessage: Message) => {
-  //     // RTK Query will automatically refetch and update the cache
-  //     refetch();
-  //   });
-
-  //   return () => {
-  //     socket.emit('leave_conversation', conversationId);
-  //     socket.off('new_message');
-  //   };
-  // }, [conversationId, refetch]);
+  useEffect(() => {
+    if (conversations?.length > 0) {
+      setConversationId(conversations[0].id);
+    }
+  }, [conversations]);
 
   const pickDocument = async () => {
     try {
@@ -106,43 +122,60 @@ const ChatScreen = ({ route, navigation }) => {
     setAttachments(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleSend = async () => {
-    if ((input.trim() === '' && attachments.length === 0) || sending) return;
+const handleSend = async () => {
+  if ((input.trim() === '' && attachments.length === 0) || sending) return;
 
-    try {
-      setSending(true);
-      
-      // Prepare message data
-      const messageData = {
-        conversationId,
-        content: input,
-        senderType: 'CUSTOMER',
-        attachments: attachments.map(a => a.uri), // In real app, upload these first
-      };
+  try {
+    setSending(true);
 
-      // Send via RTK Query mutation
-      await createConversation(messageData).unwrap();
+    let currentConversationId = conversationId;
 
-      // Clear input
-      setInput('');
-      setAttachments([]);
-      
-      // Scroll to bottom
-      setTimeout(() => {
-        flatListRef.current?.scrollToEnd({ animated: true });
-      }, 100);
-    } catch (error) {
-      console.error('Failed to send message:', error);
-    } finally {
-      setSending(false);
+    if (!currentConversationId) {
+      const newConversation = await createConversation().unwrap();
+      currentConversationId = newConversation.data.id; // Use .data.id here
+      setConversationId(currentConversationId);
+
+      //console.log('[💬] New conversation created:', newConversation);
+    } else {
+      //console.log('[💬] Using existing conversation ID:', currentConversationId);
     }
-  };
+
+    const messageData = {
+      conversationId: currentConversationId,
+      content: input,
+      senderType: 'CUSTOMER',
+      attachments: attachments.map((a) => a.uri),
+    };
+
+    await sendMessage(messageData).unwrap();
+
+    setInput('');
+    setAttachments([]);
+
+    setTimeout(() => {
+      flatListRef.current?.scrollToEnd({ animated: true });
+    }, 100);
+
+    refetch();
+  } catch (error) {
+    console.error('Failed to send message:', error);
+  } finally {
+    setSending(false);
+  }
+};
+
+
 
   const renderMessage = ({ item }: { item: Message }) => (
     <View style={[
       styles.messageContainer,
       item.senderType === 'ADMIN' ? styles.receivedMessage : styles.sentMessage
     ]}>
+      {item.senderType === 'ADMIN' && (
+        <Text style={styles.senderName}>
+          {item.user?.firstname || 'Admin'}
+        </Text>
+      )}
       <Text style={[
         styles.messageText,
         item.senderType === 'ADMIN' ? styles.receivedText : styles.sentText
@@ -169,7 +202,10 @@ const ChatScreen = ({ route, navigation }) => {
         </View>
       ))}
       
-      <Text style={styles.messageTime}>
+      <Text style={[
+        styles.messageTime,
+        item.senderType === 'ADMIN' ? styles.receivedTime : styles.sentTime
+      ]}>
         {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
       </Text>
     </View>
@@ -200,14 +236,22 @@ const ChatScreen = ({ route, navigation }) => {
 
   if (isLoading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007bff" />
-      </View>
+      <FlatList
+        data={[1, 2, 3, 4, 5]}
+        keyExtractor={(item) => item.toString()}
+        renderItem={() => <TransactionSkeleton />}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 20 }}
+        showsVerticalScrollIndicator={false}
+      />
     );
   }
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+    >
       <FlatList
         ref={flatListRef}
         data={messages}
@@ -217,6 +261,7 @@ const ChatScreen = ({ route, navigation }) => {
         inverted={false}
         onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
         onLayout={() => flatListRef.current?.scrollToEnd({ animated: true })}
+        showsVerticalScrollIndicator={false}
       />
 
       {attachments.length > 0 && renderAttachmentPreview()}
@@ -253,7 +298,7 @@ const ChatScreen = ({ route, navigation }) => {
           )}
         </TouchableOpacity>
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -261,7 +306,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f8f9fa',
-    padding: 10,
   },
   loadingContainer: {
     flex: 1,
@@ -269,7 +313,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   messagesList: {
-    paddingBottom: 10,
+    padding: 10,
+    paddingBottom: 70, // Extra space for input container
   },
   messageContainer: {
     maxWidth: '80%',
@@ -279,7 +324,7 @@ const styles = StyleSheet.create({
   },
   sentMessage: {
     alignSelf: 'flex-end',
-    backgroundColor: 'green',
+    backgroundColor: '#7ddd7d',
     borderBottomRightRadius: 4,
   },
   receivedMessage: {
@@ -289,6 +334,11 @@ const styles = StyleSheet.create({
   },
   messageText: {
     fontSize: 16,
+  },
+  senderName: {
+    fontWeight: 'bold',
+    marginBottom: 4,
+    color: '#333',
   },
   sentText: {
     color: '#fff',
@@ -300,7 +350,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 4,
     textAlign: 'right',
+  },
+  sentTime: {
     color: 'rgba(255,255,255,0.7)',
+  },
+  receivedTime: {
+    color: '#666',
   },
   attachmentContainer: {
     marginTop: 8,
@@ -326,7 +381,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     marginBottom: 8,
-    paddingHorizontal: 5,
+    paddingHorizontal: 10,
   },
   attachmentPreview: {
     flexDirection: 'row',
@@ -353,15 +408,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#fff',
-    borderRadius: 25,
-    marginBottom: 30,
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+    marginTop:10,
+    marginButton:10,
     paddingVertical: 8,
     paddingHorizontal: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
   },
   attachmentButton: {
     padding: 8,
@@ -373,6 +425,8 @@ const styles = StyleSheet.create({
     maxHeight: 100,
     paddingHorizontal: 12,
     fontSize: 16,
+    backgroundColor: '#f1f1f1',
+    borderRadius: 20,
   },
   sendButton: {
     backgroundColor: 'green',

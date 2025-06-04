@@ -5,9 +5,9 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
 import { StatusBar } from "expo-status-bar";
 
-import TopLogo from "../../Images/TopLogo.png";
-import shareImage from "../../Images/icones/shareImage.png";
-import manualImage from "../../Images/icones/manual.png";
+import TopLogo from "../../images/TopLogo.png";
+import shareImage from "../../images/icones/shareImage.png";
+import manualImage from "../../images/icones/manual.png";
 
 const DistributionMethod = () => {
   const navigation = useNavigation();
@@ -22,6 +22,7 @@ const DistributionMethod = () => {
   participants, 
   userFullName 
 } = route.params;
+console.log(participants)
   const handleMethodSelect = (method) => {
     if (method === "auto") {
     navigation.navigate("ConfirmTransfer", {
