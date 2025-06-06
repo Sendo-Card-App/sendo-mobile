@@ -89,7 +89,7 @@ const MonSolde = () => {
           shadowOpacity: 0.2,
           shadowRadius: 3,
           elevation: 5,
-          top: (StatusBar.currentHeight || 0) + (isSmallScreen ? height * 0.85 : height * 0.88),
+          top: (StatusBar.currentHeight || 0) + (isSmallScreen ? height * 0.70 : height * 0.70),
           right: isSmallScreen ? scale(15) : scale(20),
           padding: isSmallScreen ? scale(8) : scale(10)
         }}

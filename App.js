@@ -2,7 +2,7 @@ import "./global.css";
 import React, { useEffect } from "react";
 import { Colors } from './src/constants/colors'; // Adjust the path as needed
 
-import { StyleSheet, View, Text, TouchableOpacity,Platform } from "react-native";
+import { StyleSheet, View, Text, TouchableOpacity,Platform,Dimensions  } from "react-native";
 import { Provider } from "react-redux";
 import { store } from "./src/store/store";
 import Toast from "react-native-toast-message";
@@ -106,6 +106,25 @@ import SelectRecipients from "./src/screens/Demand/SelectRecipients";
 import DetailsList from "./src/screens/Demand/DetailsList";
 import EditFundField from "./src/screens/Demand/EditFundField";
 
+//MODULE TONTINE
+import TontineList from "./src/screens/Tontine/TontineList";
+import CreateTontine from "./src/screens/Tontine/CreateTontine";
+import FrequencyScreen from "./src/screens/Tontine/FrequencyScreen";
+import OrderSelection from "./src/screens/Tontine/OrderSelection";
+import Method from "./src/screens/Tontine/Methode";
+import MonthlyContribution from "./src/screens/Tontine/MonthlyContribution";
+import Participant from "./src/screens/Tontine/Participant";
+import PenaltyScreen from "./src/screens/Tontine/PenaltyScreen";
+import AddPenalty from "./src/screens/Tontine/AddPenalty";
+import Penalty from "./src/screens/Tontine/Penalty"
+import TontineDetail from "./src/screens/Tontine/TontineDetail";
+import MemberAddPenalty from "./src/screens/Tontine/MemberAddPenalty";
+import MemberHistory from "./src/screens/Tontine/MemberHistory";
+import MemberPenalty from "./src/screens/Tontine/MemberPenalty";
+import Members from "./src/screens/Tontine/Members";
+import Cotisations from "./src/screens/Tontine/Cotisations";  
+import MemberDetail from "./src/screens/Tontine/MemberDetail";
+
 
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -115,7 +134,7 @@ const headerHeight = Platform.select({
   ios: 60,
   android: 56, // Standard Android header height
 });
-
+const screenWidth = Dimensions.get('window').width;
 // Custom tab bar component
 function CustomTabBar({ state, descriptors, navigation }) {
   const { t } = useTranslation();
@@ -238,65 +257,69 @@ function AuthStack() {
 function MainStack() {
   const { t } = useTranslation();
   return (
-   <Stack.Navigator
+    <Stack.Navigator
       screenOptions={({ navigation }) => ({
-        headerStyle: { 
+        headerStyle: {
           backgroundColor: Colors.primary,
-          height: headerHeight,
-          elevation: 0, // Remove shadow on Android
-          shadowOpacity: 0, // Remove shadow on iOS
+          height: Platform.select({
+            ios: headerHeight,
+            android: headerHeight,
+          }),
+          elevation: 0,
+          shadowOpacity: 0,
         },
-        headerTitleStyle: { 
-          fontSize: 18, 
-          fontWeight: "bold", 
+        headerTitleStyle: {
+          fontSize: 18,
+          fontWeight: "bold",
           color: Colors.text,
-          alignSelf: 'center',
           textAlign: 'center',
-          width: '100%',
-          marginLeft: -40, // Compensate for back button space
+          alignSelf: 'center',
+          width: '70%',
         },
         headerTitleAlign: "center",
         headerLeftContainerStyle: {
           paddingLeft: Platform.select({
-            ios: 8,
-            android: 16,
+            ios: '4%',
+            android: '4%',
           }),
           paddingTop: Platform.select({
             ios: 0,
-            android: 4,
+            android: '1.5%',
           }),
         },
         headerLeft: () => (
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={() => navigation.goBack()}
-            style={{ 
+            style={{
               flexDirection: 'row',
               alignItems: 'center',
               justifyContent: 'center',
               height: '100%',
-              minWidth: 40, // Ensure consistent tap area
+              minWidth: 40,
               paddingHorizontal: Platform.select({
-                ios: 8,
-                android: 16,
+                ios: '2%',
+                android: '4%',
               }),
             }}
           >
             {Platform.OS === 'ios' ? (
-              <Text style={{ 
-                fontSize: 24, 
-                color: Colors.text,
-                marginTop: -2,
-              }}>&lt;</Text>
+              <Text
+                style={{
+                  fontSize: 24,
+                  color: Colors.text,
+                  marginTop: -2,
+                }}
+              >
+                &lt;
+              </Text>
             ) : (
-              <View style={{ 
-                justifyContent: 'center',
-                height: '100%',
-              }}>
-                <AntDesign 
-                  name="arrowleft" 
-                  size={20} 
-                  color={Colors.text}
-                />
+              <View
+                style={{
+                  justifyContent: 'center',
+                  height: '100%',
+                }}
+              >
+                <AntDesign name="arrowleft" size={20} color={Colors.text} />
               </View>
             )}
           </TouchableOpacity>
@@ -398,6 +421,25 @@ function MainStack() {
       <Stack.Screen name="DemandList" component={DemandList } options={{ headerShown: false }} />
       <Stack.Screen name="ConfirmInformation" component={ConfirmInformation } options={{ headerShown: false }} />
       <Stack.Screen name="EditFundField" component={EditFundField } options={{ headerShown: false }} />
+
+      <Stack.Screen name="TontineList" component={TontineList } options={{ headerShown: false }} />
+      <Stack.Screen name="CreateTontine" component={CreateTontine } options={{ headerShown: false }} />
+      <Stack.Screen name="AddPenalty" component={AddPenalty } options={{ headerShown: false }} />
+      <Stack.Screen name="OrderSelection" component={OrderSelection } options={{ headerShown: false }} />
+      <Stack.Screen name="Participant" component={Participant } options={{ headerShown: false }} />
+      <Stack.Screen name="PenaltyScreen" component={PenaltyScreen } options={{ headerShown: false }} />
+      <Stack.Screen name="MonthlyContribution" component={MonthlyContribution } options={{ headerShown: false }} />
+      <Stack.Screen name="FrequencyScreen" component={FrequencyScreen } options={{ headerShown: false }} />
+      <Stack.Screen name="Method" component={Method } options={{ headerShown: false }} />
+      <Stack.Screen name="Penalty" component={Penalty } options={{ headerShown: false }} />
+      <Stack.Screen name="Cotisations" component={Cotisations } options={{ headerShown: false }} />
+      <Stack.Screen name="TontineDetail" component={TontineDetail } options={{ headerShown: false }} />
+      <Stack.Screen name="Members" component={Members } options={{ headerShown: false }} />
+      <Stack.Screen name="MemberPenalty" component={MemberPenalty } options={{ headerShown: false }} />
+      <Stack.Screen name="MemberHistory" component={MemberHistory } options={{ headerShown: false }} />
+      <Stack.Screen name="MemberAddPenalty" component={MemberAddPenalty } options={{ headerShown: false }} />
+      <Stack.Screen name="MemberDetail" component={MemberDetail } options={{ headerShown: false }} />
+
 
       
     </Stack.Navigator>

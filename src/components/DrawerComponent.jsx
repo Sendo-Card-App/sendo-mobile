@@ -325,8 +325,8 @@ const DrawerComponent = ({ navigation }) => {
         visible={showPinModal}
         onClose={() => setShowPinModal(false)}
         onVerify={handlePinVerify}
-        title="Enter Your PIN"
-        subtitle="Please enter your 4-digit PIN to view your balance"
+        title=" Entrez votre code PIN"
+        subtitle="Veuillez entrer votre code PIN à 4 chiffres pour consulter votre solde"
       />
 
           <TouchableOpacity
@@ -382,6 +382,22 @@ const DrawerComponent = ({ navigation }) => {
                 </View>
               </TouchableOpacity>
 
+              <TouchableOpacity
+                className="flex-row gap-2 my-2 mb-5 items-center"
+                onPress={() => navigation2.navigate("TontineList")}
+              >
+                <Feather
+                  name="users" // good symbol for tontines (group savings)
+                  size={Platform.OS === "ios" ? 28 : 22}
+                  color="gray" // green tone to match the theme
+                />
+                <View>
+                  <Text className="font-bold text-gray-500">{t("drawer.tontine")}</Text>
+                  <Text className="text-sm text-gray-500">{t('drawer.h2')}</Text>
+                </View>
+              </TouchableOpacity>
+
+
            <TouchableOpacity
                       className="flex-row gap-2 my-2 mb-5"
                       onPress={() => navigation2.navigate("VerifyIdentity")}
@@ -431,7 +447,7 @@ const DrawerComponent = ({ navigation }) => {
 
           <TouchableOpacity
             className="flex-row gap-2 my-2 mb-5"
-            onPress={() => navigation2.navigate("SettingsTab")}
+            onPress={() => navigation2.navigate("Settings")}
           >
             <AntDesign name="setting" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
             <View>
