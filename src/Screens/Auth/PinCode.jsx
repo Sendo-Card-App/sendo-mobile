@@ -51,26 +51,25 @@ const PinCode = ({ navigation, route }) => {
   const isLocked = lockedUntil && new Date(lockedUntil) > new Date();
 
   // Check and update token when component mounts or user profile changes
-  useEffect(() => {
-    const checkAndUpdateToken = async () => {
-      if (!userId) return;
-      
-      try {
-        const localToken = await getStoredPushToken();
-        const serverToken = serverTokenData?.data?.token;
-        
-        if (localToken && localToken !== serverToken) {
-          await createToken({ userId, token: localToken }).unwrap();
-          console.log('Token updated successfully');
-        }
-      } catch (error) {
-       console.log('Error (pretty):', JSON.stringify(error, null, 2));
+ useEffect(() => {
+  const checkAndUpdateToken = async () => {
+    if (!userId) return;
 
+    try {
+      const localToken = await getStoredPushToken();
+      const serverToken = serverTokenData?.data?.token;
+
+      if (localToken && localToken !== serverToken) {
+        const response = await createToken({ userId, token: localToken }).unwrap();
+        console.log('✅ Token update response:', response); 
       }
-    };
-    
-    checkAndUpdateToken();
-  }, [userId, serverTokenData]);
+    } catch (error) {
+      console.log(' Error:', JSON.stringify(error, null, 2));
+    }
+  };
+  checkAndUpdateToken();
+}, [userId, serverTokenData]);
+
 
   // Clear session function
   const clearSession = async () => {
@@ -96,10 +95,9 @@ const PinCode = ({ navigation, route }) => {
 
   useFocusEffect(
     useCallback(() => {
-      refetch(); // force une requête au backend
+      refetch(); // force a query to the backend
     }, [])
   );
-
   useEffect(() => {
     const loadAuthData = async () => {
       const data = await getData('@authData');

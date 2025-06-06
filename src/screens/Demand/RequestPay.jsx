@@ -94,10 +94,10 @@ const RequestPay = ({ navigation, route }) => {
       description: requestFund.description,
     };
 
-    console.log('Payload sent to backend:', {
-      requestRecipientId: currentRecipientId,
-      payload: payloadToSend,
-    });
+    // console.log('Payload sent to backend:', {
+    //   requestRecipientId: currentRecipientId,
+    //   payload: payloadToSend,
+    // });
 
     try {
       const res = await payFundRequest({
@@ -106,6 +106,7 @@ const RequestPay = ({ navigation, route }) => {
       }).unwrap();
 
       Alert.alert('Succès', 'Paiement effectué avec succès.');
+
       setModalVisible(false);
     } catch (error) {
       console.error('Payment error:', error);

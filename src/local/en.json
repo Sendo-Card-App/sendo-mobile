@@ -192,7 +192,9 @@
 "pay_bills": "Pay Bills",
 "account": "Account",
  "share": "Share between friends",
- "demand": "Demande de fond",
+ "demand": "Funds requests",
+ "tontine": "Tontine",
+  "h2": "Your digital tontine",
 "favorite": "Favorite contact",
  "request": "KYC verification",
     "sub": "Submit your KYC documents",
@@ -715,6 +717,9 @@
     "deposit": "Deposit",
     "withdraw": "Withdraw",
     "transfer": "Transfer",
+    "share": "Shared payment",
+     "wallet": "Wallet Transfer",
+      "payment": "Payment ",
     "mobileMoney": "Mobile Money",
     "bankTransfer": "Bank Transfer",
     "success": "Completed",
@@ -1162,6 +1167,43 @@
     "paid": "Paid",
     "all": "All",
     "requester": "Requester"
+  },
+  "createTontine": {
+    "stepTitle": "1. New Tontine",
+    "nameLabel": "Tontine Name",
+    "namePlaceholder": "Enter name...",
+    "descriptionLabel": "Description",
+    "descriptionPlaceholder": "Enter description...",
+    "amountLabel": "Minimum Contribution Amount",
+    "amountPlaceholder": "Enter amount...",
+    "nextButton": "Next"
+  },
+ "frequency": {
+    "quotidien": "Daily",
+    "hebdomadaire": "Weekly",
+    "mensuel": "Monthly"
+  },
+  "frequencyScreen": {
+    "title": "2. Contribution Frequency"
+  },
+  "orderSelection": {
+    "title": "4. Order of Play",
+    "fixedOrder": "Fixed Order",
+    "fixedDescription": "Order of registration, alphabetical order",
+    "randomOrder": "Controlled Random Draw",
+    "randomDescription": "Each round, a beneficiary member is drawn among those who haven't received the pot yet",
+    "votingOrder": "Community Voting",
+    "votingDescription": "Members vote to designate the round's beneficiary"
+  },
+  "method1": {
+    "title": "5. Fund Transfer",
+    "automatic": "Automatically",
+    "automaticDescription": "Once conditions are validated, the platform automatically triggers the transfer of the total pot amount to the designated beneficiary's wallet for the round",
+    "manual": "Manually",
+    "manualDescription": "The administrator will need to manually trigger the fund transfer to the designated beneficiary's wallet for the round"
+  },
+  "common5": {
+    "nextButton": "Next"
   }
 
   

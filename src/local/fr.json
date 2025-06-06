@@ -191,6 +191,8 @@
     "account": "Compte",
     "share": "Partage Entre Amis",
      "demand": "Demande de fond",
+      "tontine": "Tontine",
+       "h2": "Votre tontine electronique",
     "favorite": "Contact favori",
     "request": "KYC vérification",
     "sub": "Veuillez soumettre vos documents du KYC",
@@ -715,6 +717,9 @@
     "deposit": "Dépôt",
     "withdraw": "Retrait",
     "transfer": "Transfert",
+     "share": "Paiement demande partagé",
+      "payment": "Paiement ",
+      "wallet": "Transfert de portefeuille",
     "mobileMoney": "Mobile Money",
     "bankTransfer": "Virement Bancaire",
     "success": "Terminé",
@@ -958,6 +963,7 @@
   },
   "destinators": {
     "title": "Choisissez les destinataires",
+    "title1": "Ajoutez les participants",
     "includeSelf": "M'inclure dans la liste",
     "searchPlaceholder": "Recherchez un ami…",
     "friendsLabel": "Amis",
@@ -1163,8 +1169,44 @@
   "pending": "En attente",
   "completed": "Terminé",
   "requester": "Demandeur"
+  },
+  "createTontine": {
+    "stepTitle": "1. Nouvelle tontine",
+    "nameLabel": "Nom de la tontine",
+    "namePlaceholder": "Saisissez le nom...",
+    "descriptionLabel": "Description",
+    "descriptionPlaceholder": "Saisissez la description...",
+    "amountLabel": "Montant minimum à cotiser",
+    "amountPlaceholder": "Entrez le montant...",
+    "nextButton": "Suivant"
+  },
+   "frequency": {
+    "quotidien": "Quotidien",
+    "hebdomadaire": "Hebdomadaire",
+    "mensuel": "Mensuel"
+  },
+  "frequencyScreen": {
+    "title": "2. Fréquence de cotisation"
+  },
+  "orderSelection": {
+    "title": "4. Ordre de passage",
+    "fixedOrder": "Ordre fixe",
+    "fixedDescription": "Ordre d'inscription, ordre alphabétique",
+    "randomOrder": "Tirage aléatoire contrôlé",
+    "randomDescription": "À chaque tour, un membre bénéficiaire est tiré au sort parmi ceux n'ayant pas encore reçu la cagnotte",
+    "votingOrder": "Vote communautaire",
+    "votingDescription": "Les membres votent pour désigner le bénéficiaire du tour"
+  },
+  "method1": {
+    "title": "5. Versement de fonds",
+    "automatic": "Automatiquement",
+    "automaticDescription": "Une fois les conditions validées, la plateforme déclenche automatiquement le transfert du montant total de la cagnotte vers le portefeuille du bénéficiaire désigné pour le tour",
+    "manual": "Manuellement",
+    "manualDescription": "L'administrateur devra manuellement déclencher le versement de fond vers le portefeuille du bénéficiaire désigné pour le tour"
+  },
+  "common5": {
+    "nextButton": "Suivant"
   }
-  
 
     
     

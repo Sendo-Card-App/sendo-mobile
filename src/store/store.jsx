@@ -13,6 +13,7 @@ import { chatApi } from '../services/Chat/ChatApi';
 import { fundRequestApi } from '../services/Fund/fundApi';
 import { sharedExpenseApi } from '../services/Shared/sharedExpenseApi';
 import { contactsApi } from '../services/Contact/contactsApi';
+import { tontineApi } from '../services/Tontine/tontineApi';
 import passcodeReducer from '../features/Auth/passcodeSlice';
 import { config } from 'dotenv';
 
@@ -32,6 +33,7 @@ export const store = configureStore({
     [transferApi.reducerPath]: transferApi.reducer,
     [sharedExpenseApi.reducerPath]: sharedExpenseApi.reducer,
     [fundRequestApi.reducerPath]: fundRequestApi.reducer,
+    [tontineApi.reducerPath]: tontineApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
@@ -46,5 +48,6 @@ export const store = configureStore({
       transferApi.middleware,
       sharedExpenseApi.middleware,
       fundRequestApi.middleware,
+      tontineApi.middleware,
     ),
 });

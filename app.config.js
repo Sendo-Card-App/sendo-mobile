@@ -11,7 +11,7 @@ module.exports = {
     slug: "sendo",
     version: "1.0.3",
     orientation: "portrait",
-    icon: "./assets/icon.png",
+    icon: "./assets/logo.jpg",
     userInterfaceStyle: "light",
     newArchEnabled: true,
     splash: {
@@ -28,7 +28,7 @@ module.exports = {
     },
     android: {
       adaptiveIcon: {
-        foregroundImage: "./assets/adaptive-icon.png",
+        foregroundImage: "./assets/logo.jpg",
         backgroundColor: "#181e25"
       },
       permissions: [

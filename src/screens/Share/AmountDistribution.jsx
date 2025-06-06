@@ -46,7 +46,7 @@ const AmountDistribution = () => {
     );
   };
 
-  const handleNext = () => {
+const handleNext = () => {
   if (remainingAmount !== 0) {
     Toast.show({
       type: "error",
@@ -62,11 +62,14 @@ const AmountDistribution = () => {
     text2: "Tous les montants ont été répartis correctement.",
   });
 
+  const { includeMyself, includeSelf, ...otherParams } = route.params;
+
   navigation.navigate("ConfirmTransfer", {
-    ...route.params,
+    ...otherParams,
     participants,
   });
 };
+
 
 
   return (
