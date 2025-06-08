@@ -8,7 +8,8 @@ import {
   SafeAreaView,
   StatusBar,
   Modal,
-  Pressable
+  Pressable,
+  ScrollView,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
@@ -21,22 +22,23 @@ const MethodType = ({ navigation }) => {
   const [showServiceModal, setShowServiceModal] = useState(false);
 
   const bankDetails = {
-    bankName: "Royal Bank International",
-    accountNumber: "1234567890",
-    accountName: "John Doe",
-    iban: "GB33BUKB20201555555555",
-    bic: "BUKBGB22"
+    beneficiary: "Services Financiers Étudiants SAS",
+    bankName: "UBA CAMEROUN S.A.",
+    bankCode: "10033",
+    branchCode: "06870",
+    accountNumber: "000237000456001",
+    ribKey: "26",
+    swiftBic: "UNAFCMCX",
+    iban: "CM21 10033 06870 000237000456001 26",
+    note: 'IMPORTANT : Insérez cette référence dans le champ "motif du virement" : 👉 IDENTIFIANT SENDO : *SD638468*'
   };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff', paddingTop: StatusBar.currentHeight || 20 }}>
-      <View style={{ flex: 1, paddingHorizontal: 20 }}>
-
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 30 }}>
         {/* Header */}
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-           
-          </TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.goBack()} />
           <TouchableOpacity style={{
             flexDirection: 'row',
             alignItems: 'center',
@@ -126,12 +128,14 @@ const MethodType = ({ navigation }) => {
               </Text>
             </TouchableOpacity>
 
-            {[
+            {[ 
+              { label: t('method.beneficiary'), value: bankDetails.beneficiary },
               { label: t('method.bank_name'), value: bankDetails.bankName },
+              { label: t('method.bank_code'), value: bankDetails.bankCode },
+              { label: t('method.branch_code'), value: bankDetails.branchCode },
               { label: t('method.account_number'), value: bankDetails.accountNumber },
-              { label: t('method.account_name'), value: bankDetails.accountName },
-              { label: t('method.full_iban'), value: bankDetails.iban },
-              { label: t('method.bic_swift'), value: bankDetails.bic },
+              { label: t('method.rib_key'), value: bankDetails.ribKey },
+              { label: t('method.bic_swift'), value: bankDetails.swiftBic },
             ].map((item, index) => (
               <View
                 key={index}
@@ -142,9 +146,38 @@ const MethodType = ({ navigation }) => {
                 }}
               >
                 <Text style={{ fontSize: 14, color: '#666', fontWeight: '500' }}>{item.label}:</Text>
-                <Text style={{ fontSize: 14, color: '#333', fontWeight: 'bold' }}>{item.value}</Text>
+                <Text style={{ fontSize: 14, color: '#333', fontWeight: 'bold', maxWidth: 180, textAlign: 'right' }}>
+                  {item.value}
+                </Text>
               </View>
             ))}
+
+            {/* Horizontally scrollable IBAN */}
+            <View style={{
+              flexDirection: 'row',
+              marginBottom: 10,
+              alignItems: 'center'
+            }}>
+              <Text style={{ fontSize: 14, color: '#666', fontWeight: '500', width: 120 }}>
+                {t('method.full_iban')}:
+              </Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                <Text style={{ fontSize: 14, color: '#333', fontWeight: 'bold' }}>
+                  {bankDetails.iban}
+                </Text>
+              </ScrollView>
+            </View>
+
+            <View style={{
+              marginTop: 10,
+              padding: 10,
+              backgroundColor: '#FFF6E5',
+              borderLeftWidth: 4,
+              borderLeftColor: '#FFA500'
+            }}>
+              <Text style={{ color: '#000', fontSize: 13, fontWeight: 'bold' }}>ℹ️ {t('method.note')}</Text>
+              <Text style={{ color: '#333', fontSize: 13 }}>{bankDetails.note}</Text>
+            </View>
           </View>
         )}
 
@@ -226,8 +259,7 @@ const MethodType = ({ navigation }) => {
           </Pressable>
         </Modal>
 
-
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 };

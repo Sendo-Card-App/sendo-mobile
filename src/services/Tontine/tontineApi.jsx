@@ -61,6 +61,75 @@ export const tontineApi = createApi({
       }),
       providesTags: [TAG_TYPES.TONTINE],
     }),
+    // Inside endpoints: (builder) => ({
+        addPenalty: builder.mutation({
+        query: ({ tontineId, payload }) => ({
+        url: `/tontines/${tontineId}/penalites`,
+        method: 'POST',
+        body: payload,
+        }),
+        invalidatesTags: [TAG_TYPES.TONTINE],
+        }),
+      contribute: builder.mutation({
+       query: ({ tontineId, membreId, cotisationId, montant }) => ({
+        url: `/tontines/${tontineId}/contribute`,
+        method: 'POST',
+        body: {
+          montant,
+          membreId,
+          cotisationId,
+        },
+      }),
+      invalidatesTags: [TAG_TYPES.TONTINE],
+    }),
+
+    getCotisations: builder.query({
+      query: ({ tontineId, memberId }) => ({
+        url: `/tontines/${tontineId}/tours?memberId=${memberId}`,
+        method: 'GET',
+      }),
+      providesTags: [TAG_TYPES.TONTINE],
+    }),
+   getToursDistribution: builder.query({
+      query: ({ tontineId }) => `/tontines/${tontineId}/tours-distribution`,
+    }),
+
+    setTontineOrder: builder.mutation({
+      query: ({ tontineId, ordreRotation }) => ({
+        url: `/tontines/${tontineId}/ordre-rotation`,
+        method: 'POST',
+        body: { ordreRotation },
+      }),
+      invalidatesTags: [TAG_TYPES.TONTINE],
+    }),
+     accessOrRejectTontine: builder.mutation({
+        query: ({ invitationCode, membreId, type }) => ({
+          url: '/tontines/access-or-reject',
+          method: 'POST',
+          body: {
+            invitationCode,
+            membreId,
+            type,
+          },
+        }),
+        invalidatesTags: [TAG_TYPES.TONTINE],
+      }),
+
+      getMemberPenalties: builder.query({
+      query: ({ tontineId, membreId }) => ({
+        url: `/tontines/${tontineId}/membres/${membreId}/penalites`,
+        method: 'GET',
+      }),
+    }),
+
+     payPenalty: builder.mutation({
+        query: ({ penaliteId}) => ({
+          url: `/tontines/penalites/${penaliteId}/pay`,
+          method: 'PUT',
+        }),
+        invalidatesTags: [TAG_TYPES.TONTINE],
+      }),
+
 
 
 
@@ -73,7 +142,16 @@ export const tontineApi = createApi({
 
 export const {
   useCreateTontineMutation,
-  useGetTontinesQuery, // <--- EXPORT THIS
+   useGetMemberPenaltiesQuery,
+  useGetTontinesQuery, 
   useAddTontineMembersMutation,
   useGetTontineDetailsQuery,
+  useGetToursDistributionQuery,
+  useAddPenaltyMutation,
+   useContributeMutation,
+   useGetCotisationsQuery,
+   usePayPenaltyMutation,
+   useSetTontineOrderMutation,
+   useAccessOrRejectTontineMutation 
+
 } = tontineApi;
