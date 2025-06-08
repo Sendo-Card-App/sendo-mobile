@@ -7,7 +7,7 @@ import { Toast } from 'react-native-toast-message';
 
 const TopLogo = require('../../images/TopLogo.png');
 
-export default function MemberAddPenalty({ navigation }) {
+export default function MembersPenalty({ navigation }) {
   const [motif, setMotif] = useState('Cotisation manqué');
   const [action, setAction] = useState('Amende');
   const [somme, setSomme] = useState('5000 xaf');

@@ -2,13 +2,17 @@ import React from "react";
 import { View, Text, TouchableOpacity, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Toast from "react-native-toast-message";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation,useRoute } from "@react-navigation/native";
 
 const TopLogo = require("../../images/TopLogo.png");
 
 const TontineDetail = () => {
   const navigation = useNavigation();
-
+   const route = useRoute();
+   const { tontineId, tontine } = route.params;
+  //console.log(tontineId)
+    
+//console.log("Tontine List:", JSON.stringify(tontine, null, 2));
   return (
     <View className="flex-1 bg-[#0E1111] pt-12">
       <Toast position="top" />
@@ -32,13 +36,21 @@ const TontineDetail = () => {
       <View className="border border-dashed border-gray-300 mb-6 mx-6" />
 
       {/* Title */}
-      <Text className="text-white text-xl font-semibold text-center mb-6">Jeunes du quartier</Text>
+      <Text className="text-white text-xl font-semibold text-center mb-6">
+        {tontine?.nom ?? "Nom de la tontine"}
+      </Text>
+
 
       {/* Action buttons */}
       <View className="px-6 space-y-4">
         <View className="flex-row justify-between">
           <TouchableOpacity
-            onPress={() => navigation.navigate("Members")}
+           onPress={() =>
+            navigation.navigate("Members", {
+              tontineId,
+              tontine, // this is the full item corresponding to the ID
+            })
+            }
             className="bg-[#6EE7B7] rounded-lg w-[47%] h-32 justify-center items-center"
           >
             <Ionicons name="people" size={40} color="#000" />
@@ -46,21 +58,45 @@ const TontineDetail = () => {
           </TouchableOpacity>
 
           <TouchableOpacity
-            onPress={() => navigation.navigate("Cotisations")}
+           onPress={() =>
+            navigation.navigate("Cotisations", {
+              tontineId,
+              tontine, // this is the full item corresponding to the ID
+            })
+            }
             className="bg-[#6EE7B7] rounded-lg w-[47%] h-32 justify-center items-center"
           >
             <Ionicons name="cash-outline" size={40} color="#000" />
             <Text className="text-black font-semibold mt-2">Cotisations</Text>
           </TouchableOpacity>
         </View>
-
-        <TouchableOpacity
-          onPress={() => navigation.navigate("Setting1")}
-          className="bg-[#6EE7B7] rounded-lg mt-5 h-32 justify-center items-center"
-        >
-          <Ionicons name="settings-outline" size={40} color="#000" />
-          <Text className="text-black font-semibold mt-2">Paramètres</Text>
-        </TouchableOpacity>
+        
+       <View className="flex-row justify-between">
+          <TouchableOpacity
+            onPress={() =>
+              navigation.navigate("TontineSetting", {
+                tontineId,
+                tontine, 
+              })
+              }
+            className="bg-[#6EE7B7] rounded-lg mt-5 w-[47%] h-32 justify-center items-center"
+          >
+            <Ionicons name="settings-outline" size={40} color="#000" />
+            <Text className="text-black font-semibold mt-2">Paramètres</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() =>
+              navigation.navigate("MemberContribution", {
+                tontineId,
+                tontine, 
+              })
+              }
+            className="bg-[#6EE7B7] rounded-lg mt-5 w-[47%] h-32 justify-center items-center"
+          >
+           <Ionicons name="hand-left-outline" size={40} color="#000" />
+            <Text className="text-black font-semibold mt-2">Me Cotise</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
   );

@@ -21,8 +21,8 @@ const KycResume = ({ navigation }) => {
   const isKYCComplete = useSelector(selectIsKYCComplete);
   const { t } = useTranslation();
   const { data: userProfile, isLoading: isProfileLoading, error: profileError } = useGetUserProfileQuery();
-    
-  
+
+  console.log("Tontine List:", JSON.stringify(userProfile, null, 2));
 
   const Data = [
     { id: "1", name: t('kyc_resume.personal_details'), route: "PersonalDetail", 
