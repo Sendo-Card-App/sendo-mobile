@@ -90,8 +90,12 @@ export const tontineApi = createApi({
       }),
       providesTags: [TAG_TYPES.TONTINE],
     }),
+    
    getToursDistribution: builder.query({
-      query: ({ tontineId }) => `/tontines/${tontineId}/tours-distribution`,
+      query: ({ tontineId }) => ({
+        url: `/tontines/${tontineId}/tours-distribution`,
+         }),
+      providesTags: [TAG_TYPES.TONTINE],
     }),
 
     setTontineOrder: builder.mutation({
@@ -137,7 +141,16 @@ export const tontineApi = createApi({
         body: { status }, 
       }),
        invalidatesTags: [TAG_TYPES.TONTINE],
-    }),
+      }),
+
+      distribute: builder.mutation({
+        query: ({ tontineId }) => ({
+          url: `/tontines/${tontineId}/distribute`,
+          method: 'PUT',
+        }),
+        invalidatesTags: [TAG_TYPES.TONTINE],
+      }),
+
 
       getValidatedCotisations: builder.query({
         query: ({ tontineId, membreId }) => ({
@@ -177,7 +190,8 @@ export const {
    useGetCotisationsQuery,
    usePayPenaltyMutation,
    useSetTontineOrderMutation,
-    useChangeTontineStatusMutation,
+   useChangeTontineStatusMutation,
+  useDistributeMutation,
    useAccessOrRejectTontineMutation,
     useGetValidatedCotisationsQuery,
   useRelanceCotisationMutation,

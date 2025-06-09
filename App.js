@@ -126,6 +126,7 @@ import Cotisations from "./src/screens/Tontine/Cotisations";
 import MemberDetail from "./src/screens/Tontine/MemberDetail";
 import MemberContribution from "./src/screens/Tontine/MemberContribution";
 import TontineSetting from "./src/screens/Tontine/TontineSetting";
+import FundRelease from "./src/screens/Tontine/FundRelease";
 
 
 const Stack = createNativeStackNavigator();
@@ -442,7 +443,9 @@ function MainStack() {
       <Stack.Screen name="MemberAddPenalty" component={MemberAddPenalty } options={{ headerShown: false }} />
       <Stack.Screen name="MemberDetail" component={MemberDetail } options={{ headerShown: false }} />
       <Stack.Screen name="MemberContribution" component={MemberContribution } options={{ headerShown: false }} />
-       <Stack.Screen name="TontineSetting" component={TontineSetting } options={{ headerShown: false }} />
+      <Stack.Screen name="TontineSetting" component={TontineSetting } options={{ headerShown: false }} />
+      <Stack.Screen name="FundRelease" component={FundRelease } options={{ headerShown: false }} />
+
 
 
 

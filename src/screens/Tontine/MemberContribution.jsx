@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
+import { useTranslation } from "react-i18next";
 import Loader from "../../components/Loader";
 import {
   sendPushNotification,
@@ -17,7 +18,7 @@ import {
   registerForPushNotificationsAsync,
   getStoredPushToken,
 } from "../../services/notificationService";
-import { useGetBalanceQuery } from "../../services/WalletApi/walletApi";
+import { useGetBalanceQuery, useGetTransactionHistoryQuery } from "../../services/WalletApi/walletApi";
 import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
 import {
   useContributeMutation,
@@ -32,6 +33,7 @@ import Toast from 'react-native-toast-message';
 const TopLogo = require("../../images/TopLogo.png");
 
 const MemberContribution = () => {
+  const { t } = useTranslation();
   const navigation = useNavigation();
   const route = useRoute();
   const { tontineId, tontine } = route.params;
@@ -46,9 +48,9 @@ const MemberContribution = () => {
     skip: !userId,
   });
   const balance = balanceData?.data.balance || 0;
+  const { data: history, refetch } = useGetTransactionHistoryQuery({ skip: !userId });
 
   const { data: tours } = useGetToursDistributionQuery({ tontineId });
-
   const membre = tontine?.membres?.find((m) => m?.user?.id === userId);
   const membreId = membre?.id;
   
@@ -57,7 +59,7 @@ const MemberContribution = () => {
     isLoading: loadingPenalties,
   } = useGetMemberPenaltiesQuery({ tontineId, membreId });
   const penaliteId = penaltiesResponse?.data?.[0]?.id;
-  
+
   const {
     data: allCotisations,
     error: cotisationError,
@@ -65,7 +67,6 @@ const MemberContribution = () => {
     tontineId,
   });
   
-  // Filter cotisations to show only those for the current member
   const memberCotisations = allCotisations?.data?.filter(
     cotisation => cotisation.membre?.id === membreId
   ) || [];
@@ -155,16 +156,16 @@ const MemberContribution = () => {
   const adminMember = tontine?.membres?.find((m) => m.role === "ADMIN");
   const adminName = adminMember
     ? `${adminMember.user.firstname} ${adminMember.user.lastname}`
-    : "Admin inconnu";
+    : t('memberContribution.unknownAdmin');
 
   const formatFrequence = (f) => {
     switch (f) {
       case "DAILY":
-        return "Journalier";
+        return t('memberContribution.daily');
       case "WEEKLY":
-        return "Hebdomadaire";
+        return t('memberContribution.weekly');
       case "MONTHLY":
-        return "Mensuel";
+        return t('memberContribution.monthly');
       default:
         return f;
     }
@@ -204,19 +205,19 @@ const MemberContribution = () => {
       <ScrollView className="pt-5 px-4 bg-white">
         <View className="bg-[#F3F9FF] rounded-xl p-4 border border-gray-200 mb-4">
           <Text className="text-[#1dd874] text-lg font-bold mb-2">
-            {tontine?.nom || "Nom indisponible"}
+            {tontine?.nom || t('memberContribution.title')}
           </Text>
           <View className="space-y-1">
-            <Info label="Nombre de membres" value={tontine?.nombreMembres} />
-            <Info label="Admin" value={adminName} />
-            <Info label="Fréquence" value={formatFrequence(tontine?.frequence)} />
-            <Info label="Somme à cotiser" value={`${montant.toLocaleString()} xaf`} />
+            <Info label={t('memberContribution.members')} value={tontine?.nombreMembres} />
+            <Info label={t('memberContribution.admin')} value={adminName} />
+            <Info label={t('memberContribution.frequency')} value={formatFrequence(tontine?.frequence)} />
+            <Info label={t('memberContribution.contributionAmount')} value={`${montant.toLocaleString()} xaf`} />
           </View>
         </View>
 
         <View className="bg-[#F0FFF5] rounded-xl p-4 border border-gray-200 mb-4">
-          <Text className="text-green-700 font-semibold text-base mb-3">Mes Cotisations</Text>
-          <Info label="Période actuelle" value={`${montant.toLocaleString()} xaf`} />
+          <Text className="text-green-700 font-semibold text-base mb-3">{t('memberContribution.myContributions')}</Text>
+          <Info label={t('memberContribution.currentPeriod')} value={`${montant.toLocaleString()} xaf`} />
         </View>
 
         <TouchableOpacity
@@ -227,18 +228,22 @@ const MemberContribution = () => {
           {isLoading ? (
             <>
               <Loader size="small" color="#fff" />
-              <Text className="text-white font-semibold text-base ml-2">Paiement...</Text>
+              <Text className="text-white font-semibold text-base ml-2">{t('memberContribution.paymentProcessing')}</Text>
             </>
           ) : (
             <>
-              <Text className="text-white font-semibold text-base mr-2">Payer</Text>
+              <Text className="text-white font-semibold text-base mr-2">{t('memberContribution.pay')}</Text>
               <Ionicons name="card-outline" size={20} color="#fff" />
             </>
           )}
         </TouchableOpacity>
 
         <View className="flex-row justify-around mb-3">
-          {["Cotisations", "Pénalités", "Historique"].map((tab) => (
+          {[
+            t('memberContribution.tabs.contributions'),
+            t('memberContribution.tabs.penalties'),
+            t('memberContribution.tabs.history')
+          ].map((tab) => (
             <TouchableOpacity key={tab} onPress={() => setActiveTab(tab)}>
               <Text
                 className={`text-base font-semibold ${
@@ -251,7 +256,7 @@ const MemberContribution = () => {
           ))}
         </View>
 
-        {activeTab === "Cotisations" && (
+        {activeTab === t('memberContribution.tabs.contributions') && (
           <View className="space-y-2 mb-6">
             {memberCotisations.length > 0 ? (
               memberCotisations.map((item, idx) => (
@@ -271,24 +276,23 @@ const MemberContribution = () => {
                       {item.montant.toLocaleString()} xaf
                     </Text>
                     <Text className="text-xs text-gray-500 ml-4">
-                      {item.statutPaiement === 'VALIDATED' ? 'Payé' : 'En attente'}
+                      {item.statutPaiement === 'VALIDATED' ? t('memberContribution.paid') : t('memberContribution.pending')}
                     </Text>
                   </View>
-
                 </View>
               ))
             ) : (
               <Text className="text-gray-500 text-center py-4">
-                Aucune cotisation enregistrée
+                {t('memberContribution.noContributions')}
               </Text>
             )}
           </View>
         )}
 
-        {activeTab === "Pénalités" && (
+        {activeTab === t('memberContribution.tabs.penalties') && (
           <View className="space-y-2 mb-6">
             {loadingPenalties ? (
-              <Text>Chargement...</Text>
+              <Text>{t('memberContribution.loading')}</Text>
             ) : penaltiesResponse?.data?.length > 0 ? (
               penaltiesResponse.data.map((penalty, index) => (
                 <View
@@ -296,7 +300,7 @@ const MemberContribution = () => {
                   className="flex-row justify-between px-3 py-2 border rounded-md items-center"
                 >
                   <View className="flex-1">
-                    <Text className="text-red-500">{penalty?.type}</Text>
+                    <Text className="text-red-500">{penalty?.type || t('memberContribution.penaltyType')}</Text>
                     <Text className="text-xs text-gray-500 mt-2">
                       {penalty?.createdAt
                         ? new Date(penalty.createdAt).toLocaleDateString()
@@ -314,24 +318,24 @@ const MemberContribution = () => {
                     <TouchableOpacity
                       className="bg-green-500 px-5 py-2 rounded flex-row items-center justify-center"
                       onPress={handlePayPenalty}
-                      disabled={isLoading}
+                      disabled={isLoading || penalty?.statut === 'PAID'}
                     >
                       {isLoading ? (
                         <Loader color="#fff" size="small" />
                       ) : (
-                        <Text className="text-white text-xs">Pay</Text>
+                        <Text className="text-white text-xs">{t('memberContribution.payPenalty')}</Text>
                       )}
                     </TouchableOpacity>
                   </View>
                 </View>
               ))
             ) : (
-              <Text>Aucune pénalité</Text>
+              <Text>{t('memberContribution.noPenalties')}</Text>
             )}
           </View>
         )}
 
-        {activeTab === "Historique" && (
+        {activeTab === t('memberContribution.tabs.history') && (
           <View className="space-y-2 mb-6">
             {memberCotisations.map((c, i) => (
               <View key={i} className="flex-row justify-between px-3 py-2 border rounded-md">

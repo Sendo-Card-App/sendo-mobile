@@ -5,11 +5,11 @@ import {
   TouchableOpacity,
   Image,
   ScrollView,
-  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Toast from "react-native-toast-message";
 import { useNavigation, useRoute } from "@react-navigation/native";
+import { useTranslation } from "react-i18next";
 
 const TopLogo = require("../../images/TopLogo.png");
 
@@ -29,15 +29,15 @@ const Members = () => {
   const route = useRoute();
   const { tontineId, tontine } = route.params;
   const [filter, setFilter] = useState("date");
+  const { t } = useTranslation();
 
   const handleFilterToggle = () => {
     setFilter((prev) => (prev === "date" ? "alphabetical" : "date"));
   };
 
   const handleViewMember = (member) => {
-  navigation.navigate("MemberDetail", { member, tontineId,tontine });
-};
-
+    navigation.navigate("MemberDetail", { member, tontineId, tontine });
+  };
 
   const sortedMembers = [...(tontine?.membres || [])].sort((a, b) => {
     if (filter === "alphabetical") {
@@ -56,6 +56,7 @@ const Members = () => {
     <View className="flex-1 bg-[#0E1111] pt-12">
       <Toast position="top" />
 
+      {/* Header */}
       <View className="flex-row mb-4 items-center justify-between px-4">
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
@@ -65,6 +66,7 @@ const Members = () => {
         </TouchableOpacity>
       </View>
 
+      {/* Logo */}
       <View className="absolute top-[-48px] left-0 right-0 items-center">
         <Image
           source={TopLogo}
@@ -76,6 +78,7 @@ const Members = () => {
       <View className="border border-dashed border-gray-300 mb-4 mx-6" />
 
       <View className="bg-white rounded-2xl mx-4 p-4 flex-1">
+        {/* Add Member Button */}
         <View className="items-center px-4">
           <TouchableOpacity
             onPress={() => navigation.navigate("Participant", { tontineId })}
@@ -83,28 +86,33 @@ const Members = () => {
           >
             <Ionicons name="person-add-outline" size={16} color="black" />
             <Text className="text-black font-medium text-sm">
-              Ajouter un membre
+              {t("add_member")}
             </Text>
           </TouchableOpacity>
         </View>
-        
+
+        {/* Filter Toggle */}
         <View className="flex-row justify-end items-center mb-4">
           <TouchableOpacity onPress={handleFilterToggle}>
             <View className="flex-row items-center space-x-1">
               <Text className="text-sm font-medium text-gray-700">
-                {filter === "date" ? "Tri: Date" : "Tri: A → Z"}
+                {filter === "date" ? t("sort_by_date") : t("sort_by_name")}
               </Text>
               <Ionicons name="filter" size={18} color="gray" />
             </View>
           </TouchableOpacity>
         </View>
-          <Text className="text-black text-xl font-bold text-center mb-6">
-            Liste des Membre
-          </Text>
+
+        {/* Title */}
+        <Text className="text-black text-xl font-bold text-center mb-6">
+          {t("member_list")}
+        </Text>
+
+        {/* Members */}
         <ScrollView showsVerticalScrollIndicator={false}>
           {sortedMembers.map((member, index) => {
             const fullName = `${member.user.firstname} ${member.user.lastname}`;
-            const status = "PAID"; // Replace later with actual logic
+            const status = "PAID"; // Replace with actual logic
             const statusStyle = getStatusStyle(status);
 
             return (
@@ -118,7 +126,6 @@ const Members = () => {
                 <TouchableOpacity onPress={() => handleViewMember(member)}>
                   <Ionicons name="eye-outline" size={22} color="black" />
                 </TouchableOpacity>
-
               </View>
             );
           })}

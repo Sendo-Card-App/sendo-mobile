@@ -5,6 +5,12 @@ import Toast from "react-native-toast-message";
 import { useTranslation } from "react-i18next";
 import Loader from "../../components/Loader";
 import { useCreateTontineMutation } from "../../services/Tontine/tontineApi";
+import { 
+  sendPushNotification,
+  sendPushTokenToBackend,
+  registerForPushNotificationsAsync,
+  getStoredPushToken
+} from '../../services/notificationService';
 
 
 const TopLogo = require("../../images/TopLogo.png");
@@ -54,11 +60,55 @@ const handleNext = async () => {
     setLoading(true);
     const response = await createTontine(data).unwrap();
     setLoading(false);
+
     console.log("Full response:", JSON.stringify(response, null, 2));
 
     const tontineId = response?.data?.id;
 
     if (tontineId) {
+      // Préparation notification
+      const notificationContent = {
+        title: "Tontine Créée",
+        body: `La tontine "${data.nom}" d'un montant de ${data.montant} FCFA a été créée.`,
+        type: "TONTINE_CREATED",
+      };
+
+      try {
+        let pushToken = await getStoredPushToken();
+        if (!pushToken) {
+          pushToken = await registerForPushNotificationsAsync();
+        }
+
+        if (pushToken) {
+          await sendPushTokenToBackend(
+            pushToken,
+            notificationContent.title,
+            notificationContent.body,
+            notificationContent.type,
+            {
+              tontineId,
+              nom: data.nom,
+              montant: data.montant,
+              timestamp: new Date().toISOString(),
+            }
+          );
+        }
+      } catch (notificationError) {
+        // Envoi fallback notification locale
+        await sendPushNotification(
+          notificationContent.title,
+          notificationContent.body,
+          {
+            data: {
+              type: notificationContent.type,
+              tontineId,
+              nom: data.nom,
+              montant: data.montant,
+            },
+          }
+        );
+      }
+
       navigation.navigate("Participant", { tontineId });
     } else {
       Toast.show({
@@ -68,6 +118,8 @@ const handleNext = async () => {
       });
     }
   } catch (err) {
+    console.log("Full response:", JSON.stringify(err, null, 2));
+
     setLoading(false);
     Toast.show({
       type: "error",
@@ -76,6 +128,7 @@ const handleNext = async () => {
     });
   }
 };
+
 
 
 
