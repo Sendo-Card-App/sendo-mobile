@@ -104,7 +104,7 @@ const Members = () => {
         <ScrollView showsVerticalScrollIndicator={false}>
           {sortedMembers.map((member, index) => {
             const fullName = `${member.user.firstname} ${member.user.lastname}`;
-            const status = "payé"; // Replace later with actual logic
+            const status = "PAID"; // Replace later with actual logic
             const statusStyle = getStatusStyle(status);
 
             return (
