@@ -9,24 +9,26 @@ import {
 import ButtomLogo from "../../images/ButtomLogo.png";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
+import { useTranslation } from "react-i18next";
 
 const TopLogo = require("../../images/TopLogo.png");
 
 const TontineSetting = () => {
   const navigation = useNavigation();
   const route = useRoute();
+  const { t } = useTranslation();
 
   const { tontineId, tontine } = route.params;
 
   const options = [
-    { title: "Informations de bases", screen: "TontineBaseInfo" },
-    { title: "Fréquence de cotisations", screen: "TontineFrequency" },
-    { title: "Ordre de passage", screen: "TontineOrder" },
-    { title: "Versement de fonds", screen: "TontineFunds" },
-    { title: "Pénalités", screen: "TontinePenalties" },
+    { title: t("tontineSetting.base_info"), screen: "TontineBaseInfo" },
+    { title: t("tontineSetting.frequency"), screen: "TontineFrequency" },
+    { title: t("tontineSetting.order"), screen: "TontineOrder" },
+    { title: t("tontineSetting.funds"), screen: "TontineFunds" },
+    { title: t("tontineSetting.penalties"), screen: "TontinePenalties" },
   ];
 
-  const handleOptionPress = (screenName: string) => {
+  const handleOptionPress = (screenName) => {
     navigation.navigate(screenName, { tontine });
   };
 
@@ -80,7 +82,7 @@ const TontineSetting = () => {
       <View className="mt-10">
         <TouchableOpacity className="border border-red-500 py-3 rounded-full">
           <Text className="text-center text-red-500 font-semibold text-base">
-            Supprimer la tontine
+            {t("tontineSetting.delete")}
           </Text>
         </TouchableOpacity>
       </View>

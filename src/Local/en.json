@@ -1,5 +1,23 @@
 {
   "welcome": "Welcome!",
+   "create_button": "Create a new tontine",
+  "tab_my_tontines": "My tontines",
+  "tab_invitations": "Invitations",
+  "no_tontine": "No tontines available.",
+  "no_invitation": "No pending invitations.",
+  "tontine_members_count": "Number of members",
+  "tontine_admin": "Admin",
+  "tontine_frequency": "Frequency",
+  "tontine_amount": "Contribution amount",
+  "join_button": "Join",
+  "reject_button": "Reject",
+  "role_ADMIN": "Administrator",
+  "role_MEMBRE": "Member",
+  "role_TRESORIER": "Treasurer",
+  "role_PRESIDENT": "President",
+  "frequency_DAILY": "Daily",
+  "frequency_WEEKLY": "Weekly",
+  "frequency_MONTHLY": "Monthly",
   "chooseCountry": "Choose a country to make a transfer.",
   "searchPlaceholder": "Search by country",
   "cameroon": "Cameroon",
@@ -10,6 +28,10 @@
   "choose_beneficiary": "Choose a beneficiary",
   "add_new_beneficiary": "Add new beneficiary",
   "adding": "Adding...",
+   "add_member": "Add Member",
+  "sort_by_date": "Sort: Date",
+  "sort_by_name": "Sort: A → Z",
+  "member_list": "Member List",
   "search_beneficiaries": "Search beneficiaries",
   "error_loading_contacts": "Error loading contacts",
   "no_contacts_found": "No contacts found",
@@ -1211,6 +1233,108 @@
   },
   "common5": {
     "nextButton": "Next"
+  },
+   "addPenalty": {
+    "motif": "Reason",
+    "motif.retard": "Late",
+    "motif.absence": "Absence",
+    "motif.autre": "Other",
+    "somme": "Amount",
+    "note": "Note",
+    "delai": "Deadline",
+    "selectDate": "Select a date",
+    "cancel": "Cancel",
+    "confirm": "Confirm"
+  },
+   "tontineDetail": {
+    "defaultName": "Tontine Name",
+    "members": "Members",
+    "contributions": "Contributions",
+    "settings": "Settings",
+    "contribute": "Contribute"
+  },
+"memberDetail": {
+  "tab_contributions": "Contributions",
+  "tab_penalties": "Penalties",
+  "tab_history": "History",
+  "filter": "Filter",
+  "no_cotisations": "No contributions found.",
+  "no_penalties": "No penalties recorded.",
+  "new_penalty": "Add New Penalty",
+  "unpaid": "Unpaid",
+  "paid": "Paid",
+  "pending": "Pending",
+  "history_coming_soon": "History feature coming soon!",
+  "no_member_selected": "No member selected.",
+  "name": "Name",
+  "contact": "Phone",
+  "email": "Email",
+  "member_since": "Member since",
+  "role": "Role"
+},
+ "tontineSetting": {
+    "base_info": "Basic Information",
+    "frequency": "Contribution Frequency",
+    "order": "Order of Rotation",
+    "funds": "Fund Distribution",
+    "penalties": "Penalties",
+    "delete": "Delete Tontine"
+  },
+    "cotisations": {
+    "total": "Total",
+    "members": "Members",
+    "changeStatus": "Change status",
+    "distributeToNext": "Distribute to next beneficiary",
+    "noContributions": "No contributions recorded",
+    "dragToReorder": "Drag to reorder the rotation"
+  },
+   "frequency1": {
+    "daily": "Daily",
+    "weekly": "Weekly",
+    "monthly": "Monthly"
+  },
+  "tabs1": {
+    "contributions": "Contributions",
+    "rotationOrder": "Rotation Order",
+    "history": "History"
+  },
+  "actions": {
+    "remind": "Remind",
+    "saveOrder": "Save order"
+  },
+  "errors5": {
+    "loadingContributions": "Error loading contributions"
+  },
+ "loading": "Loading...",
+  "comingSoon": "Coming soon...",
+  "memberContribution": {
+    "title": "My Contributions",
+    "back": "Back",
+    "menu": "Menu",
+    "members": "Members",
+    "admin": "Admin",
+    "frequency": "Frequency",
+    "contributionAmount": "Contribution amount",
+    "myContributions": "My Contributions",
+    "currentPeriod": "Current period",
+    "pay": "Pay",
+    "paymentProcessing": "Processing...",
+    "tabs": {
+      "contributions": "Contributions",
+      "penalties": "Penalties",
+      "history": "History"
+    },
+    "noContributions": "No contributions recorded",
+    "paid": "Paid",
+    "pending": "Pending",
+    "penaltyType": "Type",
+    "noPenalties": "No penalties",
+    "loading": "Loading...",
+    "payPenalty": "Pay",
+    "daily": "Daily",
+    "weekly": "Weekly",
+    "monthly": "Monthly",
+    "unknownAdmin": "Unknown admin"
   }
 
   
