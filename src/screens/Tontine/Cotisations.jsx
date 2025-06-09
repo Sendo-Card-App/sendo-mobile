@@ -10,7 +10,10 @@ import { Ionicons } from "@expo/vector-icons";
 import Toast from "react-native-toast-message";
 import Loader from "../../components/Loader";
 import { useGetCotisationsQuery,
-  useSetTontineOrderMutation
+  useSetTontineOrderMutation,
+  useChangeTontineStatusMutation,
+   useGetValidatedCotisationsQuery,
+  useRelanceCotisationMutation,
  } from '../../services/Tontine/tontineApi';
 import { useNavigation, useRoute } from "@react-navigation/native";
 import DraggableFlatList from "react-native-draggable-flatlist";
@@ -22,11 +25,13 @@ const Cotisations = () => {
   const [loading, setLoading] = useState(false);
   const route = useRoute();
   const { tontineId, tontine } = route.params;
+  //console.log(tontine)
   const [setTontineOrder] = useSetTontineOrderMutation();
-
+  const [changeTontineStatus] = useChangeTontineStatusMutation();
+  const [relanceCotisation] = useRelanceCotisationMutation();
   const [activeTab, setActiveTab] = useState("Cotisations");
   const memberId = tontine.membres[0]?.id; 
-
+   console.log(memberId)
   const {
     data: cotisations,
     isLoading,
@@ -35,7 +40,17 @@ const Cotisations = () => {
     tontineId,
     memberId,
   });
-//console.log("Tontine List:", JSON.stringify(cotisations, null, 2));
+  const {
+      data: cotisation,
+      Loading,
+      Error,
+    } = useGetValidatedCotisationsQuery({
+      tontineId,
+      memberId,
+    });
+
+
+console.log("cotisation List:", JSON.stringify(cotisation, null, 2));
   
 const handleSaveOrdreRotation = async () => {
   setLoading(true);
@@ -137,6 +152,39 @@ const [ordreList, setOrdreList] = useState(initialOrdreList);
 
             <Text className="text-black font-semibold"> {tontine.montant}</Text>
           </View>
+             <View className="mt-4">
+                <TouchableOpacity
+                  className="bg-yellow-500 py-2 px-4 rounded-full items-center"
+                  onPress={async () => {
+                    try {
+                      setLoading(true);
+                      const newStatus = tontine.etat === "EN_COURS" ? "TERMINEE" : "EN_COURS";
+
+                      await changeTontineStatus({ tontineId, status: newStatus }).unwrap();
+
+                      Toast.show({
+                        type: 'success',
+                        text1: 'Succès',
+                        text2: `Statut changé en ${newStatus}`,
+                      });
+
+                      // Optionally, refetch tontine data or update manually
+                    } catch (error) {
+                      Toast.show({
+                        type: 'error',
+                        text1: 'Erreur',
+                        text2: error?.data?.message || 'Une erreur est survenue.',
+                      });
+                    } finally {
+                      setLoading(false);
+                    }
+                  }}
+                >
+                  <Text className="text-black font-bold">
+                    Changer le statut ({tontine.etat})
+                  </Text>
+                </TouchableOpacity>
+              </View>
 
           {/* Action Button */}
           <TouchableOpacity className="bg-[#34D399] mt-4 py-3 rounded-full items-center flex-row justify-center space-x-2">
@@ -169,40 +217,64 @@ const [ordreList, setOrdreList] = useState(initialOrdreList);
         {/* Cotisations */}
         {activeTab === "Cotisations" && (
           <>
-            {isLoading ? (
+            {isLoading || Loading ? (
               <Text className="text-center text-gray-500 mt-4">
                 Chargement...
               </Text>
-            ) : isError ? (
+            ) : isError || Error ? (
               <Text className="text-center text-red-500 mt-4">
                 Erreur de chargement des cotisations.
               </Text>
-            ) : cotisations?.data?.length === 0 ? (
+            ) : cotisation?.data?.length === 0 ? (
               <Text className="text-center text-gray-400 mt-4">
                 Aucune cotisation enregistrée.
               </Text>
             ) : (
               <ScrollView className="mt-4">
-                {cotisations.data.map((item, idx) => (
+                {cotisation.data.map((item, idx) => (
                   <View
                     key={idx}
                     className="flex-row items-center justify-between bg-white rounded-xl px-4 py-3 mb-2 shadow-sm"
                   >
-                    <Text className="text-black font-medium">
-                      {item.beneficiaire?.user?.firstname}{" "}
-                      {item.beneficiaire?.user?.lastname}
-                    </Text>
+                    <View className="flex-1">
+                      <Text className="text-black font-medium">
+                        {item.membre?.user?.firstname} {item.membre?.user?.lastname}
+                      </Text>
+                      <Text className="text-gray-500 text-xs mt-1">
+                        {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : "—"}
+                      </Text>
+                    </View>
 
-                    {item.status === "PAID" ? (
-                      <Text className="text-blue-600 font-semibold text-sm">
+                    {item.statutPaiement === "VALIDATED" ? (
+                      <Text className="text-green-600 font-semibold text-sm">
                         {item.montant} xaf
                       </Text>
                     ) : (
                       <View className="flex-row items-center space-x-2">
                         <Text className="text-orange-500 font-medium text-sm">
-                           {item.etat} 
+                          {item.statutPaiement}
                         </Text>
-                        <TouchableOpacity className="bg-blue-400 rounded-full px-3 py-1">
+                        <TouchableOpacity 
+                          className="bg-blue-400 rounded-full px-3 py-1"
+                          onPress={() => {
+                            relanceCotisation(item.id)
+                              .unwrap()
+                              .then(() => {
+                                Toast.show({
+                                  type: 'success',
+                                  text1: 'Succès',
+                                  text2: 'Relance envoyée avec succès',
+                                });
+                              })
+                              .catch(error => {
+                                Toast.show({
+                                  type: 'error',
+                                  text1: 'Erreur',
+                                  text2: error?.data?.message || 'Échec de la relance',
+                                });
+                              });
+                          }}
+                        >
                           <Text className="text-white text-xs font-semibold">
                             Relancer
                           </Text>
@@ -210,10 +282,8 @@ const [ordreList, setOrdreList] = useState(initialOrdreList);
                       </View>
                     )}
 
-                    <Text className="text-gray-500 text-sm">
-                      {item.date
-                        ? new Date(item.date).toLocaleDateString()
-                        : "—"}
+                    <Text className="text-gray-500 ml-4 text-sm">
+                     {item.statutPaiement === 'VALIDATED' ? 'Payé' : 'En attente'}
                     </Text>
                   </View>
                 ))}

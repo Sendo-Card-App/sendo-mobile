@@ -25,6 +25,8 @@ import {
   useGetToursDistributionQuery,
   useGetMemberPenaltiesQuery,
   usePayPenaltyMutation,
+  useGetValidatedCotisationsQuery,
+  useRelanceCotisationMutation,
 } from "../../services/Tontine/tontineApi";
 import Toast from 'react-native-toast-message';
 const TopLogo = require("../../images/TopLogo.png");
@@ -49,15 +51,25 @@ const MemberContribution = () => {
 
   const membre = tontine?.membres?.find((m) => m?.user?.id === userId);
   const membreId = membre?.id;
-
+  
   const {
     data: penaltiesResponse = {},
     isLoading: loadingPenalties,
   } = useGetMemberPenaltiesQuery({ tontineId, membreId });
-    const penaliteId = penaltiesResponse?.data?.[0]?.id;
-   
-
-
+  const penaliteId = penaltiesResponse?.data?.[0]?.id;
+  
+  const {
+    data: allCotisations,
+    error: cotisationError,
+  } = useGetValidatedCotisationsQuery({
+    tontineId,
+  });
+  
+  // Filter cotisations to show only those for the current member
+  const memberCotisations = allCotisations?.data?.filter(
+    cotisation => cotisation.membre?.id === membreId
+  ) || [];
+  
   const montant = tontine?.montant || 0;
 
   const { data: cotisations } = useGetCotisationsQuery({
@@ -121,24 +133,24 @@ const MemberContribution = () => {
     }
   };
 
-const handlePayPenalty = async () => {
-  try {
-    const response = await payPenalty({ penaliteId }).unwrap();
-    console.log('Paiement réussi', response);
-    Toast.show({
-      type: 'success',
-      text1: 'Succès',
-      text2: 'La pénalité a été payée avec succès.',
-    });
-  } catch (error) {
-    console.error('Erreur lors du paiement', error);
-    Toast.show({
-      type: 'error',
-      text1: 'Erreur',
-      text2: error?.data?.message || 'Une erreur est survenue pendant le paiement.',
-    });
-  }
-};
+  const handlePayPenalty = async () => {
+    try {
+      const response = await payPenalty({ penaliteId }).unwrap();
+      console.log('Paiement réussi', response);
+      Toast.show({
+        type: 'success',
+        text1: 'Succès',
+        text2: 'La pénalité a été payée avec succès.',
+      });
+    } catch (error) {
+      console.error('Erreur lors du paiement', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Erreur',
+        text2: error?.data?.message || 'Une erreur est survenue pendant le paiement.',
+      });
+    }
+  };
 
   const adminMember = tontine?.membres?.find((m) => m.role === "ADMIN");
   const adminName = adminMember
@@ -162,40 +174,6 @@ const handlePayPenalty = async () => {
     const date = new Date(d);
     return date.toLocaleDateString("fr-FR");
   };
-
-  const mockContributions = [{ montant: 5000, date: "2025-06-02" }];
-
-  const expectedDates = (() => {
-    const now = new Date();
-    const dates = [];
-    if (tontine.frequence === "DAILY") {
-      for (let i = 0; i < 7; i++) {
-        const d = new Date(now);
-        d.setDate(d.getDate() - i);
-        dates.push(d.toISOString().split("T")[0]);
-      }
-    } else if (tontine.frequence === "WEEKLY") {
-      const d = new Date(now);
-      d.setDate(d.getDate() - d.getDay());
-      dates.push(d.toISOString().split("T")[0]);
-    } else if (tontine.frequence === "MONTHLY") {
-      const d = new Date(now.getFullYear(), now.getMonth(), 1);
-      dates.push(d.toISOString().split("T")[0]);
-    }
-    return dates;
-  })();
-
-  const contributionStatusList = expectedDates.map((date) => {
-    const found = mockContributions.find((c) => c.date === date);
-    return {
-      date: formatDate(date),
-      status: found ? "Payé" : "En attente",
-      color: found ? "text-green-600" : "text-orange-500",
-    };
-  });
-
-  const dejaContribue = mockContributions.reduce((sum, c) => sum + c.montant, 0);
-  const reste = Math.max(montant - dejaContribue, 0);
 
   return (
     <View className="flex-1 bg-white">
@@ -239,7 +217,6 @@ const handlePayPenalty = async () => {
         <View className="bg-[#F0FFF5] rounded-xl p-4 border border-gray-200 mb-4">
           <Text className="text-green-700 font-semibold text-base mb-3">Mes Cotisations</Text>
           <Info label="Période actuelle" value={`${montant.toLocaleString()} xaf`} />
-          
         </View>
 
         <TouchableOpacity
@@ -276,12 +253,35 @@ const handlePayPenalty = async () => {
 
         {activeTab === "Cotisations" && (
           <View className="space-y-2 mb-6">
-            {contributionStatusList.map((item, idx) => (
-              <View key={idx} className="flex-row justify-between px-3 py-2 border rounded-md">
-                <Text className="text-gray-700">{item.date}</Text>
-                <Text className={`font-semibold ${item.color}`}>{item.status}</Text>
-              </View>
-            ))}
+            {memberCotisations.length > 0 ? (
+              memberCotisations.map((item, idx) => (
+                <View key={idx} className="flex-row justify-between px-3 py-3 mt-3 border rounded-md">
+                  <View className="flex-1">
+                    <Text className="text-gray-700">
+                      {item.membre?.user?.firstname} {item.membre?.user?.lastname}
+                    </Text>
+                    <Text className="text-xs text-gray-500">
+                      {item.createdAt ? formatDate(item.createdAt) : 'Date inconnue'}
+                    </Text>
+                  </View>
+                  <View className="flex-row items-center px-7">
+                    <Text className={`font-semibold ${
+                      item.statutPaiement === 'VALIDATED' ? 'text-green-600' : 'text-orange-500'
+                    }`}>
+                      {item.montant.toLocaleString()} xaf
+                    </Text>
+                    <Text className="text-xs text-gray-500 ml-4">
+                      {item.statutPaiement === 'VALIDATED' ? 'Payé' : 'En attente'}
+                    </Text>
+                  </View>
+
+                </View>
+              ))
+            ) : (
+              <Text className="text-gray-500 text-center py-4">
+                Aucune cotisation enregistrée
+              </Text>
+            )}
           </View>
         )}
 
@@ -295,7 +295,6 @@ const handlePayPenalty = async () => {
                   key={index}
                   className="flex-row justify-between px-3 py-2 border rounded-md items-center"
                 >
-                  {/* Left side: Type and Date */}
                   <View className="flex-1">
                     <Text className="text-red-500">{penalty?.type}</Text>
                     <Text className="text-xs text-gray-500 mt-2">
@@ -305,14 +304,12 @@ const handlePayPenalty = async () => {
                     </Text>
                   </View>
 
-                  {/* Center: Montant */}
                   <View className="mx-10">
                     <Text className="text-gray-700 font-bold">
                       {(penalty?.montant ?? 0).toLocaleString()} XAF
                     </Text>
                   </View>
 
-                  {/* Right side: Pay Button */}
                   <View className="items-end">
                     <TouchableOpacity
                       className="bg-green-500 px-5 py-2 rounded flex-row items-center justify-center"
@@ -336,9 +333,9 @@ const handlePayPenalty = async () => {
 
         {activeTab === "Historique" && (
           <View className="space-y-2 mb-6">
-            {mockContributions.map((c, i) => (
+            {memberCotisations.map((c, i) => (
               <View key={i} className="flex-row justify-between px-3 py-2 border rounded-md">
-                <Text className="text-gray-700">{formatDate(c.date)}</Text>
+                <Text className="text-gray-700">{formatDate(c.createdAt)}</Text>
                 <Text className="text-green-600 font-semibold">
                   {c.montant.toLocaleString()} xaf
                 </Text>

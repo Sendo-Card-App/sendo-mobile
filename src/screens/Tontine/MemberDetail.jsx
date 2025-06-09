@@ -10,7 +10,10 @@ import {
 import { Ionicons, Feather } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import Toast from "react-native-toast-message";
-import { useGetMemberPenaltiesQuery } from "../../services/Tontine/tontineApi";
+import { useGetMemberPenaltiesQuery,
+    useGetValidatedCotisationsQuery,
+    useRelanceCotisationMutation,
+ } from "../../services/Tontine/tontineApi";
 
 const TopLogo = require("../../images/TopLogo.png");
 const avatarImage = require("../../images/Avatar.png");
@@ -27,17 +30,24 @@ const MemberDetail = () => {
     isLoading: loadingPenalties,
     error,
   } = useGetMemberPenaltiesQuery({ tontineId, membreId });
-
+  
+  const {
+      data: allCotisations,
+      error: cotisationError,
+    } = useGetValidatedCotisationsQuery({
+      tontineId,
+    });
+    const memberCotisations = allCotisations?.data?.filter(
+    cotisation => cotisation.membre?.id === membreId
+  ) || [];
+  console.log(memberCotisations)
   const penalties = penaltiesResponse.data || [];
 
-  const contributions = [
-    { date: "03/06/2025", status: "En attente" },
-    { date: "03/06/2025", status: "Payé" },
-    { date: "03/06/2025", status: "Payé" },
-    { date: "03/06/2025", status: "Payé" },
-    { date: "03/06/2025", status: "Manqué" },
-    { date: "03/06/2025", status: "Payé" },
-  ];
+ const formatDate = (dateString) => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString(); // Tu peux personnaliser selon le format souhaité
+};
+
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -155,18 +165,42 @@ const MemberDetail = () => {
         {/* Content */}
         <View className="px-4 mb-10">
           {activeTab === "Cotisations" && (
-            contributions.map((item, index) => (
-              <View
-                key={index}
-                className="flex-row justify-between items-center py-2 mb-5 border-b border-gray-200"
-              >
-                <Text className="text-black">{item.date}</Text>
-                <Text className={`font-semibold ${getStatusColor(item.status)}`}>
-                  {item.status}
+          <>
+            {memberCotisations.length === 0 ? (
+              <Text className="text-gray-400 text-center text-sm">
+                Aucune cotisation trouvée.
+              </Text>
+            ) : (
+              memberCotisations.map((cotisation, index) => (
+                <View
+                  key={cotisation.id || index}
+                  className="flex-row justify-between items-center py-2 mb-5 border-b border-gray-200"
+                >
+                  <View className="flex-1">
+                  <Text className="text-gray-700">
+                    {cotisation.membre?.user?.firstname} {cotisation.membre?.user?.lastname}
+                  </Text>
+                  <Text className="text-xs text-gray-500">
+                    {cotisation.createdAt ? formatDate(cotisation.createdAt) : 'Date inconnue'}
+                  </Text>
+
+                </View>
+                 <View className="flex-row items-center px-7">
+                <Text className={`font-semibold ${
+                  cotisation.statutPaiement === 'VALIDATED' ? 'text-green-600' : 'text-orange-500'
+                }`}>
+                  {cotisation.montant.toLocaleString()} xaf
+                </Text>
+                <Text className="text-xs text-gray-500 ml-4">
+                  {cotisation.statutPaiement === 'VALIDATED' ? 'Payé' : 'En attente'}
                 </Text>
               </View>
-            ))
-          )}
+                </View>
+              ))
+            )}
+          </>
+        )}
+
 
           {activeTab === "Pénalités" && (
             <>

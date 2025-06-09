@@ -93,7 +93,6 @@ export default function TontineListScreen({ navigation }) {
 
     try {
       await accessOrRejectTontine({
-        invitationCode: "REJECT",
         membreId,
         type: "REJECT",
       }).unwrap();
