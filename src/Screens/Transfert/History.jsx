@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import React, { useState, useEffect, useCallback } from "react";
 import { useFocusEffect } from '@react-navigation/native';
-import OrangeMoney from "../../images/om.png";
+import OrangeMoney from "../../Images/om.png";
 import { useNavigation } from "@react-navigation/native";
 import SkeletonLoader from '../../components/SkeletonLoader';
 import { useGetTransactionHistoryQuery } from "../../services/WalletApi/walletApi";
@@ -57,16 +57,16 @@ const HistoryCard = ({ transaction, user, onPress }) => {
   switch (transaction.method?.toUpperCase()) {
     case 'MOBILE_MONEY':
       if (transaction.provider === 'CMORANGEOM') {
-        return require('../../images/om.png');
+        return require('../../Images/om.png');
       } else if (transaction.provider === 'MTNMOMO') {
-        return require('../../images/mtn.png');
+        return require('../../Images/mtn.png');
       } else {
-        return require('../../images/transaction.png'); // fallback générique
+        return require('../../Images/transaction.png'); // fallback générique
       }
     case 'BANK_TRANSFER':
-      return require('../../images/RoyalBank.png');
+      return require('../../Images/RoyalBank.png');
     default:
-      return require('../../images/transaction.png');
+      return require('../../Images/transaction.png');
   }
 };
 

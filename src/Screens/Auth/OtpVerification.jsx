@@ -188,7 +188,7 @@ const OtpVerification = ({ route, onClose, onResend }) => {
       <View className="w-full bg-[#f1f1f1] rounded-t-3xl p-6 items-center" style={{ marginTop: 100 }}>
         <Image
           className="w-40 h-40"
-          source={require("../../images/Artboard 5.png")}
+          source={require("../../Images/Artboard 5.png")}
         />
         <Text className="mb-4 text-lg text-gray-800 opacity-40 text-center">
           Enter code sent to {email}

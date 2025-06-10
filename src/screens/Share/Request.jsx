@@ -17,7 +17,7 @@ import Toast from "react-native-toast-message";
 import { useTranslation } from "react-i18next";
 
 import Loader from "../../components/Loader";
-import TopLogo from "../../images/TopLogo.png";
+import TopLogo from "../../Images/TopLogo.png";
 
 const Request = ({ navigation }) => {
   const { t } = useTranslation();

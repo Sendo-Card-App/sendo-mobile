@@ -10,8 +10,8 @@ import {
 } from 'react-native';
 import { AntDesign } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import om from '../../images/om.png';
-import mtn from '../../images/mtn.png';
+import om from '../../Images/om.png';
+import mtn from '../../Images/mtn.png';
 
 const SelectMethod = ({ navigation }) => {
   const { t } = useTranslation();
@@ -83,7 +83,7 @@ const SelectMethod = ({ navigation }) => {
             padding: 15,
           }}
         >
-          <Image source={require('../../images/LogoSendo.png')} style={{ width: 40, height: 40, borderRadius: 20 }} />
+          <Image source={require('../../Images/LogoSendo.png')} style={{ width: 40, height: 40, borderRadius: 20 }} />
           <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#0D1C6A', marginLeft: 10, flex: 1 }}>
             {t('select_method.sendo_transfer')}
           </Text>

@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
-import TopLogo from '../../images/TopLogo.png';
+import TopLogo from '../../Images/TopLogo.png';
 import {
   useUpdateRecipientStatusMutation,
   usePayFundRequestMutation,

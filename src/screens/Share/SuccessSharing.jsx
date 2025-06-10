@@ -11,9 +11,9 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
 
-import TopLogo from "../../images/TopLogo.png";
-import ButtomLogo from "../../images/ButtomLogo.png";
-import good from "../../images/icones/good.png";
+import TopLogo from "../../Images/TopLogo.png";
+import ButtomLogo from "../../Images/ButtomLogo.png";
+import good from "../../Images/icones/good.png";
 
 const SuccessSharing = () => {
   const navigation = useNavigation();

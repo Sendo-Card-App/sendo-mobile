@@ -13,8 +13,8 @@ import {
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
-import om from "../../images/om.png";
-import mtn from "../../images/mtn.png";
+import om from "../../Images/om.png";
+import mtn from "../../Images/mtn.png";
 
 const MethodType = ({ navigation }) => {
   const { t } = useTranslation();

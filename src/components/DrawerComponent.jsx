@@ -24,7 +24,7 @@ import { incrementAttempt, resetAttempts, lockPasscode } from '../features/Auth/
 import { useTranslation } from "react-i18next";
 import { useGetUserProfileQuery, useLogoutMutation } from "../services/Auth/authAPI";
 import Loader from "./Loader";
-import shareImage from "../images/icones/shareImage.png"; // Adjust the path as necessary
+import shareImage from "../Images/icones/shareImage.png"; // Adjust the path as necessary
 import { Share } from 'react-native';
 import { getData, removeData, storeData } from "../services/storage";
 import Toast from "react-native-toast-message";

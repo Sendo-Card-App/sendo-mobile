@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { Ionicons, AntDesign } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import TopLogo from "../../images/TopLogo.png";
+import TopLogo from "../../Images/TopLogo.png";
 import Loader from "../../components/Loader";
 import { StatusBar } from "expo-status-bar";
 import { 

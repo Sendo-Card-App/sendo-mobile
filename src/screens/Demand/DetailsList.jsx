@@ -16,7 +16,7 @@ import {
 } from '../../services/Fund/fundApi';
 import { useGetUserProfileQuery } from '../../services/Auth/authAPI';
 import Loader from '../../components/Loader';
-const TopLogo = require('../../images/TopLogo.png');
+const TopLogo = require('../../Images/TopLogo.png');
 
 const DetailsList = () => {
   const navigation = useNavigation();

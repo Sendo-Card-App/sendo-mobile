@@ -4,7 +4,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
 import * as ImagePicker from 'expo-image-picker';
 import Toast from "react-native-toast-message";
-import TopLogo from "../../images/TopLogo.png";
+import TopLogo from "../../Images/TopLogo.png";
 import { AntDesign, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 import KycTab from "../../components/KycTab";

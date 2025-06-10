@@ -12,8 +12,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 
 // Assets
-import ButtomLogo from "../../images/ButtomLogo.png";
-import demand from "../../images/icones/demand.png";
+import ButtomLogo from "../../Images/ButtomLogo.png";
+import demand from "../../Images/icones/demand.png";
 
 const { width, height } = Dimensions.get("window");
 

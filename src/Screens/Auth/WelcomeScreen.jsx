@@ -3,8 +3,8 @@ import { getData } from '../../services/storage';
 import { useDispatch } from 'react-redux';
 import { loginSuccess } from '../../features/Auth/authSlice';
 import { View, Text, Image, StyleSheet, Animated, Easing, Dimensions } from 'react-native';
-import LogoSendo from '../../images/LogoSendo.png';
-import WorldMap from '../../images/WorldMap.png';
+import LogoSendo from '../../Images/LogoSendo.png';
+import WorldMap from '../../Images/WorldMap.png';
 import Loader from "../../components/Loader"
 
 const { width, height } = Dimensions.get('window');

@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Image, ScrollView, ImageBackground, Dimensions } from 'react-native';
-import TopLogo from "../../images/TopLogo.png";
-import BG from "../../images/BG.jpg";
+import TopLogo from "../../Images/TopLogo.png";
+import BG from "../../Images/BG.jpg";
 import { AntDesign, Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 import { useDispatch } from 'react-redux';
@@ -27,7 +27,7 @@ const Addresse = ({ navigation }) => {
       <View className="flex-1 justify-center items-center">
         <View className="bg-white bg-opacity-80 p-6 rounded-lg shadow-lg w-11/12 max-w-md">
           <Image
-            source={require("../../images/Localisation.png")}
+            source={require("../../Images/Localisation.png")}
             style={{
               width: "100%",
               height: Dimensions.get('window').width * 0.45,

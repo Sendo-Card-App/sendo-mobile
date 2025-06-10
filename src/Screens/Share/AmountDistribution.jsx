@@ -13,7 +13,7 @@ import { StatusBar } from "expo-status-bar";
 import { useTranslation } from "react-i18next";
 import Toast from "react-native-toast-message";
 
-import TopLogo from "../../images/TopLogo.png";
+import TopLogo from "../../Images/TopLogo.png";
 
 const AmountDistribution = () => {
   const navigation = useNavigation();

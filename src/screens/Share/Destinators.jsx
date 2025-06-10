@@ -15,7 +15,7 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
 import { useGetSynchronizedContactsQuery } from "../../services/Contact/contactsApi";
 import Loader from "../../components/Loader";
-import TopLogo from "../../images/TopLogo.png";
+import TopLogo from "../../Images/TopLogo.png";
 import { StatusBar } from "expo-status-bar";
 import Toast from "react-native-toast-message";
 import { useTranslation } from "react-i18next";

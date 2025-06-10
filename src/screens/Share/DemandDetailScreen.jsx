@@ -12,7 +12,7 @@ import {
   Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import TopLogo from "../../images/TopLogo.png";
+import TopLogo from "../../Images/TopLogo.png";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import {
   useCancelSharedExpenseMutation,
