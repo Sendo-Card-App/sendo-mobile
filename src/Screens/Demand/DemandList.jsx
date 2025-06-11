@@ -36,6 +36,7 @@ const DemandList = () => {
     { page: 1, limit: 10 },
     { skip: !userId }
   );
+  //console.log("Full response:", JSON.stringify(demandRequests, null, 2));
 
   const renderMyRequest = ({ item }) => (
     <TouchableOpacity
@@ -61,16 +62,24 @@ const DemandList = () => {
     </TouchableOpacity>
   );
 
-  const renderRecipientRequest = ({ item }) => {
+ const renderRecipientRequest = ({ item }) => {
     const fund = item.requestFund;
     const recipients = fund.recipients;
     const recipient = recipients?.[0];
     const recipientStatus = recipient?.status ?? "UNKNOWN";
+    
+    // Determine if navigation should be disabled
+    const isDisabled = item.status === 'COMPLETED' || recipientStatus === 'PAID';
 
     return (
       <TouchableOpacity
-        onPress={() => navigation.navigate("RequestPay", { demand: item })}
-        className="bg-white rounded-xl p-4 mb-4"
+        onPress={() => {
+          if (!isDisabled) {
+            navigation.navigate("RequestPay", { demand: item });
+          }
+        }}
+        className={`bg-white rounded-xl p-4 mb-4 ${isDisabled ? 'opacity-80' : ''}`}
+        disabled={isDisabled}
       >
         <Text className="text-black font-bold text-base mb-1">{fund.description}</Text>
         <Text className="text-green-500 text-sm font-bold mb-1">{fund.amount} XAF</Text>

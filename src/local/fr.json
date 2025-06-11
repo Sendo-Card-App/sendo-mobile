@@ -401,6 +401,8 @@
     "uploadInstruction": "Téléchargez votre document de contribuable",
     "description": "Le numéro d'identification unique est une combinaison de lettres et de chiffres attribuée aux contribuables. Ce numéro est essentiel pour identifier l'utilisateur en tant que contribuable.",
     "takePhotoButton": "PRENDRE UNE PHOTO",
+     "uploadButton": "Televerse un document",
+      "removeDocument": "Retire le document",
     "securityNotice": "Ne partagez pas vos informations personnelles",
     "uploadDocumentButton": "Upload Document",
     "fileTooLarge": "Fichier trop volumineux",
@@ -650,7 +652,7 @@
     "title": "Mot de passe oublié",
     "subtitle": "Entrez votre email  pour recevoir un code OTP",
     "phonePlaceholder": "Entrez votre numéro de téléphone",
-    "sendOtp": "Envoyer",
+    "sendResetLink": "Envoyer",
     "backToSignIn": "Retour à la connexion",
     "selectCountry": "Sélectionner un pays",
     "enterOtp": "Entrez le code OTP",
@@ -748,6 +750,7 @@
       "payment": "Paiement ",
       "tontine": "Paiement tontine ",
       "wallet": "Transfert de portefeuille",
+       "walletPayment": "Paiement du portefeuille",
     "mobileMoney": "Mobile Money",
     "bankTransfer": "Virement Bancaire",
     "success": "Terminé",
@@ -1279,7 +1282,8 @@
     "order": "Ordre de passage",
     "funds": "Versement de fonds",
     "penalties": "Pénalités",
-    "delete": "Supprimer la tontine"
+    "delete": "Supprimer la tontine",
+    "information": "Informations de la tontine"
   },
   "cotisations": {
     "total": "Total",
@@ -1287,7 +1291,20 @@
     "changeStatus": "Changer le statut",
     "distributeToNext": "Verser au prochain bénéficiaire",
     "noContributions": "Aucune cotisation enregistrée",
-    "dragToReorder": "Glissez pour réorganiser la rotation"
+    "dragToReorder": "Glissez pour réorganiser la rotation",
+    "alreadyDefined": "L'ordre de rotation a été déjà défini",
+     "confirmDistribution": "Confirmer la distribution",
+      "cancel": "Annuler",
+      "confirm": "Confirmer",
+      "sendoFeeInfo": "Sendo prélèvera des frais de {{percentage}} % sur le montant distribué.",
+      "confirmPayment": "Confirmer le Paiement",
+      "sendoFeeInfoPay": "Sendo prélèvera des frais de {{percentage}} % sur le montant du paiement.",
+      "baseAmount": "Montant de base",
+    "fees": "Frais de transaction Sendo",
+    "total1": "Total à payer",
+     "totalBalance": "Solde total",
+    "fees1": "Frais de distribution",
+    "netAmount": "Montant à distribuer"
   },
   "frequency1": {
     "daily": "Journalier",
@@ -1336,6 +1353,29 @@
     "weekly": "Hebdomadaire",
     "monthly": "Mensuel",
     "unknownAdmin": "Admin inconnu"
+  },
+ "terms": {
+    "title": "Conditions Générales",
+    "intro": "Veuillez lire attentivement les conditions suivantes avant d'utiliser nos services.",
+    "content": "1. Vous devez avoir au moins 18 ans pour utiliser cette application.\n2. Vos informations personnelles seront gardées confidentielles.\n3. Vous acceptez les règles de la tontine en y adhérant.\n4. Toute violation des règles peut entraîner une suspension.\n5. Toutes les transactions financières sont enregistrées pour plus de transparence.",
+    "accept": "J'accepte",
+    "feesNotice": "Sendo prélève des frais lors des contributions et distribution des fonds."
+  },
+  "home": {
+    "greeting": "Bonjour,",
+    "balance": "Solde",
+     "seeAll": "Voir tout",
+     "services": "Services",
+    "transfer": "Transfert D'argent",
+    "recharge": "Recharger mon compte",
+    "virtualCard": "Carte virtuelle",
+    "friendsShare": "Partage entre amis",
+    "fundRequest": "Demande de fonds",
+    "etontine": "E-Tontine",
+    "payBills": "Payer les factures",
+    "pubSection": "Section PUB",
+    "recentTransactions": "Transactions récentes",
+    "noTransactions": "Aucune transaction trouvée"
   }
     
     

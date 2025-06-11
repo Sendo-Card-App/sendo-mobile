@@ -211,11 +211,11 @@ const SplashScreen = ({ navigation }) => {
 };
 
 const dotPositions = [
-  { top: height * 0.3, left: width * 0.4 },
+  { top: height * 0.4, left: width * 0.5 },
   { top: height * 0.5, left: width * 0.5 },
-  { top: height * 0.2, left: width * 0.3 },
+  { top: height * 0.4, left: width * 0.8 },
   { top: height * 0.5, left: width * 0.3 },
-  { top: height * 0.4, left: width * 0.3 },
+  { top: height * 0.4, left: width * 0.2 },
 ]; // Random nice positions
 
 const styles = StyleSheet.create({

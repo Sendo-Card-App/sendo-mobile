@@ -253,7 +253,7 @@ const NiuRequest = () => {
         {!completedSteps[1] && (
           <TouchableOpacity
             onPress={handlePayPress}
-            className="bg-blue-600 mx-5 mb-5 rounded-lg py-4 items-center"
+            className="bg-green-600 mx-5 mb-5 rounded-lg py-4 items-center"
             disabled={isSubmitting}
           >
             <Text className="text-white text-lg font-semibold">{t('niu.request.payNow')}</Text>

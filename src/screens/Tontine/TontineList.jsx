@@ -1,16 +1,23 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
+  Modal,
   TouchableOpacity,
   FlatList,
-  Alert,
+  KeyboardAvoidingView,
+  Platform,
   ActivityIndicator,
   Image,
+  TextInput,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSelector } from "react-redux";
+import Toast from 'react-native-toast-message';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useFocusEffect } from "@react-navigation/native";
 import ButtomLogo from "../../images/ButtomLogo.png";
+import Loader from "../../components/Loader";
 import { useTranslation } from "react-i18next";
 import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
 import {
@@ -22,17 +29,33 @@ export default function TontineListScreen({ navigation }) {
   const { t } = useTranslation();
   const [selectedTab, setSelectedTab] = useState("mesTontines");
   const [expandedInvitations, setExpandedInvitations] = useState({});
+  const [showCodeModal, setShowCodeModal] = useState(false);
+  const [rejectLoading, setRejectLoading] = useState(false);
+   const [acceptLoading, setAcceptLoading] = useState(false);
+  const [invitationCode, setInvitationCode] = useState("");
+  const [currentItem, setCurrentItem] = useState(null);
   const user = useSelector((state) => state.auth.user);
-  const { data: userProfile, isLoading: profileLoading } = useGetUserProfileQuery();
-  const userId = userProfile?.data?.id;
-  const [accessOrRejectTontine] = useAccessOrRejectTontineMutation();
 
-  const { data, isLoading, isError } = useGetTontinesQuery(userId, {
+  const { data: userProfile, isLoading: profileLoading, refetch: refetchProfile } = useGetUserProfileQuery();
+  const userId = userProfile?.data?.id;
+
+  const { data, isLoading, isError, refetch: refetchTontines } = useGetTontinesQuery(userId, {
     skip: !userId,
   });
 
-  const tontines = data?.data?.items || [];
+  const [accessOrRejectTontine] = useAccessOrRejectTontineMutation();
 
+  useFocusEffect(
+    useCallback(() => {
+      if (userId) {
+        refetchProfile();
+        refetchTontines();
+      }
+    }, [userId])
+  );
+
+  const tontines = data?.data?.items || [];
+   //console.log("Full response:", JSON.stringify(tontines, null, 2));
   const myTontines = tontines.filter((t) =>
     t.membres.some((m) => m.user?.id === userId && m.etat !== "PENDING")
   );
@@ -48,60 +71,122 @@ export default function TontineListScreen({ navigation }) {
     PRESIDENT: t("role_PRESIDENT"),
   };
 
-  const handleJoin = (item) => {
-    const membre = item.membres.find((m) => m.user?.id === userId);
-    const membreId = membre?.id;
+const handleJoin = async (item) => {
+  const hasAcceptedTerms = await AsyncStorage.getItem('hasAcceptedTontineTerms');
 
-    if (!membreId) {
-      Alert.alert("Erreur", "Impossible de trouver votre identifiant de membre.");
-      return;
-    }
+  if (!hasAcceptedTerms) {
+   
+    navigation.navigate("TermsAndConditions", {
+      onAccept: async () => {
+        await AsyncStorage.setItem('hasAcceptedTontineTerms', 'true');
+        setCurrentItem(item);
+        setShowCodeModal(true);
+      }
+    });
+    return;
+  }
 
-    Alert.prompt(
-      "Code d'invitation",
-      "Veuillez entrer le code d'invitation reçu par email.",
-      [
-        { text: "Annuler", style: "cancel" },
-        {
-          text: "Joindre",
-          onPress: async (code) => {
-            const payload = {
-              invitationCode: code,
-              membreId,
-              type: "JOIN",
-            };
-            try {
-              await accessOrRejectTontine(payload).unwrap();
-              Alert.alert("Succès", "Vous avez rejoint la tontine.");
-            } catch (error) {
-              Alert.alert("Erreur", "Échec de l'opération. Vérifiez le code.");
-            }
-          },
-        },
-      ],
-      "plain-text"
-    );
+ 
+  setCurrentItem(item);
+  setShowCodeModal(true);
+};
+
+ const submitJoin = async () => {
+  if (!currentItem) return;
+  
+  setAcceptLoading(true); 
+  
+  const membre = currentItem.membres.find((m) => m.user?.id === userId);
+  const membreId = membre?.id;
+  console.log(membreId)
+
+  if (!membreId) {
+    Toast.show({
+      type: 'error',
+      text1: 'Erreur',
+      text2: 'Impossible de trouver votre identifiant de membre.',
+      position: 'bottom',
+    });
+    setAcceptLoading(false);
+    return;
+  }
+
+  if (!invitationCode) {
+    Toast.show({
+      type: 'error',
+      text1: 'Erreur',
+      text2: 'Veuillez entrer un code d\'invitation.',
+      position: 'bottom',
+    });
+    setAcceptLoading(false);
+    return;
+  }
+
+    const payload = {
+    invitationCode: invitationCode,
+    membreId,
+    type: "JOIN",
   };
+  try {
+    await accessOrRejectTontine(payload).unwrap();
+    Toast.show({
+      type: 'success',
+      text1: 'Succès',
+      text2: 'Vous avez rejoint la tontine.',
+      position: 'top',
+    });
+    setShowCodeModal(false);
+    setInvitationCode("");
+  } catch (error) {
+    console.log("API Error:", error);
+    Toast.show({
+      type: 'error',
+      text1: 'Erreur',
+      text2: error.data?.message || 'Échec de l\'opération. Vérifiez le code.',
+      position: 'top',
+    });
+  } finally {
+    setAcceptLoading(false);
+  }
+};
 
-  const handleReject = async (item) => {
-    const membre = item.membres.find((m) => m.user?.id === userId);
-    const membreId = membre?.id;
+const handleReject = async (item) => {
+  setRejectLoading(true);
+  const membre = item.membres.find((m) => m.user?.id === userId);
+  const membreId = membre?.id;
 
-    if (!membreId) {
-      Alert.alert("Erreur", "Impossible de trouver votre identifiant de membre.");
-      return;
-    }
+  if (!membreId) {
+    Toast.show({
+      type: 'error',
+      text1: 'Erreur',
+      text2: 'Impossible de trouver votre identifiant de membre.',
+    });
+    setRejectLoading(false);
+    return;
+  }
 
-    try {
+   try {
       await accessOrRejectTontine({
         membreId,
         type: "REJECT",
       }).unwrap();
-      Alert.alert("Invitation rejetée");
-    } catch (error) {
-      Alert.alert("Erreur", "Impossible de rejeter l'invitation.");
-    }
-  };
+    
+    Toast.show({
+      type: 'success',
+      text1: 'Succès',
+      text2: 'Invitation rejetée',
+    });
+  } catch (error) {
+    console.log("Full response:", JSON.stringify(error, null, 2));
+    Toast.show({
+      type: 'error',
+      text1: 'Erreur',
+      text2: error.data?.message || 'Impossible de rejeter l\'invitation.',
+    });
+  } finally {
+    setRejectLoading(false);
+  }
+};
 
   const formatFrequence = (f) => {
     switch (f) {
@@ -190,12 +275,28 @@ export default function TontineListScreen({ navigation }) {
             <Text className="text-sm font-bold">{t("tontine_frequency")}: <Text className="font-normal">{formatFrequence(item.frequence)}</Text></Text>
             <Text className="text-sm font-bold">{t("tontine_amount")}: <Text className="font-normal">{item.montant} FCFA</Text></Text>
 
-            <TouchableOpacity className="bg-green-400 py-3 rounded-full items-center mt-4" onPress={() => handleJoin(item)}>
-              <Text className="text-white font-bold">{t("join_button")}</Text>
+           <TouchableOpacity
+              className="bg-green-400 py-3 rounded-full items-center mt-4"
+               onPress={() => handleJoin(item)}
+              disabled={acceptLoading}
+            >
+              {acceptLoading ? (
+                <Loader size="small" color="white" />
+              ) : (
+                <Text className="text-white">Joindre</Text>
+              )}
             </TouchableOpacity>
 
-            <TouchableOpacity className="border border-red-400 py-3 rounded-full items-center mt-3" onPress={() => handleReject(item)}>
-              <Text className="text-red-500 font-bold">{t("reject_button")}</Text>
+           <TouchableOpacity 
+              className={`border border-red-400 py-3 rounded-full items-center mt-3 ${rejectLoading ? 'opacity-70' : ''}`} 
+              onPress={() => handleReject(item)}
+              disabled={rejectLoading}
+            >
+              {rejectLoading ? (
+                <Loader size="small" color="green" />
+              ) : (
+                <Text className="text-red-500 font-bold">{t("reject_button")}</Text>
+              )}
             </TouchableOpacity>
           </>
         )}
@@ -205,6 +306,72 @@ export default function TontineListScreen({ navigation }) {
 
   return (
     <View className="flex-1 bg-gray-100">
+      {/* Code Modal */}
+      <Modal
+        visible={showCodeModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowCodeModal(false)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          className="flex-1"
+        >
+          <TouchableOpacity 
+            className="flex-1 justify-center items-center bg-black/50"
+            activeOpacity={1}
+            onPressOut={() => {
+              setShowCodeModal(false);
+              setInvitationCode("");
+            }}
+          >
+            <TouchableOpacity 
+              activeOpacity={1}
+              onPress={() => {}} // Empty function to prevent click-through
+            >
+              <View className="bg-white p-6 rounded-lg w-80">
+                <Text className="text-lg font-bold mb-4">Code d'invitation</Text>
+                <Text className="mb-4">Veuillez entrer le code d'invitation reçu par email.</Text>
+                
+                <TextInput
+                  className="border border-gray-300 rounded p-3 mb-4"
+                  placeholder="Entrez le code"
+                  value={invitationCode}
+                  onChangeText={setInvitationCode}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  autoFocus={true}
+                />
+                
+                <View className="flex-row justify-between">
+                  <TouchableOpacity
+                    className="bg-gray-300 py-3 px-6 rounded items-center justify-center"
+                    onPress={() => {
+                      setShowCodeModal(false);
+                      setInvitationCode("");
+                    }}
+                  >
+                    <Text>Annuler</Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity
+                    className="bg-green-500 py-3 px-6 rounded items-center justify-center"
+                    onPress={submitJoin}
+                    disabled={acceptLoading}
+                  >
+                    {acceptLoading ? (
+                      <Loader size="small" color="white" />
+                    ) : (
+                      <Text className="text-white">Joindre</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </KeyboardAvoidingView>
+      </Modal>
+
       <View className="bg-green-400 pb-4 rounded-b-2xl">
         <View className="flex-row justify-between items-center px-4 pt-12">
           <Image source={ButtomLogo} resizeMode="contain" className="h-[40px] w-[120px]" />
@@ -225,18 +392,22 @@ export default function TontineListScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      <View className="flex-row justify-around mt-6 border-b border-gray-200">
+       <View className="flex-row justify-around mt-6 border-b border-gray-200">
         <TouchableOpacity
           onPress={() => setSelectedTab("mesTontines")}
           className={`pb-2 ${selectedTab === "mesTontines" ? "border-b-2 border-green-500" : ""}`}
         >
-          <Text className={`text-sm font-semibold ${selectedTab === "mesTontines" ? "text-green-600" : "text-gray-500"}`}>{t("tab_my_tontines")}</Text>
+          <Text className={`text-sm font-semibold ${selectedTab === "mesTontines" ? "text-green-600" : "text-gray-500"}`}>
+            {t("tab_my_tontines")} ({myTontines.length})
+          </Text>
         </TouchableOpacity>
         <TouchableOpacity
           onPress={() => setSelectedTab("invitations")}
           className={`pb-2 ${selectedTab === "invitations" ? "border-b-2 border-green-500" : ""}`}
         >
-          <Text className={`text-sm font-semibold ${selectedTab === "invitations" ? "text-green-600" : "text-gray-500"}`}>{t("tab_invitations")}</Text>
+          <Text className={`text-sm font-semibold ${selectedTab === "invitations" ? "text-green-600" : "text-gray-500"}`}>
+            {t("tab_invitations")} ({invitationTontines.length})
+          </Text>
         </TouchableOpacity>
       </View>
 

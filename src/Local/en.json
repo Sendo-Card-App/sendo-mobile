@@ -401,6 +401,7 @@
 "documentSizeLimit": "Please choose a document smaller than 5MB",
 "imageSizeLimit": "Please choose an image smaller than 5MB",
 "error": "Something went wrong",
+"removeDocument": "Remove the document",
 "documentSelectionError": "We couldn't select your document - please try again",
 "taxNumber": "Taxpayer Number",
 "uploadInstruction": "Upload your taxpayer document",
@@ -651,7 +652,7 @@
     "title": "Forgot Password",
     "subtitle": "Enter your phone number to receive an OTP code",
     "phonePlaceholder": "Enter your phone number",
-    "sendOtp": "Send OTP",
+    "sendResetLink": "Send Link",
     "backToSignIn": "Back to Sign In",
     "selectCountry": "Select Country",
     "enterOtp": "Enter OTP Code",
@@ -1273,12 +1274,13 @@
   "role": "Role"
 },
  "tontineSetting": {
-    "base_info": "Basic Information",
-    "frequency": "Contribution Frequency",
-    "order": "Order of Rotation",
-    "funds": "Fund Distribution",
+    "base_info": "Basic Info",
+    "frequency": "Frequency & Mode",
+    "order": "Distribution Order",
+    "funds": "Funds Info",
     "penalties": "Penalties",
-    "delete": "Delete Tontine"
+    "delete": "Delete Tontine",
+    "information": "Tontine Information"
   },
     "cotisations": {
     "total": "Total",
@@ -1286,7 +1288,17 @@
     "changeStatus": "Change status",
     "distributeToNext": "Distribute to next beneficiary",
     "noContributions": "No contributions recorded",
-    "dragToReorder": "Drag to reorder the rotation"
+    "dragToReorder": "Drag to reorder the rotation",
+    "alreadyDefined": "The rotation order has already been defined",
+     "confirmDistribution": "Confirm Distribution",
+      "cancel": "Cancel",
+    "confirm": "Confirm",
+     "sendoFeeInfo": "Sendo will take a fee of {{percentage}}% from the distributed amount.",
+     "confirmPayment": "Confirm Payment",
+     "sendoFeeInfoPay": "Sendo will take a fee of {{percentage}}% from the payment amount.",
+      "baseAmount": "Base Amount",
+    "fees": "Sendo Transaction Fees",
+    "total1": "Total to Pay"
   },
    "frequency1": {
     "daily": "Daily",
@@ -1335,6 +1347,29 @@
     "weekly": "Weekly",
     "monthly": "Monthly",
     "unknownAdmin": "Unknown admin"
+  },
+   "terms": {
+    "title": "Terms and Conditions",
+    "intro": "Please read the following terms carefully before using our services.",
+    "content": "1. You must be at least 18 years old to use this app.\n2. Your personal information will be kept confidential.\n3. You agree to the tontine rules upon joining.\n4. Violations of the rules may result in suspension.\n5. All financial transactions are recorded for transparency.",
+    "accept": "I Accept",
+    "feesNotice": "Sendo charges fees on contributions and fund distributions."
+  },
+   "home": {
+    "greeting": "Hello,",
+    "balance": "Balance",
+      "seeAll": "See all",
+     "services": "Services",
+    "transfer": "Money Transfer",
+    "recharge": "Top Up Account",
+    "virtualCard": "Virtual Card",
+    "friendsShare": "Share with Friends",
+    "fundRequest": "Fund Request",
+    "etontine": "E-Tontine",
+    "payBills": "Pay Bills",
+    "pubSection": "Advertisement Section",
+    "recentTransactions": "Recent Transactions",
+    "noTransactions": "No transactions found"
   }
 
   

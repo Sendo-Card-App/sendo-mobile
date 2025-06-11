@@ -1,10 +1,13 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
   TouchableOpacity,
   Image,
   StatusBar,
+  Modal,
+  Pressable,
+  ScrollView,
 } from "react-native";
 import ButtomLogo from "../../images/ButtomLogo.png";
 import { Ionicons } from "@expo/vector-icons";
@@ -17,8 +20,10 @@ const TontineSetting = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { t } = useTranslation();
-
   const { tontineId, tontine } = route.params;
+
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedInfo, setSelectedInfo] = useState("");
 
   const options = [
     { title: t("tontineSetting.base_info"), screen: "TontineBaseInfo" },
@@ -28,8 +33,27 @@ const TontineSetting = () => {
     { title: t("tontineSetting.penalties"), screen: "TontinePenalties" },
   ];
 
+  const getInfoForModal = (screen) => {
+    switch (screen) {
+      case "TontineBaseInfo":
+        return `Nom de la tontine: ${tontine.nom}\nType: ${tontine.type}\nDescription: ${tontine.description}`;
+      case "TontineFrequency":
+        return `Fréquence: ${tontine.frequence}\nMode de versement: ${tontine.modeVersement}`;
+      case "TontineOrder":
+        return `Ordre de rotation: ${tontine.ordreRotation}`;
+      case "TontineFunds":
+        return `Solde actuel: ${tontine.compteSequestre?.soldeActuel} XAF\nMontant bloqué: ${tontine.compteSequestre?.montantBloque} XAF\nÉtat du compte: ${tontine.compteSequestre?.etatCompte}`;
+      case "TontinePenalties":
+        return `Nombre de pénalités: ${tontine.membres?.reduce((acc, m) => acc + (m.penalites?.length || 0), 0)}`;
+      default:
+        return "";
+    }
+  };
+
   const handleOptionPress = (screenName) => {
-    navigation.navigate(screenName, { tontine });
+    const info = getInfoForModal(screenName);
+    setSelectedInfo(info);
+    setModalVisible(true);
   };
 
   return (
@@ -48,7 +72,7 @@ const TontineSetting = () => {
         </TouchableOpacity>
       </View>
 
-      {/* Top Centered Logo */}
+      {/* Top Logo */}
       <View className="absolute left-0 right-0 -top-6 items-center">
         <Image
           source={TopLogo}
@@ -79,13 +103,42 @@ const TontineSetting = () => {
       </View>
 
       {/* Delete Button */}
-      <View className="mt-10">
+      {/* <View className="mt-10">
         <TouchableOpacity className="border border-red-500 py-3 rounded-full">
           <Text className="text-center text-red-500 font-semibold text-base">
             {t("tontineSetting.delete")}
           </Text>
         </TouchableOpacity>
-      </View>
+      </View> */}
+
+      {/* Modal Info Popup */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View className="flex-1 justify-center items-center bg-black/60 px-5">
+          <View className="bg-white rounded-2xl p-6 w-full max-w-md">
+            <ScrollView>
+              <Text className="text-lg font-bold text-center mb-4">
+                {t("tontineSetting.information")}
+              </Text>
+              <Text className="text-gray-800 whitespace-pre-line">
+                {selectedInfo}
+              </Text>
+            </ScrollView>
+            <Pressable
+              onPress={() => setModalVisible(false)}
+              className="mt-4 py-2 bg-green-500 rounded-full"
+            >
+              <Text className="text-white text-center font-semibold">
+                OK
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };

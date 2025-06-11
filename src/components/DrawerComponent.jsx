@@ -24,7 +24,7 @@ import { incrementAttempt, resetAttempts, lockPasscode } from '../features/Auth/
 import { useTranslation } from "react-i18next";
 import { useGetUserProfileQuery, useLogoutMutation } from "../services/Auth/authAPI";
 import Loader from "./Loader";
-import shareImage from "../images/icones/shareImage.png"; // Adjust the path as necessary
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Share } from 'react-native';
 import { getData, removeData, storeData } from "../services/storage";
 import Toast from "react-native-toast-message";
@@ -35,6 +35,7 @@ const DrawerComponent = ({ navigation }) => {
 
   const [authChecked, setAuthChecked] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(true);
+  const [hasAcceptedTerms, setHasAcceptedTerms] = useState(false);
   const [stored,setStored] = useState('');
   const [authData, setAuthData] = useState(null);
   
@@ -68,6 +69,14 @@ const DrawerComponent = ({ navigation }) => {
     };
     loadAuthData();
   }, []);
+
+  useEffect(() => {
+  const checkTerms = async () => {
+    const value = await AsyncStorage.getItem("hasAcceptedTerms");
+    setHasAcceptedTerms(value === "true");
+  };
+  checkTerms();
+}, []);
 
   useEffect(() => {
     const backupAuthData = async () => {
@@ -143,6 +152,7 @@ const DrawerComponent = ({ navigation }) => {
       // Clear all auth data
       await removeData('@authData');
       await removeData('Stored'); 
+      await removeData('@passcode');
       setAuthData(null);
   
       // Call logout mutation
@@ -384,18 +394,23 @@ const DrawerComponent = ({ navigation }) => {
 
               <TouchableOpacity
                 className="flex-row gap-2 my-2 mb-5 items-center"
-                onPress={() => navigation2.navigate("TontineList")}
+                onPress={() =>
+                  hasAcceptedTerms
+                    ? navigation2.navigate("TontineList")
+                    : navigation2.navigate("TermsAndConditions")
+                }
               >
                 <Feather
-                  name="users" // good symbol for tontines (group savings)
+                  name="users"
                   size={Platform.OS === "ios" ? 28 : 22}
-                  color="gray" // green tone to match the theme
+                  color="gray"
                 />
                 <View>
                   <Text className="font-bold text-gray-500">{t("drawer.tontine")}</Text>
                   <Text className="text-sm text-gray-500">{t('drawer.h2')}</Text>
                 </View>
               </TouchableOpacity>
+
 
 
            <TouchableOpacity

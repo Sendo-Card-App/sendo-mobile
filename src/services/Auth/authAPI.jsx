@@ -151,12 +151,13 @@ export const authApi = createApi({
 
     // Password recovery
     forgotPassword: builder.mutation({
-      query: (email) => ({
-        url: AUTH_ENDPOINTS.FORGOT_PASSWORD,
-        method: 'POST',
-        body: { email },
+        query: ({ email }) => ({
+          url: AUTH_ENDPOINTS.FORGOT_PASSWORD,
+          method: 'POST',
+          body: { email },
+        }),
       }),
-    }),
+
 
     resetPassword: builder.mutation({
       query: ({ token, newPassword }) => ({

@@ -24,7 +24,6 @@ const MemberDetail = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { t } = useTranslation();
-
   const { member, tontineId, tontine } = route.params || {};
   const membreId = member?.id;
 
@@ -35,23 +34,24 @@ const MemberDetail = () => {
   };
   const [activeTab, setActiveTab] = useState("Cotisations");
 
-  const {
-    data: penaltiesResponse = {},
-    isLoading: loadingPenalties,
-    error,
-  } = useGetMemberPenaltiesQuery({ tontineId, membreId });
+ const {
+  data: penaltiesResponse = {},
+  isLoading: loadingPenalties,
+  error,
+} = useGetMemberPenaltiesQuery({ tontineId, membreId });
+
+const penalties = penaltiesResponse.data || [];
+console.log("Penalties response:", penaltiesResponse);
+
 
   const {
     data: allCotisations,
     error: cotisationError,
-  } = useGetValidatedCotisationsQuery({ tontineId });
+  } = useGetValidatedCotisationsQuery({ tontineId,membreId });
 
-  const memberCotisations =
-    allCotisations?.data?.filter(
-      (cotisation) => cotisation.membre?.id === membreId
-    ) || [];
 
-  const penalties = penaltiesResponse.data || [];
+  const memberCotisations = allCotisations?.data || [];
+
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -135,7 +135,7 @@ const MemberDetail = () => {
                 <Text className="text-sm font-semibold">
                   {t("memberDetail.role")}: <Text className="font-normal">{role}</Text>
                 </Text>
-                <Feather name="edit-2" size={14} color="#000" />
+                {/* <Feather name="edit-2" size={14} color="#000" /> */}
               </View>
             </View>
           </View>
