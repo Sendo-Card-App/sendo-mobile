@@ -14,32 +14,47 @@ const IdentityCard = ({ navigation }) => {
   const dispatch = useDispatch();
   const { identityDocument } = useSelector(state => state.kyc);
   const { t } = useTranslation();
-  
+
   const handleFrontCapture = () => {
-  navigation.navigate("Camera", { purpose: "id_front" });
-};
+    navigation.navigate("Camera", {
+      purpose: "id_front",
+      onCapture: (image) => {
+        dispatch(setIdentityDocumentFront(image));
+        if (identityDocument.type === IDENTITY_TYPES.PASSPORT) {
+          dispatch(setIdentityDocumentBack(image));
+        }
+      }
+    });
+  };
 
-const handleBackCapture = () => {
-  navigation.navigate("Camera", { purpose: "id_back"});
-};
-
-  
+  const handleBackCapture = () => {
+    navigation.navigate("Camera", {
+      purpose: "id_back",
+      onCapture: (image) => {
+        dispatch(setIdentityDocumentBack(image));
+      }
+    });
+  };
 
   const handleDocumentTypeChange = (type) => {
     dispatch(setIdentityDocumentType(type));
     dispatch(setIdentityDocumentFront(null));
-    if (type === IDENTITY_TYPES.CNI) {
-      dispatch(setIdentityDocumentBack(null));
-    }
+    dispatch(setIdentityDocumentBack(null));
   };
 
   const handleRemoveFront = () => {
     dispatch(setIdentityDocumentFront(null));
+    if (identityDocument.type === IDENTITY_TYPES.PASSPORT) {
+      dispatch(setIdentityDocumentBack(null));
+    }
   };
 
   const handleRemoveBack = () => {
     dispatch(setIdentityDocumentBack(null));
   };
+
+  const isNextEnabled = identityDocument.front &&
+    (identityDocument.type !== IDENTITY_TYPES.CNI && identityDocument.type !== IDENTITY_TYPES.DRIVERS_LICENSE || identityDocument.back);
 
   return (
     <View className="bg-[#181e25] flex-1 pt-0 relative">
@@ -48,7 +63,7 @@ const handleBackCapture = () => {
         <View className="absolute -top-12 left-0 right-0 items-center justify-center">
           <Image source={TopLogo} className="h-36 w-40" resizeMode="contain" />
         </View>
-        
+
         <View className="flex-row items-center justify-between px-5 pt-16">
           <TouchableOpacity onPress={() => navigation.navigate("KycResume")}>
             <AntDesign name="arrowleft" size={24} color="white" />
@@ -120,8 +135,8 @@ const handleBackCapture = () => {
             </TouchableOpacity>
           )}
 
-          {/* Back Side (only for CNI) */}
-          {identityDocument.type === IDENTITY_TYPES.CNI && (
+          {/* Back Side (for CNI and DRIVERS_LICENSE) */}
+          {(identityDocument.type === IDENTITY_TYPES.CNI || identityDocument.type === IDENTITY_TYPES.DRIVERS_LICENSE) && (
             <>
               <Text className="font-bold text-gray-800 mb-1">{t('identity_card.back_side')}</Text>
               {identityDocument.back ? (
@@ -160,9 +175,9 @@ const handleBackCapture = () => {
 
           {/* Next Button */}
           <TouchableOpacity
-            className={`py-3 rounded-full mt-4 ${identityDocument.front && (identityDocument.type !== IDENTITY_TYPES.CNI || identityDocument.back) ? 'bg-[#7ddd7d]' : 'bg-gray-400'}`}
+            className={`py-3 rounded-full mt-4 ${isNextEnabled ? 'bg-[#7ddd7d]' : 'bg-gray-400'}`}
             onPress={() => navigation.navigate("KycResume")}
-            disabled={!identityDocument.front || (identityDocument.type === IDENTITY_TYPES.CNI && !identityDocument.back)}
+            disabled={!isNextEnabled}
           >
             <Text className="text-xl text-center font-bold">{t('identity_card.next_button')}</Text>
           </TouchableOpacity>

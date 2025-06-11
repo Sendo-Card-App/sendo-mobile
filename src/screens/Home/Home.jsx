@@ -1,288 +1,323 @@
+import React, { useCallback, useEffect, useState } from "react";
 import {
   View,
-  Dimensions,
   Text,
-  Image,
-  Pressable,
   TouchableOpacity,
-  Platform,
+  Image,
   ScrollView,
-  RefreshControl,
+   Dimensions, Platform,StatusBar
 } from "react-native";
-import React, { useState } from "react";
-import { StatusBar } from "expo-status-bar";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons, Entypo,  MaterialIcons  } from "@expo/vector-icons";
+import { Ionicons, AntDesign } from "@expo/vector-icons";
+import Loader from "../../components/Loader";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
+import { useGetBalanceQuery } from "../../services/WalletApi/walletApi";
+import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
+import { useGetTransactionHistoryQuery } from "../../services/WalletApi/walletApi";
+import { useTranslation } from 'react-i18next';
+import Toast from 'react-native-toast-message';
+const TopLogo = require("../../images/TopLogo.png");
 import ButtomLogo from "../../images/ButtomLogo.png";
-import CarteVirtuelle from "../../images/CarteVirtuelle.png";
-import HomeImage2 from "../../images/HomeImage2.png";
-import { useNavigation } from "@react-navigation/native";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const Home = () => {
-  const { height } = Dimensions.get("window");
+
+const { width, height } = Dimensions.get('window');
+const isSmallScreen = width < 375;
+const isIOS = Platform.OS === 'ios';
+const scale = (size) => (width / 375) * size;
+
+const HomeScreen = () => {
   const navigation = useNavigation();
-  const [isClickedOne, setisClickedOne] = useState(false);
-  const [isClickedTwo, setisClickedTwo] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(); // Replace with actual data
+    const { t } = useTranslation();
+    const [showBalance, setShowBalance] = useState(true);
+    const [hasAcceptedTerms, setHasAcceptedTerms] = useState(false);
+    // Fetch user profile and enable refetch
+    const {
+      data: userProfile,
+      isLoading: isProfileLoading,
+      refetch: refetchProfile,
+    } = useGetUserProfileQuery();
+  
+    const userId = userProfile?.data?.id;
+    
+    const { data: history, isLoadingHistory, isError, refetch } = useGetTransactionHistoryQuery(
+        { 
+          userId,
+        
+        },
+        { skip: !userId }
+      );
+        //console.log('Transaction History Data:', JSON.stringify(history, null, 2));
 
-  const platformFont = Platform.OS === "ios" ? "HelveticaNeue" : "Roboto";
+    // Fetch balance and enable refetch
+    const {
+      data: balanceData,
+      isLoading: isBalanceLoading,
+      error: balanceError,
+      isError: isBalanceError,
+      refetch: refetchBalance,
+    } = useGetBalanceQuery(userId, { skip: !userId });
+  
+    const isLoading = isProfileLoading || isBalanceLoading;
+  
+    // Refetch profile and balance when screen is focused
+    useFocusEffect(
+      useCallback(() => {
+        refetchProfile();
+        if (userId) {
+          refetchBalance();
+        }
+      }, [userId])
+    );
+    useEffect(() => {
+      const checkTerms = async () => {
+        const value = await AsyncStorage.getItem("hasAcceptedTerms");
+        setHasAcceptedTerms(value === "true");
+      };
+      checkTerms();
+    }, []);
 
-  const onRefresh = () => {
-    setRefreshing(true);
-    setTimeout(() => {
-      setRefreshing(false);
-    }, 1000);
-  };
+    useEffect(() => {
+      if (balanceError) {
+        let errorMessage = 'An unknown error occurred';
+        if (balanceError.status === 401) errorMessage = 'Authentication required (missing passcode)';
+        else if (balanceError.status === 403) errorMessage = 'Missing KYC documents';
+        else if (balanceError.status === 404) errorMessage = 'Wallet not found';
+        else if (balanceError.data?.message) errorMessage = balanceError.data.message;
+  
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: errorMessage,
+          position: 'top',
+          visibilityTime: 10000,
+          autoHide: true,
+        });
+      }
+    }, [balanceError]);
+    
+    const getStatusColor = (status) => {
+  switch (status?.toUpperCase()) {
+    case 'COMPLETED': return 'text-green-600';
+    case 'FAILED': return 'text-red-600';
+    case 'PENDING': return 'text-yellow-600';
+    case 'BLOCKED': return 'text-orange-600';
+    default: return 'text-gray-600';
+  }
+};
+
+const getTypeLabel = (type, t) => {
+  switch (type?.toUpperCase()) {
+    case 'DEPOSIT': return t('history1.deposit');
+    case 'WITHDRAWAL': return t('history1.withdraw');
+    case 'TRANSFER': return t('history1.transfer');
+    case 'SHARED_PAYMENT': return t('history1.share');
+    case 'WALLET_TO_WALLET': return t('history1.wallet');
+    case 'TONTINE_PAYMENT': return t('history1.tontine');
+    case 'PAYMENT': return t('history1.payment');
+    default: return type;
+  }
+};
+
+const getMethodIcon = (transaction) => {
+  switch (transaction.method?.toUpperCase()) {
+    case 'MOBILE_MONEY':
+      if (transaction.provider === 'CMORANGEOM') {
+        return require('../../images/om.png');
+      } else if (transaction.provider === 'MTNMOMO') {
+        return require('../../images/mtn.png');
+      } else {
+        return require('../../images/transaction.png');
+      }
+    case 'BANK_TRANSFER':
+      return require('../../images/RoyalBank.png');
+    default:
+      return require('../../images/transaction.png');
+  }
+};
+
 
   return (
-    <SafeAreaView className="flex-1 bg-[#7ddd7d] relative">
-      <ScrollView
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-        contentContainerStyle={{ flexGrow: 1 }}
-      >
-        <View className="flex-1 gap-2 mx-5">
-          {/* Upper Section */}
-          <View>
-            <View className="border-b border-dashed flex-row items-center justify-between pt-2 pb-1">
-              <Image
-                source={ButtomLogo}
-                resizeMode="contain"
-                className="h-[50px] w-[150px]"
-              />
-              <View className="flex-row items-center gap-4">
-                {/* Notification Bell with Badge */}
-                <TouchableOpacity 
-                  className="relative p-2"
-                  onPress={() => navigation.navigate("NotificationComponent")}
-                >
-                  <MaterialIcons name="notifications" size={24} color="black" />
-                  {unreadCount > 0 && (
-                    <View className="absolute top-1 right-1 bg-red-500 rounded-full min-w-[20px] h-[20px] justify-center items-center px-1">
-                      <Text className="text-white text-xs font-bold">
-                        {unreadCount > 9 ? '9+' : unreadCount}
-                      </Text>
-                    </View>
-                  )}
-                </TouchableOpacity>
-                
-                <TouchableOpacity onPress={() => navigation.openDrawer()}>
-                  <Ionicons name="menu-outline" size={24} color="black" />
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            <View className="py-5 pl-4">
-              <Text
-                style={{
-                  fontSize: Platform.OS === "ios" ? 20 : 18,
-                  fontFamily: platformFont,
-                  color: "white",
-                }}
-              >
-                Bienvenue!
-              </Text>
-              <Text
-                style={{
-                  fontSize: Platform.OS === "ios" ? 20 : 18,
-                  fontFamily: platformFont,
-                  color: "white",
-                }}
-              >
-                your <Text style={{ color: "black" }}>Service Area</Text>
-              </Text>
-            </View>
+    <View className="flex-1 bg-[#0B0F1D] pt-10 px-4">
+      {/* Top header */}
+      <View className="flex-row justify-between items-center mb-4">
+        <Image
+          source={ButtomLogo}
+          resizeMode="contain"
+          className="h-[40px] w-[120px]"
+        />
+        <TouchableOpacity onPress={() => navigation.openDrawer()}>
+          <Ionicons name="menu-outline" size={28} color="white" />
+        </TouchableOpacity>
+          <View className="absolute top-[-48] left-9 right-0 items-center">
+            <Image
+              source={TopLogo}
+              className="h-[90px] w-[120px]"
+              resizeMode="contain"
+            />
           </View>
-
-          {/* Two Options */}
-          <View className="flex-row gap-2" style={{ height: height / 4.5 }}>
-            {/* Box 1 */}
-            <Pressable
-              className="flex-1 bg-white rounded-3xl relative p-2"
-              onPress={() => {
-                setisClickedOne(true);
-                setisClickedTwo(false);
-                navigation.navigate("Payment");
-              }}
-            >
-              <View
-                className={`absolute top-2 left-2 ${
-                  isClickedOne ? "bg-[#181e25]" : ""
-                } rounded-full`}
+      </View>
+       <View className="border border-dashed border-white mt-1 mb-10 " />
+      {/* Balance Card with TopLogo background */}
+      <View className="relative bg-[#7ddd7d] rounded-xl p-4 mb-6 overflow-hidden">
+          <Image
+            source={TopLogo}
+            resizeMode="contain"
+            className="absolute top-0 left-0 right-0 bottom-0 h-full w-full opacity-10"
+          />
+          <View className="z-10">
+            <View className="flex-row justify-between items-center mb-2">
+              <Text className="text-white text-larg">{t("home.greeting")}</Text>
+              <TouchableOpacity 
+                onPress={() => {
+                  if (showBalance) {
+                    setShowBalance(false);
+                  } else {
+                    navigation.navigate('Auth', { 
+                      screen: 'PinCode',
+                      params: {
+                        onSuccess: () => {
+                          setShowBalance(true);
+                          return Promise.resolve();
+                        },
+                        showBalance: true
+                      }
+                    });
+                  }
+                }}
               >
-                <Entypo name="circle" size={24} color="lightgray" />
-              </View>
-              <View className="flex-1 items-center justify-end">
-                <Image
-                  source={CarteVirtuelle}
-                  className="w-full"
-                  style={{ height: height / 7 }}
-                  resizeMode="contain"
+                <Ionicons
+                  name={showBalance ? "eye-outline" : "eye-off-outline"}
+                  size={isSmallScreen ? scale(24) : scale(28)}
+                  color="#4A5568"
                 />
-                <View className="py-2">
-                  <Text
-                    style={{
-                      fontSize: 16,
-                      fontFamily: platformFont,
-                      textAlign: "center",
-                      color: "#7ddd7d",
-                      fontStyle: "italic",
-                      fontWeight: "800",
-                    }}
-                  >
-                    Carte
-                  </Text>
-                  <Text
-                    style={{
-                      fontSize: 16,
-                      fontFamily: platformFont,
-                      textAlign: "center",
-                      fontStyle: "italic",
-                      fontWeight: "800",
-                    }}
-                  >
-                    Virtuelle
-                  </Text>
-                </View>
-              </View>
-            </Pressable>
-
-            {/* Box 2 */}
-            <Pressable
-              onPress={() => {
-                setisClickedTwo(true);
-                setisClickedOne(false);
-                navigation.navigate("BeneficiaryScreen");
-              }}
-              className="flex-1 bg-white rounded-3xl relative p-2"
-            >
-              <View
-                className={`absolute top-2 left-2 ${
-                  isClickedTwo ? "bg-[#181e25]" : ""
-                } rounded-full`}
-              >
-                <Entypo name="circle" size={24} color="lightgray" />
-              </View>
-              <View className="flex-1 items-center justify-end">
-                <Image
-                  source={HomeImage2}
-                  className="w-full"
-                  style={{ height: height / 7 }}
-                  resizeMode="contain"
-                />
-                <View className="py-2">
-                  <Text
-                    style={{
-                      fontSize: 16,
-                      fontFamily: platformFont,
-                      textAlign: "center",
-                      color: "#7ddd7d",
-                      fontStyle: "italic",
-                      fontWeight: "800",
-                    }}
-                  >
-                    Transfert
-                  </Text>
-                  <Text
-                    style={{
-                      fontSize: 16,
-                      fontFamily: platformFont,
-                      textAlign: "center",
-                      fontStyle: "italic",
-                      fontWeight: "800",
-                    }}
-                  >
-                    D'argent
-                  </Text>
-                </View>
-              </View>
-            </Pressable>
-          </View>
-
-          {/* Lower Text Section */}
-          <View className="flex-[2.4]">
-            <View className="flex-1 justify-center">
-              <Text
-                style={{
-                  textAlign: "center",
-                  fontStyle: "italic",
-                  fontWeight: "bold",
-                  color: "#7ddd7d",
-                  fontSize: 18,
-                  fontFamily: platformFont,
-                }}
-              >
-                TRANSFÉREZ DE L'ARGENT
-              </Text>
-              <Text
-                style={{
-                  textAlign: "center",
-                  fontStyle: "italic",
-                  fontWeight: "bold",
-                  color: "#7ddd7d",
-                  fontSize: 18,
-                  fontFamily: platformFont,
-                }}
-              >
-                EN TOUTE SÉCURITÉ
-              </Text>
-
-              <Text
-                style={{
-                  textAlign: "center",
-                  marginTop: 32,
-                  color: "white",
-                  fontSize: 14,
-                  fontFamily: platformFont,
-                }}
-              >
-                <Text style={{ color: "#7ddd7d" }}>Bon à savoir :</Text> Nous
-                facilitons les transactions ﬁnancières internationales pour les
-                étudiants étrangers, en particulier ceux originaires d'Afrique,
-                qui souhaitent étudier au Canada.
-              </Text>
-
-              <Text
-                style={{
-                  textAlign: "center",
-                  marginTop: 20,
-                  color: "#7ddd7d",
-                  fontSize: 14,
-                  fontFamily: platformFont,
-                }}
-              >
-                Vos transferts d'argent simpliﬁés avec notre application.
-                Proﬁtez de transferts rapide entre le Cameroun et le Canada.
-                Suivez vos transferts en temps réel avec Sendo.
-              </Text>
+              </TouchableOpacity>
             </View>
 
-            <View className="py-4 flex-row justify-center items-center gap-2">
-              <Ionicons name="shield-checkmark" size={18} color="orange" />
-              <Text
-                style={{
-                  color: "white",
-                  fontSize: 12,
-                  fontFamily: platformFont,
-                }}
-              >
-                Ne partagez pas vos informations personnelles…
-              </Text>
+            <Text className="text-black text-2xl font-bold"> {userProfile?.data?.firstname} {userProfile?.data?.lastname}</Text>
+
+            <View className="flex-row justify-between items-center my-2">
+              <Text className="text-black text-xl">{t("home.balance")}</Text>
+             <Text className="text-black text-4xl font-bold">
+              {showBalance
+                ? `${(balanceData?.data.balance || 0).toLocaleString('en-US')} ${balanceData?.data.currency || 'XAF'}`
+                : '****'}
+            </Text>
             </View>
+
+            <View className="flex-row mt-4 justify-between space-x-4">
+              <TouchableOpacity
+                onPress={() => navigation.navigate('SelectMethod')}
+                className="bg-white px-3 py-2 rounded-full flex-row items-center space-x-2 flex-1">
+                <Ionicons name="send-outline" size={16} color="black" />
+                <Text className="text-black font-semibold text-sm">{t("home.transfer")}</Text>
+              </TouchableOpacity>
+
+              {/* Recharger mon compte button */}
+              <TouchableOpacity
+                onPress={() => navigation.navigate('MethodType')}
+                className="bg-white px-2 py-2 rounded-full flex-row items-center space-x-2 flex-1">
+                <Ionicons name="refresh-outline" size={16} color="black" />
+                <Text className="text-black font-semibold text-sm">{t("home.recharge")}</Text>
+              </TouchableOpacity>
+            </View>
+
           </View>
         </View>
-      </ScrollView>
 
-      {/* Background Overlay */}
-      <View
-        className="flex-1 bg-[#181e25] rounded-t-[14px] absolute left-0 right-0 bottom-0 -z-10"
-        style={{ top: height / 2.4 }}
-      />
-      <StatusBar style="auto" backgroundColor="#7ddd7d" />
-    </SafeAreaView>
+
+      {/* Action buttons */}
+      <View className="mb-4">
+        <View className="flex-row justify-between items-center mb-2">
+          <Text className="text-green-400 font-semibold text-base">
+            {t("home.services")} 
+          </Text>
+          <TouchableOpacity onPress={() => navigation.navigate("")}>
+            <Text className="text-white text-sm">{t("home.seeAll")}</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Action buttons row */}
+        <View className="flex-row justify-between">
+          {[
+            { label: t("home.virtualCard"), icon: "card-outline", route: "VerifyIdentity" },
+            { label: t("home.friendsShare"), icon: "people-outline", route: "WelcomeShare" },
+            { label: t("home.fundRequest"), icon: "cash-outline", route: "WelcomeDemand" },
+            { label: t("home.etontine"), icon: "layers-outline" },
+            { label: t("home.payBills"), icon: "home-outline", route: "MethodType" },
+          ].map((item, index) => (
+            <TouchableOpacity
+              key={index}
+              className="items-center w-[18%]"
+              onPress={() => {
+                if (item.label === t("home.etontine")) {
+                  hasAcceptedTerms
+                    ? navigation.navigate("TontineList")
+                    : navigation.navigate("TermsAndConditions");
+                } else {
+                  navigation.navigate(item.route);
+                }
+              }}
+            >
+              <View className="bg-[#0B0F1D] border border-green-400 p-2 rounded-full mb-1">
+                <Ionicons name={item.icon} size={20} color="white" />
+              </View>
+              <Text className="text-[10px] text-white text-center">{item.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+
+
+
+      {/* Section PUB with TopLogo background */}
+       <View className="bg-[#7ddd7d] py-16 px-8 rounded-xl items-center justify-center mb-6 overflow-hidden">
+        <View className="absolute top-0 left-0 right-0 bottom-0 items-center justify-center opacity-10">
+          <Image source={TopLogo} className="h-[130px] w-[160px]" resizeMode="contain" />
+        </View>
+        <Text className="text-black font-bold text-lg">{t("home.pubSection")}</Text>
+      </View>
+
+      {/* Transactions récentes */}
+      <Text className="text-green-400 font-semibold text-base mb-2">
+       {t("home.recentTransactions")}
+      </Text>
+          {isLoadingHistory ? (
+            <Loader />
+          ) : history?.data?.transactions?.items?.length === 0 ? (
+            <Text className="text-white text-center mt-4">{t("home.noTransactions")}</Text>
+          ) : (
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {history?.data?.transactions?.items?.map((item, index) => {
+                const statusColor = getStatusColor(item.status);
+                const typeLabel = getTypeLabel(item.type, t);
+                const iconSource = getMethodIcon(item);
+
+                return (
+                  <TouchableOpacity
+                    key={index}
+                    className="flex-row items-center mb-4 border-b border-gray-700 pb-2"
+                    onPress={() => navigation.navigate('Receipt', {
+                      transaction: item,
+                      user: userProfile?.data,
+                    })}
+                  >
+                    <Image source={iconSource} className="w-10 h-10 mr-3 rounded-full" resizeMode="contain" />
+                    <View className="flex-1">
+                      <Text className="text-white font-semibold">{item.description || typeLabel}</Text>
+                      <Text className="text-gray-300 text-sm">{item.amount?.toLocaleString()} {item.currency || "XAF"}</Text>
+                    </View>
+                    <Text className={`text-xs font-semibold ${statusColor}`}>{item.status}</Text>
+                  </TouchableOpacity>
+
+                );
+              })}
+            </ScrollView>
+
+          )}
+
+
+    </View>
   );
 };
 
-export default Home;
+export default HomeScreen;

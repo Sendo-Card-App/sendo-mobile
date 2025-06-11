@@ -59,73 +59,84 @@ const handleNext = async () => {
   try {
     setLoading(true);
     const response = await createTontine(data).unwrap();
-    setLoading(false);
 
-    console.log("Full response:", JSON.stringify(response, null, 2));
+    // Notification logic starts here
+    const notificationContent = {
+      title: "Tontine Créée",
+      body: `La tontine "${data.nom}" (${data.montant} FCFA) a été créée avec succès`,
+      type: "TONTINE_CREATED",
+    };
 
-    const tontineId = response?.data?.id;
+    try {
+      // Try to get existing push token
+      let pushToken = await getStoredPushToken();
+      
+      // If no token, request notification permission
+      if (!pushToken) {
+        pushToken = await registerForPushNotificationsAsync();
+      }
 
-    if (tontineId) {
-      // Préparation notification
-      const notificationContent = {
-        title: "Tontine Créée",
-        body: `La tontine "${data.nom}" d'un montant de ${data.montant} FCFA a été créée.`,
-        type: "TONTINE_CREATED",
-      };
-
-      try {
-        let pushToken = await getStoredPushToken();
-        if (!pushToken) {
-          pushToken = await registerForPushNotificationsAsync();
-        }
-
-        if (pushToken) {
-          await sendPushTokenToBackend(
-            pushToken,
-            notificationContent.title,
-            notificationContent.body,
-            notificationContent.type,
-            {
-              tontineId,
-              nom: data.nom,
-              montant: data.montant,
-              timestamp: new Date().toISOString(),
-            }
-          );
-        }
-      } catch (notificationError) {
-        // Envoi fallback notification locale
-        await sendPushNotification(
+      // If we have a token, send to backend
+      if (pushToken) {
+        await sendPushTokenToBackend(
+          pushToken,
           notificationContent.title,
           notificationContent.body,
+          notificationContent.type,
           {
-            data: {
-              type: notificationContent.type,
-              tontineId,
-              nom: data.nom,
-              montant: data.montant,
-            },
+            tontineId: response?.data?.id,
+            nom: data.nom,
+            montant: data.montant,
+            type: data.type,
+            timestamp: new Date().toISOString(),
           }
         );
       }
-
-      navigation.navigate("Participant", { tontineId });
-    } else {
-      Toast.show({
-        type: "error",
-        text1: "Erreur",
-        text2: "Identifiant de tontine introuvable.",
-      });
+    } catch (notificationError) {
+      console.log("Notification error:", notificationError);
+      // Fallback to local notification if backend fails
+      await sendPushNotification(
+        notificationContent.title,
+        notificationContent.body,
+        {
+          data: {
+            type: notificationContent.type,
+            tontineId: response?.data?.id,
+            nom: data.nom,
+            montant: data.montant,
+          }
+        }
+      );
     }
-  } catch (err) {
-    console.log("Full response:", JSON.stringify(err, null, 2));
 
-    setLoading(false);
+    navigation.navigate("Participant", { tontineId: response?.data?.id });
+    
+  } catch (error) {
+    console.log("Creation error:", error);
+    
+    // Error notification
+    try {
+      await sendPushNotification(
+        "Échec de création",
+        "La création de la tontine a échoué",
+        {
+          data: {
+            type: "TONTINE_CREATION_FAILED",
+            error: error.message || "Erreur inconnue",
+          }
+        }
+      );
+    } catch (pushError) {
+      console.warn("Failed to send error notification:", pushError);
+    }
+
     Toast.show({
       type: "error",
       text1: "Erreur",
-      text2: "Échec de la création de la tontine.",
+      text2: error.data?.message || "Échec de la création de la tontine",
     });
+  } finally {
+    setLoading(false);
   }
 };
 

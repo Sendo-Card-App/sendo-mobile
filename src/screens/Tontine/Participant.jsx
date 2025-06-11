@@ -58,7 +58,7 @@ const Participant = () => {
     );
   };
 
-  const handleNext = async () => {
+ const handleNext = async () => {
     if (selectedFriends.length === 0) {
       Toast.show({
         type: "error",
@@ -71,31 +71,36 @@ const Participant = () => {
     setIsSubmitting(true);
 
     try {
-      const selectedUserIds = selectedFriends.map((friendId) => {
-        const friend = synchronizedContacts.find((f) => f.id === friendId);
-        return friend?.contactUser?.id;
-      });
+      // Extraire les IDs valides
+      const selectedUserIds = selectedFriends
+        .map((friendId) => {
+          const friend = synchronizedContacts.find((f) => f.id === friendId);
+          return friend?.contactUser?.id;
+        })
+        .filter(id => id !== undefined);
 
-      const payload = {
-        userId: selectedUserIds,
-      };
-       console.log(payload)
-      await addMembers({ tontineId, payload }).unwrap();
-     // console.log(payload)
+      const addMemberPromises = selectedUserIds.map(userId => 
+        addMembers({
+          tontineId: tontineId,
+          payload: { userId } 
+        }).unwrap()
+      );
+
+      await Promise.all(addMemberPromises);
+     
       Toast.show({
         type: "success",
         text1: "Succès",
-        text2: "Participants ajoutés à la tontine.",
+        text2: `Participants ajoutés à la tontine.`,
       });
 
       navigation.navigate("TontineList");
     } catch (error) {
-     
-       //console.log("Add Members Error:", JSON.stringify(error, null, 2));
+      console.log("Erreur:", error);
       Toast.show({
         type: "error",
         text1: "Erreur",
-        text2: "Impossible d'ajouter les participants.",
+        text2: error.data?.message || "Impossible d'ajouter certains participants.",
       });
     } finally {
       setIsSubmitting(false);

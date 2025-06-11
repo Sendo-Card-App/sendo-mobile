@@ -6,32 +6,46 @@ import {
   StyleSheet, 
   Modal, 
   FlatList, 
-  TouchableWithoutFeedback 
+  TouchableWithoutFeedback,
+  ActivityIndicator
 } from 'react-native';
-import { useGetNotificationsQuery, useMarkAsReadMutation, useClearAllNotificationsMutation } from '../services/Notification/notificationApi';
+import { useGetNotificationsQuery } from '../services/Notification/notificationApi';
 import { useGetUserProfileQuery } from "../services/Auth/authAPI";
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
 const NotificationComponent = () => {
   const [modalVisible, setModalVisible] = useState(false);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
   
   // Get user profile first
   const { data: userProfile } = useGetUserProfileQuery();
   const userId = userProfile?.data?.id;
 
-  // Only fetch notifications if userId exists
+  // Get notifications with pagination
   const { 
-    data: notifications = [], 
+    data: notificationsResponse, 
     isLoading, 
     isError,
     refetch,
     error: notificationError
-  } = useGetNotificationsQuery(userId, {
-    skip: !userId
-  });
+  } = useGetNotificationsQuery(
+    { 
+      userId,
+      page,
+      limit
+      // Add other filters as needed:
+      // type: 'INFORMATION',
+      // status: 'SENDED'
+    }, 
+    {
+      skip: !userId
+    }
+  );
 
-  const [markAsRead] = useMarkAsReadMutation();
-
+  const notifications = notificationsResponse?.data || [];
+  console.log(notifications)
+  const totalNotifications = notificationsResponse?.total || 0;
 
   // Debug logs
   useEffect(() => {
@@ -40,43 +54,25 @@ const NotificationComponent = () => {
     }
   }, [notificationError]);
 
-  // Get unread count
-  const unreadCount = notifications?.filter(n => !n?.isRead)?.length || 0;
-
-  // Refresh notifications periodically
-  useEffect(() => {
-    if (!userId) return;
-
-    const interval = setInterval(() => {
-      refetch();
-    }, 30000); // 30 seconds
-
-    return () => clearInterval(interval);
-  }, [userId, refetch]);
-
-  const handleNotificationPress = async (notification) => {
-    if (!notification.isRead) {
-      await markAsRead(notification.id);
-      refetch();
+  const handleLoadMore = () => {
+    if (notifications.length < totalNotifications) {
+      setPage(prev => prev + 1);
     }
-    // Handle navigation based on notification type
-    // setModalVisible(false);
-    // navigation.navigate(notification.type);
   };
 
- 
-
   const getIconName = (type) => {
-    const icons = {
-      payment: 'payment',
-      transaction: 'swap-horiz',
-      account: 'account-circle',
-      message: 'message',
-      alert: 'warning',
-      success: 'check-circle',
-      default: 'notifications'
+    const iconMap = {
+      SUCCESS_ACCOUNT_VERIFIED: 'check-circle',
+      INFORMATION: 'info',
+      MARKETING: 'campaign',
+      SUCCESS_KYC_VERIFIED: 'verified',
+      SUCCESS_TRANSFER_FUNDS: 'swap-horiz',
+      SUCCESS_DEPOSIT_CARD: 'credit-card',
+      PAYMENT_FAILED: 'error',
+      ERROR: 'warning',
+      // Add more mappings as needed
     };
-    return icons[type] || icons.default;
+    return iconMap[type] || 'notifications';
   };
 
   const renderItem = ({ item }) => (
@@ -103,13 +99,18 @@ const NotificationComponent = () => {
     </TouchableOpacity>
   );
 
-  if (isLoading) return null;
-  if (isError) return null;
+  const renderFooter = () => {
+    if (isLoading) {
+      return <ActivityIndicator size="small" color="#0000ff" />;
+    }
+    return null;
+  };
+
+  if (isLoading && page === 1) return <ActivityIndicator size="large" />;
+  if (isError) return <Text>Error loading notifications</Text>;
 
   return (
     <>
-
-      {/* Notification Modal */}
       <Modal
         animationType="slide"
         transparent={true}
@@ -121,8 +122,6 @@ const NotificationComponent = () => {
         </TouchableWithoutFeedback>
 
         <View style={styles.modalContainer}>
-
-
           {notifications.length === 0 ? (
             <View style={styles.emptyContainer}>
               <Icon name="notifications-off" size={40} color="#ccc" />
@@ -135,7 +134,13 @@ const NotificationComponent = () => {
               keyExtractor={item => item.id}
               contentContainerStyle={styles.listContent}
               refreshing={isLoading}
-              onRefresh={refetch}
+              onRefresh={() => {
+                setPage(1);
+                refetch();
+              }}
+              onEndReached={handleLoadMore}
+              onEndReachedThreshold={0.5}
+              ListFooterComponent={renderFooter}
             />
           )}
         </View>

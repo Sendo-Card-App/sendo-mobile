@@ -20,6 +20,7 @@ const PinCode = ({ navigation, route }) => {
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [biometricAvailable, setBiometricAvailable] = useState(false);
+  const [hasStoredPasscode, setHasStoredPasscode] = useState(false);
   const [biometricType, setBiometricType] = useState(null);
   const [authData, setAuthData] = useState(null);
   
@@ -47,7 +48,7 @@ const PinCode = ({ navigation, route }) => {
   });
   
   const isNewUser = useSelector((state) => state.auth.isNewUser);
-  const isSetup = route.params?.setup ?? !currentPasscode;
+  const isSetup = route.params?.setup ?? !hasStoredPasscode;
   const isLocked = lockedUntil && new Date(lockedUntil) > new Date();
 
   // Check and update token when component mounts or user profile changes
@@ -72,15 +73,17 @@ const PinCode = ({ navigation, route }) => {
 
 
   // Clear session function
-  const clearSession = async () => {
-    try {
-      await removeData('@authData');
-      dispatch(clearAuth());
-      dispatch(clearPasscode());
-    } catch (error) {
-      console.error('Error clearing session:', error);
-    }
-  };
+    const clearSession = async () => {
+      try {
+        await removeData('@authData');
+        await removeData('@passcode'); 
+        dispatch(clearAuth());
+        dispatch(clearPasscode());
+      } catch (error) {
+        console.error('Error clearing session:', error);
+      }
+    };
+
 
   const showToast = (type, title, message) => {
     Toast.show({
@@ -98,13 +101,23 @@ const PinCode = ({ navigation, route }) => {
       refetch(); // force a query to the backend
     }, [])
   );
-  useEffect(() => {
-    const loadAuthData = async () => {
+ useEffect(() => {
+    const loadInitialData = async () => {
       const data = await getData('@authData');
       setAuthData(data);
+
+      const savedPasscode = await getData('@passcode');
+      if (savedPasscode) {
+        setHasStoredPasscode(true);
+        dispatch(setPasscode(savedPasscode));
+      } else {
+        setHasStoredPasscode(false);
+      }
     };
-    loadAuthData();
+
+    loadInitialData();
   }, []);
+
 
   // Check for biometric availability
   useEffect(() => {
@@ -199,66 +212,82 @@ const PinCode = ({ navigation, route }) => {
     }
   };
 
-  const handleComplete = async (enteredPin) => {
-    setIsLoading(true);
-    try {
-      if (currentPasscode) {
-        if (enteredPin === currentPasscode) {
-          dispatch(resetAttempts());
-          
-          // Check if we have an onSuccess callback (from transfer confirmation)
+const handleComplete = async (enteredPin) => {
+  setIsLoading(true);
+  try {
+    // Get passcode directly from AsyncStorage 
+    const storedPasscode = await getData('@passcode');
+    
+    if (storedPasscode) {
+      if (enteredPin === storedPasscode) {
+        dispatch(resetAttempts());
+        
+        // Handle different scenarios based on why we came to PinCode
+        if (route.params?.showBalance) {
+          // Case 1: Came from balance viewing request
           if (route.params?.onSuccess) {
             await route.params.onSuccess(enteredPin);
-            navigation.navigate('Main', { screen: 'Success' });
-          } else {
-            navigation.navigate('Main');
           }
-        } else {
-          setError(t('pin.incorrectPin'));
-          setPin('');
-          dispatch(incrementAttempt());
-
-          if (attempts + 1 >= 3) {
-            const lockTime = new Date();
-            lockTime.setMinutes(lockTime.getMinutes() + 5);
-            dispatch(lockPasscode(lockTime.toISOString()));
-            
-            Alert.alert(
-              t('pin.accountLocked'),
-              t('pin.lockedFor5Minutes'),
-              [
-                { 
-                  text: t('common.ok'), 
-                  onPress: () => {
-                    if (biometricAvailable) {
-                      handleBiometricAuth();
-                    }
-                  }
-                }
-              ]
-            );
-          }
+          navigation.goBack(); // Go back to HomeScreen
+        } 
+        else if (route.params?.onSuccess) {
+          // Case 2: Came from other operations (like transfer confirmation)
+          await route.params.onSuccess(enteredPin);
+          navigation.navigate('Main', { screen: 'Success' });
+        } 
+        else {
+          // Case 3: Regular authentication flow
+          navigation.navigate('Main');
         }
       } else {
-        const result = await createPasscode({ passcode: enteredPin }).unwrap();
-        if (result.status === 200) {
-          dispatch(setPasscode(enteredPin));
-          dispatch(setIsNewUser(false));
+        // Incorrect PIN handling
+        setError(t('pin.incorrectPin'));
+        setPin('');
+        dispatch(incrementAttempt());
+
+        if (attempts + 1 >= 3) {
+          const lockTime = new Date();
+          lockTime.setMinutes(lockTime.getMinutes() + 5);
+          dispatch(lockPasscode(lockTime.toISOString()));
           
-          navigation.navigate('Main');
-        } else {
-          setError(t('pin.validationError'));
-          setPin('');
+          Alert.alert(
+            t('pin.accountLocked'),
+            t('pin.lockedFor5Minutes'),
+            [
+              { 
+                text: t('common.ok'), 
+                onPress: () => {
+                  if (biometricAvailable) {
+                    handleBiometricAuth();
+                  }
+                }
+              }
+            ]
+          );
         }
       }
-    } catch (error) {
-      console.log("Error:", error);
-      showToast('error', t('errors.title'), error.data?.message || "compte supendu");
-      setPin('');
-    } finally {
-      setIsLoading(false);
+    } else {
+      // New user setting up PIN for first time
+      const result = await createPasscode({ passcode: enteredPin }).unwrap();
+      if (result.status === 200) {
+        await storeData('@passcode', enteredPin); 
+        dispatch(setPasscode(enteredPin));
+        dispatch(setIsNewUser(false));
+        
+        navigation.navigate('Main');
+      } else {
+        setError(t('pin.validationError'));
+        setPin('');
+      }
     }
-  };
+  } catch (error) {
+    console.log("Error:", error);
+    showToast('error', t('errors.title'), error.data?.message || "compte supendu");
+    setPin('');
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   const renderDots = () => (
     <View style={{ flexDirection: 'row', justifyContent: 'center', marginVertical: 20 }}>
@@ -293,6 +322,7 @@ const PinCode = ({ navigation, route }) => {
           try {
             // Clear authentication data
             await removeData('@authData');
+            await removeData('@passcode');
             
             // Update state
             setAuthData(null);
@@ -372,7 +402,7 @@ const PinCode = ({ navigation, route }) => {
             {t('pin.greeting')}, {userProfile?.data?.firstname} {userProfile?.data?.lastname}
           </Text>
           <Text style={{ fontSize: 16, color: '#0D1C6A', marginTop: 10 }}>
-            {isSetup ? t('pin.setupPin') : t('pin.enterPin')}
+            {hasStoredPasscode ? t('pin.enterPin') : t('pin.setupPin')}
           </Text>
 
           {renderDots()}

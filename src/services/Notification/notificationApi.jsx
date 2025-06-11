@@ -14,17 +14,14 @@ export const notificationApi = createApi({
   }),
   tagTypes: ['Notifications'],
   endpoints: (builder) => ({
-    getNotifications: builder.query({
-      query: (userId) => `/users/${userId}`,
-      providesTags: ['Notifications']
+   getNotifications: builder.query({
+    query: ({ userId, page = 1, limit = 10, type, status }) => ({
+      url: `/notification/users/${userId}`,
+      params: { page, limit, type, status }
     }),
-    markAsRead: builder.mutation({
-      query: (notificationId) => ({
-        url: `/read/${notificationId}`,
-        method: 'PATCH'
-      }),
-      invalidatesTags: ['Notifications']
-    }),
+    providesTags: ['Notifications']
+  }),
+   
     sendNotification: builder.mutation({
       query: (notificationData) => ({
         url: '/send',
@@ -38,6 +35,5 @@ export const notificationApi = createApi({
 
 export const { 
   useGetNotificationsQuery, 
-  useMarkAsReadMutation,
   useSendNotificationMutation
 } = notificationApi;

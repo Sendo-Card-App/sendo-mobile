@@ -127,7 +127,7 @@ import MemberDetail from "./src/screens/Tontine/MemberDetail";
 import MemberContribution from "./src/screens/Tontine/MemberContribution";
 import TontineSetting from "./src/screens/Tontine/TontineSetting";
 import FundRelease from "./src/screens/Tontine/FundRelease";
-
+import TermsAndConditions from "./src/screens/Tontine/TermsAndConditions";
 
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -445,6 +445,7 @@ function MainStack() {
       <Stack.Screen name="MemberContribution" component={MemberContribution } options={{ headerShown: false }} />
       <Stack.Screen name="TontineSetting" component={TontineSetting } options={{ headerShown: false }} />
       <Stack.Screen name="FundRelease" component={FundRelease } options={{ headerShown: false }} />
+       <Stack.Screen name="TermsAndConditions" component={TermsAndConditions} options={{ headerShown: false }} />
 
 
 

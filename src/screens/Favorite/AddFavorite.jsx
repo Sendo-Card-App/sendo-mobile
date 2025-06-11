@@ -174,7 +174,7 @@ const AddFavorite = () => {
       console.log('Processed contacts for sync:', JSON.stringify(contactsToSync, null, 2));
       
       // Process in batches
-      const batchSize = 50;
+      const batchSize = 700;
       let successfulSyncs = 0;
       
       for (let i = 0; i < contactsToSync.length; i += batchSize) {

@@ -429,7 +429,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   sendButton: {
-    backgroundColor: 'green',
+    backgroundColor: '#7ddd7d',
     borderRadius: 20,
     width: 40,
     height: 40,
