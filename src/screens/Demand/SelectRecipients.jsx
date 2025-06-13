@@ -39,17 +39,16 @@ const SelectRecipients = ({ navigation, route }) => {
 
   const synchronizedContacts = contactsData?.data ?? [];
 
-const filteredContacts = useMemo(() => {
-  if (!synchronizedContacts) return [];
+  const filteredContacts = useMemo(() => {
+    if (!synchronizedContacts) return [];
 
-  return synchronizedContacts.filter((friend) => {
-    const friendName = friend?.name?.toLowerCase() || '';
-    const contactUserId = friend?.contactUser?.id;
+    return synchronizedContacts.filter((friend) => {
+      const friendName = friend?.name?.toLowerCase() || '';
+      const contactUserId = friend?.contactUser?.id;
 
-    return contactUserId !== userId && friendName.includes(searchQuery.toLowerCase());
-  });
-}, [searchQuery, synchronizedContacts, userId]);
-
+      return contactUserId !== userId && friendName.includes(searchQuery.toLowerCase());
+    });
+  }, [searchQuery, synchronizedContacts, userId]);
 
   const toggleFriend = (id) => {
     setSelectedFriends((prev) =>
@@ -141,6 +140,27 @@ const filteredContacts = useMemo(() => {
     );
   };
 
+  const renderEmptyList = () => (
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: 50 }}>
+      <Text style={{ color: '#fff', marginBottom: 20 }}>
+        {t("selectRecipient.no_contacts_found")}
+      </Text>
+      <TouchableOpacity
+        onPress={() => navigation.navigate("AddFavorite")}
+        style={{
+          paddingHorizontal: 24,
+          paddingVertical: 12,
+          backgroundColor: "#2B2F38",
+          borderRadius: 8,
+        }}
+      >
+        <Text style={{ color: "#7ddd7d", fontWeight: "bold" }}>
+          {t("selectRecipient.add_manually")}
+        </Text>
+      </TouchableOpacity>
+    </View>
+  );
+
   return (
     <KeyboardAvoidingView
       style={{ flex: 1, backgroundColor: "#181e25" }}
@@ -186,7 +206,8 @@ const filteredContacts = useMemo(() => {
           resizeMode="contain"
         />
       </View>
-       <View className="border border-dashed border-gray-300" />
+      <View className="border border-dashed border-gray-300" />
+      
       <View style={{ flex: 1, paddingHorizontal: 20 }}>
         <Text
           style={{
@@ -199,23 +220,6 @@ const filteredContacts = useMemo(() => {
         >
           {t("selectRecipient.choose_recipients")}
         </Text>
-
-        {/* Manual Add Button */}
-        <TouchableOpacity
-          onPress={() => navigation.navigate("AddRecipients")}
-          style={{
-            alignSelf: "flex-end",
-            marginBottom: 10,
-            paddingHorizontal: 16,
-            paddingVertical: 8,
-            backgroundColor: "#2B2F38",
-            borderRadius: 8,
-          }}
-        >
-          <Text style={{ color: "#7ddd7d", fontWeight: "bold" }}>
-            + {t("selectRecipient.add_manually")}
-          </Text>
-        </TouchableOpacity>
 
         {/* Search */}
         <View
@@ -247,30 +251,36 @@ const filteredContacts = useMemo(() => {
             data={filteredContacts}
             keyExtractor={(item) => item.id.toString()}
             renderItem={renderItem}
-            contentContainerStyle={{ paddingBottom: 20 }}
+            ListEmptyComponent={renderEmptyList}
+            contentContainerStyle={{ 
+              paddingBottom: 20,
+              flex: filteredContacts.length === 0 ? 1 : undefined 
+            }}
           />
         )}
 
-        {/* Submit Button */}
-        <TouchableOpacity
-          onPress={handleNext}
-          disabled={isSubmitting}
-          style={{
-            marginTop: 50,
-            marginBottom:50,
-            backgroundColor: isSubmitting ? "#a5e7a5" : "#7ddd7d",
-            borderRadius: 30,
-            paddingVertical: 14,
-            alignItems: "center",
-            flexDirection: "row",
-            justifyContent: "center",
-          }}
-        >
-          {isSubmitting && <Loader color="#000" style={{ marginRight: 8 }} />}
-          <Text style={{ fontWeight: "bold", color: "#000" }}>
-            {isSubmitting ? t("please_wait") : t("selectRecipient.next")}
-          </Text>
-        </TouchableOpacity>
+        {/* Submit Button - Only show if there are selected friends */}
+        {selectedFriends.length > 0 && (
+          <TouchableOpacity
+            onPress={handleNext}
+            disabled={isSubmitting}
+            style={{
+              marginTop: 50,
+              marginBottom: 50,
+              backgroundColor: isSubmitting ? "#a5e7a5" : "#7ddd7d",
+              borderRadius: 30,
+              paddingVertical: 14,
+              alignItems: "center",
+              flexDirection: "row",
+              justifyContent: "center",
+            }}
+          >
+            {isSubmitting && <Loader color="#000" style={{ marginRight: 8 }} />}
+            <Text style={{ fontWeight: "bold", color: "#000" }}>
+              {isSubmitting ? t("please_wait") : t("selectRecipient.next")}
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       <Toast />

@@ -45,7 +45,7 @@ const Account = () => {
     const { t } = useTranslation();
 
   const { data: userProfile, isLoading, error, refetch } = useGetUserProfileQuery();
-
+ 
   const [updateProfile, { isLoading: isUpdating }] = useUpdateProfileMutation();
   const [
   addSecondPhone, 
@@ -102,22 +102,24 @@ const [
   );
 
   useEffect(() => {
-    if (userProfile) {
-      const profileData = {
-        firstname: userProfile.data.firstname || "",
-        lastname: userProfile.data.lastname || "",
-        phone: userProfile.data.phone || "",
-        email: userProfile.data.email || "",
-        profession: userProfile.data.profession || "",
-        region: userProfile.data.region || "",
-        city: userProfile.data.city || "",
-        district: userProfile.data.district || "",
-        picture: userProfile.data.picture || null,
-      };
-      setFormData(profileData);
-      setOriginalData(profileData);
-    }
-  }, [userProfile]);
+  if (userProfile) {
+    const profileData = {
+      firstname: userProfile.data.firstname || "",
+      lastname: userProfile.data.lastname || "",
+      phone: userProfile.data.phone || "",
+      email: userProfile.data.email || "",
+      profession: userProfile.data.profession || "",
+      region: userProfile.data.region || "",
+      city: userProfile.data.city || "",
+      district: userProfile.data.district || "",
+      picture: userProfile.data.picture 
+        ? { uri: userProfile.data.picture } 
+        : null,
+    };
+    setFormData(profileData);
+    setOriginalData(profileData);
+  }
+}, [userProfile]);
     
 
   const handleSave = async () => {
@@ -425,13 +427,13 @@ const handleVerifySecondPhoneOtp = async ({ phone, code }) => {
     <SafeAreaView className="flex-1 bg-[#181e25]">
       <StatusBar style="light" backgroundColor="#fffff" />
        {/* Floating Home Button */}
-                  <TouchableOpacity 
-                    onPress={() => navigation.navigate('MainTabs')}
-                    style={styles.floatingHomeButton}
-                  >
-                    <Ionicons name="home" size={44} color="#7ddd7d" />
-                  </TouchableOpacity>
-      
+        <TouchableOpacity 
+          onPress={() => navigation.navigate('MainTabs')}
+          style={styles.floatingHomeButton}
+        >
+          <Ionicons name="home" size={44} color="#7ddd7d" />
+        </TouchableOpacity>
+
       <KeyboardAvoidinWrapper>
         <View className="flex-1 p-6">
           <View className="flex-row justify-between items-center mb-6">
@@ -443,9 +445,15 @@ const handleVerifySecondPhoneOtp = async ({ phone, code }) => {
 
           <View className="items-center mb-8">
             <Image
-              source={formData.picture ? { uri: formData.picture.uri } : Avatar}
-              className="w-32 h-32 rounded-full border-4 border-[#7ddd7d]"
-            />
+                source={
+                  formData.picture 
+                    ? { uri: formData.picture.uri } 
+                    : userProfile?.data?.picture 
+                      ? { uri: userProfile.data.picture } 
+                      : Avatar
+                }
+                className="w-32 h-32 rounded-full border-4 border-[#7ddd7d]"
+              />
             {isEditing && (
               <TouchableOpacity
                 className="absolute bottom-0 right-0 bg-[#7ddd7d] rounded-full p-2"
@@ -613,8 +621,6 @@ const handleVerifySecondPhoneOtp = async ({ phone, code }) => {
                 </View>
               </>
             )}
-
-
             {/* Save Button */}
             {isEditing && (
               <TouchableOpacity

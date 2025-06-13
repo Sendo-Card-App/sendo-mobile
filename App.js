@@ -63,9 +63,9 @@ import History from "./src/screens/Transfert/History";
 import Receipt from "./src/screens/Transfert/Receipt";
 import Account from "./src/screens/Profile/Account";
 import Settings from "./src/screens/Setting/Settings";
-import MonSolde from "./src/screens/Solde/MonSolde";
 import CreateVirtualCard from "./src/screens/VirtualCard/CreateVirtualCard";
 import VerifyIdentity from "./src/screens/VirtualCard/VerifyIdentity";
+import KYCValidation from "./src/screens/VirtualCard/KYCValidation";
 import ManageVirtualCard from "./src/screens/VirtualCard/ManageVirtualCard";
 import KycResume from "./src/screens/VirtualCard/KycResume";
 import KycSelfie from "./src/screens/VirtualCard/KycSelfie";
@@ -386,7 +386,6 @@ function MainStack() {
       <Stack.Screen name="History" component={History} options={{ headerTitle: t('screens.history') }} />
       <Stack.Screen name="Receipt" component={Receipt} options={{ headerTitle: t('screens.receipt') }}/>
       <Stack.Screen name="NotificationComponent" component={NotificationComponent} options={{ headerTitle: t('screens.notification') }} />
-      <Stack.Screen name="MonSolde" component={MonSolde} options={{ headerTitle: t('screens.myBalance') }} />
       <Stack.Screen name="CreateVirtualCard" component={CreateVirtualCard}options={{ headerTitle: t('screens.createCard') }} />
       <Stack.Screen name="VerifyIdentity" component={VerifyIdentity} options={{ headerShown: false }} />
       <Stack.Screen name="ManageVirtualCard" component={ManageVirtualCard} options={{ headerShown: false }} />
@@ -399,6 +398,7 @@ function MainStack() {
       <Stack.Screen name="IdentityVerification" component={IdentityVerification} options={{ headerShown: false }} />
       <Stack.Screen name="AddressSelect" component={AddressSelect} options={{ headerShown: false }} />
       <Stack.Screen name="AddressConfirm" component={AddressConfirm} options={{ headerShown: false }} />
+       <Stack.Screen name="KYCValidation" component={KYCValidation} options={{ headerShown: false }} />
       <Stack.Screen name="Address" component={Address} options={{ headerShown: false }} />
       <Stack.Screen name="Camera" component={Camera} options={{ headerShown: false }} />
 

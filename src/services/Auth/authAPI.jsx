@@ -160,10 +160,10 @@ export const authApi = createApi({
 
 
     resetPassword: builder.mutation({
-      query: ({ token, newPassword }) => ({
+      query: ({ code, newPassword }) => ({
         url: AUTH_ENDPOINTS.RESET_PASSWORD,
         method: 'POST',
-        body: { token, newPassword },
+        body: { code, newPassword },
       }),
       invalidatesTags: [TAG_TYPES.AUTH],
     }),

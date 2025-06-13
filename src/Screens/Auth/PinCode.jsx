@@ -150,47 +150,51 @@ const PinCode = ({ navigation, route }) => {
   }, [biometricEnabled, biometricAvailable, isSetup, isLocked]);
 
   // Handle biometric authentication
-  const handleBiometricAuth = async () => {
-    try {
-      const authResult = await LocalAuthentication.authenticateAsync({
-        promptMessage: t('pin.biometricPrompt'),
-        fallbackLabel: t('pin.usePinInstead'),
-        disableDeviceFallback: false
-      });
+ const [isAuthenticating, setIsAuthenticating] = useState(false);
 
-      if (authResult.success) {
-        dispatch(resetAttempts());
-        
-        // Check if this is for a transfer confirmation
-        if (route.params?.onSuccess) {
-          try {
-            await route.params.onSuccess('biometric_auth');
-            navigation.goBack();
-          } catch (error) {
-            console.error('Transfer failed after biometric auth:', error);
-            showToast('error', error.message || "error occurred");
-          }
-        } else {
-          // Regular authentication flow
-          navigation.navigate('Main');
-        }
-      } else if (authResult.error === 'user_cancel') {
-        // User canceled, do nothing
-      } else if (authResult.error === 'not_enrolled') {
-        showToast('error', t('errors.title'), t('pin.biometricNotEnrolled'));
-      } else {
-        setError(t('pin.biometricFailed'));
-      }
-    } catch (err) {
-      console.error('Biometric auth error:', err);
-      setError(t('pin.biometricFailed'));
-      
-      // If this was for a transfer, show the error
+const handleBiometricAuth = async () => {
+  if (isAuthenticating) return;
+  setIsAuthenticating(true);
+  try {
+    const authResult = await LocalAuthentication.authenticateAsync({
+      promptMessage: t('pin.biometricPrompt'),
+      fallbackLabel: Platform.OS === 'ios' ? t('pin.usePinInstead') : undefined,
+      disableDeviceFallback: false,
+    });
+
+    if (authResult.success) {
+      dispatch(resetAttempts());
+
       if (route.params?.onSuccess) {
-        showToast('error', t('errors.title'), t('pin.biometricFailed'));
+        try {
+          await route.params.onSuccess('biometric_auth');
+          navigation.goBack();
+        } catch (error) {
+          console.error('Transfer failed after biometric auth:', error);
+          showToast('error', t('errors.title'), error.message || t('errors.default'));
+        }
+      } else {
+        navigation.navigate('Main');
       }
+    } else if (authResult.error === 'user_cancel') {
+      // Do nothing
+    } else if (authResult.error === 'not_enrolled') {
+      showToast('error', t('errors.title'), t('pin.biometricNotEnrolled'));
+    } else {
+      setError(t('pin.biometricFailed'));
     }
-  };
+  } catch (err) {
+    console.error('Biometric auth error:', err);
+    setError(t('pin.biometricFailed'));
+
+    if (route.params?.onSuccess) {
+      showToast('error', t('errors.title'), t('pin.biometricFailed'));
+    }
+  } finally {
+    setIsAuthenticating(false);
+  }
+};
+
 
   // Handle PIN input
   useEffect(() => {
@@ -351,14 +355,15 @@ const handleComplete = async (enteredPin) => {
 };
 
   // Get appropriate biometric icon
-  const getBiometricIcon = () => {
+    const getBiometricIcon = () => {
     if (biometricType === 'face') {
       return require('../../images/face-id.png');
     } else if (biometricType === 'fingerprint') {
       return require('../../images/fingerprint.png');
     }
-    return require('../../images/fingerprint.png'); // Default
+    return null;
   };
+
 
   const keypad = [
     ['1', '2', '3'],
@@ -394,7 +399,7 @@ const handleComplete = async (enteredPin) => {
               height: 100,
               alignSelf: 'center',
               marginVertical: 30,
-              borderRadius: 50,
+             
             }}
           />
 
@@ -417,18 +422,22 @@ const handleComplete = async (enteredPin) => {
                 {t('pin.accountLocked')}
               </Text>
               {biometricAvailable && (
-                <TouchableOpacity 
+                <TouchableOpacity
                   onPress={handleBiometricAuth}
-                  style={{ marginTop: 15 }}
+                  activeOpacity={0.7}
+                  accessibilityLabel="Unlock with biometric"
+                  style={{ marginTop: 15, alignItems: 'center' }}
                 >
                   <Image
                     source={getBiometricIcon()}
                     style={{ width: 50, height: 50 }}
+                    resizeMode="contain"
                   />
                   <Text style={{ color: '#0D1C6A', marginTop: 5 }}>
                     {t('pin.unlockWithBiometric')}
                   </Text>
                 </TouchableOpacity>
+
               )}
             </View>
           )}
@@ -437,7 +446,7 @@ const handleComplete = async (enteredPin) => {
         {!isLocked && (
           <View style={{ alignItems: 'center' }}>
             {keypad.map((row, rowIndex) => (
-              <View key={rowIndex} style={{ flexDirection: 'row', marginVertical: 10 }}>
+              <View key={rowIndex} style={{ flexDirection: 'row', marginVertical: 10, marginTop: 5, }}>
                 {row.map((item, index) => (
                   item ? (
                     <TouchableOpacity
@@ -473,7 +482,7 @@ const handleComplete = async (enteredPin) => {
             ))}
 
             <TouchableOpacity onPress={handleForgotPin} disabled={isLoading}>
-              <Text style={{ color: '#999', marginTop: 30 }}>
+              <Text style={{ color: '#999', marginTop: 50, marginBottom:50 }}>
                 {t('pin.forgotPinQuestion')}
               </Text>
             </TouchableOpacity>

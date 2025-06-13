@@ -77,47 +77,49 @@ const RequestPay = ({ navigation, route }) => {
   };
 
   const handlePay = async () => {
-    const amount = parseFloat(amountToPay);
-    if (!amount || amount <= 0) {
-      Alert.alert('Erreur', 'Veuillez entrer un montant valide.');
-      return;
-    }
+  const amount = parseFloat(amountToPay);
+  if (!amount || amount <= 0) {
+    Alert.alert('Erreur', 'Veuillez entrer un montant valide.');
+    return;
+  }
 
-    if (balance < amount) {
-      Alert.alert('Erreur', 'Solde insuffisant pour effectuer ce paiement.');
-      return;
-    }
+  if (balance < amount) {
+    Alert.alert('Erreur', 'Solde insuffisant pour effectuer ce paiement.');
+    return;
+  }
 
-    const payloadToSend = {
-      amount,
-      fundRequestId: requestFund.id,
-      description: requestFund.description,
-    };
-
-    // console.log('Payload sent to backend:', {
-    //   requestRecipientId: currentRecipientId,
-    //   payload: payloadToSend,
-    // });
-
-    try {
-      const res = await payFundRequest({
-        requestRecipientId: currentRecipientId,
-        payload: payloadToSend,
-      }).unwrap();
-
-      Alert.alert('Succès', 'Paiement effectué avec succès.');
-
-      setModalVisible(false);
-    } catch (error) {
-      console.error('Payment error:', error);
-      if (error?.data?.data?.errors) {
-        const messages = error.data.data.errors.map(e => e.message || JSON.stringify(e)).join('\n');
-        Alert.alert('Erreur', messages);
-      } else {
-        Alert.alert('Erreur', error?.data?.message || 'Le paiement a échoué.');
-      }
-    }
+  const payloadToSend = {
+    amount,
+    fundRequestId: requestFund.id,
+    description: requestFund.description,
   };
+
+  try {
+    const res = await payFundRequest({
+      requestRecipientId: currentRecipientId,
+      payload: payloadToSend,
+    }).unwrap();
+
+    Toast.show({
+      type: 'success',
+      text1: 'Succès',
+      text2: 'Paiement effectué avec succès.',
+      visibilityTime: 500,
+      onHide: () => {
+        navigation.goBack();
+      },
+    });
+
+    setModalVisible(false);
+  } catch (error) {
+    console.error('Payment error:', error);
+    Toast.show({
+      type: "error",
+      text1: "Error",
+      text2: error?.data?.message,
+    });
+  }
+};
 
 
   const statusStyle = getStatusLabel(requestFund.status);

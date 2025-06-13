@@ -207,7 +207,7 @@
     "bonus_description": "Vous recevrez 1,00 CAD et votre ami recevra 1,00 CAD lors de son premier transfert. Des exigences d’envoi minimales peuvent s’appliquer. Sous réserve de conditions.",
     "bonus_code": "Votre code:",
     "invite_friends": "INVITER VOS AMIS",
-    "balance": "Mon solde",
+    "balance": "Estimateur de paiement enlign",
     "history": "Historique",
     "pay_bills": "Payer les factures",
     "account": "Compte",
@@ -217,9 +217,9 @@
        "h2": "Votre tontine electronique",
     "favorite": "Contact favori",
     "request": "KYC vérification",
-    "sub": "Veuillez soumettre vos documents du KYC",
+    "sub": "Veuillez soumettre vos documents \n du KYC",
      "request1": "Demander un NIU",
-     "sub1": "Demandez a Sendo de créer ou télécharger mon NUI",
+     "sub1": "Demandez a Sendo de créer et \n télécharger mon NUI",
     "payment": "Paiement",
     "settings": "Paramètres",
     "support": "Support",
@@ -286,10 +286,11 @@
   "select_method": {
     "withdrawal_limit": "📊 Limite de retrait",
     "send_to_mobile": "Envoyer de l'argent sur vos comptes MOMO ou OM",
-    "transfer_to_mobile": "Transférer vers Mobile...",
+    "transfer_to_mobile": "Transfert vers un compte  Mobile Money",
     "transfer_fee": "2.5% frais de transfert",
     "send_to_friends": "Envoyez de l'argent à vos amis de Sendo",
-    "sendo_transfer": "Sendo - Sendo Tra...",
+    "sendo_transfer": "Sendo - Sendo",
+     "transfer": "Transfert",
     "no_fee": "0 % de frais"
   },
   "method": {
@@ -749,6 +750,7 @@
      "share": "Paiement demande partagé",
       "payment": "Paiement ",
       "tontine": "Paiement tontine ",
+       "fund": " Demande de fonds ",
       "wallet": "Transfert de portefeuille",
        "walletPayment": "Paiement du portefeuille",
     "mobileMoney": "Mobile Money",
@@ -819,8 +821,8 @@
   },
   "tabs": {
     "home": "Accueil",
-    "cards": "Cartes",
-    "history": "Historique",
+    "cards": "Mes Cartes",
+    "history": "Historiques",
     "settings": "Paramètres"
   },
   "screens": {
@@ -1128,7 +1130,7 @@
   },
    "selectRecipient": {
    "choose_recipients": "Choisissez les bénéficiaires",
-  "add_manually": "Ajouter manuellement",
+  "add_manually": "Synchronise vos contact",
   "search_contact": "Rechercher un contact...",
   "no_recipients_selected": "Aucun bénéficiaire sélectionné",
   "select_at_least_one": "Veuillez sélectionner au moins un bénéficiaire",
@@ -1376,7 +1378,45 @@
     "pubSection": "Section PUB",
     "recentTransactions": "Transactions récentes",
     "noTransactions": "Aucune transaction trouvée"
+  },
+  "kyc": {
+    "my_kyc": "Mes KYC",
+    "id_proof": "CNI (ou passeport ou permis de conduire)",
+    "address_proof": "Plan de Localisation",
+    "niu_proof": "NIU",
+    "approved": "Accepté",
+    "rejected": "Rejeté",
+    "pending": "En attente"
+  },
+  "recipientStatus": {
+  "paid": "Payé",
+  "pending": "En attente",
+  "rejected": "Rejeté",
+  "requester": "Demandeur",
+  "completed": "Terminé"
+},
+"resetPassword": {
+    "title": "Réinitialiser le mot de passe",
+    "descriptionEmail": "Réinitialiser le mot de passe pour {{email}}",
+    "descriptionPhone": "Réinitialiser le mot de passe pour {{phone}}",
+    "descriptionGeneric": "Entrez votre nouveau mot de passe ci-dessous",
+    "otpLabel": "Code OTP",
+    "otpPlaceholder": "Entrez le code OTP",
+    "newPasswordLabel": "Nouveau mot de passe",
+    "newPasswordPlaceholder": "Entrez le nouveau mot de passe",
+    "confirmPasswordLabel": "Confirmez le mot de passe",
+    "confirmPasswordPlaceholder": "Confirmez le nouveau mot de passe",
+    "button": "Réinitialiser le mot de passe",
+    "toast": {
+      "requiredFields": "Tous les champs sont requis",
+      "minLength": "Le mot de passe doit contenir au moins 8 caractères",
+      "mismatch": "Les mots de passe ne correspondent pas",
+      "success": "Le mot de passe a été réinitialisé avec succès",
+      "genericError": "Une erreur est survenue lors de la réinitialisation du mot de passe. Veuillez réessayer.",
+      "updateError": "Échec de la mise à jour du mot de passe. Veuillez réessayer."
+    }
   }
+
     
     
     

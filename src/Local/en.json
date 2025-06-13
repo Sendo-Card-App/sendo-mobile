@@ -209,7 +209,7 @@
 "bonus_description": "You will receive 1.00 CAD and your friend will receive 1.00 CAD when they make their first transfer. Minimum sending requirements may apply. Subject to conditions.",
 "bonus_code": "Your code:",
 "invite_friends": "INVITE YOUR FRIENDS",
-"balance": "My Balance",
+"balance": "Payment estimator",
 "history": "History",
 "pay_bills": "Pay Bills",
 "account": "Account",
@@ -285,7 +285,8 @@
 "transfer_to_mobile": "Transfer to Mobile...",
 "transfer_fee": "2.5% transfer fee",
 "send_to_friends": "Send money to your Sendo friends",
-"sendo_transfer": "Sendo - Sendo Trans...",
+"sendo_transfer": "Sendo - Sendo",
+"transfer": "Transfer",
 "no_fee": "0% fee"
 },
 "method": {
@@ -748,6 +749,7 @@
     "transfer": "Transfer",
     "share": "Shared payment",
      "wallet": "Wallet Transfer",
+     "fund": " Funds Request ",
       "payment": "Payment ",
       "tontine": "Tontine payment ",
     "mobileMoney": "Mobile Money",
@@ -817,8 +819,8 @@
   },
   "tabs": {
     "home": "Home",
-    "cards": "Cards",
-    "history": "History",
+    "cards": "My Cards",
+    "history": "Histories",
     "settings": "Settings"
   },
   "screens": {
@@ -1125,7 +1127,7 @@
   },
    "selectRecipient": {
    "choose_recipients": "Choose Recipients",
-  "add_manually": "Add Manually",
+  "add_manually": "Schronised my contact",
   "search_contact": "Search contact...",
   "no_recipients_selected": "No recipients selected",
   "select_at_least_one": "Please select at least one recipient",
@@ -1370,6 +1372,43 @@
     "pubSection": "Advertisement Section",
     "recentTransactions": "Recent Transactions",
     "noTransactions": "No transactions found"
+  },
+  "kyc": {
+    "my_kyc": "My KYC",
+    "id_proof": "ID (Passport, Driver's License, etc.)",
+    "address_proof": "Location Plan",
+    "niu_proof": "NIU",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "pending": "Pending"
+  },
+  "recipientStatus": {
+    "paid": "Paid",
+    "pending": "Pending",
+    "rejected": "Rejected",
+    "requester": "Requester",
+    "completed": "Completed"
+  },
+   "resetPassword": {
+    "title": "Reset Password",
+    "descriptionEmail": "Reset password for {{email}}",
+    "descriptionPhone": "Reset password for {{phone}}",
+    "descriptionGeneric": "Enter your new password below",
+    "otpLabel": "OTP Code",
+    "otpPlaceholder": "Enter OTP code",
+    "newPasswordLabel": "New Password",
+    "newPasswordPlaceholder": "Enter new password",
+    "confirmPasswordLabel": "Confirm Password",
+    "confirmPasswordPlaceholder": "Confirm new password",
+    "button": "Reset Password",
+    "toast": {
+      "requiredFields": "All fields are required",
+      "minLength": "Password must be at least 8 characters",
+      "mismatch": "Passwords do not match",
+      "success": "Password has been reset successfully",
+      "genericError": "An error occurred while resetting your password. Please try again.",
+      "updateError": "Failed to update password. Please try again."
+    }
   }
 
   

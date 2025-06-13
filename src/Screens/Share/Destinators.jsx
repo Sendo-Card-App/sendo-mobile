@@ -254,21 +254,39 @@ const filteredContacts = useMemo(() => {
           {t("destinators.friendsLabel")}
         </Text>
 
-        {isLoadingContacts ? (
-          <ActivityIndicator size="small" color="#7ddd7d" />
-        ) : synchronizedContacts.length === 0 ? (
-          <Text style={{ color: "#888", textAlign: "center", marginTop: 20 }}>
+      {isLoadingContacts ? (
+        <Loader size="small" color="#7ddd7d" />
+      ) : synchronizedContacts.length === 0 ? (
+        <View style={{ marginTop: 20, alignItems: "center" }}>
+          <Text style={{ color: "#888", textAlign: "center", marginBottom: 10 }}>
             {t("destinators.noFriends")}
           </Text>
-        ) : (
-          <FlatList
-            data={filteredContacts}
-            keyExtractor={(item) => item.id.toString()}
-            renderItem={renderFriendItem}
-            contentContainerStyle={{ paddingBottom: 20 }}
-            showsVerticalScrollIndicator={false}
-          />
-        )}
+          <TouchableOpacity
+            onPress={() => navigation.navigate("AddFavorite")}
+            style={{
+              alignSelf: "center",
+              marginTop: 10,
+              paddingHorizontal: 16,
+              paddingVertical: 8,
+              backgroundColor: "#2B2F38",
+              borderRadius: 8,
+            }}
+          >
+            <Text style={{ color: "#7ddd7d", fontWeight: "bold" }}>
+               {t("selectRecipient.add_manually")}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <FlatList
+          data={filteredContacts}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={renderFriendItem}
+          contentContainerStyle={{ paddingBottom: 20 }}
+          showsVerticalScrollIndicator={false}
+        />
+      )}
+
 
         <TouchableOpacity
           onPress={handleNext}

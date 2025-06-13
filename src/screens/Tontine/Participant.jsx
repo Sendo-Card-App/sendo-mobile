@@ -218,11 +218,28 @@ const Participant = () => {
         </Text>
 
         {isLoadingContacts ? (
-          <ActivityIndicator size="small" color="#7ddd7d" />
+          <Loader size="small" color="#7ddd7d" />
         ) : synchronizedContacts.length === 0 ? (
-          <Text style={{ color: "#888", textAlign: "center", marginTop: 20 }}>
-            {t("destinators.noFriends")}
-          </Text>
+          <View style={{ marginTop: 20, alignItems: "center" }}>
+            <Text style={{ color: "#888", textAlign: "center", marginBottom: 10 }}>
+              {t("destinators.noFriends")}
+            </Text>
+            <TouchableOpacity
+              onPress={() => navigation.navigate("AddFavorite")}
+              style={{
+                alignSelf: "center",
+                marginTop: 10,
+                paddingHorizontal: 16,
+                paddingVertical: 8,
+                backgroundColor: "#2B2F38",
+                borderRadius: 8,
+              }}
+            >
+              <Text style={{ color: "#7ddd7d", fontWeight: "bold" }}>
+                {t("selectRecipient.add_manually")}
+              </Text>
+            </TouchableOpacity>
+          </View>
         ) : (
           <FlatList
             data={filteredContacts}
@@ -232,6 +249,7 @@ const Participant = () => {
             showsVerticalScrollIndicator={false}
           />
         )}
+
 
         <TouchableOpacity
           onPress={handleNext}

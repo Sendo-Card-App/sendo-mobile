@@ -320,24 +320,6 @@ const DrawerComponent = ({ navigation }) => {
             />
           }
         >
-          <TouchableOpacity
-        className="flex-row gap-2 my-2 items-center mb-5"
-        onPress={handleBalancePress}
-      >
-        <AntDesign name="wallet" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
-        <View>
-          <Text className="font-bold text-gray-500">{t('drawer.balance')}</Text>
-        </View>
-      </TouchableOpacity>
-
-      {/* Add the PinVerificationModal */}
-      <PinVerificationModal
-        visible={showPinModal}
-        onClose={() => setShowPinModal(false)}
-        onVerify={handlePinVerify}
-        title=" Entrez votre code PIN"
-        subtitle="Veuillez entrer votre code PIN à 4 chiffres pour consulter votre solde"
-      />
 
           <TouchableOpacity
             className="flex-row gap-2 my-2 mb-5"
@@ -362,6 +344,65 @@ const DrawerComponent = ({ navigation }) => {
               <Text className="text-sm text-gray-500">
                 Gérez vos informations personnelles
               </Text>
+            </View>
+          </TouchableOpacity>
+             
+          
+           <TouchableOpacity
+                      className="flex-row gap-2 my-2 mb-5"
+                      onPress={() => navigation2.navigate("VerifyIdentity")}
+                    >
+                      <Feather name="file-text" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
+                      <View>
+                        <Text className="font-bold text-gray-500">{t('drawer.request')}</Text>
+                        <Text className="text-sm text-gray-500">
+                         {t('drawer.sub')}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                     <TouchableOpacity
+                      className="flex-row gap-2 my-2 mb-5"
+                      onPress={() => navigation2.navigate("NiuRequest")}
+                    >
+                      <Feather name="file-text" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
+                      <View>
+                        <Text className="font-bold text-gray-500">{t('drawer.request1')}</Text>
+                        <Text className="text-sm text-gray-500">
+                          {t('drawer.sub1')}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                 <TouchableOpacity
+                  className="flex-row gap-2 my-2 items-center mb-5"
+                    onPress={() => navigation2.navigate("PaymentSimulator")}
+                    >
+                      <AntDesign name="calculator" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
+                      <View>
+                        <Text className="font-bold text-gray-500">{t('drawer.balance')}</Text>
+                        <Text className="text-sm text-gray-500">
+                         Calculer et estimer le montant en USD, \n EUR et CAD
+                        </Text>
+                      </View>
+                   </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => navigation2.navigate("Payment")}
+            className="flex-row gap-2 my-2 mb-5"
+          >
+            <MaterialCommunityIcons name="bank-outline" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
+            <View>
+              <Text className="font-bold text-gray-500">{t('drawer.payment')}</Text>
+              <Text className="text-sm text-gray-500">
+                Gérez vos méthodes de paiement
+              </Text>
+            </View>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => navigation2.navigate("AddFavorite")}
+            className="flex-row gap-2 my-2 mb-5"
+          >
+            <MaterialCommunityIcons name="heart" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
+            <View>
+              <Text className="font-bold text-gray-500">{t('drawer.favorite')}</Text>
             </View>
           </TouchableOpacity>
            <TouchableOpacity
@@ -410,56 +451,6 @@ const DrawerComponent = ({ navigation }) => {
                   <Text className="text-sm text-gray-500">{t('drawer.h2')}</Text>
                 </View>
               </TouchableOpacity>
-
-
-
-           <TouchableOpacity
-                      className="flex-row gap-2 my-2 mb-5"
-                      onPress={() => navigation2.navigate("VerifyIdentity")}
-                    >
-                      <Feather name="file-text" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
-                      <View>
-                        <Text className="font-bold text-gray-500">{t('drawer.request')}</Text>
-                        <Text className="text-sm text-gray-500">
-                         {t('drawer.sub')}
-                        </Text>
-                      </View>
-                    </TouchableOpacity>
-                     <TouchableOpacity
-                      className="flex-row gap-2 my-2 mb-5"
-                      onPress={() => navigation2.navigate("NiuRequest")}
-                    >
-                      <Feather name="file-text" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
-                      <View>
-                        <Text className="font-bold text-gray-500">{t('drawer.request1')}</Text>
-                        <Text className="text-sm text-gray-500">
-                          {t('drawer.sub1')}
-                        </Text>
-                      </View>
-                    </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => navigation2.navigate("Payment")}
-            className="flex-row gap-2 my-2 mb-5"
-          >
-            <MaterialCommunityIcons name="bank-outline" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
-            <View>
-              <Text className="font-bold text-gray-500">{t('drawer.payment')}</Text>
-              <Text className="text-sm text-gray-500">
-                Gérez vos méthodes de paiement
-              </Text>
-            </View>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => navigation2.navigate("AddFavorite")}
-            className="flex-row gap-2 my-2 mb-5"
-          >
-            <MaterialCommunityIcons name="heart" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
-            <View>
-              <Text className="font-bold text-gray-500">{t('drawer.favorite')}</Text>
-            </View>
-          </TouchableOpacity>
-
           <TouchableOpacity
             className="flex-row gap-2 my-2 mb-5"
             onPress={() => navigation2.navigate("Settings")}

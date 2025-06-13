@@ -1,18 +1,26 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+} from 'react-native';
 import { useTranslation } from 'react-i18next';
 import {
   useUpdatePasswordMutation,
   useGetMyProfileQuery,
 } from '../../services/Auth/authAPI';
-import { sendPushNotification,
-   sendPushTokenToBackend, 
-   registerForPushNotificationsAsync  } from '../../services/notificationService';
+import {
+  sendPushNotification,
+  sendPushTokenToBackend,
+  registerForPushNotificationsAsync,
+} from '../../services/notificationService';
 import Toast from 'react-native-toast-message';
 import Loader from '../../components/Loader';
 import { Ionicons } from '@expo/vector-icons';
-import PinVerificationModal from '../../components/PinVerificationModal';
-import { useVerifyPasscodeMutation } from '../../services/Auth/authAPI';
 
 const ChangePassword = () => {
   const { t } = useTranslation();
@@ -23,11 +31,9 @@ const ChangePassword = () => {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [showPinModal, setShowPinModal] = useState(false);
 
-  const { data: profile, error: profileError } = useGetMyProfileQuery();
+  const { data: profile } = useGetMyProfileQuery();
   const [updatePassword] = useUpdatePasswordMutation();
-  const [verifyPasscode] = useVerifyPasscodeMutation();
 
   const getPasswordStrength = (password) => {
     let strength = 0;
@@ -61,7 +67,7 @@ const ChangePassword = () => {
               pushToken,
               "Password Updated",
               "Your password has been changed successfully",
-              "SUCCESS_MODIFY_PASSWORD"  
+              "SUCCESS_MODIFY_PASSWORD"
             );
           }
           await sendPushNotification(
@@ -91,36 +97,11 @@ const ChangePassword = () => {
       console.error('UpdatePassword error:', err);
       Toast.show({
         type: 'error',
-        text1: t('Wrong passwod'),
-        text2: t('The password enter your old passwod.'),
+        text1: t('Wrong password'),
+        text2: t('Please enter your correct old password.'),
       });
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const handlePinVerified = async (pin) => {
-    try {
-      const verificationResponse = await verifyPasscode(pin).unwrap();
-      
-      if (!verificationResponse) {
-        Toast.show({
-          type: 'error',
-          text1: 'Error',
-          text2: 'Invalid PIN'
-        });
-        return;
-      }
-      
-      await handlePasswordUpdate();
-    } catch (error) {
-      Toast.show({
-        type: 'error',
-        text1: 'PIN Error',
-        text2: error.data?.message || 'Failed to verify PIN'
-      });
-    } finally {
-      setShowPinModal(false);
     }
   };
 
@@ -164,171 +145,173 @@ const ChangePassword = () => {
       return;
     }
 
-    setShowPinModal(true);
+    handlePasswordUpdate();
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#fff', padding: 20 }}>
-      <Text
-        style={{
-          fontSize: 24,
-          fontWeight: 'bold',
-          textAlign: 'center',
-          marginBottom: 30,
-          color: '#333',
-        }}
+    <KeyboardAvoidingView
+      style={{ flex: 1, backgroundColor: '#fff' }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
+    >
+      <ScrollView
+        contentContainerStyle={{ padding: 20, flexGrow: 1, justifyContent: 'center' }}
+        keyboardShouldPersistTaps="handled"
       >
-        {t('change_password')}
-      </Text>
-
-      {/* Old Password */}
-      <View style={{ marginBottom: 20, position: 'relative' }}>
-        <TextInput
-          secureTextEntry={!showOldPassword}
-          placeholder={t('old_password')}
-          value={oldPassword}
-          onChangeText={setOldPassword}
-          placeholderTextColor="#999"
+        <Text
           style={{
-            height: 50,
-            borderColor: '#ddd',
-            borderWidth: 1,
-            borderRadius: 10,
-            paddingLeft: 15,
-            backgroundColor: '#f9f9f9',
+            fontSize: 24,
+            fontWeight: 'bold',
+            textAlign: 'center',
+            marginBottom: 30,
+            color: '#333',
           }}
-        />
-        <TouchableOpacity
-          onPress={() => setShowOldPassword(v => !v)}
-          style={{ position: 'absolute', right: 15, top: 15 }}
         >
-          <Ionicons
-            name={showOldPassword ? 'eye-off' : 'eye'}
-            size={20}
-            color="#666"
-          />
-        </TouchableOpacity>
-      </View>
+          {t('change_password')}
+        </Text>
 
-      {/* New Password */}
-      <View style={{ marginBottom: 10, position: 'relative' }}>
-        <TextInput
-          secureTextEntry={!showNewPassword}
-          placeholder={t('new_password')}
-          value={newPassword}
-          onChangeText={setNewPassword}
-          placeholderTextColor="#999"
-          style={{
-            height: 50,
-            borderColor: '#ddd',
-            borderWidth: 1,
-            borderRadius: 10,
-            paddingLeft: 15,
-            backgroundColor: '#f9f9f9',
-          }}
-        />
-        <TouchableOpacity
-          onPress={() => setShowNewPassword(v => !v)}
-          style={{ position: 'absolute', right: 15, top: 15 }}
-        >
-          <Ionicons
-            name={showNewPassword ? 'eye-off' : 'eye'}
-            size={20}
-            color="#666"
-          />
-        </TouchableOpacity>
-      </View>
-
-      {/* Password Strength Bar */}
-      {newPassword.length > 0 && (
-        <View style={{ marginBottom: 20 }}>
-          <View
+        {/* Old Password */}
+        <View style={{ marginBottom: 20, position: 'relative' }}>
+          <TextInput
+            secureTextEntry={!showOldPassword}
+            placeholder={t('old_password')}
+            value={oldPassword}
+            onChangeText={setOldPassword}
+            placeholderTextColor="#999"
             style={{
-              height: 8,
-              width: '100%',
-              backgroundColor: '#eee',
+              height: 50,
+              borderColor: '#ddd',
+              borderWidth: 1,
               borderRadius: 10,
-              overflow: 'hidden',
+              paddingLeft: 15,
+              backgroundColor: '#f9f9f9',
             }}
+          />
+          <TouchableOpacity
+            onPress={() => setShowOldPassword(v => !v)}
+            style={{ position: 'absolute', right: 15, top: 15 }}
           >
+            <Ionicons
+              name={showOldPassword ? 'eye-off' : 'eye'}
+              size={20}
+              color="#666"
+            />
+          </TouchableOpacity>
+        </View>
+
+        {/* New Password */}
+        <View style={{ marginBottom: 10, position: 'relative' }}>
+          <TextInput
+            secureTextEntry={!showNewPassword}
+            placeholder={t('new_password')}
+            value={newPassword}
+            onChangeText={setNewPassword}
+            placeholderTextColor="#999"
+            style={{
+              height: 50,
+              borderColor: '#ddd',
+              borderWidth: 1,
+              borderRadius: 10,
+              paddingLeft: 15,
+              backgroundColor: '#f9f9f9',
+            }}
+          />
+          <TouchableOpacity
+            onPress={() => setShowNewPassword(v => !v)}
+            style={{ position: 'absolute', right: 15, top: 15 }}
+          >
+            <Ionicons
+              name={showNewPassword ? 'eye-off' : 'eye'}
+              size={20}
+              color="#666"
+            />
+          </TouchableOpacity>
+        </View>
+
+        {/* Password Strength */}
+        {newPassword.length > 0 && (
+          <View style={{ marginBottom: 20 }}>
             <View
               style={{
-                height: '100%',
-                width: passwordStrength.width,
-                backgroundColor: passwordStrength.color,
+                height: 8,
+                width: '100%',
+                backgroundColor: '#eee',
+                borderRadius: 10,
+                overflow: 'hidden',
               }}
-            />
+            >
+              <View
+                style={{
+                  height: '100%',
+                  width: passwordStrength.width,
+                  backgroundColor: passwordStrength.color,
+                }}
+              />
+            </View>
+            <Text style={{ marginTop: 5, color: passwordStrength.color }}>
+              {passwordStrength.label}
+            </Text>
           </View>
-          <Text style={{ marginTop: 5, color: passwordStrength.color }}>
-            {passwordStrength.label}
-          </Text>
-        </View>
-      )}
-
-      {/* Confirm Password */}
-      <View style={{ marginBottom: 20, position: 'relative' }}>
-        <TextInput
-          secureTextEntry={!showConfirmPassword}
-          placeholder={t('confirm_new_password')}
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-          placeholderTextColor="#999"
-          style={{
-            height: 50,
-            borderColor: '#ddd',
-            borderWidth: 1,
-            borderRadius: 10,
-            paddingLeft: 15,
-            backgroundColor: '#f9f9f9',
-          }}
-        />
-        <TouchableOpacity
-          onPress={() => setShowConfirmPassword(v => !v)}
-          style={{ position: 'absolute', right: 15, top: 15 }}
-        >
-          <Ionicons
-            name={showConfirmPassword ? 'eye-off' : 'eye'}
-            size={20}
-            color="#666"
-          />
-        </TouchableOpacity>
-      </View>
-
-      {/* Submit Button */}
-      <TouchableOpacity
-        onPress={handleSubmit}
-        disabled={isLoading}
-        style={{
-          backgroundColor: '#4CAF50',
-          paddingVertical: 15,
-          borderRadius: 10,
-          alignItems: 'center',
-          marginTop: 20,
-          elevation: 3,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.2,
-          shadowRadius: 3,
-        }}
-      >
-        {isLoading ? (
-          <Loader color="#fff" />
-        ) : (
-          <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 18 }}>
-            {t('submit')}
-          </Text>
         )}
-      </TouchableOpacity>
-      <PinVerificationModal
-        visible={showPinModal}
-        onClose={() => setShowPinModal(false)}
-        onVerify={handlePinVerified}
-        title="Confirm Password Change"
-        subtitle="Enter your PIN to confirm the password change"
-      />
 
-      <Toast />
-    </View>
+        {/* Confirm Password */}
+        <View style={{ marginBottom: 20, position: 'relative' }}>
+          <TextInput
+            secureTextEntry={!showConfirmPassword}
+            placeholder={t('confirm_new_password')}
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            placeholderTextColor="#999"
+            style={{
+              height: 50,
+              borderColor: '#ddd',
+              borderWidth: 1,
+              borderRadius: 10,
+              paddingLeft: 15,
+              backgroundColor: '#f9f9f9',
+            }}
+          />
+          <TouchableOpacity
+            onPress={() => setShowConfirmPassword(v => !v)}
+            style={{ position: 'absolute', right: 15, top: 15 }}
+          >
+            <Ionicons
+              name={showConfirmPassword ? 'eye-off' : 'eye'}
+              size={20}
+              color="#666"
+            />
+          </TouchableOpacity>
+        </View>
+
+        {/* Submit */}
+        <TouchableOpacity
+          onPress={handleSubmit}
+          disabled={isLoading}
+          style={{
+            backgroundColor: '#4CAF50',
+            paddingVertical: 15,
+            borderRadius: 10,
+            alignItems: 'center',
+            marginTop: 20,
+            elevation: 3,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.2,
+            shadowRadius: 3,
+          }}
+        >
+          {isLoading ? (
+            <Loader color="#fff" />
+          ) : (
+            <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 18 }}>
+              {t('submit')}
+            </Text>
+          )}
+        </TouchableOpacity>
+
+        <Toast />
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 

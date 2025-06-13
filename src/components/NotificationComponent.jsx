@@ -1,261 +1,151 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  TouchableOpacity, 
-  StyleSheet, 
-  Modal, 
-  FlatList, 
-  TouchableWithoutFeedback,
-  ActivityIndicator
+import React from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  FlatList,
+  ActivityIndicator,
+  StyleSheet,
 } from 'react-native';
-import { useGetNotificationsQuery } from '../services/Notification/notificationApi';
-import { useGetUserProfileQuery } from "../services/Auth/authAPI";
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import { useGetNotificationsQuery, useMarkAsReadMutation } from '../services/Notification/notificationApi';
+import { useGetUserProfileQuery } from '../services/Auth/authAPI';
+import { MaterialIcons } from '@expo/vector-icons';
+import { skipToken } from '@reduxjs/toolkit/query/react';
+import { TypesNotification } from '../utils/constants';
 
-const NotificationComponent = () => {
-  const [modalVisible, setModalVisible] = useState(false);
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
-  
-  // Get user profile first
-  const { data: userProfile } = useGetUserProfileQuery();
-  const userId = userProfile?.data?.id;
-
-  // Get notifications with pagination
-  const { 
-    data: notificationsResponse, 
-    isLoading, 
-    isError,
-    refetch,
-    error: notificationError
-  } = useGetNotificationsQuery(
-    { 
-      userId,
-      page,
-      limit
-      // Add other filters as needed:
-      // type: 'INFORMATION',
-      // status: 'SENDED'
-    }, 
-    {
-      skip: !userId
-    }
-  );
-
-  const notifications = notificationsResponse?.data || [];
-  console.log(notifications)
-  const totalNotifications = notificationsResponse?.total || 0;
-
-  // Debug logs
-  useEffect(() => {
-    if (notificationError) {
-      console.log('Notification error:', notificationError);
-    }
-  }, [notificationError]);
-
-  const handleLoadMore = () => {
-    if (notifications.length < totalNotifications) {
-      setPage(prev => prev + 1);
-    }
+export const getIconName = (type) => {
+  const map = {
+    [TypesNotification.SUCCESS_ACCOUNT_VERIFIED]: 'check-circle',
+    [TypesNotification.INFORMATION]: 'info',
+    [TypesNotification.MARKETING]: 'campaign',
+    [TypesNotification.SUCCESS_KYC_VERIFIED]: 'verified',
+    [TypesNotification.SUCCESS_TRANSFER_FUNDS]: 'swap-horiz',
+    [TypesNotification.SUCCESS_DEPOSIT_WALLET]: 'account-balance-wallet',
+    [TypesNotification.SUCCESS_DEPOSIT_CARD]: 'credit-card',
+    [TypesNotification.PAYMENT_FAILED]: 'error',
+    [TypesNotification.SUCCESS_ADD_SECOND_NUMBER]: 'add-call',
+    [TypesNotification.SUCCESS_VERIFY_SECOND_NUMBER]: 'verified-user',
+    [TypesNotification.SUCCESS_CREATING_CARD]: 'credit-card',
+    [TypesNotification.ERROR]: 'warning',
+    [TypesNotification.SUCCESS_MODIFY_PASSWORD]: 'lock-open',
+    [TypesNotification.SUCCESS_MODIFY_ACCOUNT_INFORMATIONS]: 'manage-accounts',
+    [TypesNotification.DELETE_ACCOUNT]: 'delete',
+    [TypesNotification.ENABLED_ACCOUNT]: 'toggle-on',
+    [TypesNotification.DISABLED_ACCOUNT]: 'toggle-off',
+    [TypesNotification.PROCESSED_REQUEST]: 'task-alt',
+    [TypesNotification.MESSAGE]: 'message',
+    [TypesNotification.FUND_REQUEST]: 'request-page',
+    [TypesNotification.SHARED_EXPENSE]: 'group',
+    [TypesNotification.TONTINE]: 'savings',
   };
 
-  const getIconName = (type) => {
-    const iconMap = {
-      SUCCESS_ACCOUNT_VERIFIED: 'check-circle',
-      INFORMATION: 'info',
-      MARKETING: 'campaign',
-      SUCCESS_KYC_VERIFIED: 'verified',
-      SUCCESS_TRANSFER_FUNDS: 'swap-horiz',
-      SUCCESS_DEPOSIT_CARD: 'credit-card',
-      PAYMENT_FAILED: 'error',
-      ERROR: 'warning',
-      // Add more mappings as needed
-    };
-    return iconMap[type] || 'notifications';
+  return map[type] || 'notifications';
+};
+
+
+const NotificationComponent = () => {
+  const { data: userProfile, isLoading: profileLoading } = useGetUserProfileQuery();
+  const userId = userProfile?.data?.id;
+
+  const {
+    data: notificationsResponse,
+    isLoading: notificationsLoading,
+    refetch,
+  } = useGetNotificationsQuery(userId ? { userId } : skipToken);
+
+  const [markAsRead] = useMarkAsReadMutation();
+
+  if (profileLoading || notificationsLoading) {
+    return (
+      <View style={styles.loading}>
+        <ActivityIndicator size="large" color="#0D1C6A" />
+      </View>
+    );
+  }
+
+  const allNotifications = notificationsResponse?.data?.items || [];
+  const unreadNotifications = allNotifications.filter((n) => !n.readed);
+
+  const handleMarkRead = async (notification) => {
+    if (notification.readed) return;
+
+    try {
+      await markAsRead(notification.id).unwrap();
+      refetch(); // Refresh the list after marking as read
+    } catch (err) {
+      console.warn('Failed to mark notification as read', err);
+    }
   };
 
   const renderItem = ({ item }) => (
-    <TouchableOpacity 
-      style={[styles.notificationItem, !item.isRead && styles.unread]}
-      onPress={() => handleNotificationPress(item)}
+    <TouchableOpacity
+      onPress={() => handleMarkRead(item)}
+      style={[styles.notificationItem, { backgroundColor: '#EBF4FF' }]}
     >
       <View style={styles.iconContainer}>
-        <Icon 
-          name={getIconName(item.type)} 
-          size={24} 
-          color={item.isRead ? '#888' : '#0D1C6A'} 
-        />
+        <MaterialIcons name={getIconName(item.type)} size={24} color="green" />
       </View>
-      <View style={styles.content}>
-        <Text style={[styles.title, !item.isRead && styles.boldTitle]}>
-          {item.title}
-        </Text>
-        <Text style={styles.body}>{item.body}</Text>
-        <Text style={styles.time}>
-          {new Date(item.createdAt).toLocaleString()}
-        </Text>
+      <View style={{ flex: 1 }}>
+        <Text style={[styles.title, { fontWeight: '700', color: 'green' }]}>{item.title}</Text>
+        <Text style={styles.body}>{item.content}</Text>
+        <Text style={styles.date}>{new Date(item.createdAt).toLocaleString()}</Text>
       </View>
     </TouchableOpacity>
   );
 
-  const renderFooter = () => {
-    if (isLoading) {
-      return <ActivityIndicator size="small" color="#0000ff" />;
-    }
-    return null;
-  };
-
-  if (isLoading && page === 1) return <ActivityIndicator size="large" />;
-  if (isError) return <Text>Error loading notifications</Text>;
+  if (unreadNotifications.length === 0) {
+    return (
+      <View style={styles.emptyContainer}>
+        <MaterialIcons name="notifications-off" size={40} color="#ccc" />
+        <Text style={styles.emptyText}>No new notifications</Text>
+      </View>
+    );
+  }
 
   return (
-    <>
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
-          <View style={styles.modalOverlay} />
-        </TouchableWithoutFeedback>
-
-        <View style={styles.modalContainer}>
-          {notifications.length === 0 ? (
-            <View style={styles.emptyContainer}>
-              <Icon name="notifications-off" size={40} color="#ccc" />
-              <Text style={styles.emptyText}>No notifications yet</Text>
-            </View>
-          ) : (
-            <FlatList
-              data={notifications}
-              renderItem={renderItem}
-              keyExtractor={item => item.id}
-              contentContainerStyle={styles.listContent}
-              refreshing={isLoading}
-              onRefresh={() => {
-                setPage(1);
-                refetch();
-              }}
-              onEndReached={handleLoadMore}
-              onEndReachedThreshold={0.5}
-              ListFooterComponent={renderFooter}
-            />
-          )}
-        </View>
-      </Modal>
-    </>
+    <FlatList
+      data={unreadNotifications}
+      renderItem={renderItem}
+      keyExtractor={(item) => item.id.toString()}
+      contentContainerStyle={{ paddingBottom: 20 }}
+    />
   );
 };
 
 const styles = StyleSheet.create({
-  // Bell Icon and Badge Styles
-  bellContainer: {
-    position: 'relative',
-    padding: 10,
-  },
-  badge: {
-    position: 'absolute',
-    top: 5,
-    right: 5,
-    backgroundColor: 'red',
-    borderRadius: 10,
-    minWidth: 20,
-    height: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 4,
-  },
-  badgeText: {
-    color: 'white',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-
-  // Modal Styles
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  modalContainer: {
-    position: 'absolute',
-    bottom: 0,
-    width: '100%',
-    height: '70%',
-    backgroundColor: 'white',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  headerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 20,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  clearText: {
-    color: '#0D1C6A',
-    fontSize: 16,
-  },
-  listContent: {
-    paddingBottom: 20,
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  emptyText: {
-    fontSize: 16,
-    color: '#888',
-    marginTop: 10,
-    textAlign: 'center',
-  },
-
-  // Notification Item Styles
   notificationItem: {
     flexDirection: 'row',
-    padding: 15,
+    padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  unread: {
-    backgroundColor: '#f5f9ff',
+    borderColor: '#ddd',
   },
   iconContainer: {
-    marginRight: 15,
-  },
-  content: {
-    flex: 1,
+    marginRight: 16,
   },
   title: {
     fontSize: 16,
-    marginBottom: 5,
-    color: '#555',
-  },
-  boldTitle: {
-    fontWeight: 'bold',
-    color: '#000',
   },
   body: {
     fontSize: 14,
     color: '#666',
-    marginBottom: 5,
   },
-  time: {
+  date: {
     fontSize: 12,
     color: '#999',
+    marginTop: 4,
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    marginTop: 32,
+  },
+  emptyText: {
+    color: '#999',
+    marginTop: 8,
+  },
+  loading: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 

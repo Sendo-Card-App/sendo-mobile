@@ -17,12 +17,20 @@ const AddSecondPhoneModal = ({
   const [otpSent, setOtpSent] = useState(false);
    const { t } = useTranslation();
   const [localLoading, setLocalLoading] = useState(false);
-  const [countries, setCountries] = useState([]);
-  const [selectedCountry, setSelectedCountry] = useState({
+ const countries = [
+  {
     name: 'Cameroon',
     code: '+237',
     flag: 'https://flagcdn.com/w320/cm.png'
-  });
+  },
+  {
+    name: 'Canada',
+    code: '+1',
+    flag: 'https://flagcdn.com/w320/ca.png'
+  }
+];
+
+const [selectedCountry, setSelectedCountry] = useState(countries[0]);
   const [showCountryPicker, setShowCountryPicker] = useState(false);
 
   useEffect(() => {
@@ -40,7 +48,7 @@ const AddSecondPhoneModal = ({
       })).filter(c => c.code).sort((a, b) => a.name.localeCompare(b.name));
       setCountries(sorted);
     } catch (e) {
-      Toast.show({ type: 'error', text1: 'Failed to load countries' });
+      // Toast.show({ type: 'error', text1: 'Failed to load countries' });
     }
   };
 
