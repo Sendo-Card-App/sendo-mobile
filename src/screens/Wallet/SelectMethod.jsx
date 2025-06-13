@@ -7,15 +7,28 @@ import {
   Modal,
   SafeAreaView,
   StatusBar,
+  Pressable,
+  Dimensions,
+  Platform,
 } from 'react-native';
-import { AntDesign } from '@expo/vector-icons';
+import { AntDesign, Entypo } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import om from '../../images/om.png';
 import mtn from '../../images/mtn.png';
+import HomeImage2 from '../../images/HomeImage2.png';
+import TopLogo from '../../images/TopLogo.png'; 
+
+const { height } = Dimensions.get('window');
 
 const SelectMethod = ({ navigation }) => {
   const { t } = useTranslation();
   const [showServiceModal, setShowServiceModal] = useState(false);
+  const [isClickedOne, setisClickedOne] = useState(false);
+  const [isClickedTwo, setisClickedTwo] = useState(false);
+  const [isClickedThree, setisClickedThree] = useState(false);
+  const [isClickedFour, setisClickedFour] = useState(false);
+
+  const platformFont = Platform.OS === 'ios' ? 'Arial' : 'Roboto';
 
   const handleServiceSelect = (service) => {
     setShowServiceModal(false);
@@ -26,72 +39,153 @@ const SelectMethod = ({ navigation }) => {
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff', paddingTop: StatusBar.currentHeight || 20 }}>
       <View style={{ flex: 1, paddingHorizontal: 20 }}>
 
-        {/* Header row */}
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
+        {/* First row of boxes */}
+        <View style={{ flexDirection: 'row', gap: 10, height: height / 4.5, marginBottom: 20 }}>
+
+         {/* Box 2 - Transfert d'argent */}
+          <Pressable
+            style={{
+              flex: 1,
+              backgroundColor: '#fff',
+              borderRadius: 24,
+              padding: 10,
+              borderWidth: 2,
+              borderColor: isClickedTwo ? '#0D1C6A' : '#E0E0E0',
+            }}
+            onPress={() => {
+              setisClickedTwo(true);
+              setisClickedOne(false);
+              navigation.navigate("BeneficiaryScreen");
+            }}
+          >
+            <View style={{
+              position: 'absolute',
+              top: 10,
+              left: 10,
+              backgroundColor: '#fff',
+              borderRadius: 999,
+              borderColor: isClickedOne ? '#0D1C6A' : '#E0E0E0', 
+            }}>
+              <Entypo name="circle" size={24} color="lightgray" />
+            </View>
+            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'flex-end' }}>
+              <Image
+                source={HomeImage2}
+                style={{ width: '100%', height: height / 7, resizeMode: 'contain' }}
+              />
+              <View style={{ paddingVertical: 8 }}>
+                <Text style={{
+                  fontSize: 16,
+                  fontFamily: platformFont,
+                  textAlign: 'center',
+                  color: '#7ddd7d',
+                  fontStyle: 'italic',
+                  fontWeight: '800',
+                }}>Transfert CA-CM</Text>
+                <Text style={{
+                  fontSize: 16,
+                  fontFamily: platformFont,
+                  textAlign: 'center',
+                  fontStyle: 'italic',
+                  fontWeight: '800',
+                }}>D'argent</Text>
+              </View>
+            </View>
+          </Pressable>
+         {/* Box 1 - Carte Virtuelle */}
+          <Pressable
+            style={{
+              flex: 1,
+              backgroundColor: '#fff',
+              borderRadius: 24,
+              padding: 10,
+              borderWidth: 2,
+              borderColor: isClickedOne ? '#0D1C6A' : '#E0E0E0',
+            }}
+            onPress={() => {
+              setisClickedOne(true);
+              setisClickedTwo(false);
+              navigation.navigate("WalletTransfer");
+            }}
+          >
+            <View style={{
+              position: 'absolute',
+              top: 10,
+              left: 10,
+              backgroundColor: isClickedOne ? '#181e25' : 'transparent',
+              borderRadius: 999,
+            }}>
+              <Entypo name="circle" size={24} color="lightgray" />
+            </View>
+            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'flex-end' }}>
+              <Image
+                source={TopLogo}
+                style={{ width: '90', height: "80", resizeMode: 'contain' }}
+              />
+              <View style={{ paddingVertical: 8 }}>
+                <Text style={{
+                  fontSize: 16,
+                  fontFamily: platformFont,
+                  textAlign: 'center',
+                  color: '#7ddd7d',
+                  fontStyle: 'italic',
+                  fontWeight: '800',
+                }}>{t('select_method.sendo_transfer')}</Text>
+                <Text style={{
+                  fontSize: 16,
+                  fontFamily: platformFont,
+                  textAlign: 'center',
+                  fontStyle: 'italic',
+                  fontWeight: '800',
+                }}>{t('select_method.transfer')}</Text>
+              </View>
+            </View>
+          </Pressable>
           
-          </TouchableOpacity>
-          <TouchableOpacity style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            marginTop: 10,
-            marginBottom: 10,
-            backgroundColor: '#F1F1F1',
-            paddingHorizontal: 10,
-            paddingVertical: 5,
-            borderRadius: 20,
-          }}>
-            <Text style={{ fontSize: 12, color: '#0D1C6A' }}>{t('select_method.withdrawal_limit')}</Text>
-          </TouchableOpacity>
         </View>
 
-        {/* Section 1 */}
-        <Text style={{ fontSize: 16, fontWeight: '500', marginBottom: 10 }}>
-          {t('select_method.send_to_mobile')}
-        </Text>
-
-        <TouchableOpacity
-          onPress={() => setShowServiceModal(true)}
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            backgroundColor: '#F1F1F1',
-            borderRadius: 10,
-            padding: 15,
-            marginBottom: 20,
-          }}
-        >
-          <AntDesign name="mobile1" size={40} color="#999" style={{ marginRight: 5 }} />
-          <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#0D1C6A', marginLeft: 10, flex: 1 }}>
-            {t('select_method.transfer_to_mobile')}
-          </Text>
-          <Text style={{ fontSize: 12, color: '#999' }}>{t('select_method.transfer_fee')}</Text>
-        </TouchableOpacity>
-
-        {/* Section 2 */}
-        <Text style={{ fontSize: 16, fontWeight: '500', marginBottom: 10 }}>
-          {t('select_method.send_to_friends')}
-        </Text>
-
-        <TouchableOpacity
-          onPress={() => navigation.navigate('WalletTransfer')}
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            backgroundColor: '#F1F1F1',
-            borderRadius: 10,
-            padding: 15,
-          }}
-        >
-          <Image source={require('../../images/LogoSendo.png')} style={{ width: 40, height: 40, borderRadius: 20 }} />
-          <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#0D1C6A', marginLeft: 10, flex: 1 }}>
-            {t('select_method.sendo_transfer')}
-          </Text>
-          <Text style={{ fontSize: 12, color: '#999' }}>{t('select_method.no_fee')}</Text>
-        </TouchableOpacity>
+        {/* Second row of boxes */}
+        <View style={{ flexDirection: 'row', gap: 10, height: height / 4.5 }}>
+          {/* Transfer to Mobile */}
+          <Pressable
+            style={{
+              flex: 1,
+              backgroundColor: '#fff',
+              borderRadius: 24,
+              padding: 10,
+              borderWidth: 2,
+              borderColor: isClickedThree ? '#0D1C6A' : '#E0E0E0',
+            }}
+            onPress={() => {
+              setisClickedOne(false);
+              setisClickedTwo(false);
+              setisClickedThree(true);
+              setisClickedFour(false);
+              setShowServiceModal(true);
+            }}
+          >
+            <View style={{
+              position: 'absolute',
+              top: 10,
+              left: 10,
+              backgroundColor: isClickedThree ? '#181e25' : 'transparent',
+              borderRadius: 999,
+            }}>
+              <Entypo name="circle" size={24} color="lightgray" />
+            </View>
+            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+              <AntDesign name="mobile1" size={40} color="#999" />
+              <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#0D1C6A', marginTop: 10, textAlign: 'center' }}>
+                {t('select_method.transfer_to_mobile')}
+              </Text>
+              <Text style={{ fontSize: 12, color: '#999' }}>{t('select_method.transfer_fee')}</Text>
+            </View>
+          </Pressable>
+         
+        </View>
       </View>
 
-      {/* Modal for service selection */}
+      {/* Modal */}
       <Modal
         visible={showServiceModal}
         animationType="fade"
@@ -120,7 +214,6 @@ const SelectMethod = ({ navigation }) => {
               {t('select_service')}
             </Text>
 
-            {/* Service Buttons in Square Format */}
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%' }}>
               <TouchableOpacity
                 onPress={() => handleServiceSelect('OM')}

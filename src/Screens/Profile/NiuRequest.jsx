@@ -238,6 +238,7 @@ const NiuRequest = () => {
             onPress={() => setTermsAccepted(!termsAccepted)}
             containerStyle={{ backgroundColor: 'transparent', borderWidth: 0 }}
             textStyle={{ color: 'black' }}
+            checkedColor="#7ddd7d"
           />
             <CheckBox
               title={`${t('niu.request.paymentAccept')} ${feeAmount.toLocaleString()} FCFA`}
@@ -256,7 +257,7 @@ const NiuRequest = () => {
             className="bg-green-600 mx-5 mb-5 rounded-lg py-4 items-center"
             disabled={isSubmitting}
           >
-            <Text className="text-white text-lg font-semibold">{t('niu.request.payNow')}</Text>
+            <Text className="text-white text-lg font-semibold">{t('niu.request.payButton')}</Text>
           </TouchableOpacity>
         )}
       </ScrollView>

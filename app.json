@@ -4,7 +4,7 @@
     "slug": "sendo",
     "version": "1.0.1",
     "orientation": "portrait",
-    "icon": "./assets/logo.jpg",
+    "icon": "./assets/icon.png", 
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
@@ -23,17 +23,17 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/logo.jpg",
+        "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#181e25"
       },
       "permissions": [
-        "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO",
-        "android.permission.INTERNET",
-        "USE_BIOMETRIC", "USE_FINGERPRINT"
+        "CAMERA",
+        "RECORD_AUDIO",
+        "INTERNET",
+        "USE_BIOMETRIC",
+        "USE_FINGERPRINT"
       ],
       "package": "com.sfe.sendo",
-      "allowCleartextTraffic": true,
       "useNextNotificationsApi": true,
       "googleServicesFile": "./google-services.json"
     },
@@ -58,8 +58,8 @@
     ],
     "extra": {
       "eas": {
-       "API_URL": "http://api.sf-e.ca/api",
-       "projectId": "08a59933-10e3-45bc-b064-54b97ea7eca9"
+        "API_URL": "http://api.sf-e.ca/api",
+        "projectId": "08a59933-10e3-45bc-b064-54b97ea7eca9"
       }
     }
   }

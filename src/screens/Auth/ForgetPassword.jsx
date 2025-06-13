@@ -27,15 +27,14 @@ const ForgetPassword = () => {
     setIsLoading(true);
     try {
       const response = await forgotPassword({ email }).unwrap();
-      
+      //console.log('Response forget password:', JSON.stringify(response, null, 2));
       Toast.show({
         type: 'success',
         text1: 'Succès',
         text2: response?.message,
       });
       
-      // Navigate to OTP screen or back to sign in based on your flow
-      navigation.navigate('SignIn');
+     navigation.navigate('ResetPassword', { response });
       
     } catch (error) {
         //console.log("Forgot password error:", JSON.stringify(error, null, 2));

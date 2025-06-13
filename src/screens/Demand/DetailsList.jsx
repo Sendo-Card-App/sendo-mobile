@@ -38,7 +38,7 @@ const DetailsList = () => {
           colorBg: '#FFF3CD',
           colorText: '#856404',
         };
-      case 'PAID':
+      case 'FULLY_FUNDED':
         return {
           label: t('detailsList.status.paid'),
           colorBg: '#D4EDDA',

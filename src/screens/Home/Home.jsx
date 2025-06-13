@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   Image,
   ScrollView,
+  BackHandler,
    Dimensions, Platform,StatusBar
 } from "react-native";
 import { Ionicons, AntDesign } from "@expo/vector-icons";
@@ -13,11 +14,13 @@ import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { useGetBalanceQuery } from "../../services/WalletApi/walletApi";
 import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
 import { useGetTransactionHistoryQuery } from "../../services/WalletApi/walletApi";
+import { useGetNotificationsQuery } from '../../services/Notification/notificationApi';
 import { useTranslation } from 'react-i18next';
 import Toast from 'react-native-toast-message';
 const TopLogo = require("../../images/TopLogo.png");
 import ButtomLogo from "../../images/ButtomLogo.png";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import NotificationBell from '../../components/NotificationBell';
 
 
 const { width, height } = Dimensions.get('window');
@@ -58,7 +61,15 @@ const HomeScreen = () => {
     } = useGetBalanceQuery(userId, { skip: !userId });
   
     const isLoading = isProfileLoading || isBalanceLoading;
-  
+    const { data: notificationsResponse, isLoadingNotification } = useGetNotificationsQuery({ userId });
+
+  // Extract notifications array safely
+  const notifications = notificationsResponse?.data?.items || [];
+
+  // Count unread notifications where `readed` is false
+  const unreadCount = notifications.filter(notification => !notification.readed).length;
+
+
     // Refetch profile and balance when screen is focused
     useFocusEffect(
       useCallback(() => {
@@ -68,6 +79,7 @@ const HomeScreen = () => {
         }
       }, [userId])
     );
+    
     useEffect(() => {
       const checkTerms = async () => {
         const value = await AsyncStorage.getItem("hasAcceptedTerms");
@@ -75,12 +87,26 @@ const HomeScreen = () => {
       };
       checkTerms();
     }, []);
+     
+     useEffect(() => {
+    const backAction = () => {
+      BackHandler.exitApp();
+      return true;
+    };
+
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      backAction
+    );
+
+    return () => backHandler.remove(); 
+  }, []);
 
     useEffect(() => {
       if (balanceError) {
         let errorMessage = 'An unknown error occurred';
-        if (balanceError.status === 401) errorMessage = 'Authentication required (missing passcode)';
-        else if (balanceError.status === 403) errorMessage = 'Missing KYC documents';
+       
+        if (balanceError.status === 403) errorMessage = 'Missing KYC documents';
         else if (balanceError.status === 404) errorMessage = 'Wallet not found';
         else if (balanceError.data?.message) errorMessage = balanceError.data.message;
   
@@ -139,26 +165,38 @@ const getMethodIcon = (transaction) => {
   return (
     <View className="flex-1 bg-[#0B0F1D] pt-10 px-4">
       {/* Top header */}
-      <View className="flex-row justify-between items-center mb-4">
+      <View className="flex-row justify-between items-center mb-1">
         <Image
           source={ButtomLogo}
           resizeMode="contain"
           className="h-[40px] w-[120px]"
         />
-        <TouchableOpacity onPress={() => navigation.openDrawer()}>
-          <Ionicons name="menu-outline" size={28} color="white" />
-        </TouchableOpacity>
-          <View className="absolute top-[-48] left-9 right-0 items-center">
-            <Image
-              source={TopLogo}
-              className="h-[90px] w-[120px]"
-              resizeMode="contain"
-            />
-          </View>
+
+        {/* Icons Row */}
+        <View className="flex-row items-center gap-4">
+         <NotificationBell
+             unreadCount={unreadCount}
+            onPress={() => navigation.navigate('NotificationComponent')}
+          />
+
+          <TouchableOpacity onPress={() => navigation.openDrawer()}>
+            <Ionicons name="menu-outline" size={28} color="white" />
+          </TouchableOpacity>
+        </View>
+
+        {/* Top Logo in absolute position */}
+        <View className="absolute top-[-48] left-9 right-0 items-center">
+          <Image
+            source={TopLogo}
+            className="h-[90px] w-[120px]"
+            resizeMode="contain"
+          />
+        </View>
       </View>
-       <View className="border border-dashed border-white mt-1 mb-10 " />
+
+       <View className="border border-dashed border-white mt-1 mb-5 " />
       {/* Balance Card with TopLogo background */}
-      <View className="relative bg-[#7ddd7d] rounded-xl p-4 mb-6 overflow-hidden">
+      <View className="relative bg-[#7ddd7d] rounded-xl p-4 mb-1 overflow-hidden">
           <Image
             source={TopLogo}
             resizeMode="contain"
@@ -166,7 +204,7 @@ const getMethodIcon = (transaction) => {
           />
           <View className="z-10">
             <View className="flex-row justify-between items-center mb-2">
-              <Text className="text-white text-larg">{t("home.greeting")}</Text>
+              <Text className="text-black text-xl">{t("home.greeting")}</Text>
               <TouchableOpacity 
                 onPress={() => {
                   if (showBalance) {
@@ -188,7 +226,7 @@ const getMethodIcon = (transaction) => {
                 <Ionicons
                   name={showBalance ? "eye-outline" : "eye-off-outline"}
                   size={isSmallScreen ? scale(24) : scale(28)}
-                  color="#4A5568"
+                  color="black"
                 />
               </TouchableOpacity>
             </View>
@@ -198,10 +236,15 @@ const getMethodIcon = (transaction) => {
             <View className="flex-row justify-between items-center my-2">
               <Text className="text-black text-xl">{t("home.balance")}</Text>
              <Text className="text-black text-4xl font-bold">
-              {showBalance
-                ? `${(balanceData?.data.balance || 0).toLocaleString('en-US')} ${balanceData?.data.currency || 'XAF'}`
-                : '****'}
-            </Text>
+                {isBalanceLoading ? (
+                  <Loader size="small" color="black" />
+                ) : showBalance ? (
+                  `${(balanceData?.data.balance || 0).toLocaleString('en-US')} ${balanceData?.data.currency || 'XAF'}`
+                ) : (
+                  '****'
+                )}
+              </Text>
+
             </View>
 
             <View className="flex-row mt-4 justify-between space-x-4">
@@ -239,7 +282,7 @@ const getMethodIcon = (transaction) => {
         {/* Action buttons row */}
         <View className="flex-row justify-between">
           {[
-            { label: t("home.virtualCard"), icon: "card-outline", route: "VerifyIdentity" },
+            { label: t("home.virtualCard"), icon: "card-outline", route: "Payment" },
             { label: t("home.friendsShare"), icon: "people-outline", route: "WelcomeShare" },
             { label: t("home.fundRequest"), icon: "cash-outline", route: "WelcomeDemand" },
             { label: t("home.etontine"), icon: "layers-outline" },
@@ -258,8 +301,8 @@ const getMethodIcon = (transaction) => {
                 }
               }}
             >
-              <View className="bg-[#0B0F1D] border border-green-400 p-2 rounded-full mb-1">
-                <Ionicons name={item.icon} size={20} color="white" />
+              <View className="bg-[#0B0F1D] border border-white p-2 rounded-full mb-1">
+                <Ionicons name={item.icon} size={22} color="green" />
               </View>
               <Text className="text-[10px] text-white text-center">{item.label}</Text>
             </TouchableOpacity>
@@ -278,9 +321,17 @@ const getMethodIcon = (transaction) => {
       </View>
 
       {/* Transactions récentes */}
-      <Text className="text-green-400 font-semibold text-base mb-2">
-       {t("home.recentTransactions")}
-      </Text>
+      <View className="flex-row justify-between items-center mb-2">
+        <Text className="text-green-400 font-semibold text-base">
+          {t("home.recentTransactions")}
+        </Text>
+        <TouchableOpacity onPress={() => {"History"}}>
+          <Text className="text-white text-sm font-medium">
+            {t("home.seeAll")}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
           {isLoadingHistory ? (
             <Loader />
           ) : history?.data?.transactions?.items?.length === 0 ? (
