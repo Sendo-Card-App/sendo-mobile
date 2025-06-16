@@ -655,18 +655,13 @@ const handleVerifySecondPhoneOtp = async ({ phone, code }) => {
 };
 const styles = {
   floatingHomeButton: {
-    position: 'absolute',
-    top: StatusBar.currentHeight + 600,
-    right: 20,
-    zIndex: 999,
-    backgroundColor: 'rgba(235, 248, 255, 0.9)',
+    position: "absolute",
+    bottom: 24,
+    right: 24,
+    backgroundColor: "#1A1A1A",
     padding: 10,
-    borderRadius: 20,
-    elevation: 3,
-    
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
+    borderRadius: 50,
+    elevation: 10,
   },
  
 };

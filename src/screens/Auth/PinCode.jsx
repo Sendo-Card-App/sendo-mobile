@@ -237,11 +237,11 @@ const handleComplete = async (enteredPin) => {
         else if (route.params?.onSuccess) {
           // Case 2: Came from other operations (like transfer confirmation)
           await route.params.onSuccess(enteredPin);
-          navigation.navigate('Main', { screen: 'Success' });
+          navigation.replace('Main', { screen: 'Success' });
         } 
         else {
           // Case 3: Regular authentication flow
-          navigation.navigate('Main');
+          navigation.replace('Main');
         }
       } else {
         // Incorrect PIN handling

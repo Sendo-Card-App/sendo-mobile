@@ -36,11 +36,11 @@ const SelectMethod = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff', paddingTop: StatusBar.currentHeight || 20 }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff', paddingTop: StatusBar.currentHeight || 30 }}>
       <View style={{ flex: 1, paddingHorizontal: 20 }}>
 
         {/* First row of boxes */}
-        <View style={{ flexDirection: 'row', gap: 10, height: height / 4.5, marginBottom: 20 }}>
+        <View style={{ flexDirection: 'row', gap: 10, height: height / 4.5, marginBottom: 20, marginTop:30 }}>
 
          {/* Box 2 - Transfert d'argent */}
           <Pressable

@@ -6,6 +6,7 @@ import {
   Image,
   ActivityIndicator,
   FlatList,
+  StyleSheet,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
@@ -192,8 +193,27 @@ const renderRecipientRequest = ({ item }) => {
           contentContainerStyle={{ paddingBottom: 30 }}
         />
       )}
+       {/* Floating Home button */}
+            <TouchableOpacity
+              onPress={() => navigation.navigate("MainTabs")}
+              style={styles.floatingHomeButton}
+            >
+              <Ionicons name="home" size={44} color="#7ddd7d" />
+            </TouchableOpacity>
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  floatingHomeButton: {
+    position: "absolute",
+    bottom: 24,
+    right: 24,
+    backgroundColor: "#1A1A1A",
+    padding: 10,
+    borderRadius: 50,
+    elevation: 10,
+  },
+});
 
 export default DemandList;

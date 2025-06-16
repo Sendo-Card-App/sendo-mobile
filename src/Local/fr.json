@@ -207,7 +207,7 @@
     "bonus_description": "Vous recevrez 1,00 CAD et votre ami recevra 1,00 CAD lors de son premier transfert. Des exigences d’envoi minimales peuvent s’appliquer. Sous réserve de conditions.",
     "bonus_code": "Votre code:",
     "invite_friends": "INVITER VOS AMIS",
-    "balance": "Estimateur de paiement enlign",
+    "balance": "Estimateur de paiement enligne",
     "history": "Historique",
     "pay_bills": "Payer les factures",
     "account": "Compte",
@@ -1257,8 +1257,9 @@
     "members": "Membres",
     "contributions": "Cotisations",
     "settings": "Paramètres",
-    "contribute": "Me Cotiser"
-  },
+    "contribute": "Me Cotiser",
+     "rotationWarning": "Vous devez définir l’ordre de rotation avant que les membres puissent cotiser."
+   },
   "memberDetail": {
   "tab_contributions": "Cotisations",
   "tab_penalties": "Pénalités",
@@ -1374,7 +1375,7 @@
     "friendsShare": "Partage entre amis",
     "fundRequest": "Demande de fonds",
     "etontine": "E-Tontine",
-    "payBills": "Payer les factures",
+    "payBills": "Estimateur de paiement",
     "pubSection": "Section PUB",
     "recentTransactions": "Transactions récentes",
     "noTransactions": "Aucune transaction trouvée"

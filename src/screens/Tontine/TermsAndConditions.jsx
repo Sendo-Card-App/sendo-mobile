@@ -32,7 +32,7 @@ const TermsAndConditions = ({ route, navigation }) => {
       if (typeof onAccept === "function") {
         onAccept(); // Call the callback if passed
       }
-      navigation.navigate("TontineList");
+      navigation.replace("TontineList");
     } catch (error) {
       console.error("Error saving acceptance:", error);
     }

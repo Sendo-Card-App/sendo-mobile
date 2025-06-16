@@ -31,7 +31,7 @@ const CreateShare = ({ navigation }) => {
           paddingBottom: 15,
         }}
       >
-        <TouchableOpacity onPress={() => navigation.goBack()}>
+        <TouchableOpacity onPress={() => navigation.navigate("MainTabs")}>
           <Ionicons name="arrow-back" size={24} color="black" />
         </TouchableOpacity>
         <Text style={{ fontSize: 18, fontWeight: "bold", color: "black" }}>
