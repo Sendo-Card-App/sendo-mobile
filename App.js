@@ -14,7 +14,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createDrawerNavigator } from "@react-navigation/drawer";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Ionicons, AntDesign } from "@expo/vector-icons";
+import { Ionicons, AntDesign,FontAwesome,FontAwesome5   } from "@expo/vector-icons";
 
 import * as Notifications from "expo-notifications";
 import { registerForPushNotificationsAsync } from "./src/services/notificationService";
@@ -142,7 +142,7 @@ const screenWidth = Dimensions.get('window').width;
 function CustomTabBar({ state, descriptors, navigation }) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  
+
   return (
     <View style={styles.tabContainer}>
       {state.routes.map((route, index) => {
@@ -161,22 +161,37 @@ function CustomTabBar({ state, descriptors, navigation }) {
           }
         };
 
+        // Custom Floating Center Tab (Beneficiary)
+        if (route.name === 'BeneficiaryTab') {
+          return (
+            <TouchableOpacity
+              key={route.key}
+              onPress={onPress}
+              style={styles.centerButton}
+            >
+             <FontAwesome5 name="dollar-sign" size={30} color="#fff" />
+            </TouchableOpacity>
+          );
+        }
+
+        // Default tab icon logic
         let iconName;
         switch (route.name) {
           case 'HomeTab':
             iconName = isFocused ? 'home' : 'home-outline';
             break;
-          case 'ManageVirtualCardTab':
-            iconName = isFocused ? 'card' : 'card-outline';
-            break;
           case 'TransferTab':
             iconName = isFocused ? 'swap-horizontal' : 'swap-horizontal-outline';
             break;
+          case 'ManageVirtualCardTab':
+            iconName = isFocused ? 'card' : 'card-outline';
+            break;
+          
           case 'SettingsTab':
             iconName = isFocused ? 'settings' : 'settings-outline';
             break;
           default:
-            iconName = 'home';
+            iconName = 'home-outline';
         }
 
         return (
@@ -204,6 +219,7 @@ function CustomTabBar({ state, descriptors, navigation }) {
   );
 }
 
+
 // Tab Navigator
 function MainTabs() {
   const { t } = useTranslation();
@@ -220,15 +236,23 @@ function MainTabs() {
         component={Home} 
         options={{ title: t('tabs.home') }}
       />
-      <Tab.Screen 
-        name="ManageVirtualCardTab" 
-        component={ManageVirtualCard} 
-        options={{ title: t('tabs.cards') }}
-      />
-      <Tab.Screen 
+      
+       <Tab.Screen 
         name="TransferTab"
         component={History} 
         options={{ title: t('tabs.history') }}
+      />
+      {/* Center Action Button (Green Floating) */}
+      <Tab.Screen 
+        name="BeneficiaryTab" 
+        component={BeneficiaryScreen} 
+        options={{ title: '' }} // No text under icon
+      />
+
+     <Tab.Screen 
+        name="ManageVirtualCardTab" 
+        component={ManageVirtualCard} 
+        options={{ title: t('tabs.cards') }}
       />
       <Tab.Screen 
         name="SettingsTab" 
@@ -236,6 +260,7 @@ function MainTabs() {
         options={{ title: t('tabs.settings') }}
       />
     </Tab.Navigator>
+
   );
 }
 
@@ -518,6 +543,23 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 5,
+  },
+    centerButton: {
+    position: 'absolute',
+    bottom: 35,
+    alignSelf: 'center',
+    backgroundColor:  Colors.primary,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
+    zIndex: 10,
   },
   tabButton: {
     flex: 1,

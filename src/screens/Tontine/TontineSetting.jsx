@@ -21,7 +21,7 @@ const TontineSetting = () => {
   const route = useRoute();
   const { t } = useTranslation();
   const { tontineId, tontine } = route.params;
-
+   //console.log(tontine)
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedInfo, setSelectedInfo] = useState("");
 
@@ -33,22 +33,23 @@ const TontineSetting = () => {
     { title: t("tontineSetting.penalties"), screen: "TontinePenalties" },
   ];
 
-  const getInfoForModal = (screen) => {
-    switch (screen) {
-      case "TontineBaseInfo":
-        return `Nom de la tontine: ${tontine.nom}\nType: ${tontine.type}\nDescription: ${tontine.description}`;
-      case "TontineFrequency":
-        return `Fréquence: ${tontine.frequence}\nMode de versement: ${tontine.modeVersement}`;
-      case "TontineOrder":
-        return `Ordre de rotation: ${tontine.ordreRotation}`;
-      case "TontineFunds":
-        return `Solde actuel: ${tontine.compteSequestre?.soldeActuel} XAF\nMontant bloqué: ${tontine.compteSequestre?.montantBloque} XAF\nÉtat du compte: ${tontine.compteSequestre?.etatCompte}`;
-      case "TontinePenalties":
-        return `Nombre de pénalités: ${tontine.membres?.reduce((acc, m) => acc + (m.penalites?.length || 0), 0)}`;
-      default:
-        return "";
-    }
-  };
+ const getInfoForModal = (screen) => {
+  switch (screen) {
+    case "TontineBaseInfo":
+      return `Nom de la tontine: ${tontine.nom}\nType: ${tontine.type}\nDescription: ${tontine.description}`;
+    case "TontineFrequency":
+      return `Fréquence: ${tontine.frequence}\nMode de versement: ${tontine.modeVersement}`;
+    case "TontineOrder":
+      return `Ordre de rotation: ${tontine.ordreRotation ? tontine.ordreRotation : "Aucun ordre de rotation definir."}`;
+    case "TontineFunds":
+      return `Solde actuel: ${tontine.compteSequestre?.soldeActuel} XAF\nMontant bloqué: ${tontine.compteSequestre?.montantBloque} XAF\nÉtat du compte: ${tontine.compteSequestre?.etatCompte}`;
+    case "TontinePenalties":
+      return `Nombre de pénalités: ${tontine.membres?.reduce((acc, m) => acc + (m.penalites?.length || 0), 0)}`;
+    default:
+      return "";
+  }
+};
+
 
   const handleOptionPress = (screenName) => {
     const info = getInfoForModal(screenName);

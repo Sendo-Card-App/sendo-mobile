@@ -142,8 +142,8 @@ const handleSend = async () => {
 
     const messageData = {
       conversationId: currentConversationId,
-      content: input,
-      senderType: 'CUSTOMER',
+      content: input.trim() !== "" ? input : attachments.length > 0 ? "[Pièce jointe]" : "", // fallback
+      senderType: "CUSTOMER",
       attachments: attachments.map((a) => a.uri),
     };
 
@@ -164,9 +164,7 @@ const handleSend = async () => {
   }
 };
 
-
-
-  const renderMessage = ({ item }: { item: Message }) => (
+  const renderMessage = ({ item }) => (
     <View style={[
       styles.messageContainer,
       item.senderType === 'ADMIN' ? styles.receivedMessage : styles.sentMessage
@@ -236,13 +234,9 @@ const handleSend = async () => {
 
   if (isLoading) {
     return (
-      <FlatList
-        data={[1, 2, 3, 4, 5]}
-        keyExtractor={(item) => item.toString()}
-        renderItem={() => <TransactionSkeleton />}
-        contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 20 }}
-        showsVerticalScrollIndicator={false}
-      />
+      <View className="bg-transparent flex-1 items-center justify-center">
+      <Loader size="large" color="green" />
+    </View>
     );
   }
 

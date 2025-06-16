@@ -129,7 +129,7 @@ const Curency = () => {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#141414', padding: 16 }}>
+    <View style={{ flex: 1, backgroundColor: '#0D0D0D', padding: 16 }}>
       <StatusBar barStyle="light-content" />
 
       <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10, marginTop: 25 }}>
@@ -204,23 +204,54 @@ const Curency = () => {
             )}
           </View>
         </View>
+          {error && (
+            <View style={{
+              backgroundColor: '#441111',
+              padding: 12,
+              borderRadius: 10,
+              marginTop: 10,
+              marginHorizontal: 20,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
+              <Ionicons name="warning-outline" size={20} color="#ff6b6b" style={{ marginRight: 8 }} />
+              <Text style={{ color: '#ff6b6b', fontSize: 14, textAlign: 'center', flex: 1 }}>
+                {error}
+              </Text>
+            </View>
+          )}
 
-        {error && (
-          <Text style={{ color: 'red', marginTop: 5, textAlign: 'center' }}>
-            {error}
-          </Text>
-        )}
+          {convertedAmount && (
+            <View style={{
+              backgroundColor: '#1a1a1a',
+              borderRadius: 10,
+              padding: 16,
+              marginTop: 20,
+              marginHorizontal: 20
+            }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 }}>
+                <Text style={{ color: '#ccc', fontSize: 14 }}>{t('transfer_fee')}</Text>
+                <Text style={{ color: 'white', fontSize: 14 }}>
+                  {transferFee} {isToCameroon ? 'XAF' : 'CAD'}
+                </Text>
+              </View>
 
-        {convertedAmount && (
-          <View style={{ marginTop: 20 }}>
-            <Text style={{ color: 'white', textAlign: 'center' }}>
-              {t('transfer_fee')}: {transferFee} {isToCameroon ? 'XAF' : 'CAD'}
-            </Text>
-            <Text style={{ color: '#7ddd7d', textAlign: 'center', marginTop: 5, fontWeight: 'bold' }}>
-              {t('total_to_send')}: {totalAmount} {isToCameroon ? 'XAF' : 'CAD'}
-            </Text>
-          </View>
-        )}
+              <View style={{
+                height: 1,
+                backgroundColor: '#333',
+                marginVertical: 6
+              }} />
+
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                <Text style={{ color: '#ccc', fontSize: 14 }}>{t('total_to_send')}</Text>
+                <Text style={{ color: '#7ddd7d', fontSize: 16, fontWeight: 'bold' }}>
+                  {totalAmount} {isToCameroon ? 'XAF' : 'CAD'}
+                </Text>
+              </View>
+            </View>
+          )}
+
 
         <View style={{ borderColor: 'gray', borderWidth: 1, borderStyle: 'dashed', marginTop: 20, marginBottom: 4 }} />
 

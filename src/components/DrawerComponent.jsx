@@ -152,7 +152,6 @@ const DrawerComponent = ({ navigation }) => {
       // Clear all auth data
       await removeData('@authData');
       await removeData('Stored'); 
-      await removeData('@passcode');
       setAuthData(null);
   
       // Call logout mutation
@@ -435,16 +434,12 @@ const DrawerComponent = ({ navigation }) => {
 
               <TouchableOpacity
                 className="flex-row gap-2 my-2 mb-5 items-center"
-                onPress={() =>
-                  hasAcceptedTerms
-                    ? navigation2.navigate("TontineList")
-                    : navigation2.navigate("TermsAndConditions")
-                }
+                 onPress={() => navigation2.navigate("TontineList")}
               >
                 <Feather
                   name="users"
                   size={Platform.OS === "ios" ? 28 : 22}
-                  color="gray"
+                  color="gray" onPress={() => navigation2.navigate("Settings")}
                 />
                 <View>
                   <Text className="font-bold text-gray-500">{t("drawer.tontine")}</Text>
@@ -453,7 +448,7 @@ const DrawerComponent = ({ navigation }) => {
               </TouchableOpacity>
           <TouchableOpacity
             className="flex-row gap-2 my-2 mb-5"
-            onPress={() => navigation2.navigate("Settings")}
+           
           >
             <AntDesign name="setting" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
             <View>

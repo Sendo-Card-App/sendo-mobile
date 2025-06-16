@@ -88,19 +88,19 @@ const HomeScreen = () => {
       checkTerms();
     }, []);
      
-     useEffect(() => {
-    const backAction = () => {
-      BackHandler.exitApp();
-      return true;
-    };
+    //    useEffect(() => {
+    //   const backAction = () => {
+    //     BackHandler.exitApp();
+    //     return true;
+    //   };
 
-    const backHandler = BackHandler.addEventListener(
-      "hardwareBackPress",
-      backAction
-    );
+    //   const backHandler = BackHandler.addEventListener(
+    //     "hardwareBackPress",
+    //     backAction
+    //   );
 
-    return () => backHandler.remove(); 
-  }, []);
+    //   return () => backHandler.remove(); 
+    // }, []);
 
     useEffect(() => {
       if (balanceError) {
@@ -163,7 +163,7 @@ const getMethodIcon = (transaction) => {
 
 
   return (
-    <View className="flex-1 bg-[#0B0F1D] pt-10 px-4">
+    <View className="flex-1 bg-[#0D0D0D] pt-10 px-4">
       {/* Top header */}
       <View className="flex-row justify-between items-center mb-1">
         <Image
@@ -196,7 +196,7 @@ const getMethodIcon = (transaction) => {
 
        <View className="border border-dashed border-white mt-1 mb-5 " />
       {/* Balance Card with TopLogo background */}
-      <View className="relative bg-[#7ddd7d] rounded-xl p-4 mb-1 overflow-hidden">
+      <View className="relative bg-[#7ddd7d] rounded-xl p-2 mb-1 overflow-hidden">
           <Image
             source={TopLogo}
             resizeMode="contain"
@@ -286,7 +286,7 @@ const getMethodIcon = (transaction) => {
             { label: t("home.friendsShare"), icon: "people-outline", route: "WelcomeShare" },
             { label: t("home.fundRequest"), icon: "cash-outline", route: "WelcomeDemand" },
             { label: t("home.etontine"), icon: "layers-outline" },
-            { label: t("home.payBills"), icon: "home-outline", route: "MethodType" },
+            { label: t("home.payBills"), icon: "calculator-outline", route: "PaymentSimulator" },
           ].map((item, index) => (
             <TouchableOpacity
               key={index}
@@ -313,7 +313,7 @@ const getMethodIcon = (transaction) => {
 
 
       {/* Section PUB with TopLogo background */}
-       <View className="bg-[#7ddd7d] py-16 px-8 rounded-xl items-center justify-center mb-6 overflow-hidden">
+       <View className="bg-[#7ddd7d] py-16 px-8 rounded-xl items-center justify-center mb-3 overflow-hidden">
         <View className="absolute top-0 left-0 right-0 bottom-0 items-center justify-center opacity-10">
           <Image source={TopLogo} className="h-[130px] w-[160px]" resizeMode="contain" />
         </View>
@@ -325,7 +325,7 @@ const getMethodIcon = (transaction) => {
         <Text className="text-green-400 font-semibold text-base">
           {t("home.recentTransactions")}
         </Text>
-        <TouchableOpacity onPress={() => {"History"}}>
+        <TouchableOpacity onPress={() => navigation.navigate("TransferTab")}>
           <Text className="text-white text-sm font-medium">
             {t("home.seeAll")}
           </Text>
