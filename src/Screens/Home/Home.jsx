@@ -31,7 +31,7 @@ const scale = (size) => (width / 375) * size;
 const HomeScreen = () => {
   const navigation = useNavigation();
     const { t } = useTranslation();
-    const [showBalance, setShowBalance] = useState(true);
+    const [showBalance, setShowBalance] = useState(false);
     const [hasAcceptedTerms, setHasAcceptedTerms] = useState(false);
     // Fetch user profile and enable refetch
     const {
@@ -71,14 +71,16 @@ const HomeScreen = () => {
 
 
     // Refetch profile and balance when screen is focused
-    useFocusEffect(
+   useFocusEffect(
       useCallback(() => {
         refetchProfile();
         if (userId) {
           refetchBalance();
+          refetch(); 
         }
       }, [userId])
     );
+
     
     useEffect(() => {
       const checkTerms = async () => {
@@ -274,7 +276,7 @@ const getMethodIcon = (transaction) => {
           <Text className="text-green-400 font-semibold text-base">
             {t("home.services")} 
           </Text>
-          <TouchableOpacity onPress={() => navigation.navigate("")}>
+          <TouchableOpacity onPress={() => navigation.navigate("ServiceScreen")}>
             <Text className="text-white text-sm">{t("home.seeAll")}</Text>
           </TouchableOpacity>
         </View>
