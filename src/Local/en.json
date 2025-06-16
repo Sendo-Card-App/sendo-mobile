@@ -434,6 +434,7 @@
       "payButton": "Pay for NIU",
       "processing": "Processing...",
        "statusApproved": "Your NIU request has been approved",
+        "raison": "Reason",
       "statusPending": "Your NIU request is being processed",
       "statusRejected": "Your previous NIU request was rejected",
       "alreadyApproved": "Already Approved"

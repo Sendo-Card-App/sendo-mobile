@@ -1,3 +1,4 @@
+// components/PaymentConfirmationModal.js
 import React from 'react';
 import { View, Text, Modal, TouchableOpacity } from 'react-native';
 
@@ -7,9 +8,10 @@ const PaymentConfirmationModal = ({
   onConfirm,
   amount,
   title,
-  message,
-  confirmText,
-  cancelText,
+  // on renomme les props internes pour coller à votre appel
+  description,
+  confirmLabel,
+  cancelLabel = 'Annuler',
 }) => {
   return (
     <Modal
@@ -23,7 +25,8 @@ const PaymentConfirmationModal = ({
           <Text className="text-xl font-bold text-center mb-3">{title}</Text>
           
           <Text className="text-center mb-3">
-            {message}
+            {/* on utilise description à la place de message */}
+            {description}
           </Text>
           
           <Text className="text-center text-lg font-bold mb-5">
@@ -35,14 +38,14 @@ const PaymentConfirmationModal = ({
               className="px-5 py-2 border border-gray-300 rounded-lg"
               onPress={onClose}
             >
-              <Text className="text-gray-700">{cancelText}</Text>
+              <Text className="text-gray-700">{cancelLabel}</Text>
             </TouchableOpacity>
             
             <TouchableOpacity
               className="px-5 py-2 bg-[#7ddd7d] rounded-lg"
               onPress={onConfirm}
             >
-              <Text className="text-white">{confirmText}</Text>
+              <Text className="text-white">{confirmLabel}</Text>
             </TouchableOpacity>
           </View>
         </View>

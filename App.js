@@ -10,10 +10,10 @@ import { useTranslation } from 'react-i18next';
 import './i18n';
 import NetworkProvider from './src/services/NetworkProvider';
 import { NavigationContainer } from "@react-navigation/native";
+import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createDrawerNavigator } from "@react-navigation/drawer";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons, AntDesign,FontAwesome,FontAwesome5   } from "@expo/vector-icons";
 
 import * as Notifications from "expo-notifications";
@@ -22,6 +22,7 @@ import app from "./src/configs/firebaseConfig";
 
 // Screens & Components
 import Home from "./src/screens/Home/Home";
+import ServiceScreen from "./src/screens/Home/ServiceScreen";
 import WelcomeScreen from "./src/screens/Auth/WelcomeScreen";
 import PinCode from "./src/screens/Auth/PinCode";
 import AddBeneficiary from "./src/screens/Solde/AddBeneficiary";
@@ -285,75 +286,33 @@ function AuthStack() {
 function MainStack() {
   const { t } = useTranslation();
   return (
-    <Stack.Navigator
-      screenOptions={({ navigation }) => ({
-        headerStyle: {
-          backgroundColor: Colors.primary,
-          height: Platform.select({
-            ios: headerHeight,
-            android: headerHeight,
-          }),
-          elevation: 0,
-          shadowOpacity: 0,
-        },
-        headerTitleStyle: {
-          fontSize: 18,
-          fontWeight: "bold",
-          color: Colors.text,
-          textAlign: 'center',
-          alignSelf: 'center',
-          width: '70%',
-        },
-        headerTitleAlign: "center",
-        headerLeftContainerStyle: {
-          paddingLeft: Platform.select({
-            ios: '4%',
-            android: '4%',
-          }),
-          paddingTop: Platform.select({
-            ios: 0,
-            android: '1.5%',
-          }),
-        },
-        headerLeft: () => (
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'center',
-              height: '100%',
-              minWidth: 40,
-              paddingHorizontal: Platform.select({
-                ios: '2%',
-                android: '4%',
-              }),
-            }}
-          >
-            {Platform.OS === 'ios' ? (
-              <Text
-                style={{
-                  fontSize: 24,
-                  color: Colors.text,
-                  marginTop: -2,
-                }}
-              >
-                &lt;
-              </Text>
-            ) : (
-              <View
-                style={{
-                  justifyContent: 'center',
-                  height: '100%',
-                }}
-              >
-                <AntDesign name="arrowleft" size={20} color={Colors.text} />
-              </View>
-            )}
-          </TouchableOpacity>
-        ),
-      })}
-    >
+      <SafeAreaProvider>
+      <Stack.Navigator
+        screenOptions={({ navigation }) => ({
+          headerShown: true,
+          statusBarTranslucent: false,              // ← obligatoire
+          headerStyle: {
+            backgroundColor: Colors.primary,
+            height: Platform.select({ ios: 60, android: 60 }), 
+            elevation: 0,
+            shadowOpacity: 0,
+          },
+          headerTitleAlign: 'center',
+          headerTitleStyle: {
+            fontSize: 18,
+            fontWeight: 'bold',
+            color: Colors.text,
+          },
+          headerBackTitleVisible: false,
+          headerLeft: () => (
+            <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 12 }}>
+              {Platform.OS === 'ios'
+                ? <Text style={{ fontSize: 24, color: Colors.text }}>{'< '}</Text>
+                : <AntDesign name="arrowleft" size={20} color={Colors.text} />}
+            </TouchableOpacity>
+          ),
+        })}
+      >
       <Stack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
       <Stack.Screen 
         name="Account" 
@@ -402,6 +361,7 @@ function MainStack() {
       <Stack.Screen name="WalletWithdrawal" component={WalletWithdrawal} options={{ headerShown: false }} />
       <Stack.Screen name="WalletConfirm" component={WalletConfirm} options={{ headerShown: false }} />
       <Stack.Screen name="WalletOk" component={WalletOk} options={{ headerShown: false }} />
+       <Stack.Screen name="ServiceScreen" component={ServiceScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Confirme" component={Confirme} options={{ headerShown: false }} />
       <Stack.Screen name="Success" component={Success} options={{ headerShown: false }} />
       <Stack.Screen name="Support" component={Support} options={{ headerTitle: t('screens.support') }}/>
@@ -477,6 +437,7 @@ function MainStack() {
 
       
     </Stack.Navigator>
+     </SafeAreaProvider>
   );
 }
 

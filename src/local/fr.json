@@ -433,9 +433,10 @@
       "paymentAccept": "J'autorise le prélèvement de ",
       "payButton": "Payer le NIU",
       "processing": "Traitement en cours...",
-      "statusApproved": "Votre demande NIU a été approuvée",
+      "statusApproved": "Votre demande NIU a été approuvée et envoyer sur votre boite mail",
       "statusPending": "Votre demande NIU est en cours de traitement",
-      "statusRejected": "Votre précédente demande NIU a été rejetée",
+      "statusRejected": "Votre précédente demande NIU a été rejetée \n",
+      "raison": "Raison",
       "alreadyApproved": "Déjà approuvé"
     },
      "paymentModal": {
