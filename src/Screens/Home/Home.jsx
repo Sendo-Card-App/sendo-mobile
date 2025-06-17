@@ -1,9 +1,11 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useRef,useCallback, useEffect, useState } from "react";
 import {
   View,
   Text,
   TouchableOpacity,
   Image,
+  Linking,
+  FlatList,
   ScrollView,
   BackHandler,
    Dimensions, Platform,StatusBar
@@ -12,9 +14,11 @@ import { Ionicons, AntDesign } from "@expo/vector-icons";
 import Loader from "../../components/Loader";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { useGetBalanceQuery } from "../../services/WalletApi/walletApi";
-import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
+import { useGetUserProfileQuery,  useGetTokenMutation, useCreateTokenMutation  } from "../../services/Auth/authAPI";
 import { useGetTransactionHistoryQuery } from "../../services/WalletApi/walletApi";
+import { getStoredPushToken } from '../../services/notificationService';
 import { useGetNotificationsQuery } from '../../services/Notification/notificationApi';
+import { useGetPubsQuery } from '../../services/Pub/pubApi';
 import { useTranslation } from 'react-i18next';
 import Toast from 'react-native-toast-message';
 const TopLogo = require("../../images/TopLogo.png");
@@ -27,12 +31,17 @@ const { width, height } = Dimensions.get('window');
 const isSmallScreen = width < 375;
 const isIOS = Platform.OS === 'ios';
 const scale = (size) => (width / 375) * size;
+const ITEM_WIDTH = width - 80;
 
 const HomeScreen = () => {
   const navigation = useNavigation();
     const { t } = useTranslation();
     const [showBalance, setShowBalance] = useState(false);
     const [hasAcceptedTerms, setHasAcceptedTerms] = useState(false);
+    const flatListRef = useRef(null);
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const [createToken] = useCreateTokenMutation();
+
     // Fetch user profile and enable refetch
     const {
       data: userProfile,
@@ -49,7 +58,8 @@ const HomeScreen = () => {
         },
         { skip: !userId }
       );
-        //console.log('Transaction History Data:', JSON.stringify(history, null, 2));
+     const { data: pubs, isLoading: isLoadingPubs, error: pubsError } = useGetPubsQuery();
+      //console.log('Liste des PUB:', JSON.stringify(pubs, null, 2));
 
     // Fetch balance and enable refetch
     const {
@@ -62,12 +72,52 @@ const HomeScreen = () => {
   
     const isLoading = isProfileLoading || isBalanceLoading;
     const { data: notificationsResponse, isLoadingNotification } = useGetNotificationsQuery({ userId });
-
+      const { data: serverTokenData } = useGetTokenMutation(userId, {
+         skip: !userId
+       });
   // Extract notifications array safely
   const notifications = notificationsResponse?.data?.items || [];
 
   // Count unread notifications where `readed` is false
   const unreadCount = notifications.filter(notification => !notification.readed).length;
+
+   useEffect(() => {
+  const checkAndUpdateToken = async () => {
+    if (!userId) {
+      console.log(' No userId provided, skipping token update.');
+      return;
+    }
+
+    try {
+      const localToken = await getStoredPushToken();
+      const serverToken = serverTokenData?.data?.token;
+
+      //console.log(' Local token from device:', localToken);
+     // console.log(' Token from server:', serverToken);
+
+      if (!localToken) {
+        console.log(' No local push token available, cannot proceed.');
+        return;
+      }
+
+      if (localToken === serverToken) {
+       
+        return;
+      }
+
+      const payload = { userId, token: localToken };
+     
+
+      const response = await createToken(payload).unwrap();
+      console.log(' Token successfully updated on backend:', response);
+
+    } catch (error) {
+      console.log(' Error updating push token:', JSON.stringify(error, null, 2));
+    }
+  };
+
+  checkAndUpdateToken();
+}, [userId, serverTokenData]);
 
 
     // Refetch profile and balance when screen is focused
@@ -103,7 +153,22 @@ const HomeScreen = () => {
 
     //   return () => backHandler.remove(); 
     // }, []);
+      
+    useEffect(() => {
+      if (!pubs?.items) return;
+      const activeItems = pubs.items.filter(pub => pub.isActive);
+      if (activeItems.length <= 1) return;
 
+      const interval = setInterval(() => {
+        let next = currentIndex + 1;
+        if (next >= activeItems.length) next = 0;
+        flatListRef.current?.scrollToIndex({ index: next, animated: true });
+        setCurrentIndex(next);
+      }, 10000);
+
+      return () => clearInterval(interval);
+    }, [currentIndex, pubs])
+   
     useEffect(() => {
       if (balanceError) {
         let errorMessage = 'An unknown error occurred';
@@ -165,7 +230,7 @@ const getMethodIcon = (transaction) => {
 
 
   return (
-    <View className="flex-1 bg-[#0D0D0D] pt-10 px-4">
+    <View className="flex-1 bg-[#F2F2F2] pt-10 px-4">
       {/* Top header */}
       <View className="flex-row justify-between items-center mb-1">
         <Image
@@ -182,7 +247,7 @@ const getMethodIcon = (transaction) => {
           />
 
           <TouchableOpacity onPress={() => navigation.openDrawer()}>
-            <Ionicons name="menu-outline" size={28} color="white" />
+            <Ionicons name="menu-outline" size={28} color="black" />
           </TouchableOpacity>
         </View>
 
@@ -196,9 +261,9 @@ const getMethodIcon = (transaction) => {
         </View>
       </View>
 
-       <View className="border border-dashed border-white mt-1 mb-5 " />
+       <View className="border border-dashed border-black mt-1 mb-5 " />
       {/* Balance Card with TopLogo background */}
-      <View className="relative bg-[#7ddd7d] rounded-xl p-2 mb-1 overflow-hidden">
+      <View className="relative bg-[#70ae70] rounded-xl p-2 mb-1 overflow-hidden">
           <Image
             source={TopLogo}
             resizeMode="contain"
@@ -249,22 +314,24 @@ const getMethodIcon = (transaction) => {
 
             </View>
 
-            <View className="flex-row mt-4 justify-between space-x-4">
+            <View className="flex-row mt-4 gap-4">
               <TouchableOpacity
                 onPress={() => navigation.navigate('SelectMethod')}
-                className="bg-white px-3 py-2 rounded-full flex-row items-center space-x-2 flex-1">
-                <Ionicons name="send-outline" size={16} color="black" />
-                <Text className="text-black font-semibold text-sm">{t("home.transfer")}</Text>
+                className="bg-white px-3 py-2 rounded-full flex-row items-center flex-1 justify-center"
+              >
+                <Ionicons name="send-outline" size={20} color="black" />
+                <Text className="text-black font-bold text-xs ml-2">{t("home.transfer")}</Text>
               </TouchableOpacity>
 
-              {/* Recharger mon compte button */}
               <TouchableOpacity
                 onPress={() => navigation.navigate('MethodType')}
-                className="bg-white px-2 py-2 rounded-full flex-row items-center space-x-2 flex-1">
-                <Ionicons name="refresh-outline" size={16} color="black" />
-                <Text className="text-black font-semibold text-sm">{t("home.recharge")}</Text>
+                className="bg-white px-3 py-2 rounded-full flex-row items-center flex-1 justify-center"
+              >
+                <Ionicons name="refresh-outline" size={20} color="black" />
+                <Text className="text-black font-bold text-xs ml-2">{t("home.recharge")}</Text>
               </TouchableOpacity>
             </View>
+
 
           </View>
         </View>
@@ -273,12 +340,15 @@ const getMethodIcon = (transaction) => {
       {/* Action buttons */}
       <View className="mb-4">
         <View className="flex-row justify-between items-center mb-2">
-          <Text className="text-green-400 font-semibold text-base">
+          <Text className="text-black font-bold text-base">
             {t("home.services")} 
           </Text>
-          <TouchableOpacity onPress={() => navigation.navigate("ServiceScreen")}>
-            <Text className="text-white text-sm">{t("home.seeAll")}</Text>
+         <TouchableOpacity onPress={() => navigation.navigate("ServiceScreen")}>
+            <Text style={{ color: '#000', fontSize: 14, textDecorationLine: 'underline' }}>
+              {t("home.seeAll")}
+            </Text>
           </TouchableOpacity>
+
         </View>
 
         {/* Action buttons row */}
@@ -288,11 +358,11 @@ const getMethodIcon = (transaction) => {
             { label: t("home.friendsShare"), icon: "people-outline", route: "WelcomeShare" },
             { label: t("home.fundRequest"), icon: "cash-outline", route: "WelcomeDemand" },
             { label: t("home.etontine"), icon: "layers-outline" },
-            { label: t("home.payBills"), icon: "calculator-outline", route: "PaymentSimulator" },
+           
           ].map((item, index) => (
             <TouchableOpacity
               key={index}
-              className="items-center w-[18%]"
+              className="items-center w-[25%]"
               onPress={() => {
                 if (item.label === t("home.etontine")) {
                   hasAcceptedTerms
@@ -303,10 +373,10 @@ const getMethodIcon = (transaction) => {
                 }
               }}
             >
-              <View className="bg-[#0B0F1D] border border-white p-2 rounded-full mb-1">
-                <Ionicons name={item.icon} size={22} color="green" />
+              <View className="bg-[#F2F2F2] border border-white p-2 rounded-full mb-1">
+                <Ionicons name={item.icon} size={35} color="green" />
               </View>
-              <Text className="text-[10px] text-white text-center">{item.label}</Text>
+              <Text className="text-[10px] text-black font-bold text-center">{item.label}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -315,20 +385,70 @@ const getMethodIcon = (transaction) => {
 
 
       {/* Section PUB with TopLogo background */}
-       <View className="bg-[#7ddd7d] py-16 px-8 rounded-xl items-center justify-center mb-3 overflow-hidden">
-        <View className="absolute top-0 left-0 right-0 bottom-0 items-center justify-center opacity-10">
-          <Image source={TopLogo} className="h-[130px] w-[160px]" resizeMode="contain" />
+       <View className="mb-3">
+          <Text className="text-black font-bold text-base mb-2">
+            {t("home.pubSection")}
+          </Text>
+
+          {isLoadingPubs ? (
+            <Loader />
+          ) : pubs?.items?.filter(pub => pub.isActive).length > 0 ? (
+            <FlatList
+              ref={flatListRef}
+              data={pubs.items.filter(pub => pub.isActive)}
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              keyExtractor={(item) => item.id.toString()}
+              contentContainerStyle={{ paddingHorizontal: 20 }}
+              decelerationRate="fast"
+              snapToAlignment="start"
+              getItemLayout={(_, index) => ({
+                length: ITEM_WIDTH + 20, 
+                offset: index * (ITEM_WIDTH + 20),
+                index,
+              })}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  onPress={() => item.link && Linking.openURL(item.link)}
+                  style={{
+                    width: ITEM_WIDTH,
+                    height: 130,
+                    borderRadius: 12,
+                    overflow: "hidden",
+                    marginRight: 20,
+                    backgroundColor: "#eee",
+                  }}
+                >
+                  <Image
+                    source={{ uri: item.imageUrl }}
+                    style={{ width: "100%", height: "100%" }}
+                    resizeMode="cover"
+                  />
+                </TouchableOpacity>
+              )}
+            />
+          ) : (
+            <Text className="text-gray-500 text-center">
+              {t("home.noPubs")}
+            </Text>
+          )}
         </View>
-        <Text className="text-black font-bold text-lg">{t("home.pubSection")}</Text>
-      </View>
 
       {/* Transactions récentes */}
       <View className="flex-row justify-between items-center mb-2">
-        <Text className="text-green-400 font-semibold text-base">
+        <Text className="text-black font-bold text-base">
           {t("home.recentTransactions")}
         </Text>
         <TouchableOpacity onPress={() => navigation.navigate("TransferTab")}>
-          <Text className="text-white text-sm font-medium">
+           <Text
+              style={{
+                color: '#000',
+                fontSize: 14,
+                fontWeight: '500',
+                textDecorationLine: 'underline',
+              }}
+            >
             {t("home.seeAll")}
           </Text>
         </TouchableOpacity>
@@ -337,7 +457,7 @@ const getMethodIcon = (transaction) => {
           {isLoadingHistory ? (
             <Loader />
           ) : history?.data?.transactions?.items?.length === 0 ? (
-            <Text className="text-white text-center mt-4">{t("home.noTransactions")}</Text>
+            <Text className="text-black text-center mt-4">{t("home.noTransactions")}</Text>
           ) : (
             <ScrollView showsVerticalScrollIndicator={false}>
               {history?.data?.transactions?.items?.map((item, index) => {
@@ -356,8 +476,8 @@ const getMethodIcon = (transaction) => {
                   >
                     <Image source={iconSource} className="w-10 h-10 mr-3 rounded-full" resizeMode="contain" />
                     <View className="flex-1">
-                      <Text className="text-white font-semibold">{item.description || typeLabel}</Text>
-                      <Text className="text-gray-300 text-sm">{item.amount?.toLocaleString()} {item.currency || "XAF"}</Text>
+                      <Text className="text-black font-semibold">{item.description || typeLabel}</Text>
+                      <Text className="text-black text-sm">{item.amount?.toLocaleString()} {item.currency}</Text>
                     </View>
                     <Text className={`text-xs font-semibold ${statusColor}`}>{item.status}</Text>
                   </TouchableOpacity>

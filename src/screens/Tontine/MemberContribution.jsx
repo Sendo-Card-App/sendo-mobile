@@ -68,7 +68,7 @@ const MemberContribution = () => {
   refetch: refetchPenalties,
   isLoading: loadingPenalties,
 } = useGetMemberPenaltiesQuery({ tontineId, membreId });
-
+   //console.log(penaltiesResponse)
      const {
          data: configData,
          isLoading: isConfigLoading,
@@ -81,7 +81,7 @@ const MemberContribution = () => {
        };
         
        const TONTINE_FEES_TRANSACTION = parseFloat(getConfigValue('TONTINE_FEES_TRANSACTION'));
-       console.log('Transaction fee percentage:', TONTINE_FEES_TRANSACTION);
+      // console.log('Transaction fee percentage:', TONTINE_FEES_TRANSACTION);
        const montant = tontine?.montant || 0;
  
         const calculateTotalAmount = () => {
@@ -89,12 +89,12 @@ const MemberContribution = () => {
           const feesAmount = (Montant * TONTINE_FEES_TRANSACTION) / 100;
           const total = Montant + feesAmount;
           
-          console.log('Amount breakdown:', {
-            baseAmount: Montant,
-            feePercentage: TONTINE_FEES_TRANSACTION,
-            feeAmount: feesAmount,
-            totalAmount: total
-          });
+          // console.log('Amount breakdown:', {
+          //   baseAmount: Montant,
+          //   feePercentage: TONTINE_FEES_TRANSACTION,
+          //   feeAmount: feesAmount,
+          //   totalAmount: total
+          // });
           
           return total;
         };
@@ -197,7 +197,7 @@ const MemberContribution = () => {
 
   const handlePayPenalty = async () => {
     try {
-      const response = await payPenalty({ penaliteId }).unwrap();
+      const response = await payPenalty({ penaliteId: penaltyId }).unwrap();
       console.log('Paiement réussi', response);
       Toast.show({
         type: 'success',
@@ -205,7 +205,8 @@ const MemberContribution = () => {
         text2: 'La pénalité a été payée avec succès.',
       });
     } catch (error) {
-      console.error('Erreur lors du paiement', error);
+    
+       console.log("Erreur lors du paiement:", JSON.stringify(error, null, 2));
       Toast.show({
         type: 'error',
         text1: 'Erreur',
@@ -445,7 +446,7 @@ const MemberContribution = () => {
                   <View className="items-end">
                     <TouchableOpacity
                       className="bg-green-500 px-5 py-2 rounded flex-row items-center justify-center"
-                      onPress={handlePayPenalty}
+                     onPress={() => handlePayPenalty(penalty.id)}
                       disabled={isLoading || penalty?.statut === 'PAID'}
                     >
                       {isLoading ? (
