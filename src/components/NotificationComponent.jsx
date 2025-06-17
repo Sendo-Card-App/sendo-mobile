@@ -10,6 +10,7 @@ import {
 import { useGetNotificationsQuery, useMarkAsReadMutation } from '../services/Notification/notificationApi';
 import { useGetUserProfileQuery } from '../services/Auth/authAPI';
 import { MaterialIcons } from '@expo/vector-icons';
+import Loader from './Loader';
 import { skipToken } from '@reduxjs/toolkit/query/react';
 import { TypesNotification } from '../utils/constants';
 
@@ -52,30 +53,31 @@ const NotificationComponent = () => {
     isLoading: notificationsLoading,
     refetch,
   } = useGetNotificationsQuery(userId ? { userId } : skipToken);
+   //console.log('Liste des notification:', JSON.stringify(notificationsResponse, null, 2));
 
   const [markAsRead] = useMarkAsReadMutation();
 
   if (profileLoading || notificationsLoading) {
     return (
       <View style={styles.loading}>
-        <ActivityIndicator size="large" color="#0D1C6A" />
+        <Loader size="large" color="#0D1C6A" />
       </View>
     );
   }
 
   const allNotifications = notificationsResponse?.data?.items || [];
-  const unreadNotifications = allNotifications.filter((n) => !n.readed);
+  //const unreadNotifications = allNotifications.filter((n) => !n.readed);
 
-  const handleMarkRead = async (notification) => {
-    if (notification.readed) return;
+const handleMarkRead = async (notification) => {
+  if (notification.readed) return;
 
-    try {
-      await markAsRead(notification.id).unwrap();
-      refetch(); // Refresh the list after marking as read
-    } catch (err) {
-      console.warn('Failed to mark notification as read', err);
-    }
-  };
+  try {
+    await markAsRead(notification.id).unwrap();
+    refetch(); // rafraîchir, mais on n'enlèvera pas la notification de l'affichage
+  } catch (err) {
+    console.warn('Failed to mark notification as read', err);
+  }
+}
 
   const renderItem = ({ item }) => (
     <TouchableOpacity
@@ -93,23 +95,43 @@ const NotificationComponent = () => {
     </TouchableOpacity>
   );
 
-  if (unreadNotifications.length === 0) {
-    return (
+  return (
+  <FlatList
+    data={allNotifications}
+    renderItem={({ item }) => (
+      <TouchableOpacity
+        onPress={() => handleMarkRead(item)}
+        style={[
+          styles.notificationItem,
+          {
+            backgroundColor: item.readed ? '#f9f9f9' : '#EBF4FF',
+          },
+        ]}
+      >
+        <View style={styles.iconContainer}>
+          <MaterialIcons name={getIconName(item.type)} size={24} color="green" />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.title, { fontWeight: '700', color: 'green' }]}>
+            {item.title}
+          </Text>
+          <Text style={styles.body}>{item.content}</Text>
+          <Text style={styles.date}>
+            {new Date(item.createdAt).toLocaleString()}
+          </Text>
+        </View>
+      </TouchableOpacity>
+    )}
+    keyExtractor={(item) => item.id.toString()}
+    contentContainerStyle={{ paddingBottom: 20 }}
+    ListEmptyComponent={() => (
       <View style={styles.emptyContainer}>
         <MaterialIcons name="notifications-off" size={40} color="#ccc" />
-        <Text style={styles.emptyText}>No new notifications</Text>
+        <Text style={styles.emptyText}>No notifications</Text>
       </View>
-    );
-  }
-
-  return (
-    <FlatList
-      data={unreadNotifications}
-      renderItem={renderItem}
-      keyExtractor={(item) => item.id.toString()}
-      contentContainerStyle={{ paddingBottom: 20 }}
-    />
-  );
+    )}
+  />
+);
 };
 
 const styles = StyleSheet.create({

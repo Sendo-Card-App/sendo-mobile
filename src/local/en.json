@@ -855,7 +855,7 @@
     "partnerFees": "Partner fees (VISA)",
     "sendoFees": "Sendo fees (VAT included)",
     "totalAmount": "Total amount to be debited",
-    "disclaimer": "Exchange rates are updated weekly and differ from conversion websites, as they include the cost of purchasing foreign currency from banks.",
+     "disclaimer": "The rate includes bank fees for currency purchase and is updated regularly, so it may differ from conversion websites.",
     "rechargeButton": "Recharge my card",
     "closeButton": "Close"
   },

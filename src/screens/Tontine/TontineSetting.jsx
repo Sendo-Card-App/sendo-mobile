@@ -33,14 +33,28 @@ const TontineSetting = () => {
     { title: t("tontineSetting.penalties"), screen: "TontinePenalties" },
   ];
 
- const getInfoForModal = (screen) => {
+const getInfoForModal = (screen) => {
   switch (screen) {
     case "TontineBaseInfo":
       return `Nom de la tontine: ${tontine.nom}\nType: ${tontine.type}\nDescription: ${tontine.description}`;
     case "TontineFrequency":
       return `Fréquence: ${tontine.frequence}\nMode de versement: ${tontine.modeVersement}`;
-    case "TontineOrder":
-      return `Ordre de rotation: ${tontine.ordreRotation ? tontine.ordreRotation : "Aucun ordre de rotation definir."}`;
+    case "TontineOrder": {
+      // On récupère les tours de distribution
+      const tours = tontine.toursDeDistribution || [];
+      if (tours.length === 0) {
+        return "Aucun tour de distribution défini.";
+      }
+      // Pour chaque tour, on associe le membre (nom) et son numéro de distribution
+      const lines = tours.map((tour) => {
+        const member = tontine.membres?.find(m => m.id === tour.beneficiaireId);
+        const name = member?.user
+          ? `${member.user.firstname} ${member.user.lastname}`
+          : `ID ${tour.beneficiaireId}`;
+        return `${name}: Tour n°${tour.numeroDistribution}`;
+      });
+      return lines.join("\n");
+    }
     case "TontineFunds":
       return `Solde actuel: ${tontine.compteSequestre?.soldeActuel} XAF\nMontant bloqué: ${tontine.compteSequestre?.montantBloque} XAF\nÉtat du compte: ${tontine.compteSequestre?.etatCompte}`;
     case "TontinePenalties":
@@ -49,6 +63,7 @@ const TontineSetting = () => {
       return "";
   }
 };
+
 
 
   const handleOptionPress = (screenName) => {

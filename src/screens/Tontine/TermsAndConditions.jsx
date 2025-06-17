@@ -5,32 +5,89 @@ import {
   Image,
   ScrollView,
   TouchableOpacity,
-  Dimensions,
+  StatusBar,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
-import { useTranslation } from "react-i18next";
-import ButtomLogo from "../../images/ButtomLogo.png";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
-const { width } = Dimensions.get("window");
+import ButtomLogo from "../../images/ButtomLogo.png";
+import { useTranslation } from "react-i18next";
 
 const TermsAndConditions = ({ route, navigation }) => {
   const { t } = useTranslation();
   const { onAccept } = route.params || {};
 
-  // Terms content + added fees notice
+  // Vos nouvelles Conditions Générales de Vente
   const termsContent = [
-  ...(t("terms.content")?.split("\n") || []),
-  t("terms.feesNotice"),
-];
-
+    "Conditions Générales de Vente (CGV) – eTontine Sendo",
+    "",
+    "1. Objet du service",
+    "La Tontine Digitale Sendo est un service numérique permettant à un groupe d’utilisateurs de constituer un fonds commun par cotisations périodiques, redistribué selon un ordre défini. Sendo agit uniquement comme plateforme technique et transactionnelle.",
+    "",
+    "2. Souscription et engagement",
+    "Toute participation à une tontine via Sendo nécessite un compte Sendo vérifié (KYC).",
+    "L’utilisateur peut créer ou rejoindre une tontine via l’application.",
+    "En signant ces CGV, le membre s’engage à cotiser régulièrement selon le calendrier établi et à respecter les règles de fonctionnement du groupe.",
+    "L’acceptation de ces CGV est obligatoire pour participer à la tontine.",
+    "",
+    "3. Rôles et responsabilités",
+    "Président de la tontine :",
+    "• Définit les règles internes (montant, ordre, fréquence, pénalités).",
+    "• Peut suspendre ou clore une tontine si nécessaire.",
+    "Membres :",
+    "• Doivent cotiser dans les délais.",
+    "• Recevront leur tour selon l’ordre défini.",
+    "Sendo :",
+    "• Fournit l’interface technique pour gérer les paiements, notifications et historiques.",
+    "",
+    "4. Fonctionnement du service",
+    "• Cotisations via portefeuille Sendo ou Mobile Money.",
+    "• Notifications automatiques à chaque tour.",
+    "• Redistribution automatique selon les règles choisies.",
+    "• Historique des opérations accessible à tous les membres.",
+    "",
+    "5. Frais et commissions",
+    "Des frais de service sont appliqués par Sendo sur chaque cotisation (fixe ou pourcentage).",
+    "Aucun frais supplémentaire ne peut être ajouté sans accord collectif.",
+    "",
+    "6. Retards et pénalités",
+    "En cas de retard ou d’absence de cotisation :",
+    "• Application d’une pénalité.",
+    "• Suspension automatique ou manuelle du membre.",
+    "• Avertissement transmis au président.",
+    "",
+    "7. Résiliation ou annulation d’une tontine",
+    "Une tontine peut être clôturée à tout moment par le président.",
+    "Les fonds non encore redistribués sont remboursés (moins les frais).",
+    "L’historique reste visible pendant 6 mois.",
+    "",
+    "8. Clause d’exonération de responsabilité",
+    "Sendo n’est pas responsable des conflits internes.",
+    "Sendo fournit uniquement une interface de gestion digitale.",
+    "En cas de non-paiement, litige, fraude ou abandon d’un membre, Sendo ne peut être tenu responsable.",
+    "Aucune réclamation ne sera recevable en dehors d’un dysfonctionnement technique de la plateforme.",
+    "",
+    "9. Confidentialité et sécurité",
+    "• Données chiffrées et protégées.",
+    "• Connexion sécurisée par authentification.",
+    "• Conformité avec les normes RGPD/LOPD.",
+    "",
+    "10. Suspension de service",
+    "Sendo peut suspendre temporairement le service pour :",
+    "• Maintenance technique,",
+    "• Sécurité,",
+    "• Non‑conformité d’un utilisateur.",
+    "",
+    "✅ En acceptant ces CGV :",
+    "Le membre reconnaît avoir lu et compris les règles.",
+    "Il s’engage à participer activement, à cotiser à chaque tour, et à respecter les autres membres du groupe.",
+    "Il comprend que toute mauvaise foi ou manquement relève de sa responsabilité personnelle, non de Sendo.",
+  ];
 
   const handleAccept = async () => {
     try {
       await AsyncStorage.setItem("hasAcceptedTerms", "true");
       if (typeof onAccept === "function") {
-        onAccept(); // Call the callback if passed
+        onAccept();
       }
       navigation.replace("TontineList");
     } catch (error) {
@@ -40,7 +97,7 @@ const TermsAndConditions = ({ route, navigation }) => {
 
   return (
     <View className="flex-1 bg-white">
-      {/* Fixed Header */}
+      {/* Header */}
       <View className="bg-[#7ddd7d] pt-12 pb-4 px-4 flex-row justify-between items-center z-10">
         <Image
           source={ButtomLogo}
@@ -55,23 +112,16 @@ const TermsAndConditions = ({ route, navigation }) => {
       {/* Divider */}
       <View className="border border-dashed border-black mx-4 my-2" />
 
-      {/* Scrollable Content */}
+      {/* Content */}
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }} className="px-6">
-        {/* Title & Intro */}
-        <Text className="text-black font-bold text-[22px] mt-4 mb-2">
-          {t("terms.title")}
-        </Text>
-        <Text className="text-[18px] font-semibold text-black mb-4">
-          {t("terms.intro")}
-        </Text>
-
-        {/* Terms List */}
-        {termsContent.map((line, index) => (
+        {termsContent.map((line, idx) => (
           <Text
-            key={index}
-            className="text-[16px] leading-6 text-gray-700 mb-2"
+            key={idx}
+            className={`${
+              line.startsWith("✅") ? "text-green-600 font-bold" : "text-gray-700"
+            } text-base mb-2`}
           >
-            {line.trim()}
+            {line}
           </Text>
         ))}
 

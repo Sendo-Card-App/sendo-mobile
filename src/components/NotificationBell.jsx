@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 const NotificationBell = ({ unreadCount = 0, onPress }) => (
   <TouchableOpacity onPress={onPress} style={{ padding: 8 }}>
-    <Ionicons name="notifications-outline" size={24} color="white" />
+    <Ionicons name="notifications-outline" size={24} color="black" />
     {unreadCount > 0 && (
       <View style={{
         position: 'absolute',

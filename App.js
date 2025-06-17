@@ -526,7 +526,8 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 8,
+     paddingVertical: 8,
+    borderRadius: 16,
   },
   tabLabel: {
     fontSize: 12,

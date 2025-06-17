@@ -268,23 +268,35 @@ const DrawerComponent = ({ navigation }) => {
     <>
       <View className="flex-row justify-between items-center mt-10">
         <Text className="text-white font-bold text-xl">
-          {userProfile?.data?.firstname} {userProfile?.data?.lastname}
         </Text>
         <TouchableOpacity onPress={() => navigation.closeDrawer()}>
           <AntDesign name="arrowleft" size={24} color="white" />
         </TouchableOpacity>
       </View>
 
-      <View className="mt-2 bg-gray-800 px-4 py-3 rounded-md flex-row justify-between items-center">
-        <View>
-          <Text className="text-white">{userProfile?.data?.email}</Text>
-          <Text className="text-white">{userProfile?.data?.phone}</Text>
-        </View>
-        {userProfile?.data?.isVerifiedEmail && (
-          <Text className="text-green-600 bg-green-100 px-2 py-1 rounded-full">
-            ✅ Verified
+      <View className="mt-4 bg-white px-4 py-3 rounded-xl shadow-sm border border-gray-100">
+        <View className="flex-row items-center justify-between">
+          <Text className="text-lg font-semibold text-gray-800">
+            {userProfile?.data?.firstname} {userProfile?.data?.lastname}
+            {userProfile?.data?.isVerifiedEmail && (
+              <Text className="ml-2">
+                <Ionicons name="checkmark-circle" size={18} color="#10B981" />
+              </Text>
+            )}
           </Text>
-        )}
+        </View>
+        
+        <View className="mt-2">
+          <View className="flex-row items-center">
+            <Ionicons name="mail-outline" size={14} color="#6B7280" className="mr-2" />
+            <Text className="text-sm text-gray-600">{userProfile?.data?.email}</Text>
+          </View>
+          
+          <View className="flex-row items-center mt-1">
+            <Ionicons name="call-outline" size={14} color="#6B7280" className="mr-2" />
+            <Text className="text-sm text-gray-600">{userProfile?.data?.phone}</Text>
+          </View>
+        </View>
       </View>
     </>
   )}
