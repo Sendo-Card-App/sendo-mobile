@@ -36,6 +36,7 @@ const Cotisations = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { tontineId, tontine } = route.params;
+  //console.log(tontine)
   const [activeTab, setActiveTab] = useState("contributions");
   const [loading, setLoading] = useState(false);
   const [isLoadingRelance, setIsLoadingRelance] = useState(false);
@@ -83,19 +84,12 @@ const Cotisations = () => {
     };
      
     const TONTINE_FEES_DISTRIBUTION = parseFloat(getConfigValue('TONTINE_FEES_DISTRIBUTION'));
-     console.log('Distribution fee percentage:', TONTINE_FEES_DISTRIBUTION);
+     //console.log('Distribution fee percentage:', TONTINE_FEES_DISTRIBUTION);
 
   const calculateDistributionAmount = () => {
     const currentBalance = parseFloat(tontine?.compteSequestre?.soldeActuel) || 0;
     const feesAmount = (currentBalance * TONTINE_FEES_DISTRIBUTION) / 100;
     const netAmount = currentBalance - feesAmount;
-    
-    console.log('Distribution calculation:', {
-      currentBalance,
-      feePercentage: TONTINE_FEES_DISTRIBUTION,
-      feesAmount,
-      netAmount
-    });
     
     return netAmount;
   };

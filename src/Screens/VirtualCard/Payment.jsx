@@ -79,7 +79,7 @@ const Payment = () => {
         </Text>
       </TouchableOpacity>
 
-      <Text className="font-extrabold text-gray-800 border-b border-gray-400 pt-6 pb-1 border-dashed text-lg">
+      {/* <Text className="font-extrabold text-gray-800 border-b border-gray-400 pt-6 pb-1 border-dashed text-lg">
         {t('payment2.bonus_balance')}
       </Text>
       <Text className="font-extrabold text-gray-800 mt-2 text-lg">
@@ -93,9 +93,20 @@ const Payment = () => {
 
       <Text className="text-[#7ddd7d] font-bold text-sm my-4">
         {t('payment2.share_referral')}
-      </Text>
+      </Text> */}
 
        <View className="mb-5 py-3 mt-auto flex-row gap-4 items-center">
+        
+        
+        {/* <TouchableOpacity
+          className="bg-[#7ddd7d] rounded-full items-center justify-center px-4 py-2"
+          onPress={() => navigation.navigate("Success")}
+        >
+          <Text className="text-md text-center font-bold">{t('payment2.generate_code')}</Text>
+        </TouchableOpacity> */}
+
+        {/* <TextInput className="border rounded-2xl border-gray-400 py-3.5 pl-2 flex-1" /> */}
+
         <TouchableOpacity 
           onPress={() => navigation.navigate('MainTabs')}
           style={styles.floatingHomeButton}
@@ -106,15 +117,6 @@ const Payment = () => {
             color="#7ddd7d" 
           />
         </TouchableOpacity>
-        
-        <TouchableOpacity
-          className="bg-[#7ddd7d] rounded-full items-center justify-center px-4 py-2"
-          onPress={() => navigation.navigate("Success")}
-        >
-          <Text className="text-md text-center font-bold">{t('payment2.generate_code')}</Text>
-        </TouchableOpacity>
-
-        <TextInput className="border rounded-2xl border-gray-400 py-3.5 pl-2 flex-1" />
       </View>
       <StatusBar backgroundColor="#7ddd7d" />
       

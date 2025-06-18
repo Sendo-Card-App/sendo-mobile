@@ -11,7 +11,7 @@ module.exports = {
     slug: "sendo",
     version: "1.0.3",
     orientation: "portrait",
-    icon: "./assets/logo.jpg",
+    icon: "./assets/icon.png", 
     userInterfaceStyle: "light",
     newArchEnabled: true,
     splash: {
@@ -28,7 +28,7 @@ module.exports = {
     },
     android: {
       adaptiveIcon: {
-        foregroundImage: "./assets/logo.jpg",
+        foregroundImage: "./assets/icon.png", 
         backgroundColor: "#181e25"
       },
       permissions: [
@@ -38,8 +38,7 @@ module.exports = {
         "android.permission.READ_CONTACTS",
         "android.permission.WRITE_CONTACTS"
       ],
-      package: "com.sendo",
-      allowCleartextTraffic: true
+      package: "com.sendo"
     },
     web: {
       favicon: "./assets/favicon.png"
@@ -66,6 +65,6 @@ module.exports = {
         projectId: "08a59933-10e3-45bc-b064-54b97ea7eca9"
       }
     },
-    owner: "sfesendo",
+    owner: "sfesendo"
   }
 };

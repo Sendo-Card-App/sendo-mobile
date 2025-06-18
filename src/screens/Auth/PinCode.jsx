@@ -18,6 +18,7 @@ const PinCode = ({ navigation, route }) => {
   const { t } = useTranslation();
   const [pin, setPin] = useState('');
   const [error, setError] = useState(null);
+  const [passcodeExists, setPasscodeExists] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [biometricAvailable, setBiometricAvailable] = useState(false);
   const [hasStoredPasscode, setHasStoredPasscode] = useState(false);
@@ -41,7 +42,7 @@ const PinCode = ({ navigation, route }) => {
     error: profileError,
     refetch 
   } = useGetUserProfileQuery();
-  
+
   const userId = userProfile?.data?.id;
   const { data: serverTokenData } = useGetTokenMutation(userId, {
     skip: !userId
@@ -51,25 +52,35 @@ const PinCode = ({ navigation, route }) => {
   const isSetup = route.params?.setup ?? !hasStoredPasscode;
   const isLocked = lockedUntil && new Date(lockedUntil) > new Date();
 
-  // Check and update token when component mounts or user profile changes
- useEffect(() => {
-  const checkAndUpdateToken = async () => {
-    if (!userId) return;
-
-    try {
-      const localToken = await getStoredPushToken();
-      const serverToken = serverTokenData?.data?.token;
-
-      if (localToken && localToken !== serverToken) {
-        const response = await createToken({ userId, token: localToken }).unwrap();
-        console.log('✅ Token update response:', response); 
-      }
-    } catch (error) {
-      console.log(' Error:', JSON.stringify(error, null, 2));
+  useEffect(() => {
+  if (userProfile) {
+    if (userProfile?.data?.passcode) {
+      setPasscodeExists(true);
+    } else {
+      setPasscodeExists(false);
     }
-  };
-  checkAndUpdateToken();
-}, [userId, serverTokenData]);
+  }
+}, [userProfile]);
+  // Check and update token when component mounts or user profile changes
+//  useEffect(() => {
+//   const checkAndUpdateToken = async () => {
+//     if (!userId) return;
+
+//     try {
+//       const localToken = await getStoredPushToken();
+//       const serverToken = serverTokenData?.data?.token;
+
+//       if (localToken && localToken !== serverToken) {
+//         const response = await createToken({ userId, token: localToken }).unwrap();
+//         console.log('✅ Token update response:', response); 
+//       }
+//     } catch (error) {
+//       console.log(' Error:', JSON.stringify(error, null, 2));
+//     }
+//   };
+//   checkAndUpdateToken();
+// }, [userId, serverTokenData]);
+  
 
 
   // Clear session function
@@ -219,32 +230,25 @@ const handleBiometricAuth = async () => {
 const handleComplete = async (enteredPin) => {
   setIsLoading(true);
   try {
-    // Get passcode directly from AsyncStorage 
+
     const storedPasscode = await getData('@passcode');
-    
     if (storedPasscode) {
       if (enteredPin === storedPasscode) {
         dispatch(resetAttempts());
-        
-        // Handle different scenarios based on why we came to PinCode
+
         if (route.params?.showBalance) {
-          // Case 1: Came from balance viewing request
           if (route.params?.onSuccess) {
             await route.params.onSuccess(enteredPin);
           }
-          navigation.goBack(); // Go back to HomeScreen
-        } 
-        else if (route.params?.onSuccess) {
-          // Case 2: Came from other operations (like transfer confirmation)
+          navigation.goBack();
+        } else if (route.params?.onSuccess) {
           await route.params.onSuccess(enteredPin);
           navigation.replace('Main', { screen: 'Success' });
-        } 
-        else {
-          // Case 3: Regular authentication flow
+        } else {
           navigation.replace('Main');
         }
       } else {
-        // Incorrect PIN handling
+        // PIN incorrect
         setError(t('pin.incorrectPin'));
         setPin('');
         dispatch(incrementAttempt());
@@ -253,45 +257,55 @@ const handleComplete = async (enteredPin) => {
           const lockTime = new Date();
           lockTime.setMinutes(lockTime.getMinutes() + 5);
           dispatch(lockPasscode(lockTime.toISOString()));
-          
+
           Alert.alert(
             t('pin.accountLocked'),
             t('pin.lockedFor5Minutes'),
             [
-              { 
-                text: t('common.ok'), 
+              {
+                text: t('common.ok'),
                 onPress: () => {
                   if (biometricAvailable) {
                     handleBiometricAuth();
                   }
-                }
-              }
+                },
+              },
             ]
           );
         }
       }
     } else {
-      // New user setting up PIN for first time
-      const result = await createPasscode({ passcode: enteredPin }).unwrap();
-      if (result.status === 200) {
-        await storeData('@passcode', enteredPin); 
-        dispatch(setPasscode(enteredPin));
-        dispatch(setIsNewUser(false));
-        
-        navigation.navigate('Main');
+      if (userProfile?.data?.passcode) {
+        if (enteredPin === userProfile?.data?.passcode) {
+          await storeData('@passcode', enteredPin);
+          dispatch(setPasscode(enteredPin));
+          navigation.navigate('Main');
+        } else {
+          setError(t('pin.incorrectPin'));
+          setPin('');
+        }
       } else {
-        setError(t('pin.validationError'));
-        setPin('');
+        const result = await createPasscode({ passcode: enteredPin }).unwrap();
+        if (result.status === 200) {
+          await storeData('@passcode', enteredPin);
+          dispatch(setPasscode(enteredPin));
+          dispatch(setIsNewUser(false));
+          navigation.navigate('Main');
+        } else {
+          setError(t('pin.validationError'));
+          setPin('');
+        }
       }
     }
   } catch (error) {
-    console.log("Error:", error);
-    showToast('error', t('errors.title'), error.data?.message || "compte supendu");
+    console.log('Error:', error);
+    showToast('error', t('errors.title'), error.data?.message || 'Compte suspendu');
     setPin('');
   } finally {
     setIsLoading(false);
   }
 };
+
 
   const renderDots = () => (
     <View style={{ flexDirection: 'row', justifyContent: 'center', marginVertical: 20 }}>

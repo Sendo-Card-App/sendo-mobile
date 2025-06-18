@@ -12,7 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 
 // Assets
-import ButtomLogo from "../../Images/ButtomLogo.png";
+import ButtomLogo1 from "../../Images/ButtomLogo1.png";
 import Ilustration from "../../Images/icones/Ilustration.png";
 
 const { width, height } = Dimensions.get("window");
@@ -26,7 +26,7 @@ const WelcomeShare = ({ navigation }) => {
       {/* Top Header */}
       <View className="flex-row justify-between items-center px-4 pt-12">
         <Image
-          source={ButtomLogo}
+          source={ButtomLogo1}
           resizeMode="contain"
           className="h-[50px] w-[150px]"
         />

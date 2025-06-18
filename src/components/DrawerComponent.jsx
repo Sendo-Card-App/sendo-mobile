@@ -151,6 +151,7 @@ const DrawerComponent = ({ navigation }) => {
   
       // Clear all auth data
       await removeData('@authData');
+       await removeData('@passcode');
       await removeData('Stored'); 
       setAuthData(null);
   

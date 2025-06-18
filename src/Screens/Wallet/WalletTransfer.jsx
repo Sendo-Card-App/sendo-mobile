@@ -223,7 +223,7 @@ const WalletTransfer = ({ navigation }) => {
             ) : (
               <>
                 <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#0D1C6A' }}>
-                  {balanceData?.data?.balance?.toFixed(2) || '0.00'} FCFA
+                  {balanceData?.data?.balance?.toFixed(2) || '0.00'} {balanceData?.data?.currency}
                 </Text>
                 {userWalletId && (
                   <Text style={{ fontSize: 14, color: '#666', marginTop: 5 }}>
