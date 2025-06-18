@@ -123,7 +123,7 @@ const MemberContribution = () => {
   });
   
   const cotisationId = validatedCotisations?.data?.[0]?.id;
-  //console.log(cotisationId)
+
   const handlePay = async () => {
   if (balance < montant) {
     Toast.show({
@@ -195,41 +195,50 @@ const MemberContribution = () => {
   }
 };
 
-const handlePayPenalty = async () => {
-  if (penalty?.statut === 'PAID') {
-    console.log('Pénalité déjà payée, action ignorée.');
-    return;
-  }
+  const handlePayPenalty = async (penalty) => {
+    console.log('penalty:', penalty);
 
-  console.log('🔄 Paiement en cours pour la pénalité ID:', penalty?.id);
+    if (!penalty?.id) {
+      console.log(" Aucune pénalité sélectionnée !");
+      return;
+    }
 
-  try {
-    const response = await payPenalty({ penaliteId: penalty.id }).unwrap();
-    console.log(' Réponse succès:', JSON.stringify(response, null, 2));
+    if (penalty.statut === 'PAID') {
+      console.log('Pénalité déjà payée, action ignorée.');
+      return;
+    }
 
-    Toast.show({
-      type: 'success',
-      text1: 'Succès',
-      text2: 'La pénalité a été payée avec succès.',
-    });
-  } catch (error) {
-    console.log(' Erreur lors du paiement:', JSON.stringify(error, null, 2));
+    if (balance < penalty.montant) {
+      Toast.show({
+        type: 'error',
+        text1: 'Solde insuffisant',
+        text2: 'Veuillez recharger votre solde.',
+        position: 'top',
+      });
+      return; 
+    }
 
-    const message =
-      error?.data?.message ||
-      error?.error ||
-      "Une erreur est survenue lors du paiement.";
+    try {
+      const response = await payPenalty({ penaliteId: penalty.id }).unwrap();
+      Toast.show({
+        type: 'success',
+        text1: 'Succès',
+        text2: 'La pénalité a été payée avec succès.',
+      });
+      refetchPenalties();
+    } catch (error) {
+      const message =
+        error?.data?.message ||
+        error?.error ||
+        "Une erreur est survenue lors du paiement.";
 
-    Toast.show({
-      type: 'error',
-      text1: 'Erreur',
-      text2: message,
-    });
-  }
-};
-
-
-
+      Toast.show({
+        type: 'error',
+        text1: 'Erreur',
+        text2: message,
+      });
+    }
+  };
 
   const adminMember = tontine?.membres?.find((m) => m.role === "ADMIN");
   const adminName = adminMember
@@ -460,9 +469,9 @@ const handlePayPenalty = async () => {
                   </View>
 
                   <View className="items-end">
-                    <TouchableOpacity
+                   <TouchableOpacity
                       className="bg-green-500 px-5 py-2 rounded flex-row items-center justify-center"
-                      onPress={handlePayPenalty} // pas besoin de passer penalty.id ici
+                      onPress={() => handlePayPenalty(penalty)} 
                       disabled={isLoading || penalty?.statut === 'PAID'}
                     >
                       {isLoading ? (
