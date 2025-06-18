@@ -16,8 +16,10 @@ import {
   useGetTontinesQuery,
   useAccessOrRejectTontineMutation,
 } from "../../services/Tontine/tontineApi";
+import { useTranslation } from "react-i18next";
 
 export default function TontineListScreen({ navigation }) {
+  const { t } = useTranslation();
   const [selectedTab, setSelectedTab] = useState("mesTontines");
   const [expandedInvitations, setExpandedInvitations] = useState({});
   const user = useSelector((state) => state.auth.user);
@@ -31,7 +33,6 @@ export default function TontineListScreen({ navigation }) {
 
   const tontines = data?.data?.items || [];
 
-  // Split into joined vs pending invitations
   const myTontines = tontines.filter((t) =>
     t.membres.some((m) => m.user?.id === userId && m.etat !== "PENDING")
   );
@@ -41,10 +42,10 @@ export default function TontineListScreen({ navigation }) {
   );
 
   const ROLE_LABELS = {
-    ADMIN: "Administrateur",
-    MEMBRE: "Participant",
-    TRESORIER: "Trésorier",
-    PRESIDENT: "Président",
+    ADMIN: t("role_ADMIN"),
+    MEMBRE: t("role_MEMBRE"),
+    TRESORIER: t("role_TRESORIER"),
+    PRESIDENT: t("role_PRESIDENT"),
   };
 
   const handleJoin = (item) => {
@@ -93,7 +94,6 @@ export default function TontineListScreen({ navigation }) {
 
     try {
       await accessOrRejectTontine({
-        invitationCode: "REJECT",
         membreId,
         type: "REJECT",
       }).unwrap();
@@ -103,11 +103,22 @@ export default function TontineListScreen({ navigation }) {
     }
   };
 
+  const formatFrequence = (f) => {
+    switch (f) {
+      case "DAILY":
+        return t("frequency_DAILY");
+      case "WEEKLY":
+        return t("frequency_WEEKLY");
+      case "MONTHLY":
+        return t("frequency_MONTHLY");
+      default:
+        return f;
+    }
+  };
+
   const renderTontineItem = ({ item }) => {
     const participants = item.membres || [];
-    const currentUserMembership = participants.find(
-      (member) => member.user?.id === userId
-    );
+    const currentUserMembership = participants.find((member) => member.user?.id === userId);
     const currentUserRole = currentUserMembership?.role;
     const roleLabel = ROLE_LABELS[currentUserRole] || currentUserRole || "";
 
@@ -144,7 +155,7 @@ export default function TontineListScreen({ navigation }) {
               <Text className="text-xs text-gray-400 mx-1">•</Text>
             </>
           ) : null}
-          <Text className="text-xs text-gray-500">{item.frequence}</Text>
+          <Text className="text-xs text-gray-500">{formatFrequence(item?.frequence)}</Text>
         </View>
         <Ionicons
           name="chevron-forward"
@@ -158,59 +169,33 @@ export default function TontineListScreen({ navigation }) {
 
   const renderInvitationItem = ({ item }) => {
     const isExpanded = expandedInvitations[item.id];
-
     const toggleExpand = () => {
-      setExpandedInvitations((prev) => ({
-        ...prev,
-        [item.id]: !prev[item.id],
-      }));
+      setExpandedInvitations((prev) => ({ ...prev, [item.id]: !prev[item.id] }));
     };
-
     const nombreMembres = item.membres.length;
     const admin = item.membres.find((m) => m.role === "ADMIN");
     const adminName = admin ? `${admin.user.firstname} ${admin.user.lastname}` : "Inconnu";
 
     return (
       <View className="bg-white rounded-lg p-4 mb-4 shadow-sm border border-gray-300">
-        <TouchableOpacity
-          className="flex-row justify-between items-center mb-2"
-          onPress={toggleExpand}
-        >
+        <TouchableOpacity className="flex-row justify-between items-center mb-2" onPress={toggleExpand}>
           <Text className="text-blue-500 font-bold text-base">{item.nom}</Text>
-          <Ionicons
-            name={isExpanded ? "chevron-up" : "chevron-down"}
-            size={20}
-            color="gray"
-          />
+          <Ionicons name={isExpanded ? "chevron-up" : "chevron-down"} size={20} color="gray" />
         </TouchableOpacity>
 
         {isExpanded && (
           <>
-            <Text className="text-sm font-bold">
-              Nombre de membres: <Text className="font-normal">{nombreMembres}</Text>
-            </Text>
-            <Text className="text-sm font-bold">
-              Admin: <Text className="font-normal">{adminName}</Text>
-            </Text>
-            <Text className="text-sm font-bold">
-              Fréquence: <Text className="font-normal">{item.frequence}</Text>
-            </Text>
-            <Text className="text-sm font-bold">
-              Somme à cotiser: <Text className="font-normal">{item.montant} FCFA</Text>
-            </Text>
+            <Text className="text-sm font-bold">{t("tontine_members_count")}: <Text className="font-normal">{nombreMembres}</Text></Text>
+            <Text className="text-sm font-bold">{t("tontine_admin")}: <Text className="font-normal">{adminName}</Text></Text>
+            <Text className="text-sm font-bold">{t("tontine_frequency")}: <Text className="font-normal">{formatFrequence(item.frequence)}</Text></Text>
+            <Text className="text-sm font-bold">{t("tontine_amount")}: <Text className="font-normal">{item.montant} FCFA</Text></Text>
 
-            <TouchableOpacity
-              className="bg-green-400 py-3 rounded-full items-center mt-4"
-              onPress={() => handleJoin(item)}
-            >
-              <Text className="text-white font-bold">Joindre</Text>
+            <TouchableOpacity className="bg-green-400 py-3 rounded-full items-center mt-4" onPress={() => handleJoin(item)}>
+              <Text className="text-white font-bold">{t("join_button")}</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              className="border border-red-400 py-3 rounded-full items-center mt-3"
-              onPress={() => handleReject(item)}
-            >
-              <Text className="text-red-500 font-bold">Rejeter</Text>
+            <TouchableOpacity className="border border-red-400 py-3 rounded-full items-center mt-3" onPress={() => handleReject(item)}>
+              <Text className="text-red-500 font-bold">{t("reject_button")}</Text>
             </TouchableOpacity>
           </>
         )}
@@ -220,7 +205,6 @@ export default function TontineListScreen({ navigation }) {
 
   return (
     <View className="flex-1 bg-gray-100">
-      {/* Header */}
       <View className="bg-green-400 pb-4 rounded-b-2xl">
         <View className="flex-row justify-between items-center px-4 pt-12">
           <Image source={ButtomLogo} resizeMode="contain" className="h-[40px] w-[120px]" />
@@ -231,38 +215,31 @@ export default function TontineListScreen({ navigation }) {
         <View className="border border-dashed border-black-300 mt-2 mx-6" />
       </View>
 
-      {/* Create button */}
       <View className="px-4 mt-6">
         <TouchableOpacity
           onPress={() => navigation.navigate("CreateTontine")}
           className="bg-green-600 py-4 rounded-full flex-row items-center justify-center"
         >
           <Ionicons name="add-circle-outline" size={20} color="white" />
-          <Text className="text-white ml-2 font-semibold">Créer une nouvelle tontine</Text>
+          <Text className="text-white ml-2 font-semibold">{t("create_button")}</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Tabs */}
       <View className="flex-row justify-around mt-6 border-b border-gray-200">
         <TouchableOpacity
           onPress={() => setSelectedTab("mesTontines")}
           className={`pb-2 ${selectedTab === "mesTontines" ? "border-b-2 border-green-500" : ""}`}
         >
-          <Text className={`text-sm font-semibold ${selectedTab === "mesTontines" ? "text-green-600" : "text-gray-500"}`}>
-            Mes tontines
-          </Text>
+          <Text className={`text-sm font-semibold ${selectedTab === "mesTontines" ? "text-green-600" : "text-gray-500"}`}>{t("tab_my_tontines")}</Text>
         </TouchableOpacity>
         <TouchableOpacity
           onPress={() => setSelectedTab("invitations")}
           className={`pb-2 ${selectedTab === "invitations" ? "border-b-2 border-green-500" : ""}`}
         >
-          <Text className={`text-sm font-semibold ${selectedTab === "invitations" ? "text-green-600" : "text-gray-500"}`}>
-            Invitations
-          </Text>
+          <Text className={`text-sm font-semibold ${selectedTab === "invitations" ? "text-green-600" : "text-gray-500"}`}>{t("tab_invitations")}</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Tab Content */}
       <View className="flex-1 px-4 mt-4">
         {isLoading || profileLoading ? (
           <ActivityIndicator size="large" color="green" className="mt-6" />
@@ -270,7 +247,7 @@ export default function TontineListScreen({ navigation }) {
           <Text className="text-center text-red-500 mt-4">Une erreur est survenue.</Text>
         ) : selectedTab === "mesTontines" ? (
           myTontines.length === 0 ? (
-            <Text className="text-center mt-4 text-gray-500">Aucune tontine disponible.</Text>
+            <Text className="text-center mt-4 text-gray-500">{t("no_tontine")}</Text>
           ) : (
             <FlatList
               data={myTontines}
@@ -281,7 +258,7 @@ export default function TontineListScreen({ navigation }) {
           )
         ) : (
           invitationTontines.length === 0 ? (
-            <Text className="text-center mt-4 text-gray-500">Aucune invitation en attente.</Text>
+            <Text className="text-center mt-4 text-gray-500">{t("no_invitation")}</Text>
           ) : (
             <FlatList
               data={invitationTontines}

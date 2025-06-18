@@ -1,10 +1,32 @@
 {
   "available_balance": "Solde disponible",
   "welcome": "Bienvenue!",
+   "create_button": "Créer une nouvelle tontine",
+  "tab_my_tontines": "Mes tontines",
+  "tab_invitations": "Invitations",
+  "no_tontine": "Aucune tontine disponible.",
+  "no_invitation": "Aucune invitation en attente.",
+  "tontine_members_count": "Nombre de membres",
+  "tontine_admin": "Admin",
+  "tontine_frequency": "Fréquence",
+  "tontine_amount": "Somme à cotiser",
+  "join_button": "Joindre",
+  "reject_button": "Rejeter",
+  "role_ADMIN": "Administrateur",
+  "role_MEMBRE": "Participant",
+  "role_TRESORIER": "Trésorier",
+  "role_PRESIDENT": "Président",
+  "frequency_DAILY": "Journalier",
+  "frequency_WEEKLY": "Hebdomadaire",
+  "frequency_MONTHLY": "Mensuel",
   "chooseCountry": "Choisissez un pays pour effectuer un transfert.",
   "searchPlaceholder": "Recherche par pays",
   "cameroon": "Cameroun",
   "canada": "Canada",
+   "add_member": "Ajouter un membre",
+  "sort_by_date": "Tri: Date",
+  "sort_by_name": "Tri: A → Z",
+  "member_list": "Liste des Membre",
   "my_destinataires": "Mes Destinataires",
   "transfer_fee": "Frais de transfert",
 "total_to_send": "Total à envoyer",
@@ -1212,8 +1234,109 @@
   },
   "common5": {
     "nextButton": "Suivant"
+  },
+  "addPenalty": {
+    "motif": "Motif",
+    "motif.retard": "Retard",
+    "motif.absence": "Absence",
+    "motif.autre": "Autre",
+    "somme": "Somme",
+    "note": "Note",
+    "delai": "Délai",
+    "selectDate": "Sélectionner une date",
+    "cancel": "Annuler",
+    "confirm": "Confirmer"
+  },
+   "tontineDetail": {
+    "defaultName": "Nom de la tontine",
+    "members": "Membres",
+    "contributions": "Cotisations",
+    "settings": "Paramètres",
+    "contribute": "Me Cotiser"
+  },
+  "memberDetail": {
+  "tab_contributions": "Cotisations",
+  "tab_penalties": "Pénalités",
+  "tab_history": "Historique",
+  "filter": "Filtre",
+  "no_cotisations": "Aucune cotisation trouvée.",
+  "no_penalties": "Aucune pénalité trouvée.",
+  "new_penalty": "Nouvelle pénalité",
+  "unpaid": "Non payé",
+  "paid": "Payé",
+  "pending": "En attente",
+  "history_coming_soon": "Historique à venir!",
+  "no_member_selected": "Aucun membre sélectionné",
+  "name": "Nom",
+  "contact": "Phone",
+  "email": "Email",
+  "member_since": "Membre depuis",
+  "role": "Rôle"
+},
+ "tontineSetting": {
+    "base_info": "Informations de bases",
+    "frequency": "Fréquence de cotisations",
+    "order": "Ordre de passage",
+    "funds": "Versement de fonds",
+    "penalties": "Pénalités",
+    "delete": "Supprimer la tontine"
+  },
+  "cotisations": {
+    "total": "Total",
+    "members": "Membres",
+    "changeStatus": "Changer le statut",
+    "distributeToNext": "Verser au prochain bénéficiaire",
+    "noContributions": "Aucune cotisation enregistrée",
+    "dragToReorder": "Glissez pour réorganiser la rotation"
+  },
+  "frequency1": {
+    "daily": "Journalier",
+    "weekly": "Hebdomadaire",
+    "monthly": "Mensuel"
+  },
+  "tabs1": {
+    "contributions": "Cotisations",
+    "rotationOrder": "Ordre de rotation",
+    "history": "Historique"
+  },
+  "actions": {
+    "remind": "Relancer",
+    "saveOrder": "Enregistrer l'ordre"
+  },
+  "errors5": {
+    "loadingContributions": "Erreur de chargement des cotisations"
+  },
+  "loading": "Chargement...",
+  "comingSoon": "Bientôt disponible...",
+  "memberContribution": {
+    "title": "Mes Cotisations",
+    "back": "Retour",
+    "menu": "Menu",
+    "members": "Membres",
+    "admin": "Administrateur",
+    "frequency": "Fréquence",
+    "contributionAmount": "Somme à cotiser",
+    "myContributions": "Mes Cotisations",
+    "currentPeriod": "Période actuelle",
+    "pay": "Payer",
+    "paymentProcessing": "Paiement...",
+    "tabs": {
+      "contributions": "Cotisations",
+      "penalties": "Pénalités",
+      "history": "Historique"
+    },
+    "noContributions": "Aucune cotisation enregistrée",
+    "paid": "Payé",
+    "pending": "En attente",
+    "penaltyType": "Type",
+    "noPenalties": "Aucune pénalité",
+    "loading": "Chargement...",
+    "payPenalty": "Payer",
+    "daily": "Journalier",
+    "weekly": "Hebdomadaire",
+    "monthly": "Mensuel",
+    "unknownAdmin": "Admin inconnu"
   }
-
     
     
     
