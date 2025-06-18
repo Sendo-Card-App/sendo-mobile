@@ -1,4 +1,5 @@
 import "./global.css";
+import { ThemeProvider } from './src/constants/ThemeContext';
 import React, { useEffect } from "react";
 import { Colors } from './src/constants/colors'; // Adjust the path as needed
 
@@ -479,13 +480,15 @@ export default function App() {
       // TODO: send token to your backend here if needed
     });
   }, []);
-  return (
+ return (
     <Provider store={store}>
       <NetworkProvider>
-        <NavigationContainer>
-          <DrawerNavigator />
-          <Toast />
-        </NavigationContainer>
+        <ThemeProvider>
+          <NavigationContainer>
+            <DrawerNavigator />
+            <Toast />
+          </NavigationContainer>
+        </ThemeProvider>
       </NetworkProvider>
     </Provider>
   );

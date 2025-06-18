@@ -46,12 +46,10 @@ const SignIn = () => {
          if (authData?.accessToken) {
            dispatch(loginSuccess(authData));
            navigation.replace("SignIn");
-         } else {
-           navigation.replace("AUTH");
          }
        } catch (error) {
          console.log("Error checking auth data:", error);
-         navigation.replace("Auth");
+         navigation.replace("SignIn");
        } finally {
          setLoading(false); // stop loader once done
        }

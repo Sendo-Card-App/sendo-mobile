@@ -37,7 +37,11 @@ const Signup = () => {
   const { error, isSignupSuccess } = useSelector((state) => state.auth);
 
   const [countries, setCountries] = useState([]);
-  const [selectedCountry, setSelectedCountry] = useState({ code: "+237", flag: "🇨🇲" });
+  const [selectedCountry, setSelectedCountry] = useState({
+     name: 'Cameroon',
+     code: '+237',
+     flag: 'https://flagcdn.com/w40/cm.png'
+   });
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showReferralCode, setShowReferralCode] = useState(false); // New state for referral code visibility
@@ -189,20 +193,26 @@ const Signup = () => {
     navigation.navigate("SignIn");
   };
 
-  useEffect(() => {
-    fetch("https://restcountries.com/v3.1/all")
-      .then((res) => res.json())
-      .then((data) => {
-        const countryList = data
-          .map((country) => ({
-            name: country.name.common,
-            flag: country.flag,
-            callingCode: country.idd?.root ? `${country.idd.root}${(country.idd.suffixes || [""])[0]}` : null,
-          }))
-          .filter((c) => c.callingCode);
-        setCountries(countryList.sort((a, b) => a.name.localeCompare(b.name)));
-      });
-  }, []);
+ useEffect(() => {
+  fetch("https://restcountries.com/v3.1/all?fields=name,idd,flags")
+    .then((res) => res.json())
+    .then((data) => {
+      const countryList = data
+        .map((country) => ({
+          name: country.name.common,
+          flag: country.flags?.png || country.flags?.svg || null,
+          callingCode: country.idd?.root
+            ? `${country.idd.root}${(country.idd.suffixes || [""])[0]}`
+            : null,
+        }))
+        .filter((c) => c.callingCode && c.flag); // make sure flag exists
+      setCountries(countryList.sort((a, b) => a.name.localeCompare(b.name)));
+    })
+    .catch((err) => {
+      console.error("Failed to fetch countries:", err);
+    });
+}, []);
+
 
   useEffect(() => {
   if (isSignupSuccess) {
@@ -333,18 +343,28 @@ const Signup = () => {
 
             {/* Phone */}
             <Text className="text-sm font-medium text-gray-700 mb-1 pl-3">{t("signup.phone")}</Text>
-            <View className="relative mb-2 flex-row bg-white rounded-3xl overflow-hidden items-center border border-[#ddd]"
+            <View
+              className="relative mb-2 flex-row bg-white rounded-3xl overflow-hidden items-center border border-[#ddd]"
               style={{
                 shadowColor: '#000',
                 shadowOffset: { width: 0, height: 1 },
                 shadowOpacity: 0.1,
                 shadowRadius: 2,
                 elevation: 2,
-                 color: '#000' 
-              }}>
-              <TouchableOpacity onPress={openModal} className="px-3">
-                <Text className="text-lg">{selectedCountry.flag} {selectedCountry.code}</Text>
+                color: '#000'
+              }}
+            >
+              <TouchableOpacity onPress={openModal} className="px-3 flex-row items-center">
+                {selectedCountry.flag ? (
+                  <Image
+                    source={{ uri: selectedCountry.flag }}
+                    style={{ width: 24, height: 16, borderRadius: 2, marginRight: 6 }}
+                    resizeMode="contain"
+                  />
+                ) : null}
+                <Text className="text-lg">{selectedCountry.code}</Text>
               </TouchableOpacity>
+
               <TextInput
                 placeholder={t("signup.phonePlaceholder") || "Phone number"}
                 value={signupDetails.phone}
@@ -506,7 +526,12 @@ const Signup = () => {
                   className="flex-row items-center p-4 border-b border-gray-200"
                   onPress={() => selectCountry(item)}
                 >
-                  <Text className="text-lg mr-2">{item.flag}</Text>
+                  <Image
+                    source={{ uri: item.flag }}
+                    style={{ width: 24, height: 16, marginRight: 10, borderRadius: 2 }}
+                    resizeMode="contain"
+                  />
+
                   <Text className="text-lg">{item.name} ({item.callingCode})</Text>
                 </TouchableOpacity>
               )}

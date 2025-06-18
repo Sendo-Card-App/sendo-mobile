@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Modal, Image, ScrollView } from 'react-native';
+import {
+  View, Text, TextInput, TouchableOpacity, Modal,
+  Image, ScrollView
+} from 'react-native';
 import Loader from "./Loader";
 import Toast from 'react-native-toast-message';
 import { useTranslation } from 'react-i18next';
@@ -15,22 +18,10 @@ const AddSecondPhoneModal = ({
   const [phone, setPhone] = useState('');
   const [code, setCode] = useState('');
   const [otpSent, setOtpSent] = useState(false);
-   const { t } = useTranslation();
+  const { t } = useTranslation();
   const [localLoading, setLocalLoading] = useState(false);
- const countries = [
-  {
-    name: 'Cameroon',
-    code: '+237',
-    flag: 'https://flagcdn.com/w320/cm.png'
-  },
-  {
-    name: 'Canada',
-    code: '+1',
-    flag: 'https://flagcdn.com/w320/ca.png'
-  }
-];
-
-const [selectedCountry, setSelectedCountry] = useState(countries[0]);
+  const [countries, setCountries] = useState([]);
+  const [selectedCountry, setSelectedCountry] = useState(null);
   const [showCountryPicker, setShowCountryPicker] = useState(false);
 
   useEffect(() => {
@@ -38,30 +29,54 @@ const [selectedCountry, setSelectedCountry] = useState(countries[0]);
   }, []);
 
   const fetchCountries = async () => {
-    try {
-      const res = await fetch('https://restcountries.com/v3.1/all');
-      const data = await res.json();
-      const sorted = data.map(c => ({
-        name: c.name.common,
-        code: `+${c.idd.root?.replace('+', '') || ''}${c.idd.suffixes ? c.idd.suffixes[0] : ''}`,
-        flag: c.flags?.png
-      })).filter(c => c.code).sort((a, b) => a.name.localeCompare(b.name));
-      setCountries(sorted);
-    } catch (e) {
-      // Toast.show({ type: 'error', text1: 'Failed to load countries' });
+  try {
+    const res = await fetch('https://restcountries.com/v3.1/all?fields=name,idd,flags,cca2');
+    if (!res.ok) {
+      throw new Error(`HTTP error! status: ${res.status}`);
     }
-  };
+
+    const data = await res.json();
+
+    const countriesList = data
+      .map(c => {
+        const name = c?.name?.common;
+        const root = c?.idd?.root || '';
+        const suffixes = c?.idd?.suffixes || [];
+        let code = suffixes.length > 0 ? `${root}${suffixes[0]}` : root;
+
+        if (!name || !code) return null;
+
+        if (!code.startsWith('+')) {
+          code = '+' + code;
+        }
+
+        const flag = c?.flags?.png || c?.flags?.svg || null;
+        const isoCode = c?.cca2 || null;
+
+        return { name, code, flag, isoCode };
+      })
+      .filter(Boolean)
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+    setCountries(countriesList);
+
+    // 🔽 Set default country to Cameroon (CM)
+    const defaultCameroon = countriesList.find(c => c.isoCode === 'CM');
+    setSelectedCountry(defaultCameroon || countriesList[0]);
+
+  } catch (error) {
+    console.log("Error fetching countries:", error);
+    Toast.show({ type: 'error', text1: 'Failed to load countries' });
+  }
+};
+
 
   const handleSendOtp = async () => {
-    if (!phone) {
-      return;
-    }
-    
+    if (!phone) return;
     const fullPhoneNumber = `${selectedCountry.code}${phone}`;
-    
     setLocalLoading(true);
     try {
-      await onSendOtp({phone: fullPhoneNumber});
+      await onSendOtp({ phone: fullPhoneNumber });
       setOtpSent(true);
     } catch (err) {
       console.error(err);
@@ -71,12 +86,8 @@ const [selectedCountry, setSelectedCountry] = useState(countries[0]);
   };
 
   const handleVerify = async () => {
-    if (!code) {
-      return;
-    }
-    
+    if (!code) return;
     const fullPhoneNumber = `${selectedCountry.code}${phone}`;
-    
     setLocalLoading(true);
     try {
       await onVerifyOtp({ phone: fullPhoneNumber, code });
@@ -88,8 +99,8 @@ const [selectedCountry, setSelectedCountry] = useState(countries[0]);
     }
   };
 
-   return (
-    <Modal visible={visible} transparent={true} animationType="slide" onRequestClose={onClose}>
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={{ flex: 1, justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.5)' }}>
         <View style={{ backgroundColor: 'white', margin: 20, padding: 20, borderRadius: 10 }}>
           {!otpSent ? (
@@ -97,10 +108,10 @@ const [selectedCountry, setSelectedCountry] = useState(countries[0]);
               <Text style={{ fontSize: 18, marginBottom: 10 }}>
                 {t('addSecondPhone.title')}
               </Text>
-              
+
               <View style={{ flexDirection: 'row', marginBottom: 10 }}>
                 <TouchableOpacity
-                  style={{ 
+                  style={{
                     flexDirection: 'row',
                     alignItems: 'center',
                     backgroundColor: '#fff',
@@ -112,21 +123,21 @@ const [selectedCountry, setSelectedCountry] = useState(countries[0]);
                   }}
                   onPress={() => setShowCountryPicker(true)}
                 >
-                  {selectedCountry.flag && (
-                    <Image 
-                      source={{ uri: selectedCountry.flag }} 
-                      style={{ width: 24, height: 16, marginRight: 5 }} 
+                  {selectedCountry?.flag && (
+                    <Image
+                      source={{ uri: selectedCountry.flag }}
+                      style={{ width: 24, height: 16, marginRight: 5 }}
                     />
                   )}
-                  <Text>{selectedCountry.code}</Text>
+                  <Text>{selectedCountry?.code}</Text>
                 </TouchableOpacity>
-                
+
                 <TextInput
                   placeholder={t('addSecondPhone.phonePlaceholder')}
                   value={phone}
                   onChangeText={setPhone}
                   keyboardType="phone-pad"
-                  style={{ 
+                  style={{
                     flex: 1,
                     backgroundColor: '#fff',
                     borderRadius: 30,
@@ -137,12 +148,12 @@ const [selectedCountry, setSelectedCountry] = useState(countries[0]);
                   }}
                 />
               </View>
-              
+
               <TouchableOpacity
                 onPress={handleSendOtp}
-                style={{ 
-                  backgroundColor: '#7ddd7d', 
-                  padding: 15, 
+                style={{
+                  backgroundColor: '#7ddd7d',
+                  padding: 15,
                   borderRadius: 30,
                   alignItems: 'center',
                 }}
@@ -166,14 +177,14 @@ const [selectedCountry, setSelectedCountry] = useState(countries[0]);
               <Text style={{ fontSize: 18, marginBottom: 10 }}>
                 {t('addSecondPhone.otpTitle', { phone: `${selectedCountry.code}${phone}` })}
               </Text>
-              
+
               <TextInput
                 placeholder={t('addSecondPhone.otpPlaceholder')}
                 value={code}
                 onChangeText={setCode}
                 keyboardType="number-pad"
                 maxLength={6}
-                style={{ 
+                style={{
                   backgroundColor: '#fff',
                   borderRadius: 30,
                   paddingVertical: 14,
@@ -181,17 +192,17 @@ const [selectedCountry, setSelectedCountry] = useState(countries[0]);
                   fontSize: 16,
                   borderWidth: 1,
                   marginBottom: 10,
-                  textAlign: 'center'
+                  textAlign: 'center',
                 }}
               />
-              
+
               <TouchableOpacity
                 onPress={handleVerify}
-                style={{ 
-                  backgroundColor: '#7ddd7d', 
-                  padding: 15, 
+                style={{
+                  backgroundColor: '#7ddd7d',
+                  padding: 15,
                   borderRadius: 30,
-                  alignItems: 'center'
+                  alignItems: 'center',
                 }}
                 disabled={localLoading || !code}
               >
@@ -205,7 +216,7 @@ const [selectedCountry, setSelectedCountry] = useState(countries[0]);
               </TouchableOpacity>
             </>
           )}
-          
+
           <TouchableOpacity
             onPress={() => {
               setOtpSent(false);
@@ -225,20 +236,31 @@ const [selectedCountry, setSelectedCountry] = useState(countries[0]);
       {/* Country Picker Modal */}
       <Modal
         visible={showCountryPicker}
-        transparent={true}
+        transparent
         animationType="slide"
         onRequestClose={() => setShowCountryPicker(false)}
       >
         <View style={{ flex: 1, justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <View style={{ backgroundColor: 'white', margin: 20, padding: 20, borderRadius: 10, maxHeight: '70%' }}>
-            <Text style={{ fontSize: 18, marginBottom: 15, fontWeight: 'bold', textAlign: 'center' }}>
+          <View style={{
+            backgroundColor: 'white',
+            margin: 20,
+            padding: 20,
+            borderRadius: 10,
+            maxHeight: '70%'
+          }}>
+            <Text style={{
+              fontSize: 18,
+              marginBottom: 15,
+              fontWeight: 'bold',
+              textAlign: 'center'
+            }}>
               {t('addSecondPhone.selectCountry')}
             </Text>
-            
+
             <ScrollView>
               {countries.map((country) => (
                 <TouchableOpacity
-                  key={country.code}
+                  key={`${country.code}-${country.name}`}
                   style={{
                     flexDirection: 'row',
                     alignItems: 'center',
@@ -253,9 +275,9 @@ const [selectedCountry, setSelectedCountry] = useState(countries[0]);
                   }}
                 >
                   {country.flag && (
-                    <Image 
-                      source={{ uri: country.flag }} 
-                      style={{ width: 30, height: 20, marginRight: 10 }} 
+                    <Image
+                      source={{ uri: country.flag }}
+                      style={{ width: 30, height: 20, marginRight: 10 }}
                     />
                   )}
                   <Text style={{ flex: 1 }}>{country.name}</Text>
@@ -263,12 +285,12 @@ const [selectedCountry, setSelectedCountry] = useState(countries[0]);
                 </TouchableOpacity>
               ))}
             </ScrollView>
-            
+
             <TouchableOpacity
               onPress={() => setShowCountryPicker(false)}
-              style={{ 
-                backgroundColor: '#f0f0f0', 
-                padding: 12, 
+              style={{
+                backgroundColor: '#f0f0f0',
+                padding: 12,
                 borderRadius: 30,
                 alignItems: 'center',
                 marginTop: 15

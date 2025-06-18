@@ -131,7 +131,7 @@ export const authApi = createApi({
       invalidatesTags: [TAG_TYPES.AUTH],
     }),
 
-     LoginWithPhone: builder.mutation({
+     LoginWithPhones: builder.mutation({
       query: ({ refreshToken, deviceId }) => ({
         url: AUTH_ENDPOINTS.REFRESH_TOKEN,
         method: 'POST',
