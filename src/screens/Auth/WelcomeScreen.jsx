@@ -29,11 +29,11 @@ const SplashScreen = ({ navigation }) => {
              dispatch(loginSuccess(authData));
              navigation.replace("PinCode");
            } else {
-             navigation.replace("AUTH");
+             navigation.replace("SignIn");
            }
          } catch (error) {
            console.log("Error checking auth data:", error);
-           navigation.replace("Auth");
+           navigation.replace("SignIn");
          } finally {
            setLoading(false); // stop loader once done
          }

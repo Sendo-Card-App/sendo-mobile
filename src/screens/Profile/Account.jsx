@@ -520,7 +520,7 @@ const handleVerifySecondPhoneOtp = async ({ phone, code }) => {
                   ) : (
                     <TouchableOpacity
                       onPress={handleAddSecondPhone}
-                      className="bg-blue-500 p-2 rounded-lg items-center"
+                      className="bg-green-500 p-2 rounded-lg items-center"
                     >
                       <Text className="text-white">{t('account.addSecondPhone')}</Text>
                     </TouchableOpacity>

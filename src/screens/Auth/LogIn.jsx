@@ -44,20 +44,44 @@ const Log = () => {
     flag: 'https://flagcdn.com/w40/cm.png'
   });
 
-  const fetchCountries = async () => {
-    try {
-      const res = await fetch('https://restcountries.com/v3.1/all');
-      const data = await res.json();
-      const sorted = data.map(c => ({
-        name: c.name.common,
-        code: `+${c.idd.root?.replace('+', '') || ''}${c.idd.suffixes ? c.idd.suffixes[0] : ''}`,
-        flag: c.flags?.png
-      })).filter(c => c.code).sort((a, b) => a.name.localeCompare(b.name));
-      setCountries(sorted);
-    } catch (e) {
-      Toast.show({ type: 'error', text1: 'Failed to load countries' });
+const fetchCountries = async () => {
+  try {
+    const res = await fetch('https://restcountries.com/v3.1/all?fields=name,idd,flags');
+
+    if (!res.ok) {
+      throw new Error(`HTTP error! status: ${res.status}`);
     }
-  };
+
+    const data = await res.json();
+
+    const countriesList = data
+      .map(c => {
+        const name = c?.name?.common;
+        const root = c?.idd?.root || '';
+        const suffixes = c?.idd?.suffixes || [];
+        let code = suffixes.length > 0 ? `${root}${suffixes[0]}` : root;
+
+        if (!name || !code) return null;
+
+        if (!code.startsWith('+')) {
+          code = '+' + code;
+        }
+
+        const flag = c?.flags?.png || c?.flags?.svg || null;
+
+        return { name, code, flag };
+      })
+      .filter(Boolean)
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+    setCountries(countriesList);
+  } catch (error) {
+    console.log("Error fetching countries:", error);
+    Toast.show({ type: 'error', text1: 'Failed to load countries' });
+  }
+};
+
+
 
   useEffect(() => {
     fetchCountries();
@@ -101,7 +125,7 @@ const Log = () => {
         navigation.navigate("PinCode");
       }
     } catch (error) {
-      console.error('Login error:', error);
+      //console.error('Login error:', error);
       Toast.show({
         type: 'error',
         text1: error.data?.message || 'Login failed',
