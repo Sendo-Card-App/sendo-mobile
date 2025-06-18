@@ -48,6 +48,7 @@ const HistoryCard = ({ transaction, user, onPress }) => {
        case 'SHARED_PAYMENT': return t('history1.share');
        case 'WALLET_TO_WALLET': return t('history1.wallet');
        case 'TONTINE_PAYMENT': return t('history1.tontine');
+        case 'FUND_REQUEST_PAYMENT': return t('history1.fund');
         case 'PAYMENT': return t('history1.payment');
       default: return type;
     }
@@ -475,7 +476,7 @@ const History = () => {
   const noTransactionsToday = isShowingToday && transactions.length === 0;
 
   return (
-    <View className="flex-1 bg-gray-50">
+    <View className="flex-1 bg-white">
       <View className={`flex-row justify-between items-center ${Platform.OS === 'ios' ? 'mt-10' : 'mt-4'} p-4`}>
         <Text className="text-xl font-bold">
           {isShowingToday ? t('history1.todayTransactions') : t('history1.title')}
@@ -534,7 +535,7 @@ const History = () => {
                 <TouchableOpacity 
                   onPress={handleNextPage}
                   disabled={currentPage >= pagination.totalPages}
-                  className={`px-4 py-2 rounded ${currentPage >= pagination.totalPages ? 'bg-gray-300' : 'bg-blue-500'}`}
+                  className={`px-4 py-2 rounded ${currentPage >= pagination.totalPages ? 'bg-gray-300' : 'bg-green-500'}`}
                 >
                   <Text className={currentPage >= pagination.totalPages ? 'text-gray-500' : 'text-white'}>
                     {t('common3.next')}

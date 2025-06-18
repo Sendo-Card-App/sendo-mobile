@@ -92,8 +92,13 @@ const handlePay = async () => {
       setModalVisible(false);
       navigation.goBack();
     } catch (error) {
-      console.log(error);
-      showToast("Erreur lors de l'annulation de la demande.", "error");
+     
+      Toast.show({
+            type: 'error',
+            text1: 'Erreur',
+            text2: error.data?.message || 'Insufficient balance.',
+            position: 'top',
+       });
     }
   };
 

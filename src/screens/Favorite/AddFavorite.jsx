@@ -174,7 +174,7 @@ const AddFavorite = () => {
       console.log('Processed contacts for sync:', JSON.stringify(contactsToSync, null, 2));
       
       // Process in batches
-      const batchSize = 50;
+      const batchSize = 700;
       let successfulSyncs = 0;
       
       for (let i = 0; i < contactsToSync.length; i += batchSize) {
@@ -213,28 +213,43 @@ const AddFavorite = () => {
 
   // Filter contacts based on search and favorites
   useEffect(() => {
-    if (synchronizedContacts?.data?.length > 0) {
-      let result = [...synchronizedContacts.data];
-      
-      if (favoritesResponse?.data?.length > 0) {
-        const favoritePhones = favoritesResponse.data.map(fav => fav.phone);
-        result = result.filter(
-          contact => !favoritePhones.includes(formatPhoneNumber(contact.phone))
-        );
+  if (synchronizedContacts?.data?.length > 0) {
+    // First deduplicate by phone number
+    const uniqueContacts = [];
+    const seenPhones = new Set();
+    
+    for (const contact of synchronizedContacts.data) {
+      const formattedPhone = formatPhoneNumber(contact.phone);
+      if (!seenPhones.has(formattedPhone)) {
+        seenPhones.add(formattedPhone);
+        uniqueContacts.push(contact);
       }
-      
-      if (searchQuery) {
-        result = result.filter(contact => 
-          contact.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          contact.phone?.includes(searchQuery)
-        );
-      }
-      
-      setFilteredContacts(result);
-    } else {
-      setFilteredContacts([]);
     }
-  }, [synchronizedContacts, favoritesResponse, searchQuery]);
+    
+    // Then filter out favorites and apply search
+    let result = [...uniqueContacts];
+    
+    if (favoritesResponse?.data?.length > 0) {
+      const favoritePhones = favoritesResponse.data.map(fav => 
+        formatPhoneNumber(fav.phone)
+      );
+      result = result.filter(
+        contact => !favoritePhones.includes(formatPhoneNumber(contact.phone))
+      );
+    }
+    
+    if (searchQuery) {
+      result = result.filter(contact => 
+        contact.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        contact.phone?.includes(searchQuery)
+      );
+    }
+    
+    setFilteredContacts(result);
+  } else {
+    setFilteredContacts([]);
+  }
+}, [synchronizedContacts, favoritesResponse, searchQuery]);
   
   const handleAddFavorite = (contact) => {
     addFavorite({
@@ -266,6 +281,21 @@ const AddFavorite = () => {
   const renderContactItem = ({ item }) => {
     const isAdding = currentlyAdding === item.phone;
     
+    const isFavorite = favoritesResponse?.data?.some(
+      fav => formatPhoneNumber(fav.phone) === formatPhoneNumber(item.phone)
+    );
+    
+    if (isFavorite) return null;
+ 
+    const isDuplicate = filteredContacts.some(
+      contact => 
+        contact !== item && 
+        formatPhoneNumber(contact.phone) === formatPhoneNumber(item.phone)
+    );
+    
+    // Don't render duplicates
+    if (isDuplicate) return null;
+
     return (
       <View style={{ 
         padding: 16, 
@@ -295,13 +325,7 @@ const AddFavorite = () => {
           style={{ padding: 8 }}
         >
           {isAdding ? (
-             <FlatList
-                data={[1, 2, 3, 4, 5]}
-                keyExtractor={(item) => item.toString()}
-                renderItem={() => <TransactionSkeleton />}
-                contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 20 }}
-                showsVerticalScrollIndicator={false}
-              />
+            <ActivityIndicator size="small" color="#f44336" />
           ) : (
             <MaterialCommunityIcons 
               name="heart" 

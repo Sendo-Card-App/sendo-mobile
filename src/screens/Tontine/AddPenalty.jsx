@@ -20,7 +20,7 @@ import {
   registerForPushNotificationsAsync,
   getStoredPushToken
 } from '../../services/notificationService';
-import { useAddPenaltyMutation, useGetCotisationsQuery } from '../../services/Tontine/tontineApi';
+import { useAddPenaltyMutation, useGetValidatedCotisationsQuery } from '../../services/Tontine/tontineApi';
 import Toast from 'react-native-toast-message';
 import Loader from '../../components/Loader';
 const TopLogo = require('../../Images/TopLogo.png');
@@ -42,12 +42,9 @@ const AddPenalty = () => {
   const [addPenalty] = useAddPenaltyMutation();
 
   const membreId = member?.id;
-  const { data: cotisations } = useGetCotisationsQuery({
-    tontineId,
-    memberId: membreId,
-  });
-
-  const cotisationId = cotisations?.data?.[0]?.id;
+  const { data: validatedCotisations } = useGetValidatedCotisationsQuery({ tontineId, membreId });
+  const cotisationId = validatedCotisations?.data?.[0]?.id;
+  console.log(cotisationId)
 
   const onDateChange = (event, selectedDate) => {
     setShowDatePicker(false);
@@ -76,7 +73,7 @@ const confirmForm = async () => {
       cotisationId,
       description: note,
     };
-
+    console.log(payload)
     await addPenalty({ tontineId, payload }).unwrap();
 
     Toast.show({

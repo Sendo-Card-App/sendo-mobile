@@ -6,6 +6,7 @@ import {
   Image,
   ActivityIndicator,
   FlatList,
+  StyleSheet,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
@@ -32,68 +33,74 @@ const DemandList = () => {
     skip: !userId,
   });
 
+ //console.log("Full response:", JSON.stringify(fundRequests, null, 2));
   const { data: demandRequests, isLoading: loadingPublicRequests } = useGetFundRequestListQuery(
     { page: 1, limit: 10 },
     { skip: !userId }
   );
+  //console.log("Full response:", JSON.stringify(demandRequests, null, 2));
 
   const renderMyRequest = ({ item }) => (
-    <TouchableOpacity
-      onPress={() => navigation.navigate("DetailsList", { demand: item })}
-      className="bg-white rounded-xl p-4 mb-4"
-    >
-      <Text className="text-black font-bold text-base mb-1">{item.description}</Text>
-      <Text className="text-green-500 text-sm font-bold mb-1">{item.amount} XAF</Text>
-      <View className="mt-2">
-        {item.recipients?.map((r, index) => (
-          <Text key={index} className="text-gray-600 font-bold text-sm">
-            {r.recipient?.firstname} {r.recipient?.lastname}
-          </Text>
-        ))}
+    
+  <TouchableOpacity
+    onPress={() => navigation.navigate("DetailsList", { demand: item })}
+    className="bg-white rounded-xl p-4 mb-4"
+  >
+    <Text className="text-black font-bold text-base mb-1">{item.description}</Text>
+    <Text className="text-green-500 text-sm font-bold mb-1">{item.amount} XAF</Text>
+    <View className="mt-2">
+      {item.recipients?.map((r, index) => (
+        <Text key={index} className="text-gray-600 font-bold text-sm">
+         {r.recipient?.firstname} {r.recipient?.lastname} -   [{t(`recipientStatus.${r.status.toLowerCase()}`)}]
+        </Text>
+      ))}
+    </View>
+    <View className="absolute right-3 top-3">
+      <View className={`px-3 py-1 rounded-full ${item.status === 'ACCEPTED' ? 'bg-green-100' : 'bg-orange-100'}`}>
+        <Text className={`text-xs font-semibold ${item.status === 'ACCEPTED' ? 'text-green-500' : 'text-orange-500'}`}>
+          {item.status === 'FULLY_FUNDED' ? t('demandList.completed') : t('demandList.pending')}
+        </Text>
       </View>
-      <View className="absolute right-3 top-3">
-        <View className={`px-3 py-1 rounded-full ${item.status === 'ACCEPTED' ? 'bg-green-100' : 'bg-orange-100'}`}>
-          <Text className={`text-xs font-semibold ${item.status === 'ACCEPTED' ? 'text-green-500' : 'text-orange-500'}`}>
-            {item.status === 'ACCEPTED' ? t('demandList.completed') : t('demandList.pending')}
+    </View>
+  </TouchableOpacity>
+);
+
+
+const renderRecipientRequest = ({ item }) => {
+  const fund = item.requestFund;
+  if (!fund) return null;
+
+  const recipients = fund.recipients || [];
+  const isDisabled = item.status === 'COMPLETED' || recipients.every(r => r.status === 'PAID');
+
+  return (
+    <TouchableOpacity
+      onPress={() => {
+        if (!isDisabled) {
+          navigation.navigate("RequestPay", { demand: item });
+        }
+      }}
+      className={`bg-white rounded-xl p-4 mb-4 ${isDisabled ? 'opacity-80' : ''}`}
+      disabled={isDisabled}
+    >
+      <Text className="text-black font-bold text-base mb-1">{fund.description}</Text>
+      <Text className="text-green-500 text-sm font-bold mb-1">{fund.amount} XAF</Text>
+      <Text className="text-gray-600 font-bold text-sm mb-1">
+        {t('recipientStatus.requester')}: {fund.requesterFund?.firstname} {fund.requesterFund?.lastname}
+      </Text>
+      <View className="absolute right-3 top-3 space-y-1">
+        <View className={`px-3 py-1 rounded-full ${item.status === 'COMPLETED' ? 'bg-green-100' : 'bg-orange-100'}`}>
+          <Text className={`text-xs font-semibold ${item.status === 'COMPLETED' ? 'text-green-500' : 'text-orange-500'}`}>
+            {item.status === 'FULLY_FUNDED' ? t('demandList.completed') : t('demandList.pending')}
           </Text>
         </View>
       </View>
     </TouchableOpacity>
   );
+};
 
-  const renderRecipientRequest = ({ item }) => {
-    const fund = item.requestFund;
-    const recipients = fund.recipients;
-    const recipient = recipients?.[0];
-    const recipientStatus = recipient?.status ?? "UNKNOWN";
 
-    return (
-      <TouchableOpacity
-        onPress={() => navigation.navigate("RequestPay", { demand: item })}
-        className="bg-white rounded-xl p-4 mb-4"
-      >
-        <Text className="text-black font-bold text-base mb-1">{fund.description}</Text>
-        <Text className="text-green-500 text-sm font-bold mb-1">{fund.amount} XAF</Text>
-        <Text className="text-gray-600 font-bold text-sm mb-1">
-          {t('demandList.requester')}: {fund.requesterFund.firstname} {fund.requesterFund.lastname}
-        </Text>
 
-        <View className="absolute right-3 top-3 space-y-1">
-          <View className={`px-3 py-1 rounded-full ${item.status === 'COMPLETED' ? 'bg-green-100' : 'bg-orange-100'}`}>
-            <Text className={`text-xs font-semibold ${item.status === 'COMPLETED' ? 'text-green-500' : 'text-orange-500'}`}>
-              {item.status === 'COMPLETED' ? t('demandList.completed') : t('demandList.pending')}
-            </Text>
-          </View>
-
-          <View className={`px-3 py-1 mt-5 rounded-full ${recipientStatus === 'PAID' ? 'bg-green-100' : 'bg-orange-100'}`}>
-            <Text className={`text-xs font-semibold ${recipientStatus === 'PAID' ? 'text-green-500' : 'text-orange-500'}`}>
-              {recipientStatus === 'PAID' ? t('demandList.paid') : t('demandList.pending')}
-            </Text>
-          </View>
-        </View>
-      </TouchableOpacity>
-    );
-  };
 
   const filteredMyRequests = (fundRequests?.data || []).filter(item => {
     if (statusFilter === 'ALL') return true;
@@ -186,8 +193,27 @@ const DemandList = () => {
           contentContainerStyle={{ paddingBottom: 30 }}
         />
       )}
+       {/* Floating Home button */}
+            <TouchableOpacity
+              onPress={() => navigation.navigate("MainTabs")}
+              style={styles.floatingHomeButton}
+            >
+              <Ionicons name="home" size={44} color="#7ddd7d" />
+            </TouchableOpacity>
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  floatingHomeButton: {
+    position: "absolute",
+    bottom: 24,
+    right: 24,
+    backgroundColor: "#1A1A1A",
+    padding: 10,
+    borderRadius: 50,
+    elevation: 10,
+  },
+});
 
 export default DemandList;

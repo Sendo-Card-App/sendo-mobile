@@ -72,21 +72,21 @@ export default function FundRelease() {
         {/* Info Card */}
         <View className="bg-[#161C2F] rounded-lg p-4 space-y-3">
           <View className="flex-row justify-between">
-            <Text className="text-white font-bold">Nom du bénéficiaire:</Text>
-            <Text className="text-white">Yannick Smith</Text>
+            <Text className="text-white font-bold">ID du bénéficiaire:</Text>
+            <Text className="text-white">{response.data.userId}</Text>
           </View>
 
           <View className="flex-row justify-between">
             <Text className="text-white font-bold">Membre depuis:</Text>
-            <Text className="text-white">12/01/2025</Text>
+            <Text className="text-white">{response.data.dateInscription}</Text>
           </View>
 
-          <View className="flex-row justify-between">
+          {/* <View className="flex-row justify-between">
             <Text className="text-white font-bold">Pénalités:</Text>
             <Text className="text-white">
               {penaltyAmount.toLocaleString()} xaf
             </Text>
-          </View>
+          </View> */}
 
           <View className="flex-row justify-between items-center">
             <Text className="text-white">Déduire les pénalités de son gain</Text>
@@ -101,13 +101,13 @@ export default function FundRelease() {
           <View className="flex-row justify-between">
             <Text className="text-white font-bold">Totale:</Text>
             <Text className="text-white">
-              {finalAmount.toLocaleString()} xaf
+             {response.data.montantDistribue.toLocaleString()} xaf
             </Text>
           </View>
         </View>
 
         {/* Distribution info from response */}
-        {response && response.status === 200 && response.data && (
+        {/* {response && response.status === 200 && response.data && (
           <View className="bg-[#223344] rounded-lg p-4 mt-8 space-y-3">
             <Text className="text-green-400 font-bold text-lg mb-2">Détails de la distribution</Text>
             <View className="flex-row justify-between">
@@ -135,17 +135,13 @@ export default function FundRelease() {
               <Text className="text-white">{response.data.beneficiaireId}</Text>
             </View>
           </View>
-        )}
+        )} */}
 
         {/* Button */}
         <TouchableOpacity
-          onPress={() => {
-            Toast.show({
-              type: "success",
-              text1: "Confirmation",
-              text2: "Versement prêt à être effectué.",
-            });
-          }}
+          onPress={() =>
+              navigation.navigate("TontineList")
+            }
           className="bg-green-500 py-4 rounded-full items-center mt-10"
         >
           <Text className="text-black font-bold text-base">Suivant</Text>

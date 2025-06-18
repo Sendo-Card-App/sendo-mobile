@@ -22,12 +22,12 @@ import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
 const RequestPay = ({ navigation, route }) => {
   const { demand } = route.params;
 
-   // console.log(JSON.stringify(demand, null, 2));
+   //console.log(JSON.stringify(demand, null, 2));
   const [updateRecipientStatus, { isLoading: isUpdating }] = useUpdateRecipientStatusMutation();
   const [payFundRequest, { isLoading: isPaying }] = usePayFundRequestMutation();
       const { data: userProfile, isLoading: isProfileLoading } = useGetUserProfileQuery();
        const userId = userProfile?.data.id;
-   
+     
       const { 
          data: balanceData, 
          error: balanceError,
@@ -45,7 +45,7 @@ const RequestPay = ({ navigation, route }) => {
   const remaining = (requestFund.amount ?? 0) - totalPaid;
   const initiator = requestFund.requesterFund;
   const recipientRequestId = requestFund.recipients[0]?.id;
-
+ 
   const getStatusLabel = (status) => {
     switch (status) {
       case 'PENDING':
@@ -77,47 +77,49 @@ const RequestPay = ({ navigation, route }) => {
   };
 
   const handlePay = async () => {
-    const amount = parseFloat(amountToPay);
-    if (!amount || amount <= 0) {
-      Alert.alert('Erreur', 'Veuillez entrer un montant valide.');
-      return;
-    }
+  const amount = parseFloat(amountToPay);
+  if (!amount || amount <= 0) {
+    Alert.alert('Erreur', 'Veuillez entrer un montant valide.');
+    return;
+  }
 
-    if (balance < amount) {
-      Alert.alert('Erreur', 'Solde insuffisant pour effectuer ce paiement.');
-      return;
-    }
+  if (balance < amount) {
+    Alert.alert('Erreur', 'Solde insuffisant pour effectuer ce paiement.');
+    return;
+  }
 
-    const payloadToSend = {
-      amount,
-      fundRequestId: requestFund.id,
-      description: requestFund.description,
-    };
-
-    // console.log('Payload sent to backend:', {
-    //   requestRecipientId: currentRecipientId,
-    //   payload: payloadToSend,
-    // });
-
-    try {
-      const res = await payFundRequest({
-        requestRecipientId: currentRecipientId,
-        payload: payloadToSend,
-      }).unwrap();
-
-      Alert.alert('Succès', 'Paiement effectué avec succès.');
-
-      setModalVisible(false);
-    } catch (error) {
-      console.error('Payment error:', error);
-      if (error?.data?.data?.errors) {
-        const messages = error.data.data.errors.map(e => e.message || JSON.stringify(e)).join('\n');
-        Alert.alert('Erreur', messages);
-      } else {
-        Alert.alert('Erreur', error?.data?.message || 'Le paiement a échoué.');
-      }
-    }
+  const payloadToSend = {
+    amount,
+    fundRequestId: requestFund.id,
+    description: requestFund.description,
   };
+
+  try {
+    const res = await payFundRequest({
+      requestRecipientId: currentRecipientId,
+      payload: payloadToSend,
+    }).unwrap();
+
+    Toast.show({
+      type: 'success',
+      text1: 'Succès',
+      text2: 'Paiement effectué avec succès.',
+      visibilityTime: 500,
+      onHide: () => {
+        navigation.goBack();
+      },
+    });
+
+    setModalVisible(false);
+  } catch (error) {
+    console.error('Payment error:', error);
+    Toast.show({
+      type: "error",
+      text1: "Error",
+      text2: error?.data?.message,
+    });
+  }
+};
 
 
   const statusStyle = getStatusLabel(requestFund.status);
@@ -230,65 +232,64 @@ const RequestPay = ({ navigation, route }) => {
             Destinataire(s)
           </Text>
 
-          {requestFund.recipients?.map((r, i) => (
-            <View key={i} style={{ marginBottom: 24 }}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
-                <Text style={{ fontWeight: '600', color: '#000' }}>Nom</Text>
-                <Text>{r.recipient?.firstname} {r.recipient?.lastname}</Text>
-              </View>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
-                <Text style={{ fontWeight: '600', color: '#000' }}>Email</Text>
-                <Text>{r.recipient?.email}</Text>
-              </View>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
-                <Text style={{ fontWeight: '600', color: '#000' }}>Téléphone</Text>
-                <Text>{r.recipient?.phone}</Text>
-              </View>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
-                <Text style={{ fontWeight: '600', color: '#000' }}>Payé</Text>
-                <Text>{(r.amountPaid ?? 0).toLocaleString()} XAF</Text>
-              </View>
+          {requestFund.recipients
+  ?.filter((r) => r.recipientId === userId)
+  .map((r, i) => (
+    <View key={i} style={{ marginBottom: 24 }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+        <Text style={{ fontWeight: '600', color: '#000' }}>Nom</Text>
+        <Text>{r.recipient?.firstname} {r.recipient?.lastname}</Text>
+      </View>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+        <Text style={{ fontWeight: '600', color: '#000' }}>Email</Text>
+        <Text>{r.recipient?.email}</Text>
+      </View>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+        <Text style={{ fontWeight: '600', color: '#000' }}>Téléphone</Text>
+        <Text>{r.recipient?.phone}</Text>
+      </View>
 
-              <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginTop: 8 }}>
-                {['ACCEPTED', 'REJECTED', 'PAID'].map((status) => (
-                  <TouchableOpacity
-                    key={status}
-                    style={{
-                      backgroundColor:
-                        status === 'ACCEPTED'
-                          ? '#4ade80'
-                          : status === 'REJECTED'
-                          ? '#f87171'
-                          : '#60a5fa',
-                      paddingVertical: 6,
-                      paddingHorizontal: 12,
-                      borderRadius: 8,
-                    }}
-                    onPress={() => handleStatusUpdate(recipientRequestId, status)}
-                    disabled={isUpdating}
-                  >
-                    <Text style={{ color: '#fff', fontWeight: '600', fontSize: 12 }}>
-                      {status}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginTop: 8 }}>
+        {['ACCEPTED', 'REJECTED', 'PAID'].map((status) => (
+          <TouchableOpacity
+            key={status}
+            style={{
+              backgroundColor:
+                status === 'ACCEPTED'
+                  ? '#4ade80'
+                  : status === 'REJECTED'
+                  ? '#f87171'
+                  : '#60a5fa',
+              paddingVertical: 6,
+              paddingHorizontal: 12,
+              borderRadius: 8,
+            }}
+            onPress={() => handleStatusUpdate(r.id, status)}
+            disabled={isUpdating}
+          >
+            <Text style={{ color: '#fff', fontWeight: '600', fontSize: 12 }}>
+              {status}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
 
-              <TouchableOpacity
-                style={{
-                  marginTop: 10,
-                  backgroundColor: '#16a34a',
-                  paddingVertical: 8,
-                  borderRadius: 8,
-                  alignItems: 'center',
-                }}
-                onPress={() => openPaymentModal(r.id)}
-                disabled={isPaying}
-              >
-                <Text style={{ color: '#fff', fontWeight: '600' }}>Payer</Text>
-              </TouchableOpacity>
-            </View>
-          ))}
+      <TouchableOpacity
+        style={{
+          marginTop: 10,
+          backgroundColor: '#16a34a',
+          paddingVertical: 8,
+          borderRadius: 8,
+          alignItems: 'center',
+        }}
+        onPress={() => openPaymentModal(r.id)}
+        disabled={isPaying}
+      >
+        <Text style={{ color: '#fff', fontWeight: '600' }}>Payer</Text>
+      </TouchableOpacity>
+    </View>
+))}
+
         </View>
       </ScrollView>
 

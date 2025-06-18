@@ -58,7 +58,7 @@ const Participant = () => {
     );
   };
 
-  const handleNext = async () => {
+ const handleNext = async () => {
     if (selectedFriends.length === 0) {
       Toast.show({
         type: "error",
@@ -71,31 +71,36 @@ const Participant = () => {
     setIsSubmitting(true);
 
     try {
-      const selectedUserIds = selectedFriends.map((friendId) => {
-        const friend = synchronizedContacts.find((f) => f.id === friendId);
-        return friend?.contactUser?.id;
-      });
+      // Extraire les IDs valides
+      const selectedUserIds = selectedFriends
+        .map((friendId) => {
+          const friend = synchronizedContacts.find((f) => f.id === friendId);
+          return friend?.contactUser?.id;
+        })
+        .filter(id => id !== undefined);
 
-      const payload = {
-        userId: selectedUserIds,
-      };
-       console.log(payload)
-      await addMembers({ tontineId, payload }).unwrap();
-     // console.log(payload)
+      const addMemberPromises = selectedUserIds.map(userId => 
+        addMembers({
+          tontineId: tontineId,
+          payload: { userId } 
+        }).unwrap()
+      );
+
+      await Promise.all(addMemberPromises);
+     
       Toast.show({
         type: "success",
         text1: "Succès",
-        text2: "Participants ajoutés à la tontine.",
+        text2: `Participants ajoutés à la tontine.`,
       });
 
       navigation.navigate("TontineList");
     } catch (error) {
-     
-       //console.log("Add Members Error:", JSON.stringify(error, null, 2));
+      console.log("Erreur:", error);
       Toast.show({
         type: "error",
         text1: "Erreur",
-        text2: "Impossible d'ajouter les participants.",
+        text2: error.data?.message || "Impossible d'ajouter certains participants.",
       });
     } finally {
       setIsSubmitting(false);
@@ -213,11 +218,28 @@ const Participant = () => {
         </Text>
 
         {isLoadingContacts ? (
-          <ActivityIndicator size="small" color="#7ddd7d" />
+          <Loader size="small" color="#7ddd7d" />
         ) : synchronizedContacts.length === 0 ? (
-          <Text style={{ color: "#888", textAlign: "center", marginTop: 20 }}>
-            {t("destinators.noFriends")}
-          </Text>
+          <View style={{ marginTop: 20, alignItems: "center" }}>
+            <Text style={{ color: "#888", textAlign: "center", marginBottom: 10 }}>
+              {t("destinators.noFriends")}
+            </Text>
+            <TouchableOpacity
+              onPress={() => navigation.navigate("AddFavorite")}
+              style={{
+                alignSelf: "center",
+                marginTop: 10,
+                paddingHorizontal: 16,
+                paddingVertical: 8,
+                backgroundColor: "#2B2F38",
+                borderRadius: 8,
+              }}
+            >
+              <Text style={{ color: "#7ddd7d", fontWeight: "bold" }}>
+                {t("selectRecipient.add_manually")}
+              </Text>
+            </TouchableOpacity>
+          </View>
         ) : (
           <FlatList
             data={filteredContacts}
@@ -227,6 +249,7 @@ const Participant = () => {
             showsVerticalScrollIndicator={false}
           />
         )}
+
 
         <TouchableOpacity
           onPress={handleNext}

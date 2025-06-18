@@ -15,6 +15,7 @@ import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { Asset } from 'expo-asset';
 import Loader from "../../components/Loader";
+import { useTranslation } from 'react-i18next';
 
 const ReceiptScreen = () => {
   const navigation = useNavigation();
@@ -22,6 +23,7 @@ const ReceiptScreen = () => {
   const user = route.params?.user;
   const transaction = route.params?.transaction;
   const [isGenerating, setIsGenerating] = React.useState(false);
+  const { t } = useTranslation();
 
   if (!transaction) {
     return (
@@ -37,47 +39,77 @@ const ReceiptScreen = () => {
     );
   }
 
- const handleDownloadReceipt = async () => {
-  if (transaction.status !== 'COMPLETED') {
-    Alert.alert(
-      "Reçu indisponible",
-      "Le reçu est uniquement disponible pour les transactions réussies"
-    );
-    return;
-  }
+  const getTypeLabel = (type) => {
+    switch(type?.toUpperCase()) {
+      case 'DEPOSIT': return t('history1.deposit');
+      case 'WITHDRAWAL': return t('history1.withdraw');
+      case 'TRANSFER': return t('history1.transfer');
+      case 'SHARED_PAYMENT': return t('history1.share');
+      case 'WALLET_TO_WALLET': return t('history1.wallet');
+     case 'WALLET_PAYMENT': return t('history1.walletPayment');
+      case 'TONTINE_PAYMENT': return t('history1.tontine');
+      case 'PAYMENT': return t('history1.payment');
+      default: return type;
+    }
+  };
 
-  setIsGenerating(true);
-  try {
-    const [asset] = await Asset.loadAsync(require('../../Images/LogoSendo.png'));
-    const base64Logo = await FileSystem.readAsStringAsync(asset.localUri, {
-      encoding: FileSystem.EncodingType.Base64,
-    });
-    const logoDataUri = `data:image/png;base64,${base64Logo}`;
-
-    const html = generateReceiptHTML(transaction, user, logoDataUri);
-
-    const file = await Print.printToFileAsync({
-      html,
-      base64: false
-    });
-
-    const fileUri = `${FileSystem.documentDirectory}Reçu transaction Sendo.pdf`;
-    await FileSystem.moveAsync({
-      from: file.uri,
-      to: fileUri
-    });
-
-    await Sharing.shareAsync(fileUri);
-  } catch (error) {
-    Alert.alert("Erreur", "Échec de génération du reçu. Veuillez réessayer.");
-    console.error(error);
-  } finally {
-    setIsGenerating(false);
+    const getMethodIcon = () => {
+  switch (transaction.method?.toUpperCase()) {
+    case 'MOBILE_MONEY':
+      if (transaction.provider === 'CMORANGEOM') {
+        return require('../../Images/om.png');
+      } else if (transaction.provider === 'MTNMOMO') {
+        return require('../../Images/mtn.png');
+      } else {
+        return require('../../Images/transaction.png'); // fallback générique
+      }
+    case 'BANK_TRANSFER':
+      return require('../../Images/RoyalBank.png');
+    default:
+      return require('../../Images/transaction.png');
   }
 };
 
+  const handleDownloadReceipt = async () => {
+    if (transaction.status !== 'COMPLETED') {
+      Alert.alert(
+        "Reçu indisponible",
+        "Le reçu est uniquement disponible pour les transactions réussies"
+      );
+      return;
+    }
 
-  const generateReceiptHTML = (transaction, user, logoUri) => {
+    setIsGenerating(true);
+    try {
+      const [asset] = await Asset.loadAsync(require('../../Images/LogoSendo.png'));
+      const base64Logo = await FileSystem.readAsStringAsync(asset.localUri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+      const logoDataUri = `data:image/png;base64,${base64Logo}`;
+
+      const html = generateReceiptHTML(transaction, user, logoDataUri, getTypeLabel);
+
+      const file = await Print.printToFileAsync({
+        html,
+        base64: false
+      });
+
+      const fileUri = `${FileSystem.documentDirectory}Reçu transaction Sendo.pdf`;
+      await FileSystem.moveAsync({
+        from: file.uri,
+        to: fileUri
+      });
+
+      await Sharing.shareAsync(fileUri);
+    } catch (error) {
+      Alert.alert("Erreur", "Échec de génération du reçu. Veuillez réessayer.");
+      console.error(error);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const generateReceiptHTML = (transaction, user, logoUri, getTypeLabel) => {
     return `
       <html>
         <head>
@@ -127,7 +159,7 @@ const ReceiptScreen = () => {
             </div>
             <div class="row">
               <span>Type:</span>
-              <span>${transaction.type || 'N/A'}</span>
+              <span>${getTypeLabel(transaction.type) || 'N/A'}</span>
             </div>
           </div>
 
@@ -228,12 +260,12 @@ const ReceiptScreen = () => {
             <Text className="font-semibold">{user?.firstname} {user?.lastname}</Text>
           </Text>
           <Text className="text-gray-600 text-sm">Methode de Paiement : {transaction.provider || 'N/A'}</Text>
-          <Text className="text-gray-600 text-sm">Type de Paiement : {transaction.type || 'N/A'}</Text>
+          <Text className="text-gray-600 text-sm">Type de Paiement : {getTypeLabel(transaction.type) || 'N/A'}</Text>
           <Text className="text-gray-600 text-sm mb-2">Numéro : {user?.phone}</Text>
 
           <Text className="text-green-600 font-semibold my-1">Reçu</Text>
           <Text className="text-gray-600 text-sm">Montant du transfert: {transaction.amount} {transaction.currency}</Text>
-          <Text className="text-gray-600 text-sm">Frais de transfert: ${transaction.sendoFees || 0} CAD</Text>
+          <Text className="text-gray-600 text-sm">Frais de transfert: {transaction.sendoFees || 0} XAF</Text>
           <Text className="text-gray-600 text-sm mb-2">Total: {transaction.totalAmount} {transaction.currency}</Text>
 
           <Text className="text-green-600 font-semibold mt-2">Détails du transfert</Text>

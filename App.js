@@ -10,11 +10,11 @@ import { useTranslation } from 'react-i18next';
 import './i18n';
 import NetworkProvider from './src/services/NetworkProvider';
 import { NavigationContainer } from "@react-navigation/native";
+import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createDrawerNavigator } from "@react-navigation/drawer";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Ionicons, AntDesign } from "@expo/vector-icons";
+import { Ionicons, AntDesign,FontAwesome,FontAwesome5   } from "@expo/vector-icons";
 
 import * as Notifications from "expo-notifications";
 import { registerForPushNotificationsAsync } from "./src/services/notificationService";
@@ -22,6 +22,7 @@ import app from "./src/configs/firebaseConfig";
 
 // Screens & Components
 import Home from "./src/Screens/Home/Home";
+import ServiceScreen from "./src/Screens/Home/ServiceScreen";
 import WelcomeScreen from "./src/Screens/Auth/WelcomeScreen";
 import PinCode from "./src/Screens/Auth/PinCode";
 import AddBeneficiary from "./src/Screens/Solde/AddBeneficiary";
@@ -63,9 +64,9 @@ import History from "./src/Screens/Transfert/History";
 import Receipt from "./src/Screens/Transfert/Receipt";
 import Account from "./src/Screens/Profile/Account";
 import Settings from "./src/Screens/Setting/Settings";
-import MonSolde from "./src/Screens/Solde/MonSolde";
 import CreateVirtualCard from "./src/Screens/VirtualCard/CreateVirtualCard";
 import VerifyIdentity from "./src/Screens/VirtualCard/VerifyIdentity";
+import KYCValidation from "./src/Screens/VirtualCard/KYCValidation";
 import ManageVirtualCard from "./src/Screens/VirtualCard/ManageVirtualCard";
 import KycResume from "./src/Screens/VirtualCard/KycResume";
 import KycSelfie from "./src/Screens/VirtualCard/KycSelfie";
@@ -127,7 +128,7 @@ import MemberDetail from "./src/Screens/Tontine/MemberDetail";
 import MemberContribution from "./src/Screens/Tontine/MemberContribution";
 import TontineSetting from "./src/Screens/Tontine/TontineSetting";
 import FundRelease from "./src/Screens/Tontine/FundRelease";
-
+import TermsAndConditions from "./src/Screens/Tontine/TermsAndConditions";
 
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -142,7 +143,7 @@ const screenWidth = Dimensions.get('window').width;
 function CustomTabBar({ state, descriptors, navigation }) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  
+
   return (
     <View style={styles.tabContainer}>
       {state.routes.map((route, index) => {
@@ -161,22 +162,37 @@ function CustomTabBar({ state, descriptors, navigation }) {
           }
         };
 
+        // Custom Floating Center Tab (Beneficiary)
+        if (route.name === 'BeneficiaryTab') {
+          return (
+            <TouchableOpacity
+              key={route.key}
+              onPress={onPress}
+              style={styles.centerButton}
+            >
+             <FontAwesome5 name="dollar-sign" size={30} color="#fff" />
+            </TouchableOpacity>
+          );
+        }
+
+        // Default tab icon logic
         let iconName;
         switch (route.name) {
           case 'HomeTab':
             iconName = isFocused ? 'home' : 'home-outline';
             break;
-          case 'ManageVirtualCardTab':
-            iconName = isFocused ? 'card' : 'card-outline';
-            break;
           case 'TransferTab':
             iconName = isFocused ? 'swap-horizontal' : 'swap-horizontal-outline';
             break;
+          case 'ManageVirtualCardTab':
+            iconName = isFocused ? 'card' : 'card-outline';
+            break;
+          
           case 'SettingsTab':
             iconName = isFocused ? 'settings' : 'settings-outline';
             break;
           default:
-            iconName = 'home';
+            iconName = 'home-outline';
         }
 
         return (
@@ -204,6 +220,7 @@ function CustomTabBar({ state, descriptors, navigation }) {
   );
 }
 
+
 // Tab Navigator
 function MainTabs() {
   const { t } = useTranslation();
@@ -220,15 +237,23 @@ function MainTabs() {
         component={Home} 
         options={{ title: t('tabs.home') }}
       />
-      <Tab.Screen 
-        name="ManageVirtualCardTab" 
-        component={ManageVirtualCard} 
-        options={{ title: t('tabs.cards') }}
-      />
-      <Tab.Screen 
+      
+       <Tab.Screen 
         name="TransferTab"
         component={History} 
         options={{ title: t('tabs.history') }}
+      />
+      {/* Center Action Button (Green Floating) */}
+      <Tab.Screen 
+        name="BeneficiaryTab" 
+        component={BeneficiaryScreen} 
+        options={{ title: '' }} // No text under icon
+      />
+
+     <Tab.Screen 
+        name="ManageVirtualCardTab" 
+        component={ManageVirtualCard} 
+        options={{ title: t('tabs.cards') }}
       />
       <Tab.Screen 
         name="SettingsTab" 
@@ -236,6 +261,7 @@ function MainTabs() {
         options={{ title: t('tabs.settings') }}
       />
     </Tab.Navigator>
+
   );
 }
 
@@ -260,75 +286,33 @@ function AuthStack() {
 function MainStack() {
   const { t } = useTranslation();
   return (
-    <Stack.Navigator
-      screenOptions={({ navigation }) => ({
-        headerStyle: {
-          backgroundColor: Colors.primary,
-          height: Platform.select({
-            ios: headerHeight,
-            android: headerHeight,
-          }),
-          elevation: 0,
-          shadowOpacity: 0,
-        },
-        headerTitleStyle: {
-          fontSize: 18,
-          fontWeight: "bold",
-          color: Colors.text,
-          textAlign: 'center',
-          alignSelf: 'center',
-          width: '70%',
-        },
-        headerTitleAlign: "center",
-        headerLeftContainerStyle: {
-          paddingLeft: Platform.select({
-            ios: '4%',
-            android: '4%',
-          }),
-          paddingTop: Platform.select({
-            ios: 0,
-            android: '1.5%',
-          }),
-        },
-        headerLeft: () => (
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'center',
-              height: '100%',
-              minWidth: 40,
-              paddingHorizontal: Platform.select({
-                ios: '2%',
-                android: '4%',
-              }),
-            }}
-          >
-            {Platform.OS === 'ios' ? (
-              <Text
-                style={{
-                  fontSize: 24,
-                  color: Colors.text,
-                  marginTop: -2,
-                }}
-              >
-                &lt;
-              </Text>
-            ) : (
-              <View
-                style={{
-                  justifyContent: 'center',
-                  height: '100%',
-                }}
-              >
-                <AntDesign name="arrowleft" size={20} color={Colors.text} />
-              </View>
-            )}
-          </TouchableOpacity>
-        ),
-      })}
-    >
+      <SafeAreaProvider>
+      <Stack.Navigator
+        screenOptions={({ navigation }) => ({
+          headerShown: true,
+          statusBarTranslucent: false,              // ← obligatoire
+          headerStyle: {
+            backgroundColor: Colors.primary,
+            height: Platform.select({ ios: 60, android: 60 }), 
+            elevation: 0,
+            shadowOpacity: 0,
+          },
+          headerTitleAlign: 'center',
+          headerTitleStyle: {
+            fontSize: 18,
+            fontWeight: 'bold',
+            color: Colors.text,
+          },
+          headerBackTitleVisible: false,
+          headerLeft: () => (
+            <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 12 }}>
+              {Platform.OS === 'ios'
+                ? <Text style={{ fontSize: 24, color: Colors.text }}>{'< '}</Text>
+                : <AntDesign name="arrowleft" size={20} color={Colors.text} />}
+            </TouchableOpacity>
+          ),
+        })}
+      >
       <Stack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
       <Stack.Screen 
         name="Account" 
@@ -377,6 +361,7 @@ function MainStack() {
       <Stack.Screen name="WalletWithdrawal" component={WalletWithdrawal} options={{ headerShown: false }} />
       <Stack.Screen name="WalletConfirm" component={WalletConfirm} options={{ headerShown: false }} />
       <Stack.Screen name="WalletOk" component={WalletOk} options={{ headerShown: false }} />
+       <Stack.Screen name="ServiceScreen" component={ServiceScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Confirme" component={Confirme} options={{ headerShown: false }} />
       <Stack.Screen name="Success" component={Success} options={{ headerShown: false }} />
       <Stack.Screen name="Support" component={Support} options={{ headerTitle: t('screens.support') }}/>
@@ -386,7 +371,6 @@ function MainStack() {
       <Stack.Screen name="History" component={History} options={{ headerTitle: t('screens.history') }} />
       <Stack.Screen name="Receipt" component={Receipt} options={{ headerTitle: t('screens.receipt') }}/>
       <Stack.Screen name="NotificationComponent" component={NotificationComponent} options={{ headerTitle: t('screens.notification') }} />
-      <Stack.Screen name="MonSolde" component={MonSolde} options={{ headerTitle: t('screens.myBalance') }} />
       <Stack.Screen name="CreateVirtualCard" component={CreateVirtualCard}options={{ headerTitle: t('screens.createCard') }} />
       <Stack.Screen name="VerifyIdentity" component={VerifyIdentity} options={{ headerShown: false }} />
       <Stack.Screen name="ManageVirtualCard" component={ManageVirtualCard} options={{ headerShown: false }} />
@@ -399,6 +383,7 @@ function MainStack() {
       <Stack.Screen name="IdentityVerification" component={IdentityVerification} options={{ headerShown: false }} />
       <Stack.Screen name="AddressSelect" component={AddressSelect} options={{ headerShown: false }} />
       <Stack.Screen name="AddressConfirm" component={AddressConfirm} options={{ headerShown: false }} />
+       <Stack.Screen name="KYCValidation" component={KYCValidation} options={{ headerShown: false }} />
       <Stack.Screen name="Address" component={Address} options={{ headerShown: false }} />
       <Stack.Screen name="Camera" component={Camera} options={{ headerShown: false }} />
 
@@ -445,12 +430,14 @@ function MainStack() {
       <Stack.Screen name="MemberContribution" component={MemberContribution } options={{ headerShown: false }} />
       <Stack.Screen name="TontineSetting" component={TontineSetting } options={{ headerShown: false }} />
       <Stack.Screen name="FundRelease" component={FundRelease } options={{ headerShown: false }} />
+       <Stack.Screen name="TermsAndConditions" component={TermsAndConditions} options={{ headerShown: false }} />
 
 
 
 
       
     </Stack.Navigator>
+     </SafeAreaProvider>
   );
 }
 
@@ -518,11 +505,29 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 5,
   },
+    centerButton: {
+    position: 'absolute',
+    bottom: 35,
+    alignSelf: 'center',
+    backgroundColor:  Colors.primary,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
+    zIndex: 10,
+  },
   tabButton: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 8,
+     paddingVertical: 8,
+    borderRadius: 16,
   },
   tabLabel: {
     fontSize: 12,

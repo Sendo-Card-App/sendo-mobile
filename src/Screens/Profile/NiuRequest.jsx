@@ -45,12 +45,15 @@ const NiuRequest = () => {
     data: userRequests,
     isLoading: isRequestsLoading,
     error: requestsError,
+    refetch: refetchRequests,
   } = useGetUserRequestsQuery(userId, { skip: !userId });
+ console.log(JSON.stringify(userRequests, null, 2));
 
   const {
     data: configData,
     isLoading: isConfigLoading,
     error: configError,
+    refetch: refetchConfig,
   } = useGetConfigQuery();
 
   const niuConfig = configData?.data?.find(item => item.id === 12);
@@ -58,8 +61,11 @@ const NiuRequest = () => {
 
   useFocusEffect(
     useCallback(() => {
-      refetch();
-    }, [])
+     refetch();
+      refetch();            // profil utilisateur
+      refetchRequests();    // requêtes NIU
+      refetchConfig();      // configuration
+    }, [userId])
   );
 
   useEffect(() => {
@@ -77,11 +83,11 @@ const NiuRequest = () => {
         request => request.type === 'NIU_REQUEST'
       );
 
-      const approved = niuRequests.find(r => r.status === 'APPROVED');
+      const processed = niuRequests.find(r => r.status === 'PROCESSED');
       const pending = niuRequests.find(r => r.status === 'UNPROCESSED' || r.status === 'PENDING');
       const rejected = niuRequests.find(r => r.status === 'REJECTED');
 
-      if (approved) {
+      if (processed) {
         setCompletedSteps(prev => ({ ...prev, 1: true, 3: true, 4: true }));
       } else if (pending) {
         setCompletedSteps(prev => ({ ...prev, 1: true, 3: false, 4: false }));
@@ -162,11 +168,11 @@ const NiuRequest = () => {
     if (!userRequests?.data?.items) return null;
 
     const niuRequests = userRequests.data.items.filter(req => req.type === 'NIU_REQUEST');
-    const approved = niuRequests.find(req => req.status === 'APPROVED');
+    const processed = niuRequests.find(req => req.status === 'PROCESSED');
     const pending = niuRequests.find(req => req.status === 'UNPROCESSED' || req.status === 'PENDING');
     const rejected = niuRequests.find(req => req.status === 'REJECTED');
 
-    if (approved) {
+    if (processed) {
       return <Text className="text-green-600 mt-2 font-bold text-lg">{t('niu.request.statusApproved')}</Text>;
     }
     if (pending) {
@@ -176,7 +182,7 @@ const NiuRequest = () => {
       return (
         <Text className="text-red-600 mt-2 font-bold text-lg">
           {t('niu.request.statusRejected')}
-          {rejected.reason && `: ${rejected.reason}`}
+          {t('niu.request.raison')} {rejected.reason && `: ${rejected.reason}`}
         </Text>
       );
     }
@@ -194,14 +200,11 @@ const NiuRequest = () => {
   return (
     <View className="bg-[#181e25] flex-1 pt-0 relative">
       {/* Header */}
-      <View className="border-b border-dashed border-white flex-row justify-between py-4 mt-10 items-center mx-5 pt-5">
+      <View className="border-b border-dashed border-white flex-row justify-between py-4 mt-1 items-center mx-5 pt-5">
         <View className="absolute -top-12 left-0 right-0 items-center justify-center">
           <Image source={TopLogo} className="h-36 w-40" resizeMode="contain" />
         </View>
       </View>
-
-      <View className="border border-dashed border-gray-300 my-1" />
-      <Text className="text-center text-white text-2xl my-3">{t('niu.request.title')}</Text>
 
       <ScrollView className="flex-1 pb-3 bg-white rounded-t-3xl">
         <View className="p-5">
@@ -238,6 +241,7 @@ const NiuRequest = () => {
             onPress={() => setTermsAccepted(!termsAccepted)}
             containerStyle={{ backgroundColor: 'transparent', borderWidth: 0 }}
             textStyle={{ color: 'black' }}
+            checkedColor="#7ddd7d"
           />
             <CheckBox
               title={`${t('niu.request.paymentAccept')} ${feeAmount.toLocaleString()} FCFA`}
@@ -253,10 +257,10 @@ const NiuRequest = () => {
         {!completedSteps[1] && (
           <TouchableOpacity
             onPress={handlePayPress}
-            className="bg-blue-600 mx-5 mb-5 rounded-lg py-4 items-center"
+            className="bg-green-600 mx-5 mb-5 rounded-lg py-4 items-center"
             disabled={isSubmitting}
           >
-            <Text className="text-white text-lg font-semibold">{t('niu.request.payNow')}</Text>
+            <Text className="text-white text-lg font-semibold">{t('niu.request.payButton')}</Text>
           </TouchableOpacity>
         )}
       </ScrollView>
@@ -267,10 +271,12 @@ const NiuRequest = () => {
         onClose={() => setShowPaymentModal(false)}
         onConfirm={handlePaymentConfirmation}
         amount={feeAmount}
-        title={t('niu.modal.title')}
-        description={t('niu.modal.description')}
-        confirmLabel={t('niu.modal.confirm')}
+        title={t('niu.paymentModal.title')}
+        description={t('niu.paymentModal.message')}
+        confirmLabel={t('niu.paymentModal.confirm')}
+        cancelLabel={t('niu.paymentModal.cancel', 'Annuler')}
       />
+
     </View>
   );
 };

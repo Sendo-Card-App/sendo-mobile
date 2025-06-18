@@ -68,6 +68,24 @@ const PaymentSimulator = () => {
     { code: 'CAD', name: 'Canadian Dollar', rate: CAD_REAL_TIME_VALUE }
   ];
   
+  // Helper pour obtenir l’emoji drapeau à partir du code pays
+const getFlagEmoji = (currencyCode) => {
+  const countryCodeMap = {
+    USD: 'US',
+    EUR: 'EU',  // Euro n’a pas de drapeau officiel unique, mais on peut utiliser l’UE 🇪🇺
+    CAD: 'CA',
+  };
+  const countryCode = countryCodeMap[currencyCode] || 'US';
+  // Convertir chaque lettre en Regional Indicator Symbol
+  return countryCode
+    .toUpperCase()
+    .split('')
+    .map(char =>  
+      String.fromCodePoint(0x1F1E6 - 65 + char.charCodeAt(0))
+    )
+    .join('');
+};
+
   const currentCurrency = currencies.find(c => c.code === currency) || currencies[0];
 
   const handleCurrencySelect = (selectedCurrency) => {
@@ -142,22 +160,27 @@ const PaymentSimulator = () => {
         </Text>
         
         {/* Amount Input */}
-        <View style={styles.amountInputContainer}>
-          <TextInput
-            value={amount}
-            onChangeText={setAmount}
-            keyboardType="numeric"
-            style={styles.amountInput}
-            placeholder={t('paymentSimulator.amountPlaceholder')}
-          />
-          <TouchableOpacity 
-            style={styles.currencySelector}
-            onPress={() => setShowCurrencyDropdown(true)}
-          >
-            <Text style={styles.currencyText}>{currency}</Text>
-            <AntDesign name="down" size={16} color="#666" />
-          </TouchableOpacity>
-        </View>
+       {/* Amount Input */}
+<View style={styles.amountInputContainer}>
+   <Text style={styles.flagEmoji}>{getFlagEmoji(currency)}</Text>
+  <TextInput
+    value={amount}
+    onChangeText={setAmount}
+    keyboardType="numeric"
+    style={styles.amountInput}
+    placeholder={t('paymentSimulator.amountPlaceholder')}
+  />
+  <TouchableOpacity 
+    style={styles.currencySelector}
+    onPress={() => setShowCurrencyDropdown(true)}
+  >
+    {/* Affiche le drapeau puis le code */}
+   
+    <Text style={styles.currencyText}>{currency}</Text>
+    <AntDesign name="down" size={16} color="#666" />
+  </TouchableOpacity>
+</View>
+
         
         <Text style={styles.exchangeRateText}>
           {t('paymentSimulator.exchangeRate')}{currency} = {currentCurrency.rate} FCFA
@@ -285,6 +308,10 @@ const styles = StyleSheet.create({
     marginTop: 20,
     alignItems: 'center',
   },
+  flagEmoji: {
+    fontSize: 48,
+    marginRight: 6,
+  },
   simulateButtonText: {
     color: 'white',
     fontWeight: 'bold',
@@ -321,7 +348,7 @@ const styles = StyleSheet.create({
     borderColor: '#999',
     borderRadius: 8,
     padding: 12,
-    marginTop: 30,
+    marginTop: 20,
   },
   disclaimerContent: {
     flexDirection: 'row',

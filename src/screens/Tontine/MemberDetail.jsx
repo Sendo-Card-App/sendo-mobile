@@ -24,7 +24,6 @@ const MemberDetail = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { t } = useTranslation();
-
   const { member, tontineId, tontine } = route.params || {};
   const membreId = member?.id;
 
@@ -35,23 +34,24 @@ const MemberDetail = () => {
   };
   const [activeTab, setActiveTab] = useState("Cotisations");
 
-  const {
-    data: penaltiesResponse = {},
-    isLoading: loadingPenalties,
-    error,
-  } = useGetMemberPenaltiesQuery({ tontineId, membreId });
+ const {
+  data: penaltiesResponse = {},
+  isLoading: loadingPenalties,
+  error,
+} = useGetMemberPenaltiesQuery({ tontineId, membreId });
+
+const penalties = penaltiesResponse.data || [];
+console.log("Penalties response:", penaltiesResponse);
+
 
   const {
     data: allCotisations,
     error: cotisationError,
-  } = useGetValidatedCotisationsQuery({ tontineId });
+  } = useGetValidatedCotisationsQuery({ tontineId,membreId });
 
-  const memberCotisations =
-    allCotisations?.data?.filter(
-      (cotisation) => cotisation.membre?.id === membreId
-    ) || [];
 
-  const penalties = penaltiesResponse.data || [];
+  const memberCotisations = allCotisations?.data || [];
+
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -79,7 +79,7 @@ const MemberDetail = () => {
 
       {/* HEADER */}
       <View className="bg-[#0C121D] pb-1">
-        <View className="flex-row mb-4 items-center justify-between px-4 pt-1">
+        <View className="flex-row mt-20 items-center justify-between px-4 pt-1">
           <TouchableOpacity onPress={() => navigation.goBack()}>
             <Ionicons name="arrow-back" size={24} color="#fff" />
           </TouchableOpacity>
@@ -91,12 +91,12 @@ const MemberDetail = () => {
         <View className="absolute top-[-48] left-0 right-0 items-center">
           <Image
             source={TopLogo}
-            className="h-[120px] w-[160px]"
+            className="h-[150px] w-[160px]"
             resizeMode="contain"
           />
         </View>
 
-        <View className="border border-dashed border-gray-300 mt-1 mx-4" />
+        <View className="border border-dashed border-gray-300 mb-1 mx-4" />
         <View className="bg-white rounded-t-3xl mt-8" style={{ height: 30 }} />
       </View>
 
@@ -135,7 +135,7 @@ const MemberDetail = () => {
                 <Text className="text-sm font-semibold">
                   {t("memberDetail.role")}: <Text className="font-normal">{role}</Text>
                 </Text>
-                <Feather name="edit-2" size={14} color="#000" />
+                {/* <Feather name="edit-2" size={14} color="#000" /> */}
               </View>
             </View>
           </View>

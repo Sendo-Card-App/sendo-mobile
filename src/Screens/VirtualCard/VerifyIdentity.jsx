@@ -2,6 +2,7 @@ import { View, Text, Image, TouchableOpacity } from "react-native";
 import { useFocusEffect } from '@react-navigation/native';
 import React, { useEffect,useCallback, useState } from "react";
 import TopLogo from "../../Images/TopLogo.png";
+import Loader from "../../components/Loader";
 import { Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 import VerifyImage from "../../Images/VerifyImage.png";
@@ -10,20 +11,39 @@ import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
 
 const VerifyIdentity = ({ navigation }) => {
   const { t } = useTranslation();
+  const [loadingDocuments, setLoadingDocuments] = useState(false);
   const [showVerifiedMessage, setShowVerifiedMessage] = useState(false);
   const { data: userProfile, isLoading: isProfileLoading, refetch } = useGetUserProfileQuery();
    
-   useFocusEffect(
+  //console.log(userProfile)
+
+useFocusEffect(
   useCallback(() => {
     let isActive = true;
 
-    const fetchData = async () => {
-      if (isActive) {
-        await refetch(); // Force une requête
+    const checkKYCStatus = async () => {
+      setLoadingDocuments(true);
+
+      try {
+        const result = await refetch();
+        const profile = result?.data?.data;
+        const documents = profile?.kycDocuments;
+
+        if (
+          Array.isArray(documents) &&
+          documents.length > 0 &&
+          documents.some(doc => doc && Object.keys(doc).length === 4)
+        ) {
+          navigation.navigate("KYCValidation", { documents });
+        }
+      } catch (error) {
+        console.warn("Failed to refetch KYC data", error);
+      } finally {
+        if (isActive) setLoadingDocuments(false); 
       }
     };
 
-    fetchData();
+    checkKYCStatus();
 
     return () => {
       isActive = false;
@@ -32,30 +52,20 @@ const VerifyIdentity = ({ navigation }) => {
 );
 
 
-useEffect(() => {
-  if (userProfile?.data?.isVerifiedKYC) {
-    setShowVerifiedMessage(true);
-    const timer = setTimeout(() => {
-      setShowVerifiedMessage(false);
-    }, 3600000); // 1 hour
-    return () => clearTimeout(timer);
-  }
-}, [userProfile?.data?.isVerifiedKYC]);
-
-
   const handleNextPress = () => {
-    if (!userProfile?.data?.isVerifiedKYC) {
-      navigation.navigate("KycResume");
-    }
-  };
+  navigation.navigate("KycResume");
+};
 
-  if (isProfileLoading) {
-    return (
-      <View className="bg-[#181e25] flex-1 items-center justify-center">
-        <Text className="text-white">Loading...</Text>
-      </View>
-    );
-  }
+
+ if (isProfileLoading || loadingDocuments) {
+  return (
+    <View className="bg-transparent flex-1 items-center justify-center">
+      <Loader size="large" color="green" />
+    </View>
+  );
+}
+
+
 
   return (
     <View className="bg-[#181e25] flex-1 pt-0 relative">
@@ -82,13 +92,6 @@ useEffect(() => {
 
       {/* Main Content */}
       <View className="flex-1 gap-6 py-3 bg-white px-8 rounded-t-3xl">
-        {showVerifiedMessage && (
-          <View className="bg-green-100 p-3 rounded-md mb-4">
-            <Text className="text-green-800 text-center font-bold text-lg">
-              {t('verifyIdentity.alreadyVerifiedMessage')}
-            </Text>
-          </View>
-        )}
 
         <View className="my-5">
           <Text className="text-center text-gray-800 text-sm font-bold">
@@ -110,7 +113,7 @@ useEffect(() => {
         </Text>
 
         {/* Only show button if user is not verified */}
-        {!userProfile?.data?.isVerifiedKYC && (
+       
           <TouchableOpacity
             className="mt-auto py-3 rounded-full mb-8 bg-[#7ddd7d]"
             onPress={handleNextPress}
@@ -119,7 +122,7 @@ useEffect(() => {
               {t('verifyIdentity.nextButton')}
             </Text>
           </TouchableOpacity>
-        )}
+      
       </View>
 
       {/* Footer */}

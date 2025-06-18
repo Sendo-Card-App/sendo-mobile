@@ -22,7 +22,7 @@ const KycResume = ({ navigation }) => {
   const { t } = useTranslation();
   const { data: userProfile, isLoading: isProfileLoading, error: profileError } = useGetUserProfileQuery();
 
-  console.log("Tontine List:", JSON.stringify(userProfile, null, 2));
+  //console.log("Tontine List:", JSON.stringify(userProfile, null, 2));
 
   const Data = [
     { id: "1", name: t('kyc_resume.personal_details'), route: "PersonalDetail", 
@@ -49,124 +49,142 @@ const KycResume = ({ navigation }) => {
   };
 
   const handleSubmit = async () => {
-    // First check if KYC is already verified
   if (userProfile?.data?.isVerifiedKYC) {
-  Toast.show({
-    type: 'success',
-    text1: 'KYC Already Verified',
-    text2: 'Your KYC documents have already been verified',
-    visibilityTime: 3000,
-    onHide: () => {
-      Alert.alert(
-        'Create Virtual Card?',
-        'Would you like to create a virtual card now?',
-        [
-          {
-            text: 'Not Now',
-            style: 'cancel',
-             onPress: () => navigation.navigate('MainTabs'),
-          },
-          {
-            text: 'Create Vitual Card',
-            onPress: () => navigation.navigate('CreateVirtualCard'),
-          },
-        ]
-      );
+    Toast.show({
+      type: 'success',
+      text1: 'KYC Already Verified',
+      text2: 'Your KYC documents have already been verified',
+      visibilityTime: 3000,
+      onHide: () => {
+        Alert.alert(
+          'Create Virtual Card?',
+          'Would you like to create a virtual card now?',
+          [
+            {
+              text: 'Not Now',
+              style: 'cancel',
+              onPress: () => navigation.navigate('MainTabs'),
+            },
+            {
+              text: 'Create Virtual Card',
+              onPress: () => navigation.navigate('CreateVirtualCard'),
+            },
+          ]
+        );
+      }
+    });
+    return;
+  }
+
+  if (!isKYCComplete) {
+    Toast.show({
+      type: 'error',
+      text1: 'Incomplet',
+      text2: 'Veuillez compléter toutes les étapes avant de soumettre'
+    });
+    return;
+  }
+
+  dispatch(setSubmissionStatus('loading'));
+
+  try {
+    const formData = new FormData();
+
+    formData.append('profession', personalDetails.profession);
+    formData.append('region', personalDetails.region);
+    formData.append('city', personalDetails.city);
+    formData.append('district', personalDetails.district);
+
+    // Upload selfie
+    if (selfie) {
+      const compressedSelfieUri = await compressImage(selfie.uri);
+      const selfieFormData = new FormData();
+      selfieFormData.append('picture', {
+        uri: compressedSelfieUri,
+        name: `picture_${Date.now()}.jpg`,
+        type: 'image/jpeg'
+      });
+      await sendSelfie(selfieFormData).unwrap();
     }
-  });
-  return;
-}
-    if (!isKYCComplete) {
+
+    // Upload documents
+    const addedDocuments = [];
+
+    const addDocumentWithType = async (doc, type) => {
+      if (!doc) return;
+      const compressedUri = await compressImage(doc.uri);
+      formData.append('documents', {
+        uri: compressedUri,
+        name: `${type.toLowerCase()}_${Date.now()}.jpg`,
+        type: 'image/jpeg'
+      });
+      formData.append('types', type);
+      addedDocuments.push(type);
+    };
+
+    await addDocumentWithType(identityDocument.front, 'ID_PROOF');
+    if (identityDocument.type === 'cni') {
+      await addDocumentWithType(identityDocument.back, 'ID_PROOF');
+    }
+    await addDocumentWithType(niuDocument, 'NIU_PROOF');
+    await addDocumentWithType(addressProof, 'ADDRESS_PROOF');
+
+    const uniqueTypes = [...new Set(addedDocuments)];
+    if (uniqueTypes.length < 4) {
       Toast.show({
         type: 'error',
-        text1: 'Incomplet',
-        text2: 'Veuillez compléter toutes les étapes avant de soumettre'
+        text1: 'Documents manquants',
+        text2: 'Veuillez télécharger les 4 documents requis avant de soumettre.',
+        visibilityTime: 4000
       });
+      dispatch(setSubmissionStatus('idle'));
       return;
     }
-  
-    dispatch(setSubmissionStatus('loading'));
-  
-    try {
-      const formData = new FormData();
-      
-      formData.append('profession', personalDetails.profession);
-      formData.append('region', personalDetails.region);
-      formData.append('city', personalDetails.city);
-      formData.append('district', personalDetails.district);
-       console.log(formData)
-      if (selfie) {
-        const compressedSelfieUri = await compressImage(selfie.uri);
-        const selfieFormData = new FormData();
-        selfieFormData.append('picture', {
-          uri: compressedSelfieUri,
-          name: `picture_${Date.now()}.jpg`,
-          type: 'image/jpeg'
-        });
-        await sendSelfie(selfieFormData).unwrap();
-      }
-  
-      const addDocumentWithType = async (doc, type) => {
-        if (!doc) return;
-        const compressedUri = await compressImage(doc.uri);
-        formData.append('documents', {
-          uri: compressedUri,
-          name: `${type.toLowerCase()}_${Date.now()}.jpg`,
-          type: 'image/jpeg'
-        });
-        formData.append('types', type);
-      };
-  
-      await Promise.all([
-        addDocumentWithType(identityDocument.front, 'ID_PROOF'),
-        identityDocument.type === 'cni' && addDocumentWithType(identityDocument.back, 'ID_PROOF'),
-        addDocumentWithType(niuDocument, 'NIU_PROOF'),
-        addDocumentWithType(addressProof, 'ADDRESS_PROOF')
-      ]);
-  
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Request timeout')), 30000)
-      );
-  
-      const response = await Promise.race([
-        submitKYC(formData).unwrap(),
-        timeoutPromise
-      ]);
-  
-      if (response.status === 201) {
-        navigation.navigate('Success', {
-          message: 'Votre KYC a été soumis avec succès',
-          nextScreen: 'MainTabs'
-        });
-      }
-    } catch (error) {
-      console.error('KYC submission error:', error);
-      let errorMessage = 'Échec de la soumission du KYC';
-  
-      if (error.message === 'Request timeout') {
-        errorMessage = "La requête a pris trop de temps. Veuillez vérifier votre connexion et réessayer.";
-      } else if (error?.data?.message?.includes('Aucun fichier fourni')) {
-        errorMessage = `Documents requis: ${error.data.data.required.mandatoryTypes.join(', ')}`;
-      } else if (error?.data?.code) {
-        const errorCodes = {
-          'ERR_MISSING': 'Veuillez remplir tous les champs obligatoires',
-          'ERR_FORMAT': 'Le format de certaines données est incorrect',
-          'ERR_UPLOAD': 'Échec du téléchargement des documents',
-          'ERR_TECH': 'Une erreur technique est survenue'
-        };
-        errorMessage = errorCodes[error.data.code] || errorMessage;
-      }
-  
-      Toast.show({
-        type: 'error',
-        text1: 'Erreur',
-        text2: errorMessage,
-        visibilityTime: 5000
+
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Request timeout')), 30000)
+    );
+
+    const response = await Promise.race([
+      submitKYC(formData).unwrap(),
+      timeoutPromise
+    ]);
+
+    if (response.status === 201) {
+      navigation.navigate('Success', {
+        message: 'Votre KYC a été soumis avec succès',
+        nextScreen: 'MainTabs'
       });
-    } finally {
-      dispatch(setSubmissionStatus('idle'));
     }
-  };
+  } catch (error) {
+    console.error('KYC submission error:', error);
+    let errorMessage = 'Échec de la soumission du KYC';
+
+    if (error.message === 'Request timeout') {
+      errorMessage = "La requête a pris trop de temps. Veuillez vérifier votre connexion et réessayer.";
+    } else if (error?.data?.message?.includes('Aucun fichier fourni')) {
+      errorMessage = `Documents requis: ${error.data.data.required.mandatoryTypes.join(', ')}`;
+    } else if (error?.data?.code) {
+      const errorCodes = {
+        'ERR_MISSING': 'Veuillez remplir tous les champs obligatoires',
+        'ERR_FORMAT': 'Le format de certaines données est incorrect',
+        'ERR_UPLOAD': 'Échec du téléchargement des documents',
+        'ERR_TECH': 'Une erreur technique est survenue'
+      };
+      errorMessage = errorCodes[error.data.code] || errorMessage;
+    }
+
+    Toast.show({
+      type: 'error',
+      text1: 'Erreur',
+      text2: errorMessage,
+      visibilityTime: 5000
+    });
+  } finally {
+    dispatch(setSubmissionStatus('idle'));
+  }
+};
+
 
   const KycOption = ({ id, name, route, completed }) => (
     <TouchableOpacity

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState,useCallback  } from "react";
 import {
   View,
   Text,
@@ -7,11 +7,14 @@ import {
   Image,
   StatusBar,
   Alert,
+  Modal,
 } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
 import Loader from "../../components/Loader";
+import { useGetConfigQuery } from '../../services/Config/configApi';
 import {
   sendPushNotification,
   sendPushTokenToBackend,
@@ -37,13 +40,17 @@ const MemberContribution = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { tontineId, tontine } = route.params;
-
   const [activeTab, setActiveTab] = useState("Cotisations");
+
   const [payPenalty, { Loading, isSuccess, isError }] = usePayPenaltyMutation();
   const [contribute, { isLoading }] = useContributeMutation();
+
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [loadingPayment, setLoadingPayment] = useState(false);
+
   const { data: userProfile } = useGetUserProfileQuery();
   const userId = userProfile?.data.id;
-
+ 
   const { data: balanceData } = useGetBalanceQuery(userId, {
     skip: !userId,
   });
@@ -53,90 +60,144 @@ const MemberContribution = () => {
   const { data: tours } = useGetToursDistributionQuery({ tontineId });
   const membre = tontine?.membres?.find((m) => m?.user?.id === userId);
   const membreId = membre?.id;
-  
-  const {
-    data: penaltiesResponse = {},
-    isLoading: loadingPenalties,
-  } = useGetMemberPenaltiesQuery({ tontineId, membreId });
-  const penaliteId = penaltiesResponse?.data?.[0]?.id;
 
-  const {
-    data: allCotisations,
-    error: cotisationError,
-  } = useGetValidatedCotisationsQuery({
-    tontineId,
-  });
-  
-  const memberCotisations = allCotisations?.data?.filter(
+   const { data: validatedCotisations, refetch: refetchCotisations } = useGetValidatedCotisationsQuery({ tontineId, membreId });
+    //console.log(validatedCotisations)
+   const {
+  data: penaltiesResponse,
+  refetch: refetchPenalties,
+  isLoading: loadingPenalties,
+} = useGetMemberPenaltiesQuery({ tontineId, membreId });
+   //console.log(penaltiesResponse)
+     const {
+         data: configData,
+         isLoading: isConfigLoading,
+         error: configError
+       } = useGetConfigQuery();
+     
+       const getConfigValue = (name) => {
+         const configItem = configData?.data?.find(item => item.name === name);
+         return configItem ? configItem.value : null;
+       };
+        
+       const TONTINE_FEES_TRANSACTION = parseFloat(getConfigValue('TONTINE_FEES_TRANSACTION'));
+      // console.log('Transaction fee percentage:', TONTINE_FEES_TRANSACTION);
+       const montant = tontine?.montant || 0;
+ 
+        const calculateTotalAmount = () => {
+          const Montant = Number(montant) || 0;
+          const feesAmount = (Montant * TONTINE_FEES_TRANSACTION) / 100;
+          const total = Montant + feesAmount;
+          
+          // console.log('Amount breakdown:', {
+          //   baseAmount: Montant,
+          //   feePercentage: TONTINE_FEES_TRANSACTION,
+          //   feeAmount: feesAmount,
+          //   totalAmount: total
+          // });
+          
+          return total;
+        };
+
+        const totalAmount = calculateTotalAmount();
+   
+     useFocusEffect(
+      useCallback(() => {
+        if (userId) {
+          refetch(); // transaction history
+          refetchCotisations();
+          refetchPenalties();
+        }
+      }, [userId])
+    );
+
+      //console.log("Full response:", JSON.stringify(allCotisations, null, 2));
+  const memberCotisations = validatedCotisations?.data?.filter(
     cotisation => cotisation.membre?.id === membreId
   ) || [];
-  
-  const montant = tontine?.montant || 0;
+
 
   const { data: cotisations } = useGetCotisationsQuery({
     tontineId,
     memberId: membreId,
   });
-  const cotisationId = cotisations?.data?.[0]?.id;
-
+  
+  const cotisationId = validatedCotisations?.data?.[0]?.id;
+  //console.log(cotisationId)
   const handlePay = async () => {
-    if (balance < montant) {
-      Alert.alert("Solde insuffisant", "Veuillez recharger votre solde.");
-      return;
+  if (balance < montant) {
+    Toast.show({
+      type: 'error',
+      text1: 'Solde insuffisant',
+      text2: 'Veuillez recharger votre solde.',
+      position: 'top',
+    });
+    return;
+  }
+
+  const payload = { tontineId, membreId, cotisationId};
+     console.log(payload)
+  try {
+    await contribute(payload).unwrap();
+
+    const notificationContent = {
+      title: "Cotisation Réussie",
+      body: `Une cotisation de ${montant} FCFA a été effectuée.`,
+      type: "TONTINE_CONTRIBUTION_SUCCESS",
+    };
+
+    let pushToken = await getStoredPushToken();
+    if (!pushToken) {
+      pushToken = await registerForPushNotificationsAsync();
     }
 
-    const payload = { tontineId, membreId, cotisationId, montant };
-
-    try {
-      await contribute(payload).unwrap();
-
-      const notificationContent = {
-        title: "Cotisation Réussie",
-        body: `Une cotisation de ${montant} FCFA a été effectuée.`,
-        type: "TONTINE_CONTRIBUTION_SUCCESS",
-      };
-
-      let pushToken = await getStoredPushToken();
-      if (!pushToken) {
-        pushToken = await registerForPushNotificationsAsync();
-      }
-
-      if (pushToken) {
-        await sendPushTokenToBackend(
-          pushToken,
-          notificationContent.title,
-          notificationContent.body,
-          notificationContent.type,
-          {
-            amount: montant,
-            tontineId,
-            membreId,
-            timestamp: new Date().toISOString(),
-          }
-        );
-      } else {
-        await sendPushNotification(notificationContent.title, notificationContent.body, {
-          data: {
-            type: notificationContent.type,
-            amount: montant,
-            tontineId,
-            membreId,
-          },
-        });
-      }
-
-      navigation.navigate("SuccessSharing", {
-        transactionDetails: "Votre cotisation a été effectuée avec succès",
+    if (pushToken) {
+      await sendPushTokenToBackend(
+        pushToken,
+        notificationContent.title,
+        notificationContent.body,
+        notificationContent.type,
+        {
+          amount: montant,
+          tontineId,
+          membreId,
+          timestamp: new Date().toISOString(),
+        }
+      );
+    } else {
+      await sendPushNotification(notificationContent.title, notificationContent.body, {
+        data: {
+          type: notificationContent.type,
+          amount: montant,
+          tontineId,
+          membreId,
+        },
       });
-    } catch (error) {
-      console.error("Erreur cotisation:", JSON.stringify(error, null, 2));
-      Alert.alert("Échec", "Échec du paiement. Veuillez réessayer.");
     }
-  };
+
+    Toast.show({
+      type: 'success',
+      text1: 'Cotisation réussie',
+      text2: `Une cotisation de ${montant} FCFA a été effectuée.`,
+      position: 'top',
+    });
+
+    navigation.navigate("SuccessSharing", {
+      transactionDetails: "Votre cotisation a été effectuée avec succès",
+    });
+  } catch (error) {
+    console.error("Erreur cotisation:", JSON.stringify(error, null, 2));
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: error?.data?.message,
+      });
+  }
+};
 
   const handlePayPenalty = async () => {
     try {
-      const response = await payPenalty({ penaliteId }).unwrap();
+      const response = await payPenalty({ penaliteId: penaltyId }).unwrap();
       console.log('Paiement réussi', response);
       Toast.show({
         type: 'success',
@@ -144,11 +205,12 @@ const MemberContribution = () => {
         text2: 'La pénalité a été payée avec succès.',
       });
     } catch (error) {
-      console.error('Erreur lors du paiement', error);
+    
+       console.log("Erreur lors du paiement:", JSON.stringify(error, null, 2));
       Toast.show({
         type: 'error',
         text1: 'Erreur',
-        text2: error?.data?.message || 'Une erreur est survenue pendant le paiement.',
+        text2: error?.data?.message,
       });
     }
   };
@@ -222,7 +284,7 @@ const MemberContribution = () => {
 
         <TouchableOpacity
           disabled={isLoading}
-          onPress={handlePay}
+           onPress={() => setShowPaymentModal(true)}
           className="bg-[#4ADE80] py-3 rounded-full flex-row justify-center items-center mb-4"
         >
           {isLoading ? (
@@ -237,7 +299,74 @@ const MemberContribution = () => {
             </>
           )}
         </TouchableOpacity>
+         
+         {showPaymentModal && (
+            <Modal
+              transparent
+              animationType="fade"
+              visible={showPaymentModal}
+              onRequestClose={() => setShowPaymentModal(false)}
+            >
+              <View className="flex-1 justify-center items-center bg-black/60 px-6">
+                <View className="bg-white rounded-2xl p-6 w-full">
+                  <Text className="text-black text-large font-bold mb-4 text-center">
+                    {t("cotisations.confirmPayment")}
+                  </Text>
+                  
+                  {/* Show payment breakdown */}
+                  <View className="mb-4">
+                    <View className="flex-row justify-between mb-1">
+                      <Text className="text-gray-700">{t('cotisations.baseAmount')}:</Text>
+                      <Text className="text-gray-700">{montant.toLocaleString()} xaf</Text>
+                    </View>
+                    <View className="flex-row justify-between mb-1">
+                      <Text className="text-gray-700">
+                        {t('cotisations.fees')} ({TONTINE_FEES_TRANSACTION}%):
+                      </Text>
+                      <Text className="text-gray-700">
+                        {((montant * TONTINE_FEES_TRANSACTION) / 100).toLocaleString()} xaf
+                      </Text>
+                    </View>
+                    <View className="border-t border-gray-300 my-2" />
+                    <View className="flex-row justify-between">
+                      <Text className="text-gray-800 font-semibold">{t('cotisations.total1')}:</Text>
+                      <Text className="text-gray-800 font-semibold">
+                        {totalAmount.toLocaleString()} xaf
+                      </Text>
+                    </View>
+                  </View>
 
+                  <View className="flex-row justify-between mt-4 space-x-2">
+                    <TouchableOpacity
+                      onPress={() => setShowPaymentModal(false)}
+                      className="flex-1 bg-gray-200 px-4 py-3 rounded-lg items-center"
+                    >
+                      <Text className="text-gray-800 font-medium">
+                        {t("common.cancel")}
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      onPress={async () => {
+                        setShowPaymentModal(false);
+                        await handlePay();    
+                      }}
+                      disabled={loadingPayment}
+                      className="flex-1 bg-green-500 px-4 py-3 rounded-lg items-center"
+                    >
+                      {loadingPayment ? (
+                        <Loader size="small" color="#fff" />
+                      ) : (
+                        <Text className="text-white font-bold">
+                          {t("cotisations.confirm")}
+                        </Text>
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+            </Modal>
+          )}
         <View className="flex-row justify-around mb-3">
           {[
             t('memberContribution.tabs.contributions'),
@@ -317,7 +446,7 @@ const MemberContribution = () => {
                   <View className="items-end">
                     <TouchableOpacity
                       className="bg-green-500 px-5 py-2 rounded flex-row items-center justify-center"
-                      onPress={handlePayPenalty}
+                     onPress={() => handlePayPenalty(penalty.id)}
                       disabled={isLoading || penalty?.statut === 'PAID'}
                     >
                       {isLoading ? (
@@ -336,9 +465,9 @@ const MemberContribution = () => {
         )}
 
         {activeTab === t('memberContribution.tabs.history') && (
-          <View className="space-y-2 mb-6">
+          <View className="space-y-2 mt-3 mb-6">
             {memberCotisations.map((c, i) => (
-              <View key={i} className="flex-row justify-between px-3 py-2 border rounded-md">
+              <View key={i} className="flex-row justify-between px-3 py-3 mt-3 border rounded-md">
                 <Text className="text-gray-700">{formatDate(c.createdAt)}</Text>
                 <Text className="text-green-600 font-semibold">
                   {c.montant.toLocaleString()} xaf

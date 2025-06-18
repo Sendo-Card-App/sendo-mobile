@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, TouchableOpacity, Image } from "react-native";
+import { View, Text, TouchableOpacity, Image, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Toast from "react-native-toast-message";
 import { useNavigation, useRoute } from "@react-navigation/native";
@@ -97,9 +97,34 @@ const TontineDetail = () => {
             <Text className="text-black font-semibold mt-2">{t("tontineDetail.contribute")}</Text>
           </TouchableOpacity>
         </View>
+
+        {/* Informational message */}
+        <Text className="text-red-400 mt-10 text-center text-sm">
+          ⚠️ {t("tontineDetail.rotationWarning", "Vous devez définir l’ordre de rotation avant que les membres puissent cotiser.")}
+        </Text>
       </View>
+
+      {/* Floating Home button */}
+      <TouchableOpacity
+        onPress={() => navigation.navigate("MainTabs")}
+        style={styles.floatingHomeButton}
+      >
+        <Ionicons name="home" size={44} color="#7ddd7d" />
+      </TouchableOpacity>
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  floatingHomeButton: {
+    position: "absolute",
+    bottom: 24,
+    right: 24,
+    backgroundColor: "#1A1A1A",
+    padding: 10,
+    borderRadius: 50,
+    elevation: 10,
+  },
+});
 
 export default TontineDetail;

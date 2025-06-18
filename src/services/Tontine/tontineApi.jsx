@@ -110,7 +110,7 @@ export const tontineApi = createApi({
         query: ({ invitationCode, membreId, type }) => ({
           url: '/tontines/access-or-reject',
           method: 'POST',
-          body: {
+           body: {
             invitationCode,
             membreId,
             type,
@@ -154,7 +154,7 @@ export const tontineApi = createApi({
 
       getValidatedCotisations: builder.query({
         query: ({ tontineId, membreId }) => ({
-          url: `/tontines/${tontineId}/cotisations?membreId=${membreId}&statutPaiement=VALIDATED`,
+          url: `/tontines/${tontineId}/cotisations?membreId=${membreId}`,
           method: 'GET',
         }),
         providesTags: [TAG_TYPES.TONTINE],

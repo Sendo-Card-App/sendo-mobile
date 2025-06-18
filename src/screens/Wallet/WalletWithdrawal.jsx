@@ -196,6 +196,7 @@ const WalletWithdrawal = () => {
           <Ionicons name="menu-outline" size={24} color="white" />
         </TouchableOpacity>
       </View>
+      <View className="border border-dashed border-white mt-1 mb-1 " />
       <Text className="text-center text-white text-2xl my-3">
        {t("walletWithdrawal.title")}
       </Text>
