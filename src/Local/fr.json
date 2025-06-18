@@ -852,7 +852,7 @@
   "paymentSimulator": {
     "title": "Entrez le montant que vous souhaitez payer",
     "amountPlaceholder": "100",
-    "exchangeRate": "Taux: 1 ",
+    "exchangeRate": "Taux du jour : 1 ",
     "convertedAmount": "Montant converti",
     "partnerFees": "Frais du partenaire (VISA)",
     "sendoFees": "Frais de Sendo (TTC)",

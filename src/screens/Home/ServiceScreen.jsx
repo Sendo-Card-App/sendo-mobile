@@ -48,14 +48,14 @@ const ServiceScreen = () => {
         height: itemSize,
         margin: spacing / 2,
         borderRadius: 18,
-        backgroundColor: "#1A1A1A",
+        backgroundColor: "#F2F2F2",
         justifyContent: "center",
         alignItems: "center",
         elevation: 4,
       }}
     >
-      <Ionicons name={item.icon} size={32} color="#7ddd7d" style={{ marginBottom: 10 }} />
-      <Text className="text-white text-sm text-center font-semibold">{item.label}</Text>
+      <Ionicons name={item.icon} size={48} color="#7ddd7d" style={{ marginBottom: 10 }} />
+      <Text className="text-black text-sm text-center font-semibold">{item.label}</Text>
     </TouchableOpacity>
   );
 
@@ -84,7 +84,7 @@ const ServiceScreen = () => {
 
       {/* Services Grid */}
       <FlatList
-        key={`grid-${numColumns}`} // Force le re-render
+        key={`grid-${numColumns}`} 
         data={services}
         renderItem={renderItem}
         keyExtractor={(item, index) => index.toString()}

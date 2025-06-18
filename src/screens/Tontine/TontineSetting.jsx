@@ -9,7 +9,7 @@ import {
   Pressable,
   ScrollView,
 } from "react-native";
-import ButtomLogo from "../../images/ButtomLogo.png";
+import ButtomLogo1 from "../../images/ButtomLogo1.png";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
@@ -79,7 +79,7 @@ const getInfoForModal = (screen) => {
       {/* Header */}
       <View className="flex-row justify-between items-center px-4">
         <Image
-          source={ButtomLogo}
+          source={ButtomLogo1}
           resizeMode="contain"
           className="h-[40px] w-[120px]"
         />

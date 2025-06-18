@@ -31,7 +31,7 @@ const { width, height } = Dimensions.get('window');
 const isSmallScreen = width < 375;
 const isIOS = Platform.OS === 'ios';
 const scale = (size) => (width / 375) * size;
-const ITEM_WIDTH = width - 80;
+const ITEM_WIDTH = width - 70;
 
 const HomeScreen = () => {
   const navigation = useNavigation();
@@ -306,7 +306,7 @@ const getMethodIcon = (transaction) => {
                 {isBalanceLoading ? (
                   <Loader size="small" color="black" />
                 ) : showBalance ? (
-                  `${(balanceData?.data.balance || 0).toLocaleString('en-US')} ${balanceData?.data.currency || 'XAF'}`
+                  `${(balanceData?.data.balance || 0).toLocaleString('en-US')} ${balanceData?.data.currency}`
                 ) : (
                   '****'
                 )}
@@ -386,9 +386,9 @@ const getMethodIcon = (transaction) => {
 
       {/* Section PUB with TopLogo background */}
        <View className="mb-3">
-          <Text className="text-black font-bold text-base mb-2">
+          {/* <Text className="text-black font-bold text-base mb-2">
             {t("home.pubSection")}
-          </Text>
+          </Text> */}
 
           {isLoadingPubs ? (
             <Loader />
@@ -413,7 +413,7 @@ const getMethodIcon = (transaction) => {
                   onPress={() => item.link && Linking.openURL(item.link)}
                   style={{
                     width: ITEM_WIDTH,
-                    height: 130,
+                    height: 120,
                     borderRadius: 12,
                     overflow: "hidden",
                     marginRight: 20,
