@@ -16,7 +16,7 @@ import { useSelector } from "react-redux";
 import Toast from 'react-native-toast-message';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from "@react-navigation/native";
-import ButtomLogo from "../../images/ButtomLogo.png";
+import ButtomLogo1 from "../../images/ButtomLogo1.png";
 import Loader from "../../components/Loader";
 import { useTranslation } from "react-i18next";
 import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
@@ -374,7 +374,7 @@ const handleReject = async (item) => {
 
       <View className="bg-green-400 pb-4 rounded-b-2xl">
         <View className="flex-row justify-between items-center px-4 pt-12">
-          <Image source={ButtomLogo} resizeMode="contain" className="h-[40px] w-[120px]" />
+          <Image source={ButtomLogo1} resizeMode="contain" className="h-[40px] w-[120px]" />
           <TouchableOpacity onPress={() => navigation.openDrawer()}>
             <Ionicons name="menu-outline" size={28} color="white" />
           </TouchableOpacity>

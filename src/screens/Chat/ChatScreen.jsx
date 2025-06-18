@@ -11,6 +11,7 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  Modal
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import * as DocumentPicker from 'expo-document-picker';
@@ -23,7 +24,7 @@ import {
 } from '../../services/Chat/ChatApi';
 import Toast from 'react-native-toast-message';
 import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
-import TransactionSkeleton from '../../components/TransactionSkeleton';
+import Loader from '../../components/Loader';
 
 interface Attachment {
   uri: string;
@@ -48,37 +49,55 @@ interface Message {
   };
 }
 
+interface Conversation {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  status: string;
+  userId: number;
+  adminId: number | null;
+  user: {
+    id: number;
+    firstname: string;
+    lastname: string;
+  };
+}
+
 const ChatScreen = ({ route, navigation }) => {
   const [input, setInput] = useState('');
   const [attachments, setAttachments] = useState([]);
   const flatListRef = useRef(null);
   const [sending, setSending] = useState(false);
-  const [conversationId, setConversationId] = useState(null);
+  const [selectedConversationIndex, setSelectedConversationIndex] = useState(0);
+  const [showConversationPicker, setShowConversationPicker] = useState(false);
 
   const { data: userProfile } = useGetUserProfileQuery();
   const userId = userProfile?.data?.id;
-  const { data: conversations } = useGetConversationsQuery(userId, {
+  
+  const { data: conversationsResponse, isLoading: isLoadingConversations, refetch: refetchConversations } = useGetConversationsQuery(userId, {
     skip: !userId
   });
-
-  const { data: messagesResponse, isLoading, refetch } = useGetConversationMessagesQuery(conversationId, {
-    skip: !conversationId
+  
+  const conversations = conversationsResponse?.data || [];
+  const openConversations = conversations.filter(conv => conv.status === 'OPEN');
+  const selectedConversation = openConversations[selectedConversationIndex];
+  
+  const { data: messagesResponse, isLoading: isLoadingMessages, refetch } = useGetConversationMessagesQuery(selectedConversation?.id, {
+    skip: !selectedConversation
   });
-  const messages = messagesResponse?.data || [];
+
+  const messages = [...(messagesResponse?.data || [])].sort(
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+  );
 
   const [sendMessage] = useSendMessageMutation();
   const [createConversation] = useCreateConversationMutation();
 
   useEffect(() => {
-    if (messages.length > 0) {
+    if (messages.length > 0 && flatListRef.current) {
+      flatListRef.current.scrollToEnd({ animated: true });
     }
   }, [messages]);
-
-  useEffect(() => {
-    if (conversations?.length > 0) {
-      setConversationId(conversations[0].id);
-    }
-  }, [conversations]);
 
   const pickDocument = async () => {
     try {
@@ -95,6 +114,11 @@ const ChatScreen = ({ route, navigation }) => {
       }
     } catch (err) {
       console.log('Document picker error:', err);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Failed to pick document',
+      });
     }
   };
 
@@ -115,6 +139,11 @@ const ChatScreen = ({ route, navigation }) => {
       }
     } catch (err) {
       console.log('Image picker error:', err);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Failed to pick image',
+      });
     }
   };
 
@@ -122,49 +151,53 @@ const ChatScreen = ({ route, navigation }) => {
     setAttachments(prev => prev.filter((_, i) => i !== index));
   };
 
-const handleSend = async () => {
-  if ((input.trim() === '' && attachments.length === 0) || sending) return;
+  const handleSend = async () => {
+    if ((input.trim() === '' && attachments.length === 0) || sending) return;
 
-  try {
-    setSending(true);
+    try {
+      setSending(true);
 
-    let currentConversationId = conversationId;
+      let currentConversationId = selectedConversation?.id;
 
-    if (!currentConversationId) {
-      const newConversation = await createConversation().unwrap();
-      currentConversationId = newConversation.data.id; // Use .data.id here
-      setConversationId(currentConversationId);
+      // If no open conversations exist or no conversation is selected
+      if (!currentConversationId || openConversations.length === 0) {
+        const newConversation = await createConversation().unwrap();
+        currentConversationId = newConversation.data.id;
+        // Refetch conversations to get the new one
+        await refetchConversations();
+        setSelectedConversationIndex(0);
+        return; // Return early and let the user send the message again
+      }
 
-      //console.log('[💬] New conversation created:', newConversation);
-    } else {
-      //console.log('[💬] Using existing conversation ID:', currentConversationId);
+      const messageData = {
+        conversationId: currentConversationId,
+        content: input.trim() !== "" ? input : attachments.length > 0 ? "[Attachment]" : "",
+        senderType: "CUSTOMER",
+        attachments: attachments.map((a) => a.uri),
+      };
+
+      await sendMessage(messageData).unwrap();
+
+      setInput('');
+      setAttachments([]);
+      refetch();
+
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+    } catch (error) {
+      console.error('Failed to send message:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Failed to send message',
+      });
+    } finally {
+      setSending(false);
     }
+  };
 
-    const messageData = {
-      conversationId: currentConversationId,
-      content: input.trim() !== "" ? input : attachments.length > 0 ? "[Pièce jointe]" : "", // fallback
-      senderType: "CUSTOMER",
-      attachments: attachments.map((a) => a.uri),
-    };
-
-    await sendMessage(messageData).unwrap();
-
-    setInput('');
-    setAttachments([]);
-
-    setTimeout(() => {
-      flatListRef.current?.scrollToEnd({ animated: true });
-    }, 100);
-
-    refetch();
-  } catch (error) {
-    console.error('Failed to send message:', error);
-  } finally {
-    setSending(false);
-  }
-};
-
-  const renderMessage = ({ item }) => (
+  const renderMessage = ({ item }: { item: Message }) => (
     <View style={[
       styles.messageContainer,
       item.senderType === 'ADMIN' ? styles.receivedMessage : styles.sentMessage
@@ -232,11 +265,11 @@ const handleSend = async () => {
     </View>
   );
 
-  if (isLoading) {
+  if (isLoadingConversations || isLoadingMessages) {
     return (
-      <View className="bg-transparent flex-1 items-center justify-center">
-      <Loader size="large" color="green" />
-    </View>
+      <View style={styles.loadingContainer}>
+        <Loader size="large" color="#7ddd7d" />
+      </View>
     );
   }
 
@@ -246,13 +279,67 @@ const handleSend = async () => {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
     >
+      {/* Conversation Selector */}
+      <TouchableOpacity 
+        style={styles.conversationSelector}
+        onPress={() => setShowConversationPicker(true)}
+      >
+        <Text style={styles.conversationSelectorText}>
+          {selectedConversation 
+            ? `Conversation ${openConversations.findIndex(c => c.id === selectedConversation.id) + 1} (${new Date(selectedConversation.createdAt).toLocaleDateString()})`
+            : openConversations.length === 0 
+              ? 'No open conversations - new one will be created'
+              : 'Select a conversation'}
+        </Text>
+        <Icon name="arrow-drop-down" size={24} color="#555" />
+      </TouchableOpacity>
+
+      {/* Conversation Picker Modal */}
+      <Modal
+        visible={showConversationPicker}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowConversationPicker(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Select Conversation</Text>
+             <FlatList
+                data={openConversations}
+                keyExtractor={item => item.id}
+                renderItem={({ item, index }) => (
+                  <TouchableOpacity
+                    style={styles.conversationItem}
+                    onPress={() => {
+                      setSelectedConversationIndex(index);
+                      setShowConversationPicker(false);
+                    }}
+                  >
+                    <Text style={styles.conversationItemText}>
+                      Conversation {index + 1} ({new Date(item.createdAt).toLocaleDateString()})
+                    </Text>
+                    {index === selectedConversationIndex && (
+                      <Icon name="check" size={20} color="#7ddd7d" />
+                    )}
+                  </TouchableOpacity>
+                )}
+              />
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setShowConversationPicker(false)}
+            >
+              <Text style={styles.closeButtonText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
       <FlatList
         ref={flatListRef}
         data={messages}
         keyExtractor={item => item.id}
         renderItem={renderMessage}
         contentContainerStyle={styles.messagesList}
-        inverted={false}
         onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
         onLayout={() => flatListRef.current?.scrollToEnd({ animated: true })}
         showsVerticalScrollIndicator={false}
@@ -306,9 +393,63 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  conversationSelector: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  conversationSelectorText: {
+    fontSize: 16,
+    color: '#333',
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    marginHorizontal: 20,
+    borderRadius: 10,
+    maxHeight: '70%',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    textAlign: 'center',
+  },
+  conversationItem: {
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  conversationItemText: {
+    fontSize: 16,
+  },
+  closeButton: {
+    padding: 15,
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+    alignItems: 'center',
+  },
+  closeButtonText: {
+    color: '#7ddd7d',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
   messagesList: {
     padding: 10,
-    paddingBottom: 70, // Extra space for input container
+    paddingBottom: 70,
   },
   messageContainer: {
     maxWidth: '80%',
@@ -404,8 +545,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderTopWidth: 1,
     borderTopColor: '#eee',
-    marginTop:10,
-    marginButton:10,
     paddingVertical: 8,
     paddingHorizontal: 12,
   },

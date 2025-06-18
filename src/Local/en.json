@@ -850,7 +850,7 @@
    "paymentSimulator": {
     "title": "Enter the amount you want to pay",
     "amountPlaceholder": "100",
-    "exchangeRate": "Rate: 1",
+    "exchangeRate": "Today rate : 1",
     "convertedAmount": "Converted amount",
     "partnerFees": "Partner fees (VISA)",
     "sendoFees": "Sendo fees (VAT included)",

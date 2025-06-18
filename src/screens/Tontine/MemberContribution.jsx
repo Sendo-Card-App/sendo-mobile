@@ -195,25 +195,41 @@ const MemberContribution = () => {
   }
 };
 
-  const handlePayPenalty = async () => {
-    try {
-      const response = await payPenalty({ penaliteId: penaltyId }).unwrap();
-      console.log('Paiement réussi', response);
-      Toast.show({
-        type: 'success',
-        text1: 'Succès',
-        text2: 'La pénalité a été payée avec succès.',
-      });
-    } catch (error) {
-    
-       console.log("Erreur lors du paiement:", JSON.stringify(error, null, 2));
-      Toast.show({
-        type: 'error',
-        text1: 'Erreur',
-        text2: error?.data?.message,
-      });
-    }
-  };
+const handlePayPenalty = async () => {
+  if (penalty?.statut === 'PAID') {
+    console.log('Pénalité déjà payée, action ignorée.');
+    return;
+  }
+
+  console.log('🔄 Paiement en cours pour la pénalité ID:', penalty?.id);
+
+  try {
+    const response = await payPenalty({ penaliteId: penalty.id }).unwrap();
+    console.log(' Réponse succès:', JSON.stringify(response, null, 2));
+
+    Toast.show({
+      type: 'success',
+      text1: 'Succès',
+      text2: 'La pénalité a été payée avec succès.',
+    });
+  } catch (error) {
+    console.log(' Erreur lors du paiement:', JSON.stringify(error, null, 2));
+
+    const message =
+      error?.data?.message ||
+      error?.error ||
+      "Une erreur est survenue lors du paiement.";
+
+    Toast.show({
+      type: 'error',
+      text1: 'Erreur',
+      text2: message,
+    });
+  }
+};
+
+
+
 
   const adminMember = tontine?.membres?.find((m) => m.role === "ADMIN");
   const adminName = adminMember
@@ -446,7 +462,7 @@ const MemberContribution = () => {
                   <View className="items-end">
                     <TouchableOpacity
                       className="bg-green-500 px-5 py-2 rounded flex-row items-center justify-center"
-                     onPress={() => handlePayPenalty(penalty.id)}
+                      onPress={handlePayPenalty} // pas besoin de passer penalty.id ici
                       disabled={isLoading || penalty?.statut === 'PAID'}
                     >
                       {isLoading ? (
