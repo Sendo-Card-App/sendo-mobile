@@ -52,6 +52,15 @@ const ReceiptScreen = () => {
       default: return type;
     }
   };
+    const getTypeLabel1 = (provider) => {
+    switch(provider?.toUpperCase()) {
+      case 'SYSTEM': return t('history1.system');
+       case 'WALLET_PAYMENT': return t('history1.walletPayment');
+      case 'TONTINE_PAYMENT': return t('history1.tontine');
+      case 'PAYMENT': return t('history1.payment');
+      default: return provider;
+    }
+  };
 
     const getMethodIcon = () => {
   switch (transaction.method?.toUpperCase()) {
@@ -259,7 +268,7 @@ const ReceiptScreen = () => {
             Bénéficiaire :{" "}
             <Text className="font-semibold">{user?.firstname} {user?.lastname}</Text>
           </Text>
-          <Text className="text-gray-600 text-sm">Methode de Paiement : {transaction.provider || 'N/A'}</Text>
+          <Text className="text-gray-600 text-sm">Methode de Paiement : {getTypeLabel1(transaction.provider) || 'N/A'}</Text>
           <Text className="text-gray-600 text-sm">Type de Paiement : {getTypeLabel(transaction.type) || 'N/A'}</Text>
           <Text className="text-gray-600 text-sm mb-2">Numéro : {user?.phone}</Text>
 

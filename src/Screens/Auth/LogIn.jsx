@@ -200,7 +200,7 @@ const fetchCountries = async () => {
 
           {/* Logo */}
           <Image 
-            source={require("../../images/LogoSendo.png")} 
+            source={require("../../images/logo2.png")} 
             className="w-24 h-24 mb-8" 
           />
 

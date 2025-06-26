@@ -58,8 +58,9 @@ const HomeScreen = () => {
         },
         { skip: !userId }
       );
+       //console.log('Liste des PUB:', JSON.stringify(history, null, 2));
      const { data: pubs, isLoading: isLoadingPubs, error: pubsError } = useGetPubsQuery();
-      //console.log('Liste des PUB:', JSON.stringify(pubs, null, 2));
+      //console.log('Liste des PUB:', JSON.stringify(history, null, 2));
 
     // Fetch balance and enable refetch
     const {
@@ -81,43 +82,43 @@ const HomeScreen = () => {
   // Count unread notifications where `readed` is false
   const unreadCount = notifications.filter(notification => !notification.readed).length;
 
-   useEffect(() => {
+useEffect(() => {
   const checkAndUpdateToken = async () => {
     if (!userId) {
-      console.log(' No userId provided, skipping token update.');
+      console.log('No userId provided, skipping token update.');
       return;
     }
 
-    try {
-      const localToken = await getStoredPushToken();
-      const serverToken = serverTokenData?.data?.token;
+    while (true) {
+      try {
+        const localToken = await getStoredPushToken();
+        const serverToken = serverTokenData?.data?.token;
 
-      //console.log(' Local token from device:', localToken);
-     // console.log(' Token from server:', serverToken);
+        if (!localToken) {
+          console.log('No local push token available, cannot proceed.');
+          return;
+        }
 
-      if (!localToken) {
-        console.log(' No local push token available, cannot proceed.');
-        return;
+        if (localToken === serverToken) {
+          console.log('Push token already up to date.');
+          return;
+        }
+
+        const payload = { userId, token: localToken };
+        const response = await createToken(payload).unwrap();
+
+        console.log('Token successfully updated on backend:', response);
+        break; 
+      } catch (error) {
+        console.log('Error updating push token, retrying in 3s...', JSON.stringify(error, null, 2));
+        await new Promise(resolve => setTimeout(resolve, 3000));
       }
-
-      if (localToken === serverToken) {
-       
-        return;
-      }
-
-      const payload = { userId, token: localToken };
-     
-
-      const response = await createToken(payload).unwrap();
-      console.log(' Token successfully updated on backend:', response);
-
-    } catch (error) {
-      console.log(' Error updating push token:', JSON.stringify(error, null, 2));
     }
   };
 
   checkAndUpdateToken();
 }, [userId, serverTokenData]);
+
 
 
     // Refetch profile and balance when screen is focused
@@ -189,14 +190,14 @@ const HomeScreen = () => {
     }, [balanceError]);
     
     const getStatusColor = (status) => {
-  switch (status?.toUpperCase()) {
-    case 'COMPLETED': return 'text-green-600';
-    case 'FAILED': return 'text-red-600';
-    case 'PENDING': return 'text-yellow-600';
-    case 'BLOCKED': return 'text-orange-600';
-    default: return 'text-gray-600';
-  }
-};
+      switch (status?.toUpperCase()) {
+        case 'COMPLETED': return 'text-green-600';
+        case 'FAILED': return 'text-red-600';
+        case 'PENDING': return 'text-yellow-600';
+        case 'BLOCKED': return 'text-orange-600';
+        default: return 'text-gray-600';
+      }
+    };
 
 const getTypeLabel = (type, t) => {
   switch (type?.toUpperCase()) {
@@ -218,13 +219,15 @@ const getMethodIcon = (transaction) => {
         return require('../../images/om.png');
       } else if (transaction.provider === 'MTNMOMO') {
         return require('../../images/mtn.png');
+      }else if (transaction.provider === 'WALLET_PAYMENT') {
+        return require('../../images/tontine.jpeg');
       } else {
         return require('../../images/transaction.png');
       }
     case 'BANK_TRANSFER':
-      return require('../../images/RoyalBank.png');
+      return require('../../images/uba.png');
     default:
-      return require('../../images/transaction.png');
+      return require('../../images/tontine.jpeg');
   }
 };
 
@@ -465,6 +468,9 @@ const getMethodIcon = (transaction) => {
                 const typeLabel = getTypeLabel(item.type, t);
                 const iconSource = getMethodIcon(item);
 
+                const isPdfLink = typeof item.description === 'string' && item.description.endsWith('.pdf');
+                const readableDescription = isPdfLink ? t('home.viewDocument') : (item.description || typeLabel);
+
                 return (
                   <TouchableOpacity
                     key={index}
@@ -476,16 +482,18 @@ const getMethodIcon = (transaction) => {
                   >
                     <Image source={iconSource} className="w-10 h-10 mr-3 rounded-full" resizeMode="contain" />
                     <View className="flex-1">
-                      <Text className="text-black font-semibold">{item.description || typeLabel}</Text>
-                      <Text className="text-black text-sm">{item.amount?.toLocaleString()} {item.currency}</Text>
+                      <Text className="text-black font-semibold">
+                        {readableDescription}
+                      </Text>
+                      <Text className="text-black text-sm">
+                        {item.amount?.toLocaleString()} {item.currency}
+                      </Text>
                     </View>
                     <Text className={`text-xs font-semibold ${statusColor}`}>{item.status}</Text>
                   </TouchableOpacity>
-
                 );
               })}
             </ScrollView>
-
           )}
 
 

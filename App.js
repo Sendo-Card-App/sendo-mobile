@@ -472,27 +472,28 @@ function DrawerNavigator() {
 }
 
 export default function App() {
- 
-  // Register for push notifications once on mount
   useEffect(() => {
     registerForPushNotificationsAsync().then((token) => {
       console.log("Expo Push Token:", token);
-      // TODO: send token to your backend here if needed
     });
   }, []);
- return (
+
+  return (
     <Provider store={store}>
       <NetworkProvider>
         <ThemeProvider>
-          <NavigationContainer>
-            <DrawerNavigator />
-            <Toast />
-          </NavigationContainer>
+          <>
+            <NavigationContainer>
+              <DrawerNavigator />
+            </NavigationContainer>
+            <Toast /> 
+          </>
         </ThemeProvider>
       </NetworkProvider>
     </Provider>
   );
 }
+
 const styles = StyleSheet.create({
   tabContainer: {
     flexDirection: 'row',

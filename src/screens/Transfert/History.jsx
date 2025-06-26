@@ -65,9 +65,9 @@ const HistoryCard = ({ transaction, user, onPress }) => {
         return require('../../images/transaction.png'); // fallback générique
       }
     case 'BANK_TRANSFER':
-      return require('../../images/RoyalBank.png');
+      return require('../../images/uba.png');
     default:
-      return require('../../images/transaction.png');
+      return require('../../images/tontine.jpeg');
   }
 };
 

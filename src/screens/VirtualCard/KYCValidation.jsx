@@ -117,15 +117,6 @@ const KYCValidation = () => {
 
               {/* Icons */}
               <View className="flex-row gap-2">
-                <TouchableOpacity
-                  onPress={() => {
-                    // handle upload/edit here
-                  }}
-                  className="p-2 bg-green-500 rounded-full"
-                >
-                  <Feather name="edit-3" size={16} color="white" />
-                </TouchableOpacity>
-
                 {item.urls.length > 0 && (
                   <TouchableOpacity
                     onPress={() => {
