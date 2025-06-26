@@ -242,19 +242,6 @@
   "referral_placeholder": "Code de parrainage (optionnel)",
   "continue_as_guest": "Continuer en tant qu'invité"
 },
-"referral": {
-  "title": "Inviter des Amis",
-  "description": "Partagez votre code de parrainage avec des amis et vous recevrez tous les deux un bonus après leur premier transfert valide.",
-  "your_code": "Votre Code de Parrainage",
-  "bonus_amount": "Montant du Bonus",
-  "how_it_works": "Comment ça marche :",
-  "step1": "Partagez votre code unique avec des amis",
-  "step2": "Ils s'inscrivent en utilisant votre code",
-  "step3": "Vous recevez tous les deux un bonus après leur premier transfert",
-  "share_button": "Partager l'Invitation",
-  "link_copied": "Lien Copié !",
-  "share_message": "Rejoignez-moi sur Sendo ! Utilisez mon code de parrainage :"
-},
 "errors": {
   "invalid_referral": "Code de parrainage invalide",
     "title": "Error",
@@ -750,6 +737,7 @@
     "transfer": "Transfert",
      "share": "Paiement demande partagé",
       "payment": "Paiement ",
+      "system": "Systeme ",
       "tontine": "Paiement tontine ",
        "fund": " Demande de fonds ",
       "wallet": "Transfert de portefeuille",
@@ -1371,6 +1359,7 @@
      "seeAll": "Voir tout",
      "services": "Services",
     "transfer": "Transfert D'argent",
+    "viewDocument": "Document de versement Bancaire",
     "recharge": "créditer mon compte",
     "virtualCard": "Carte virtuelle",
     "friendsShare": "Partage entre amis",
@@ -1418,6 +1407,12 @@
       "genericError": "Une erreur est survenue lors de la réinitialisation du mot de passe. Veuillez réessayer.",
       "updateError": "Échec de la mise à jour du mot de passe. Veuillez réessayer."
     }
+  },
+  "referral": {
+    "errorNoCode": "Aucun code de parrainage disponible",
+    "errorShareFailed": "Échec du partage du code de parrainage",
+    "title": "Rejoins {{appName}} avec mon code de parrainage",
+    "message": "Salut ! Rejoins-moi sur {{appName}} en utilisant mon code de parrainage {{code}} et nous recevrons tous les deux un bonus !\n\nTélécharge l'application ici :\niOS : {{iosLink}}\nAndroid : {{androidLink}}\n\nUtilise mon code lors de l'inscription !"
   }
 
     

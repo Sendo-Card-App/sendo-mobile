@@ -19,46 +19,59 @@ export async function registerForPushNotificationsAsync() {
     return null;
   }
 
-  try {
-    let { status } = await Notifications.getPermissionsAsync();
-    if (status !== 'granted') {
-      const { status: newStatus } = await Notifications.requestPermissionsAsync();
-      status = newStatus;
+  while (true) {
+    try {
+      let { status } = await Notifications.getPermissionsAsync();
+      if (status !== 'granted') {
+        const { status: newStatus } = await Notifications.requestPermissionsAsync();
+        status = newStatus;
+      }
+
+      if (status !== 'granted') {
+        console.warn('Permission denied for notifications. Retrying in 3 seconds...');
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        continue;
+      }
+
+      const token = (await Notifications.getExpoPushTokenAsync()).data;
+      if (!token) {
+        console.warn('No push token retrieved. Retrying in 3 seconds...');
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        continue;
+      }
+
+      await storeData('pushToken', token);
+      console.log('Expo Token stored:', token);
+      return token;
+    } catch (error) {
+      console.error('Error registering push notifications:', error);
+      console.log('Retrying in 3 seconds...');
+      await new Promise(resolve => setTimeout(resolve, 3000));
     }
-
-    if (status !== 'granted') {
-      console.warn('Permission denied for notifications');
-      return null;
-    }
-
-    const token = (await Notifications.getExpoPushTokenAsync()).data;
-    console.log('Expo Token:', token);
-
-    if (!token) {
-      console.error('No push token retrieved');
-      return null;
-    }
-
-    await storeData('pushToken', token);
-    return token;
-  } catch (error) {
-    console.error('Error registering push notifications:', error);
-    return null;
   }
 }
 
 export async function getStoredPushToken() {
-  try {
-    const storedToken = await getData('pushToken');
-    if (storedToken) return storedToken;
+  while (true) {
+    try {
+      const storedToken = await getData('pushToken');
+      if (storedToken) {
+        return storedToken;
+      }
 
-    console.log('No stored token found. Registering...');
-    return await registerForPushNotificationsAsync();
-  } catch (error) {
-    console.warn('Failed to retrieve push token:', error);
-    return null;
+      console.log('No stored token found. Registering...');
+      const newToken = await registerForPushNotificationsAsync();
+      if (newToken) return newToken;
+
+      console.log('Retrying getStoredPushToken in 3 seconds...');
+      await new Promise(resolve => setTimeout(resolve, 3000));
+    } catch (error) {
+      console.warn('Failed to retrieve push token:', error);
+      await new Promise(resolve => setTimeout(resolve, 3000));
+    }
   }
 }
+
 
 export async function sendPushNotification(title, body) {
   try {

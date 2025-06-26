@@ -122,7 +122,7 @@ const ResetPassword = () => {
 
           <View className="items-center justify-center py-8">
             <Image
-              source={require('../../images/LogoSendo.png')}
+              source={require('../../images/logo2.png')}
               className="w-28 h-28 mb-6"
             />
 

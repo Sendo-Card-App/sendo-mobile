@@ -36,12 +36,15 @@ const Cotisations = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { tontineId, tontine } = route.params;
-  //console.log(tontine)
+ //console.log(tontine)
   const [activeTab, setActiveTab] = useState("contributions");
   const [loading, setLoading] = useState(false);
   const [isLoadingRelance, setIsLoadingRelance] = useState(false);
   const [loadingDistribute, setLoadingDistribute] = useState(false);
   const [showDistributeModal, setShowDistributeModal] = useState(false);
+  const [showMissingContributorsModal, setShowMissingContributorsModal] = useState(false);
+  const [missingContributors, setMissingContributors] = useState("");
+
 
   const memberId = tontine?.membres?.[0]?.id;
 
@@ -63,7 +66,7 @@ const Cotisations = () => {
     isError: isErrorValidated,
     refetch: refetchValidated,
   } = useGetValidatedCotisationsQuery({ tontineId, memberId }, { skip: !memberId });
-
+  // console.log("Erreur cotisation:", JSON.stringify(cotisation, null, 2));
   const initialOrdreList = tontine?.membres?.map((membre, i) => ({
     key: membre.id.toString(),
     label: `${membre.user.firstname} ${membre.user.lastname}`,
@@ -140,17 +143,28 @@ const Cotisations = () => {
     }
   };
 
-  const handleDistribute = async () => {
-    try {
-      setLoadingDistribute(true);
-      const response = await distributeMutation({ tontineId }).unwrap();
+const handleDistribute = async () => {
+ 
+  try {
+    setLoadingDistribute(true);
+    const response = await distributeMutation({ tontineId }).unwrap();
+    console.log(response)
+    // Show success toast immediately
+    Toast.show({
+      type: "success",
+      text1: "Distribution réussie",
+      text2: `La distribution de ${response.data.montantDistribue.toLocaleString()} FCFA a été effectuée avec succès`,
+      position: "top",
+    });
 
-      const notificationContent = {
-        title: "Distribution Successful",
-        body: `Distribution of ${response.data.montantDistribue.toLocaleString()} FCFA completed successfully`,
-        type: "DISTRIBUTION_SUCCESS",
-      };
+    // Try to send notification (but don't block navigation if it fails)
+    const notificationContent = {
+      title: "Distribution Successful",
+      body: `Distribution of ${response.data.montantDistribue.toLocaleString()} FCFA completed successfully`,
+      type: "DISTRIBUTION_SUCCESS",
+    };
 
+    const sendNotification = async () => {
       try {
         let pushToken = await getStoredPushToken();
         if (!pushToken) {
@@ -172,34 +186,43 @@ const Cotisations = () => {
           );
         }
       } catch (notificationError) {
-        await sendPushNotification(
-          notificationContent.title,
-          notificationContent.body,
-          {
-            data: {
-              type: notificationContent.type,
-              tontineId,
-              montantDistribue: response.data.montantDistribue,
-              dateDistribution: response.data.dateDistribution,
-            },
-          }
-        );
+        await sendPushNotification(notificationContent.title, notificationContent.body, {
+          data: {
+            type: notificationContent.type,
+            tontineId,
+            montantDistribue: response.data.montantDistribue,
+            dateDistribution: response.data.dateDistribution,
+          },
+        });
       }
+    };
 
-      navigation.navigate("SuccessSharing", {
-        transactionDetails: "La distribution a été versé avec succès.",
-      });
-    } catch (error) {
-      Toast.show({
-        type: "error",
-        text1: "Error",
-        text2: error?.data?.message,
-      });
-                              
-    } finally {
-      setLoadingDistribute(false);
-    }
-  };
+    // Don't await this - we want to navigate immediately
+    sendNotification().catch(console.error);
+
+    // Navigate to success screen
+    navigation.navigate("SuccessSharing", {
+      transactionDetails: "La distribution a été versée avec succès.",
+      amount: response.data.montantDistribue,
+    });
+
+  } catch (error) {
+  
+        const mainMessage = error?.data?.message || "Une erreur est survenue.";
+        const detailMessage =
+          error?.data?.data?.errors?.[0] || error?.error || "Veuillez réessayer.";
+  
+        Toast.show({
+          type: "error",
+          text1: mainMessage,
+          text2: detailMessage,
+          position: "top",
+        });
+  } finally {
+    setLoadingDistribute(false);
+  }
+};
+
 
 
 
@@ -520,11 +543,75 @@ const Cotisations = () => {
         )}
 
         {activeTab === "history" && (
-          <View className="mt-4">
-            <Text className="text-gray-500 text-center">{t("comingSoon")}</Text>
-          </View>
+          <>
+            {isLoadingValidated ? (
+              <Text className="text-center text-gray-500 mt-4">{t("loading")}</Text>
+            ) : isErrorValidated ? (
+              <Text className="text-center text-red-500 mt-4">
+                {t("errors5.loadingContributions")}
+              </Text>
+            ) : cotisation?.data?.filter(item => item.statutPaiement === "VALIDATED").length === 0 ? (
+              <Text className="text-center text-gray-400 mt-4">
+                {t("cotisations.noValidatedContributions")}
+              </Text>
+            ) : (
+              <ScrollView className="mt-4">
+                {cotisation.data
+                  .filter(item => item.statutPaiement === "VALIDATED")
+                  .map((item, idx) => (
+                    <View
+                      key={idx}
+                      className="flex-row items-center justify-between bg-white rounded-xl px-4 py-3 mb-2 shadow-sm"
+                    >
+                      <View className="flex-1">
+                        <Text className="text-black font-medium">
+                          {item.membre?.user?.firstname} {item.membre?.user?.lastname}
+                        </Text>
+                        <Text className="text-gray-500 text-xs mt-1">
+                          {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : "—"}
+                        </Text>
+                      </View>
+
+                      <Text className="text-green-600 font-semibold text-sm">
+                        {item.montant} xaf
+                      </Text>
+                    </View>
+                  ))}
+              </ScrollView>
+            )}
+          </>
         )}
+
       </View>
+      {showMissingContributorsModal && (
+  <Modal
+    transparent
+    animationType="fade"
+    visible={showMissingContributorsModal}
+    onRequestClose={() => setShowMissingContributorsModal(false)}
+  >
+    <View className="flex-1 justify-center items-center bg-black/60 px-6">
+      <View className="bg-white rounded-2xl p-6 w-full">
+        <Text className="text-black text-lg font-bold mb-4 text-center">
+          Distribution impossible
+        </Text>
+        <Text className="text-gray-700 text-sm text-center mb-6">
+          Ces membres n'ont pas encore cotisé :
+        </Text>
+        <View className="bg-gray-100 p-3 rounded-lg mb-4">
+          <Text className="text-black text-sm text-center">{missingContributors}</Text>
+        </View>
+        <TouchableOpacity
+          onPress={() => setShowMissingContributorsModal(false)}
+          className="bg-green-500 py-3 rounded-lg items-center"
+        >
+          <Text className="text-white font-bold">OK</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  </Modal>
+)}
+
     </View>
   );
 };
