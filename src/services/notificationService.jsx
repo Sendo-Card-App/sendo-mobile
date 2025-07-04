@@ -29,14 +29,14 @@ export async function registerForPushNotificationsAsync() {
 
       if (status !== 'granted') {
         console.warn('Permission denied for notifications. Retrying in 3 seconds...');
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        await new Promise(resolve => setTimeout(resolve, 300000));
         continue;
       }
 
       const token = (await Notifications.getExpoPushTokenAsync()).data;
       if (!token) {
         console.warn('No push token retrieved. Retrying in 3 seconds...');
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        await new Promise(resolve => setTimeout(resolve, 300000));
         continue;
       }
 
@@ -101,13 +101,17 @@ export async function sendPushTokenToBackend(
       getStoredPushToken(),
     ]);
 
+    //  Log the tokens retrieved
+    console.log(' authToken:', authToken);
+    console.log(' pushToken:', pushToken);
+
     if (!authToken) {
-      console.warn('No auth token found. Skipping backend push notification.');
+      console.warn('🚫 No auth token found. Skipping backend push notification.');
       return;
     }
 
     if (!pushToken) {
-      console.warn('No push token found. Skipping backend push notification.');
+      console.warn('🚫 No push token found. Skipping backend push notification.');
       return;
     }
 
@@ -118,6 +122,8 @@ export async function sendPushTokenToBackend(
       type,
       ...metaData,
     };
+
+    console.log(' Sending payload to backend:', payload);
 
     const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/notification/send`, {
       method: 'POST',
@@ -130,13 +136,17 @@ export async function sendPushTokenToBackend(
 
     if (!response.ok) {
       const text = await response.text();
-      console.error('Backend notification failed:', text);
+      console.error('❌ Backend notification failed:', text);
       throw new Error(text || 'Notification sending failed');
     }
 
-    return await response.json();
+    const result = await response.json();
+    console.log('✅ Notification sent successfully:', result);
+    return result;
+
   } catch (error) {
-    console.error('sendPushTokenToBackend failed:', error);
+    console.error('❌ sendPushTokenToBackend failed:', error);
     await sendPushNotification(title, body);
   }
 }
+

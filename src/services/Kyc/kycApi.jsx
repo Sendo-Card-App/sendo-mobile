@@ -1,8 +1,9 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
 const KYC_ENDPOINTS = {
-  SUBMIT_KYC: '/kyc/send',
+  SUBMIT_KYC: '/kyc/upload',
   GET_STATUS: '/kyc/status',
+  UPDATE_PROFILE: '/kyc/update-profil',
   SEND_SELFIE: '/users/send-picture',
   NIU_REQUEST: '/requests/ask',
   GET_USER_REQUESTS: '/requests/users',
@@ -41,6 +42,19 @@ export const kycApi = createApi({
         },
       }),
     }),
+
+    updateProfile: builder.mutation({
+      query: (profileData) => ({
+        url: KYC_ENDPOINTS.UPDATE_PROFILE,
+        method: 'PUT',
+        body: profileData,
+        headers: {
+          'Content-Type': 'application/json',
+          'accept': '*/*',
+        },
+      }),
+    }),
+
      
     NiuResquest: builder.mutation({
       query: (requestData) => ({
@@ -71,4 +85,5 @@ export const {
   useGetUserRequestsQuery,
   useSendSelfieMutation,
   useNiuResquestMutation,
+  useUpdateProfileMutation 
 } = kycApi;

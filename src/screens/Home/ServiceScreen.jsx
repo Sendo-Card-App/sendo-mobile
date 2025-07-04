@@ -8,6 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const ServiceScreen = () => {
   const navigation = useNavigation();
   const { t } = useTranslation();
+  const [hasAcceptedTerms, setHasAcceptedTerms] = useState(null);
   const [screenWidth, setScreenWidth] = useState(Dimensions.get("window").width);
 
   const numColumns = 2;
@@ -24,12 +25,24 @@ const ServiceScreen = () => {
   }, []);
 
    useEffect(() => {
-        const checkTerms = async () => {
-          const value = await AsyncStorage.getItem("hasAcceptedTerms");
-          setHasAcceptedTerms(value === "true");
-        };
-        checkTerms();
-      }, []);
+    const checkTerms = async () => {
+      try {
+        const value = await AsyncStorage.getItem('hasAcceptedTerms');
+
+        if (value === null) {
+          // First time launch: set to false
+          await AsyncStorage.setItem('hasAcceptedTerms', 'false');
+          setHasAcceptedTerms(false);
+        } else {
+          setHasAcceptedTerms(value === 'true');
+        }
+      } catch (error) {
+        console.error('Error checking terms acceptance:', error);
+      }
+    };
+
+    checkTerms();
+  }, []);
 
   const services = [
     { label: t("home.virtualCard"), icon: "card-outline", route: "Payment" },
@@ -40,9 +53,22 @@ const ServiceScreen = () => {
     { label: t("drawer.request1"), icon: "chatbubbles-outline", route: "NiuRequest" },
   ];
 
-  const renderItem = ({ item }) => (
+ const renderItem = ({ item }) => {
+  const handlePress = () => {
+    if (item.route === "TontineList") {
+      if (hasAcceptedTerms) {
+        navigation.navigate("TontineList");
+      } else {
+        navigation.navigate("TermsAndConditions");
+      }
+    } else {
+      navigation.navigate(item.route);
+    }
+  };
+
+  return (
     <TouchableOpacity
-      onPress={() => item.route && navigation.navigate(item.route)}
+      onPress={handlePress}
       style={{
         width: itemSize,
         height: itemSize,
@@ -58,6 +84,8 @@ const ServiceScreen = () => {
       <Text className="text-black text-sm text-center font-semibold">{item.label}</Text>
     </TouchableOpacity>
   );
+};
+
 
   return (
     <View className="flex-1 bg-black">

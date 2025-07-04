@@ -27,6 +27,7 @@ const PersonalDetail = ({ navigation }) => {
     country: personalDetails.country || '',
     region: personalDetails.region || '',
     city: personalDetails.city || '',
+    cni: personalDetails.cni || '',
     district: personalDetails.district || '',
     profession: personalDetails.profession || '',
   });
@@ -36,9 +37,9 @@ const PersonalDetail = ({ navigation }) => {
   };
 
   const handleSubmit = () => {
-    const { country, region, city, district, profession } = formData;
+    const { country, region, city, cni,  district, profession } = formData;
 
-    if (!country || !region || !city || !district || !profession) {
+    if (!country || !region || !city ||  !cni || !district || !profession) {
       Alert.alert(t('personalDetail.errorTitle'), t('personalDetail.fillAllFields'));
       return;
     }
@@ -85,8 +86,9 @@ const PersonalDetail = ({ navigation }) => {
           {/* Champs */}
           {[
             { key: 'country', placeholder: 'enterCountry' },
-            { key: 'region', placeholder: 'enterRegion' },
+            { key: 'region', placeholder: 'enterRegion' },     
             { key: 'city', placeholder: 'enterCity' },
+            { key: 'cni', placeholder: 'enterCni' },
             { key: 'district', placeholder: 'enterDistrict' },
             { key: 'profession', placeholder: 'enterProfession' },
           ].map(({ key, placeholder }) => (

@@ -139,16 +139,24 @@ export const selectPendingDocuments = (state) =>
 
 export const selectIsKYCComplete = (state) => {
   const { identityDocument } = state.kyc;
-  
-  // Check required documents are present
+  const { type, front, back } = identityDocument;
+
   const hasSelfie = !!state.kyc.selfie;
-  const hasIDFront = !!identityDocument.front;
-  const hasIDBack = identityDocument.type === IDENTITY_TYPES.CNI ? !!identityDocument.back : true;
   const hasNIU = !!state.kyc.niuDocument;
   const hasAddressProof = !!state.kyc.addressProof;
-  
-  return hasSelfie && hasIDFront && hasIDBack && hasNIU && hasAddressProof;
+  const hasIDFront = !!front;
+
+  let hasIDBack = true; // par défaut
+
+  if (type === IDENTITY_TYPES.CNI || type === IDENTITY_TYPES.DRIVERS_LICENSE) {
+    hasIDBack = !!back;
+  }
+
+  const isIDComplete = hasIDFront && hasIDBack;
+
+  return hasSelfie && isIDComplete && hasNIU && hasAddressProof;
 };
+
 
 export const {
   updatePersonalDetails,
