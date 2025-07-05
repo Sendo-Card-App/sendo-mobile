@@ -163,37 +163,52 @@ function CustomTabBar({ state, descriptors, navigation }) {
           }
         };
 
-        // Custom Floating Center Tab (Beneficiary)
+        // Custom Floating Center Tab (Send Money)
         if (route.name === 'BeneficiaryTab') {
           return (
             <TouchableOpacity
               key={route.key}
               onPress={onPress}
               style={styles.centerButton}
+              activeOpacity={0.8}
             >
-             <FontAwesome5 name="dollar-sign" size={30} color="#fff" />
+              <View style={styles.centerButtonInner}>
+                <FontAwesome5 
+                  name="money-bill-wave" 
+                  size={24} 
+                  color="#fff" 
+                />
+                {isFocused && (
+                  <View style={styles.activeIndicator} />
+                )}
+              </View>
             </TouchableOpacity>
           );
         }
 
         // Default tab icon logic
         let iconName;
+        let label;
         switch (route.name) {
           case 'HomeTab':
             iconName = isFocused ? 'home' : 'home-outline';
+            label = t('tabs.home');
             break;
           case 'TransferTab':
             iconName = isFocused ? 'swap-horizontal' : 'swap-horizontal-outline';
+            label = t('tabs.history');
             break;
           case 'ManageVirtualCardTab':
             iconName = isFocused ? 'card' : 'card-outline';
+            label = t('tabs.cards');
             break;
-          
           case 'SettingsTab':
             iconName = isFocused ? 'settings' : 'settings-outline';
+            label = t('tabs.settings');
             break;
           default:
             iconName = 'home-outline';
+            label = '';
         }
 
         return (
@@ -205,22 +220,36 @@ function CustomTabBar({ state, descriptors, navigation }) {
             testID={options.tabBarTestID}
             onPress={onPress}
             style={styles.tabButton}
+            activeOpacity={0.7}
           >
-            <Ionicons 
-              name={iconName} 
-              size={24} 
-              color={isFocused ? Colors.primary : Colors.text} 
-            />
-            <Text style={[styles.tabLabel, { color: isFocused ? Colors.primary : Colors.text }]}>
-              {options.title || t(`tabs.${route.name.toLowerCase().replace('tab', '')}`)}
-            </Text>
+            <View style={styles.tabButtonContent}>
+              <Ionicons 
+                name={iconName} 
+                size={24} 
+                color={isFocused ? Colors.primary : Colors.text} 
+              />
+              <Text 
+                style={[
+                  styles.tabLabel, 
+                  { 
+                    color: isFocused ? Colors.primary : Colors.text,
+                    fontFamily: isFocused ? 'Font-Bold' : 'Font-Regular'
+                  }
+                ]}
+                numberOfLines={1}
+              >
+                {label}
+              </Text>
+              {isFocused && (
+                <View style={styles.activeIndicator} />
+              )}
+            </View>
           </TouchableOpacity>
         );
       })}
     </View>
   );
 }
-
 
 // Tab Navigator
 function MainTabs() {
@@ -236,33 +265,49 @@ function MainTabs() {
       <Tab.Screen 
         name="HomeTab" 
         component={Home} 
-        options={{ title: t('tabs.home') }}
+        options={{ 
+          title: t('tabs.home'),
+          unmountOnBlur: true 
+        }}
       />
       
-       <Tab.Screen 
+      <Tab.Screen 
         name="TransferTab"
         component={History} 
-        options={{ title: t('tabs.history') }}
+        options={{ 
+          title: t('tabs.history'),
+          unmountOnBlur: true 
+        }}
       />
-      {/* Center Action Button (Green Floating) */}
+      
+      {/* Center Action Button */}
       <Tab.Screen 
         name="BeneficiaryTab" 
         component={BeneficiaryScreen} 
-        options={{ title: '' }} // No text under icon
+        options={{ 
+          title: '',
+          unmountOnBlur: true 
+        }}
       />
 
-     <Tab.Screen 
+      <Tab.Screen 
         name="ManageVirtualCardTab" 
         component={ManageVirtualCard} 
-        options={{ title: t('tabs.cards') }}
+        options={{ 
+          title: t('tabs.cards'),
+          unmountOnBlur: true 
+        }}
       />
+      
       <Tab.Screen 
         name="SettingsTab" 
         component={Settings} 
-        options={{ title: t('tabs.settings') }}
+        options={{ 
+          title: t('tabs.settings'),
+          unmountOnBlur: true 
+        }}
       />
     </Tab.Navigator>
-
   );
 }
 
@@ -497,45 +542,67 @@ export default function App() {
 const styles = StyleSheet.create({
   tabContainer: {
     flexDirection: 'row',
-    height: 65,
-    borderTopWidth: 1,
-    borderTopColor: Colors.borderTop,
+    height: 80,
+    borderTopWidth: 0.5,
+    borderTopColor: Colors.border,
     justifyContent: 'space-around',
     alignItems: 'center',
     backgroundColor: Colors.background2,
     shadowColor: Colors.shadow,
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowRadius: 6,
     elevation: 5,
+    paddingBottom: 10,
   },
-    centerButton: {
+  centerButton: {
     position: 'absolute',
-    bottom: 35,
+    bottom: 45,
     alignSelf: 'center',
-    backgroundColor:  Colors.primary,
+    backgroundColor: Colors.primary,
     width: 60,
     height: 60,
     borderRadius: 30,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
+    shadowColor: Colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 5,
+    shadowRadius: 6,
+    elevation: 8,
     zIndex: 10,
+    transform: [{ translateY: -10 }]
+  },
+  centerButtonInner: {
+    width: '50',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 30,
   },
   tabButton: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-     paddingVertical: 8,
-    borderRadius: 16,
+    paddingVertical: 8,
+    height: '100%',
+  },
+  tabButtonContent: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: '100%',
   },
   tabLabel: {
     fontSize: 12,
-    marginTop: 5,
-    color: Colors.text,
+    marginTop: 6,
+    maxWidth: '80%',
+  },
+  activeIndicator: {
+    position: 'absolute',
+    bottom: -12,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: Colors.primary,
   },
 });

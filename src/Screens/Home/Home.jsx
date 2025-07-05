@@ -37,7 +37,7 @@ const HomeScreen = () => {
   const navigation = useNavigation();
     const { t } = useTranslation();
     const [showBalance, setShowBalance] = useState(false);
-    const [hasAcceptedTerms, setHasAcceptedTerms] = useState(false);
+    const [hasAcceptedTerms, setHasAcceptedTerms] = useState(null);
     const flatListRef = useRef(null);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [createToken] = useCreateTokenMutation();
@@ -70,7 +70,7 @@ const HomeScreen = () => {
       isError: isBalanceError,
       refetch: refetchBalance,
     } = useGetBalanceQuery(userId, { skip: !userId });
-  
+    //console.log(balanceData, 'Balance Data:', JSON.stringify(balanceData, null, 2));
     const isLoading = isProfileLoading || isBalanceLoading;
     const { data: notificationsResponse, isLoadingNotification } = useGetNotificationsQuery({ userId });
       const { data: serverTokenData } = useGetTokenMutation(userId, {
@@ -134,12 +134,24 @@ useEffect(() => {
 
     
     useEffect(() => {
-      const checkTerms = async () => {
-        const value = await AsyncStorage.getItem("hasAcceptedTerms");
-        setHasAcceptedTerms(value === "true");
-      };
-      checkTerms();
-    }, []);
+    const checkTerms = async () => {
+      try {
+        const value = await AsyncStorage.getItem('hasAcceptedTerms');
+
+        if (value === null) {
+          // First time launch: set to false
+          await AsyncStorage.setItem('hasAcceptedTerms', 'false');
+          setHasAcceptedTerms(false);
+        } else {
+          setHasAcceptedTerms(value === 'true');
+        }
+      } catch (error) {
+        console.error('Error checking terms acceptance:', error);
+      }
+    };
+
+    checkTerms();
+  }, []);
      
     //    useEffect(() => {
     //   const backAction = () => {
@@ -306,13 +318,13 @@ const getMethodIcon = (transaction) => {
             <View className="flex-row justify-between items-center my-2">
               <Text className="text-black text-xl">{t("home.balance")}</Text>
              <Text className="text-black text-4xl font-bold">
-                {isBalanceLoading ? (
-                  <Loader size="small" color="black" />
-                ) : showBalance ? (
-                  `${(balanceData?.data.balance || 0).toLocaleString('en-US')} ${balanceData?.data.currency}`
-                ) : (
-                  '****'
-                )}
+               {isBalanceLoading ? (
+                    <Loader size="small" color="black" />
+                  ) : showBalance ? (
+                    `${(balanceData?.data?.balance ?? 0).toFixed(2)} ${balanceData?.data?.currency ?? ''}`
+                  ) : (
+                    '****'
+                  )}
               </Text>
 
             </View>

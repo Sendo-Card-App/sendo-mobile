@@ -110,7 +110,7 @@ const WalletRecharge = () => {
       amount: parseFloat(amount),
       matriculeWallet: userWalletId,
     }).unwrap();
-
+  
     const trid = response?.data?.mobileMoney?.trid;
     const type = response?.data?.transaction?.type;
     const transactionId = response?.data?.transaction?.transactionId;

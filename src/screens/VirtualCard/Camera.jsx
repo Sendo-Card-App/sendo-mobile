@@ -31,7 +31,7 @@ const handleSubmit = () => {
     const file = {
       uri: picture.uri,
       type: 'image/jpeg',
-      name: `${purpose}_${Date.now()}.jpg`
+      name: `${purpose}_${new Date().toISOString()}.jpg`
     };
 
     switch (purpose) {
@@ -48,26 +48,23 @@ const handleSubmit = () => {
         dispatch(setAddressProof(file));
         break;
       case 'niu':
-        dispatch(setNiuDocument(file));
+        dispatch(setNiuDocument({
+          document: file,
+          taxIdNumber: sid?.trim() || ''
+        }));
         break;
       default:
         console.warn(`Unknown purpose: ${purpose}`);
     }
 
-    if (purpose === 'selfie') {
+    if (['selfie', 'niu', 'address_proof'].includes(purpose)) {
       navigation.navigate("KycResume");
-    } else 
-    if (purpose === 'niu') {
-      navigation.navigate("KycResume");
-    } else
-     if (purpose === 'address_proof') {
-      navigation.navigate("KycResume");
-    } else
-    {
+    } else {
       navigation.goBack();
     }
   }
 };
+
 
 
 
