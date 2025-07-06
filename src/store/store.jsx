@@ -10,6 +10,7 @@ import kycReducer from '../features/Kyc/kycReducer'; // Updated path (note capit
 import { configApi } from '../services/Config/configApi';
 import { transferApi } from '../services/Transfer/transferApi';
 import { chatApi } from '../services/Chat/ChatApi';
+import { cardApi } from '../services/Card/cardApi'; 
 import { fundRequestApi } from '../services/Fund/fundApi';
 import { sharedExpenseApi } from '../services/Shared/sharedExpenseApi';
 import { contactsApi } from '../services/Contact/contactsApi';
@@ -36,6 +37,7 @@ export const store = configureStore({
     [fundRequestApi.reducerPath]: fundRequestApi.reducer,
     [tontineApi.reducerPath]: tontineApi.reducer,
     [pubApi.reducerPath]: pubApi.reducer,
+    [cardApi.reducerPath]: cardApi.reducer, // Add cardApi reducer
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
@@ -52,5 +54,6 @@ export const store = configureStore({
       fundRequestApi.middleware,
       tontineApi.middleware,
       pubApi.middleware,
+      cardApi.middleware // Add cardApi middleware
     ),
 });

@@ -66,6 +66,7 @@ import Receipt from "./src/screens/Transfert/Receipt";
 import Account from "./src/screens/Profile/Account";
 import Settings from "./src/screens/Setting/Settings";
 import CreateVirtualCard from "./src/screens/VirtualCard/CreateVirtualCard";
+import OnboardingCard from "./src/screens/VirtualCard/OnboardingCard";
 import VerifyIdentity from "./src/screens/VirtualCard/VerifyIdentity";
 import KYCValidation from "./src/screens/VirtualCard/KYCValidation";
 import ManageVirtualCard from "./src/screens/VirtualCard/ManageVirtualCard";
@@ -408,6 +409,7 @@ function MainStack() {
       <Stack.Screen name="WalletConfirm" component={WalletConfirm} options={{ headerShown: false }} />
       <Stack.Screen name="WalletOk" component={WalletOk} options={{ headerShown: false }} />
        <Stack.Screen name="ServiceScreen" component={ServiceScreen} options={{ headerShown: false }} />
+       <Stack.Screen name="OnboardingCard" component={OnboardingCard} options={{ headerShown: false }} />
       <Stack.Screen name="Confirme" component={Confirme} options={{ headerShown: false }} />
       <Stack.Screen name="Success" component={Success} options={{ headerShown: false }} />
       <Stack.Screen name="Support" component={Support} options={{ headerTitle: t('screens.support') }}/>

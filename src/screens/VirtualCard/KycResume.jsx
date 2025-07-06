@@ -66,7 +66,7 @@ const handleSubmit = async () => {
     Toast.show({
       type: 'error',
       text1: 'Incomplet',
-      text2: 'Veuillez compléter toutes les étapes avant de soumettre'
+      text2: 'Veuillez compléter toutes les étapes avant de soumettre',
     });
     return;
   }
@@ -76,7 +76,6 @@ const handleSubmit = async () => {
   try {
     const idDocumentNumber = personalDetails.cni;
 
-    // === Update profile ===
     const profilePayload = {
       profession: personalDetails.profession,
       region: personalDetails.region,
@@ -84,12 +83,10 @@ const handleSubmit = async () => {
       district: personalDetails.district,
     };
 
-    //console.log('Updating profile with:', profilePayload);
     await updateProfile(profilePayload).unwrap();
 
-    // === Prepare documents and files ===
     const documents = [];
-    const fileBlobs = [];
+    const files = [];
 
     const addDocumentAndFile = async (doc, uri, index) => {
       documents.push(doc);
@@ -97,7 +94,7 @@ const handleSubmit = async () => {
       const compressedUri = await compressImage(uri);
       const name = `file_${index + 1}.jpg`;
 
-      fileBlobs.push({
+      files.push({
         uri: compressedUri,
         name,
         type: 'image/jpeg',
@@ -107,15 +104,25 @@ const handleSubmit = async () => {
     let fileIndex = 0;
 
     // 1. ID_PROOF — FRONT
-    if (identityDocument.front) {
+      if (identityDocument.front) {
+      // Ajoute le recto (ou unique pièce pour passeport)
       await addDocumentAndFile(
         { type: 'ID_PROOF', idDocumentNumber },
         identityDocument.front.uri,
         fileIndex++
       );
+
+      // Si passeport, duplique le même fichier une deuxième fois
+      if (identityDocument.type === 'passport') {
+        await addDocumentAndFile(
+          { type: 'ID_PROOF', idDocumentNumber },
+          identityDocument.front.uri,
+          fileIndex++
+        );
+      }
     }
 
-    // 1. ID_PROOF — BACK (if applicable)
+    // Ajoute le verso si type CNI ou permis
     if (
       (identityDocument.type === 'cni' || identityDocument.type === 'drivers_license') &&
       identityDocument.back
@@ -127,7 +134,8 @@ const handleSubmit = async () => {
       );
     }
 
-    // 2. NIU_PROOF
+
+    // 3. NIU_PROOF
     if (niuDocument?.document) {
       await addDocumentAndFile(
         { type: 'NIU_PROOF', taxIdNumber: niuDocument.taxIdNumber },
@@ -136,7 +144,7 @@ const handleSubmit = async () => {
       );
     }
 
-    // 3. ADDRESS_PROOF
+    // 4. ADDRESS_PROOF
     if (addressProof) {
       await addDocumentAndFile(
         { type: 'ADDRESS_PROOF' },
@@ -145,7 +153,7 @@ const handleSubmit = async () => {
       );
     }
 
-    // 4. SELFIE
+    // 5. SELFIE
     if (selfie) {
       await addDocumentAndFile(
         { type: 'SELFIE' },
@@ -154,32 +162,36 @@ const handleSubmit = async () => {
       );
     }
 
-    // === Validation
-    if (documents.length !== fileBlobs.length) {
+    // === Validation stricte ===
+    console.log(' Documents to submit:', JSON.stringify(documents, null, 2));
+    console.log(' Files to upload:', files);
+
+    if (documents.length !== 5 || files.length !== 5) {
       Toast.show({
         type: 'error',
-        text1: 'Incohérence',
-        text2: 'Le nombre de documents et de fichiers ne correspond pas.',
-        visibilityTime: 4000
+        text1: 'Erreur de validation',
+        text2: `5 documents et 5 fichiers sont requis. Actuellement: ${documents.length} doc(s), ${files.length} fichier(s)`,
+        visibilityTime: 5000
       });
       dispatch(setSubmissionStatus('idle'));
       return;
     }
 
-    // === FormData
+    // === FormData ===
     const formData = new FormData();
     formData.append('documents', JSON.stringify(documents));
-
-    fileBlobs.forEach((file) => {
-      formData.append('files', file); // Same key, repeat for each file
+    files.forEach((file) => {
+      formData.append('files', file);
     });
+
+    // Log FormData for debug (names only, since FormData can't be fully serialized)
+    console.log('FormData ready with 5 files and documents');
 
     // === Timeout fallback
     const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Request timeout')), 10000)
+      setTimeout(() => reject(new Error('Request timeout')), 3000)
     );
 
-    // === Submit KYC
     const response = await Promise.race([
       submitKYC(formData).unwrap(),
       timeoutPromise
@@ -193,7 +205,7 @@ const handleSubmit = async () => {
     }
 
   } catch (error) {
-    console.error('❌ KYC submission error:', JSON.stringify(error, null, 2));
+    console.error(' KYC submission error:', JSON.stringify(error, null, 2));
 
     let errorMessage = 'Échec de la soumission du KYC';
 
@@ -221,6 +233,7 @@ const handleSubmit = async () => {
     dispatch(setSubmissionStatus('idle'));
   }
 };
+
 
 
 

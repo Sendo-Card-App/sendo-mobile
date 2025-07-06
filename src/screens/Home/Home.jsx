@@ -369,7 +369,7 @@ const getMethodIcon = (transaction) => {
         {/* Action buttons row */}
         <View className="flex-row justify-between">
           {[
-            { label: t("home.virtualCard"), icon: "card-outline", route: "Payment" },
+            { label: t("home.virtualCard"), icon: "card-outline", route: "CreateVirtualCard" },
             { label: t("home.friendsShare"), icon: "people-outline", route: "WelcomeShare" },
             { label: t("home.fundRequest"), icon: "cash-outline", route: "WelcomeDemand" },
             { label: t("home.etontine"), icon: "layers-outline" },

@@ -304,22 +304,25 @@ const handleDistribute = async () => {
             </Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-             onPress={() => setShowDistributeModal(true)}
-            disabled={loadingDistribute}
-            className="bg-[#34D399] mt-4 py-3 rounded-full items-center flex-row justify-center space-x-2"
-          >
-            {loadingDistribute ? (
-              <Loader size="small" color="#000" />
-            ) : (
-              <>
-                <Text className="text-black font-semibold">
-                  {t("cotisations.distributeToNext")}
-                </Text>
-                <Ionicons name="lock-closed-outline" size={18} color="#000" />
-              </>
-            )}
-          </TouchableOpacity>
+          {tontine.etat !== "CLOSED" && (
+            <TouchableOpacity
+              onPress={() => setShowDistributeModal(true)}
+              disabled={loadingDistribute}
+              className="bg-[#34D399] mt-4 py-3 rounded-full items-center flex-row justify-center space-x-2"
+            >
+              {loadingDistribute ? (
+                <Loader size="small" color="#000" />
+              ) : (
+                <>
+                  <Text className="text-black font-semibold">
+                    {t("cotisations.distributeToNext")}
+                  </Text>
+                  <Ionicons name="lock-closed-outline" size={18} color="#000" />
+                </>
+              )}
+            </TouchableOpacity>
+          )}
+
           
              {showDistributeModal && (
     <Modal

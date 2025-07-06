@@ -516,7 +516,7 @@
     "connect_description": "Connectez votre compte bancaire pour commencer un transfert",
     "create_virtual": "CRÉER UNE CARTE VIRTUELLE",
     "manage_virtual": "GÉRER MA CARTE VIRTUELLE",
-    "get_visa": "OBTENIR UNE CARTE VISA",
+    "get_visa": "Vérification d’identité (KYC)",
     "bonus_balance": "Solde bonus",
     "referral_terms": "Vous recevrez 5.00 CAD et votre ami recevra 5,00 CAD lors de son premier transfert. Des exigences d'envoi minimales peuvent s'appliquer.",
     "terms_conditions": "Sous réserve de conditions.",
@@ -588,11 +588,16 @@
     "validateButton": "Valider",
     "privacyNotice": "Ne partagez pas vos informations personnelles..."
   },
-  "virtual_card": {
-    "card_price": "Prix de la carte:",
-    "total": "Total:",
-    "create_now": "CRÉER MAINTENANT"
-  },
+ "virtual_card": {
+  "enter_name": "Entrez votre nom complet",
+  "card_price": "Frais de création",
+  "total": "Total",
+  "create_now": "Créer maintenant",
+  "missing_name": "Veuillez saisir votre nom",
+  "request_success": "Demande envoyée avec succès",
+  "request_failed": "Échec de la demande",
+  "error_message": "Une erreur est survenue"
+},
   "account": {
     "title": "Mon Compte",
     "edit": "Modifier",
@@ -736,7 +741,7 @@
      "todayTransactions": "Transactions d'aujourd'hui",
     "noTransactionsToday": "Aucune transaction aujourd'hui",
     "loadingUser": "Chargement des historique de transaction......",
-    "errorLoading": "Erreur lors du chargement des transactions",
+    "errorLoading": "KYC non vérifié. Veuillez soumettre vos documents.",
     "transactions": "transactions",
     "page": "Page",
     "of": "sur",
