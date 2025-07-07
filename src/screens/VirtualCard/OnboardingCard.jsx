@@ -281,7 +281,7 @@ const styles = StyleSheet.create({
     height: width * 0.3,
     position: 'absolute',
     top: '30%',
-    left: '25%',
+    left: '20%',
   },
   statusImage: {
     width: width * 0.4,

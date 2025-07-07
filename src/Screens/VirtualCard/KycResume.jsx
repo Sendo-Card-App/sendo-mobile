@@ -83,6 +83,7 @@ const handleSubmit = async () => {
       district: personalDetails.district,
     };
 
+    // Mise à jour du profil
     await updateProfile(profilePayload).unwrap();
 
     const documents = [];
@@ -104,15 +105,13 @@ const handleSubmit = async () => {
     let fileIndex = 0;
 
     // 1. ID_PROOF — FRONT
-      if (identityDocument.front) {
-      // Ajoute le recto (ou unique pièce pour passeport)
+    if (identityDocument.front) {
       await addDocumentAndFile(
         { type: 'ID_PROOF', idDocumentNumber },
         identityDocument.front.uri,
         fileIndex++
       );
 
-      // Si passeport, duplique le même fichier une deuxième fois
       if (identityDocument.type === 'passport') {
         await addDocumentAndFile(
           { type: 'ID_PROOF', idDocumentNumber },
@@ -122,7 +121,7 @@ const handleSubmit = async () => {
       }
     }
 
-    // Ajoute le verso si type CNI ou permis
+    // Ajoute le verso si CNI ou permis
     if (
       (identityDocument.type === 'cni' || identityDocument.type === 'drivers_license') &&
       identityDocument.back
@@ -133,7 +132,6 @@ const handleSubmit = async () => {
         fileIndex++
       );
     }
-
 
     // 3. NIU_PROOF
     if (niuDocument?.document) {
@@ -162,10 +160,11 @@ const handleSubmit = async () => {
       );
     }
 
-    // === Validation stricte ===
-    console.log(' Documents to submit:', JSON.stringify(documents, null, 2));
-    console.log(' Files to upload:', files);
+    // === Logs JSON pour debug ===
+    console.log('Documents to submit:', JSON.stringify(documents, null, 2));
+    console.log('Files to upload:', files);
 
+    // Validation stricte
     if (documents.length !== 5 || files.length !== 5) {
       Toast.show({
         type: 'error',
@@ -177,26 +176,31 @@ const handleSubmit = async () => {
       return;
     }
 
-    // === FormData ===
+    // Préparation FormData
     const formData = new FormData();
-    formData.append('documents', JSON.stringify(documents));
+    formData.append('documents', JSON.stringify(documents), {
+      contentType: 'application/json',
+      name: 'documents'
+    });
+
     files.forEach((file) => {
       formData.append('files', file);
     });
 
-    // Log FormData for debug (names only, since FormData can't be fully serialized)
+    // Log FormData ready 
     console.log('FormData ready with 5 files and documents');
 
-    // === Timeout fallback
+    // Timeout fallback 3s
     const timeoutPromise = new Promise((_, reject) =>
       setTimeout(() => reject(new Error('Request timeout')), 3000)
     );
 
+    // Envoi avec timeout
     const response = await Promise.race([
       submitKYC(formData).unwrap(),
       timeoutPromise
     ]);
-
+   console.log('KYC submission response:', JSON.stringify(response, null, 2));
     if (response.status === 201) {
       navigation.navigate('Success', {
         message: 'Votre KYC a été soumis avec succès',
@@ -205,7 +209,7 @@ const handleSubmit = async () => {
     }
 
   } catch (error) {
-    console.error(' KYC submission error:', JSON.stringify(error, null, 2));
+    console.error('KYC submission error:', JSON.stringify(error, null, 2));
 
     let errorMessage = 'Échec de la soumission du KYC';
 
@@ -233,14 +237,6 @@ const handleSubmit = async () => {
     dispatch(setSubmissionStatus('idle'));
   }
 };
-
-
-
-
-
-
-
-
   const KycOption = ({ id, name, route, completed }) => (
     <TouchableOpacity
       className={`py-2 px-4 my-2 rounded-2xl flex-row items-center gap-3 ${completed ? 'bg-green-100' : 'bg-[#ededed]'}`}
