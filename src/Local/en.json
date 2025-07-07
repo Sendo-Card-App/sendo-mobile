@@ -526,7 +526,7 @@
 "connect_description": "Connect your bank account to start a transfer",
 "create_virtual": "CREATE A VIRTUAL CARD",
 "manage_virtual": "MANAGE MY VIRTUAL CARD",
-"get_visa": "GET A VISA CARD",
+"get_visa": "Submit KYC Documents",
 "bonus_balance": "Bonus balance",
 "referral_terms": "You will receive 5.00 CAD and your friend will receive 5.00 CAD on their first transfer. Minimum sending requirements may apply.",
 "terms_conditions": "Subject to conditions.",
@@ -599,10 +599,16 @@
 "privacyNotice": "Do not share your personal information..."
 },
 "virtual_card": {
-"card_price": "Card price:",
-"total": "Total:",
-"create_now": "CREATE NOW"
+  "enter_name": "Enter your full name",
+  "card_price": "Creation fees",
+  "total": "Total",
+  "create_now": "Create now",
+  "missing_name": "Please enter your name",
+  "request_success": "Request sent successfully",
+  "request_failed": "Request failed",
+  "error_message": "An error occurred"
 },
+
  "account": {
     "title": "My Account",
     "edit": "Edit",
@@ -744,7 +750,7 @@
     "resetFilters": "Reset Filters",
     "noTransactions": "No transactions found",
     "loadingUser": "Loading user information...",
-    "errorLoading": "Error loading transactions",
+   "errorLoading": "KYC not verified. Please submit your documents.",
     "transactions": "transactions",
     "todayTransactions": "Today's Transactions",
     "noTransactionsToday": "No transactions today",

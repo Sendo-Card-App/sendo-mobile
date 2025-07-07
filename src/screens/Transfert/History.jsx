@@ -457,12 +457,12 @@ const History = () => {
     return (
       <View className="flex-1 justify-center items-center">
         <Text className="text-red-500">{t('history1.errorLoading')}</Text>
-        <TouchableOpacity 
+        {/* <TouchableOpacity 
           className="mt-4 px-4 py-2 bg-green-500 rounded"
           onPress={refetch}
         >
           <Text className="text-white">{t('common3.retry')}</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View>
     );
   }
