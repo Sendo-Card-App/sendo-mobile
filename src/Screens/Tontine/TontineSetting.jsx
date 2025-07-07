@@ -21,7 +21,7 @@ const TontineSetting = () => {
   const route = useRoute();
   const { t } = useTranslation();
   const { tontineId, tontine } = route.params;
-   //console.log(tontine)
+   //console.log("Full response:", JSON.stringify(tontine, null, 2));
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedInfo, setSelectedInfo] = useState("");
 
@@ -57,8 +57,31 @@ const getInfoForModal = (screen) => {
     }
     case "TontineFunds":
       return `Solde actuel: ${tontine.compteSequestre?.soldeActuel} XAF\nMontant bloqué: ${tontine.compteSequestre?.montantBloque} XAF\nÉtat du compte: ${tontine.compteSequestre?.etatCompte}`;
-    case "TontinePenalties":
-      return `Nombre de pénalités: ${tontine.membres?.reduce((acc, m) => acc + (m.penalites?.length || 0), 0)}`;
+   case "TontinePenalties": {
+      if (!tontine?.membres?.length) return "Aucun membre trouvé.";
+
+      let result = "";
+
+      tontine.membres.forEach((membre) => {
+        const { firstname, lastname } = membre.user || {};
+        const fullName = firstname && lastname ? `${firstname} ${lastname}` : `Membre ID ${membre.id}`;
+        result += `👤 ${fullName}\n`;
+
+        if (Array.isArray(membre.penalites) && membre.penalites.length > 0) {
+          membre.penalites.forEach((penalite, idx) => {
+            result += `  - [${penalite.type}] ${penalite.description || "Pas de description"}\n`;
+            result += `    Montant: ${penalite.montant} XAF | Statut: ${penalite.statut}\n`;
+          });
+        } else {
+          result += `  ✅ Aucune pénalité\n`;
+        }
+
+        result += "\n";
+      });
+
+      return result.trim(); // retire les blancs en fin
+    }
+
     default:
       return "";
   }
