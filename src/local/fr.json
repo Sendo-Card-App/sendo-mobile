@@ -47,7 +47,7 @@
   "submit_button": "Effectuer le transfert",
   "security": "Sécurité",
   "biometrics": "Biométriques",
-  "unlock_app": "Déverrouillez l’appli en utilisant votre visage {\n} ou votre empreinte",
+  "unlock_app": "Déverrouillez l’appli en utilisant votre visage ou votre empreinte",
   "biometric_not_available": "L'authentification biométrique n'est pas disponible",
   "amount_cad": "Montant en $ CAD",
   "amount_xaf": "Montant en XAF",
@@ -64,7 +64,7 @@
 "Strong": "Fort",
 "authenticate_to_toggle_biometrics": "Veuillez vous authentifier pour activer/désactiver la biométrie",
   "notifications": "Notiﬁcations",
-  "ensure_notifications": "Assurez-vous d’avoir activé les notiﬁcations dans {\n} les paramètres de votre appareil",
+  "ensure_notifications": "Assurez-vous d’avoir activé les notiﬁcations dans  les paramètres de votre appareil",
   "switch_on": "Activé",
   "switch_off": "Désactivé",
   "change_password": "Créer un nouveau mot de passe",
@@ -345,12 +345,12 @@
     "help_available": "Une aide est disponible via l'un des canaux suivants:",
     "faq": "FAQ",
     "faq_description": "Questions fréquentes",
-    "email": "E-mail supportsendo@sf-e.ca",
+    "email": "E-mail infosendo@sf-e.ca",
     "email_description": "Pour une réponse plus rapide",
     "phone": "Appel 581 907 2096",
     "phone_description": "24/24 et 7 jours sur 7",
-    "contact_instructions": "Si vous ne pouvez pas nous contacter par téléphone, veuillez nous envoyer un email à supportsendo@sf-e.ca",
-    "account_deletion": "Si vous souhaitez demander la suppression des informations relatives à votre compte, veuillez nous envoyer un email à supportsendo@sf-e.ca"
+    "contact_instructions": "Si vous ne pouvez pas nous contacter par téléphone, veuillez nous envoyer un email à infosendo@sf-e.ca",
+    "account_deletion": "Si vous souhaitez demander la suppression des informations relatives à votre compte, veuillez nous envoyer un email à infosendo@sf-e.ca"
   },
   "address_verification": {
     "identity_verification": "Vérification de l'identité",

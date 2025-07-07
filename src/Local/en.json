@@ -354,12 +354,12 @@
 "help_available": "Help is available through the following channels:",
 "faq": "FAQ",
 "faq_description": "Frequently asked questions",
-"email": "Email supportsendo@sf-e.ca",
+"email": "Email infosendo@sf-e.ca",
 "email_description": "For a faster response",
 "phone": "Call 581 907 2096",
 "phone_description": "24/7",
-"contact_instructions": "If you can't reach us by phone, please email us at supportsendo@sf-e.ca",
-"account_deletion": "If you wish to request deletion of your account information, please email us at supportsendo@sf-e.ca"
+"contact_instructions": "If you can't reach us by phone, please email us at infosendo@sf-e.ca",
+"account_deletion": "If you wish to request deletion of your account information, please email us at infosendo@sf-e.ca"
 },
 "address_verification": {
 "identity_verification": "Identity Verification",
