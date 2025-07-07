@@ -611,6 +611,7 @@
 
  "account": {
     "title": "My Account",
+     "language_changed_to": "Language change in",
     "edit": "Edit",
     "close": "Close",
     "fullName": "Full Name",
