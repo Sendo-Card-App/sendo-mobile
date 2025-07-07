@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useState } from 'react';
+import React, { useEffect, useCallback, useState, useRef  } from 'react';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import {
   View,
@@ -7,7 +7,9 @@ import {
   TouchableOpacity,
   StyleSheet,
   Dimensions,
-  ActivityIndicator
+  ActivityIndicator,
+  Animated,
+   Easing 
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -31,6 +33,18 @@ const OnboardingCardScreen = () => {
   const status = cardRequest?.data?.onboardingSessionStatus;
   const [requestDate, setRequestDate] = useState(null);
   const [remainingTime, setRemainingTime] = useState(null);
+  const rotation = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+  Animated.loop(
+    Animated.timing(rotation, {
+      toValue: 1,
+      duration: 10000, 
+      easing: Easing.linear,
+      useNativeDriver: true,
+    })
+  ).start();
+}, []);
 
   // Redirection automatique
   useEffect(() => {
@@ -186,9 +200,19 @@ const OnboardingCardScreen = () => {
     return (
       <>
         <View style={styles.imageContainer}>
-          <Image
+          <Animated.Image
             source={require('../../images/earth.jpeg')}
-            style={styles.earthImage}
+            style={[
+              styles.earthImage,
+              {
+                transform: [{
+                  rotate: rotation.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: ['0deg', '360deg'],
+                  })
+                }]
+              }
+            ]}
           />
           <Image
             source={require('../../images/VirtualCard.png')}
@@ -257,7 +281,7 @@ const styles = StyleSheet.create({
     height: width * 0.3,
     position: 'absolute',
     top: '30%',
-    left: '10%',
+    left: '25%',
   },
   statusImage: {
     width: width * 0.4,
