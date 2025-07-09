@@ -11,6 +11,7 @@ import {
   Animated,
    Easing 
 } from 'react-native';
+import Toast from 'react-native-toast-message';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import {
@@ -29,11 +30,14 @@ const OnboardingCardScreen = () => {
     isLoading: isFetchingStatus,
     refetch,
   } = useGetVirtualCardStatusQuery();
+  //console.log('Card request data:', JSON.stringify(cardRequest, null, 2));
 
-  const status = cardRequest?.data?.onboardingSessionStatus;
+  const status = cardRequest?.data?.onboardingSession?.onboardingSessionStatus;
+  //console.log(status)
   const [requestDate, setRequestDate] = useState(null);
   const [remainingTime, setRemainingTime] = useState(null);
   const rotation = useRef(new Animated.Value(0)).current;
+  const DEFAULT_DOCUMENT_TYPE = "NATIONALID";
 
   useEffect(() => {
   Animated.loop(
@@ -48,7 +52,7 @@ const OnboardingCardScreen = () => {
 
   // Redirection automatique
   useEffect(() => {
-    if (status === 'APPROVED') {
+    if (status === 'VERIFIED') {
       navigation.replace('CreateVirtualCard');
     }
   }, [status, navigation]);
@@ -98,18 +102,37 @@ const OnboardingCardScreen = () => {
 
   const handleRequestCard = async () => {
     try {
-      const response = await requestCard().unwrap();
-      console.log('✅ Réponse du backend :', JSON.stringify(response, null, 2));
+      console.log(DEFAULT_DOCUMENT_TYPE)
+      const response = await requestCard({ documentType: DEFAULT_DOCUMENT_TYPE }).unwrap();
+      //console.log('✅ Réponse du backend :', JSON.stringify(response, null, 2));
+
+      Toast.show({
+        type: 'success',
+        text1: 'Demande envoyée',
+        text2: 'Votre demande de carte a été envoyée avec succès.',
+      });
+
       const now = new Date().toISOString();
       await AsyncStorage.setItem(REQUEST_DATE_KEY, now);
       setRequestDate(now);
       await refetch();
     } catch (error) {
-      if (error?.data) {
-        console.error('Erreur API (backend) :', JSON.stringify(error.data, null, 2));
-      } else {
-        console.error('Erreur inconnue :', JSON.stringify(error, null, 2));
+      const backendMessage = error?.data?.message || 'Une erreur est survenue.';
+      const details = error?.data?.data?.details?.required;
+
+      let fullMessage = backendMessage;
+
+      if (details?.mandatoryTypes) {
+        fullMessage += `\nDocuments requis : ${details.mandatoryTypes.join(', ')}`;
       }
+
+      console.error('Erreur API (backend) :', JSON.stringify(error?.data, null, 2));
+
+      Toast.show({
+        type: 'error',
+        text1: 'Erreur de demande',
+        text2: fullMessage,
+      });
     }
   };
 
