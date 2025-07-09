@@ -10,21 +10,21 @@ import {
 import Loader from "../../components/Loader";
 import { Ionicons, Feather } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { useTranslation } from "react-i18next"; // ← Add this line
+import { useTranslation } from "react-i18next";
 
 const documentTypeMap = {
   ID_PROOF: "kyc.id_proof",
   ADDRESS_PROOF: "kyc.address_proof",
   NIU_PROOF: "kyc.niu_proof",
+  SELFIE: "kyc.selfie", // ✅ Added SELFIE
 };
 
 const KYCValidation = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { documents } = route.params;
-  const { t } = useTranslation(); // ← Hook for translations
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
-
   const [visibleImages, setVisibleImages] = useState(null);
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -55,7 +55,7 @@ const KYCValidation = () => {
 
     return {
       id: type,
-      title: t(documentTypeMap[type]),
+      title: t(documentTypeMap[type] || type),
       status,
       statusColor,
       urls: docList.map((doc) => doc.url),
@@ -88,7 +88,6 @@ const KYCValidation = () => {
         </TouchableOpacity>
       </View>
 
-      {/* Space between header and items */}
       <View className="h-3 mt-3 bg-white" />
 
       {/* KYC Items */}
@@ -99,7 +98,6 @@ const KYCValidation = () => {
             className="bg-gray-100 rounded-xl p-4 mb-4 shadow-sm"
           >
             <View className="flex-row justify-between items-center">
-              {/* Title & Status */}
               <View className="flex-1">
                 <View className="flex-row items-center mb-1">
                   <Feather name="file-text" size={16} color="black" />
@@ -117,7 +115,7 @@ const KYCValidation = () => {
                 )}
               </View>
 
-              {/* Icons */}
+              {/* Eye icon */}
               <View className="flex-row gap-2">
                 {item.urls.length > 0 && (
                   <TouchableOpacity
@@ -157,18 +155,20 @@ const KYCValidation = () => {
         >
           {visibleImages && visibleImages[currentIndex] && (
             <>
-             {loading && (
-                <View style={{ 
-                  position: 'absolute', 
-                  top: 0, 
-                  left: 0, 
-                  right: 0, 
-                  bottom: 0, 
-                  justifyContent: 'center', 
-                  alignItems: 'center',
-                  zIndex: 10, // ensures it's above the image
-                  backgroundColor: 'rgba(0,0,0,0.6)', // optional dim
-                }}>
+              {loading && (
+                <View
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    justifyContent: "center",
+                    alignItems: "center",
+                    zIndex: 10,
+                    backgroundColor: "rgba(0,0,0,0.6)",
+                  }}
+                >
                   <Loader size="large" color="#fff" />
                 </View>
               )}
@@ -187,7 +187,6 @@ const KYCValidation = () => {
               />
             </>
           )}
-
 
           {/* Controls */}
           <View className="flex-row justify-between items-center mt-4 w-full px-10">

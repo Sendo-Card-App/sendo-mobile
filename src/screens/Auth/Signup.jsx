@@ -110,11 +110,11 @@ const Signup = () => {
     validateField(name, value);
   };
 
-  const handleDateChange = (event, selectedDate) => {
+   const handleDateChange = (event, selectedDate) => {
     setShowDatePicker(false);
     if (selectedDate) {
       setDate(selectedDate);
-      const formattedDate = selectedDate.toISOString().split('T')[0];
+      const formattedDate = selectedDate.toISOString().split('T')[0]; // YYYY-MM-DD
       handleChange("dateOfBirth", formattedDate);
     }
   };
@@ -413,7 +413,7 @@ const Signup = () => {
 
       {/* Date of Birth */}
       <Text className="text-sm font-medium text-gray-700 mb-1 pl-3">  {t("signup.DOB")}</Text>
-      <TouchableOpacity
+     <TouchableOpacity
         onPress={() => setShowDatePicker(true)}
         className="border-[#fff] bg-[#ffffff] rounded-3xl mb-2 py-4"
         style={{
@@ -433,9 +433,10 @@ const Signup = () => {
         }}
       >
         <Text style={{ color: signupDetails.dateOfBirth ? '#000' : '#888' }}>
-            {signupDetails.dateOfBirth || t("signup.dateOfBirthPlaceholder")}
+          {signupDetails.dateOfBirth || t("signup.dateOfBirthPlaceholder")}
         </Text>
       </TouchableOpacity>
+
       {showDatePicker && (
         <DateTimePicker
           value={date}
@@ -445,9 +446,13 @@ const Signup = () => {
           maximumDate={new Date()}
         />
       )}
+
       {validationErrors.dateOfBirth && (
-        <Text className="text-red-500 text-xs mb-3 pl-3">{validationErrors.dateOfBirth}</Text>
+        <Text className="text-red-500 text-xs mb-3 pl-3">
+          {validationErrors.dateOfBirth}
+        </Text>
       )}
+    
 
       {/* Place of Birth */}
       <Text className="text-sm font-medium text-gray-700 mb-1 pl-3">{t("signup.pob")}</Text>

@@ -42,20 +42,33 @@ const CreateVirtualCard = () => {
   const displayedFees = isFirstCardFree ? "0 XAF" : `${cardFees} XAF`;
   const total = displayedFees;
 
-  const handleCreateCard = async () => {
-    if (!name.trim()) {
-      alert(t('virtual_card.missing_name') || "Please enter your name");
-      return;
-    }
-    try {
-      await createVirtualCard({ name: name.trim() }).unwrap();
-      alert(t('virtual_card.request_success') || "Request successful");
-      navigation.navigate("VerifyIdentity");
-    } catch (e) {
-      alert(t('virtual_card.request_failed') || "Request failed");
-      console.error(e);
-    }
-  };
+const handleCreateCard = async () => {
+  if (!name.trim()) {
+    alert(t('virtual_card.missing_name') || "Please enter your name");
+    return;
+  }
+
+  try {
+    const response = await createVirtualCard({ name: name.trim() }).unwrap();
+
+    console.log('✅ Virtual card response:', JSON.stringify(response, null, 2));
+
+    alert(
+      t('virtual_card.request_success') + 
+      `\n\n${response?.cardId ? `Card ID: ${response.cardId}` : '✔️ Carte créée avec succès.'}`
+    );
+
+    navigation.navigate("ManageVirtualCard");
+  } catch (e) {
+    console.error('❌ Virtual card creation failed:', JSON.stringify(e ?? {}, null, 2));
+
+    alert(
+      t('virtual_card.request_failed') ||
+      `La création de la carte a échoué.\n\n${e?.data?.message || 'Erreur inconnue'}`
+    );
+  }
+};
+
 
   return (
     <SafeAreaView className="flex-1 pt-4 pb-5">

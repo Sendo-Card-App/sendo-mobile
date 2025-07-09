@@ -76,6 +76,7 @@ import PersonalDetail from "./src/screens/VirtualCard/PersonalDetail";
 import NIU from "./src/screens/VirtualCard/NIU";
 import Addresse from "./src/screens/VirtualCard/Adresse";
 import IdentityCard from "./src/screens/VirtualCard/IdentityCard";
+import CardAction from "./src/screens/VirtualCard/CardAction";
 import IdentityVerification from "./src/screens/VirtualCard/IdentityVerification";
 import AddressSelect from "./src/screens/VirtualCard/AddressSelect";
 import AddressConfirm from "./src/screens/VirtualCard/AddressConfirm";
@@ -340,7 +341,7 @@ function MainStack() {
           statusBarTranslucent: false,              // ← obligatoire
           headerStyle: {
             backgroundColor: Colors.primary,
-            height: Platform.select({ ios: 60, android: 60 }), 
+            height: Platform.select({ ios: 60, android: 80 }), 
             elevation: 0,
             shadowOpacity: 0,
           },
@@ -438,6 +439,7 @@ function MainStack() {
       <Stack.Screen name="WelcomeShare" component={WelcomeShare} options={{ headerShown: false }} />
       <Stack.Screen name="Destinators" component={Destinators} options={{ headerShown: false }} />
       <Stack.Screen name="Request" component={Request} options={{ headerShown: false }} />
+      <Stack.Screen name="CardAction" component={CardAction} options={{headerShown:false}} />
       <Stack.Screen name="SuccessSharing" component={SuccessSharing} options={{ headerShown: false }} />
       <Stack.Screen name="CreateShare" component={CreateShare} options={{ headerShown: false }} />
       <Stack.Screen name="DistributionMethod" component={DistributionMethod} options={{ headerShown: false }} />
