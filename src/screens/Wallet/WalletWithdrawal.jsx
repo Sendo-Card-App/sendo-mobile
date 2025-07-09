@@ -75,7 +75,7 @@ const WalletWithdrawal = () => {
       ? trimmedPhone
       : trimmedPhone.startsWith("237")
       ? `+${trimmedPhone}`
-      : `237${trimmedPhone}`;
+      : `+237${trimmedPhone}`;
 
     if (!trimmedPhone || isNaN(amount) || parseFloat(amount) < 500) {
       Toast.show({
@@ -104,7 +104,7 @@ const WalletWithdrawal = () => {
         amount: parseFloat(amount),
         matriculeWallet: userWalletId,
       }).unwrap();
-
+       console.log(response)
       const trid = response?.data?.mobileMoney?.trid;
       const type = response?.data?.transaction?.type;
       const transactionId = response?.data?.transaction?.transactionId;

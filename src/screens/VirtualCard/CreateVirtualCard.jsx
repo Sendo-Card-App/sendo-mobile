@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -10,11 +10,13 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Modal,
 } from "react-native";
 import Card from "../../images/VirtualCard.png";
 import { useNavigation } from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
-import { useGetConfigQuery } from '../../services/Config/configApi';
+import { useGetConfigQuery } from "../../services/Config/configApi";
+import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
 import { useCreateVirtualCardMutation } from "../../services/Card/cardApi";
 
 const CreateVirtualCard = () => {
@@ -23,13 +25,24 @@ const CreateVirtualCard = () => {
 
   const [name, setName] = useState("");
 
-  const [createVirtualCard, { isLoading, isError, error }] = useCreateVirtualCardMutation();
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalMessage, setModalMessage] = useState("");
+  const [modalType, setModalType] = useState("success"); // 'success' | 'error'
+
+  const [createVirtualCard, { isLoading }] = useCreateVirtualCardMutation();
+  const { data: userProfile, isLoading: isProfileLoading } = useGetUserProfileQuery();
 
   const {
     data: configData,
     isLoading: isConfigLoading,
-    error: configError
   } = useGetConfigQuery();
+
+  // Redirect if virtual card already exists
+  useEffect(() => {
+    if (userProfile?.data?.virtualCard) {
+      navigation.replace("ManageVirtualCard");
+    }
+  }, [userProfile]);
 
   const getConfigValue = (key) => {
     const item = configData?.data?.find((c) => c.name === key);
@@ -38,37 +51,54 @@ const CreateVirtualCard = () => {
 
   const cardFees = getConfigValue("SENDO_CREATING_CARD_FEES");
   const isFirstCardFree = getConfigValue("IS_FREE_FIRST_CREATING_CARD") === "1";
-
   const displayedFees = isFirstCardFree ? "0 XAF" : `${cardFees} XAF`;
   const total = displayedFees;
 
-const handleCreateCard = async () => {
-  if (!name.trim()) {
-    alert(t('virtual_card.missing_name') || "Please enter your name");
-    return;
-  }
+  const showModal = (type, message) => {
+    setModalType(type);
+    setModalMessage(message);
+    setModalVisible(true);
+  };
 
-  try {
-    const response = await createVirtualCard({ name: name.trim() }).unwrap();
+  const handleCreateCard = async () => {
+    if (!name.trim()) {
+      showModal("error", t("virtual_card.missing_name") || "Please enter your name");
+      return;
+    }
 
-    console.log('✅ Virtual card response:', JSON.stringify(response, null, 2));
+    try {
+      const response = await createVirtualCard({ name: name.trim() }).unwrap();
 
-    alert(
-      t('virtual_card.request_success') + 
-      `\n\n${response?.cardId ? `Card ID: ${response.cardId}` : '✔️ Carte créée avec succès.'}`
+      console.log("✅ Virtual card response:", response);
+
+      showModal(
+        "success",
+        t("virtual_card.request_success") +
+          `\n\n${response?.cardId ? `Card ID: ${response.cardId}` : "✔️ Carte créée avec succès."}`
+      );
+
+      // Delay navigation after showing success message
+      setTimeout(() => {
+        setModalVisible(false);
+        navigation.navigate("ManageVirtualCard");
+      }, 2500);
+    } catch (e) {
+      console.error("❌ Virtual card creation failed:", e);
+      showModal(
+        "error",
+        t("virtual_card.request_failed") +
+          `\n\n${e?.data?.message || "Erreur inconnue"}`
+      );
+    }
+  };
+
+  if (isProfileLoading) {
+    return (
+      <SafeAreaView className="flex-1 justify-center items-center">
+        <ActivityIndicator size="large" color="#000" />
+      </SafeAreaView>
     );
-
-    navigation.navigate("ManageVirtualCard");
-  } catch (e) {
-    console.error('❌ Virtual card creation failed:', JSON.stringify(e ?? {}, null, 2));
-
-    alert(
-      t('virtual_card.request_failed') ||
-      `La création de la carte a échoué.\n\n${e?.data?.message || 'Erreur inconnue'}`
-    );
   }
-};
-
 
   return (
     <SafeAreaView className="flex-1 pt-4 pb-5">
@@ -88,10 +118,9 @@ const handleCreateCard = async () => {
           />
 
           <View className="border-t border-dashed border-gray-400 flex-1 mt-4 mx-6 px-2 pt-4">
-
             {/* Input nom */}
             <TextInput
-              placeholder={t('virtual_card.enter_name') || "Enter your full name"}
+              placeholder={t("virtual_card.enter_name") || "Enter your full name"}
               value={name}
               onChangeText={setName}
               className="border border-gray-300 rounded-md px-3 py-4 mb-4 text-black"
@@ -102,7 +131,7 @@ const handleCreateCard = async () => {
 
             {/* Frais de création */}
             <View className="flex-row justify-between items-center">
-              <Text className="text-gray-400">{t('virtual_card.card_price')}</Text>
+              <Text className="text-gray-400">{t("virtual_card.card_price")}</Text>
               <Text className="font-bold text-gray-700">
                 {isConfigLoading ? "..." : displayedFees}
               </Text>
@@ -110,7 +139,7 @@ const handleCreateCard = async () => {
 
             {/* Total */}
             <View className="flex-row justify-between items-center mt-2">
-              <Text className="font-bold text-gray-700">{t('virtual_card.total')}</Text>
+              <Text className="font-bold text-gray-700">{t("virtual_card.total")}</Text>
               <Text className="font-bold text-gray-700">
                 {isConfigLoading ? "..." : total}
               </Text>
@@ -118,7 +147,7 @@ const handleCreateCard = async () => {
 
             {/* Bouton créer carte */}
             <TouchableOpacity
-              className="my-auto bg-[#7ddd7d] py-3 rounded-full"
+              className="my-auto bg-[#7ddd7d] py-3 rounded-full mt-6"
               onPress={handleCreateCard}
               disabled={isLoading}
             >
@@ -126,19 +155,43 @@ const handleCreateCard = async () => {
                 <ActivityIndicator size="small" color="#000" />
               ) : (
                 <Text className="text-xl text-center font-bold">
-                  {t('virtual_card.create_now')}
+                  {t("virtual_card.create_now")}
                 </Text>
               )}
             </TouchableOpacity>
-
-            {/* Erreur de requête */}
-            {isError && (
-              <Text className="text-red-600 mt-2 text-center">
-                {error?.data?.message || t('virtual_card.error_message')}
-              </Text>
-            )}
           </View>
         </ScrollView>
+
+        {/* Modal */}
+        <Modal
+          transparent
+          animationType="slide"
+          visible={modalVisible}
+          onRequestClose={() => setModalVisible(false)}
+        >
+          <View className="flex-1 justify-center items-center bg-black/50 px-6">
+            <View className="bg-white rounded-2xl p-6 w-full">
+              <Text
+                className={`text-center text-lg font-bold mb-4 ${
+                  modalType === "success" ? "text-green-600" : "text-red-600"
+                }`}
+              >
+                {modalType === "success"
+                  ? t("virtual_card.success_title") || "Success"
+                  : t("virtual_card.error_title") || "Error"}
+              </Text>
+              <Text className="text-center text-gray-700 mb-4">{modalMessage}</Text>
+              <TouchableOpacity
+                onPress={() => setModalVisible(false)}
+                className="bg-blue-500 rounded-full py-2 mt-2"
+              >
+                <Text className="text-white text-center font-semibold">
+                  {t("common.ok") || "OK"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

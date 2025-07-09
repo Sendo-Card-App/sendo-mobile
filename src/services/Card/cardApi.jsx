@@ -111,6 +111,12 @@ export const cardApi = createApi({
       }),
       invalidatesTags: ['Card'],
     }),
+
+    getCardTransactions: builder.query({
+      query: (cardId) => `/cards/${cardId}/transactions`,
+      providesTags: ['Card'],
+    }),
+
   }),
 });
 
@@ -124,4 +130,6 @@ export const {
   useUnfreezeCardMutation,
   useRechargeCardMutation,
   useWithdrawFromCardMutation,
+  useGetCardTransactionsQuery,
+
 } = cardApi;
