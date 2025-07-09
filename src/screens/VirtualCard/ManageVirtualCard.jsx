@@ -1,22 +1,28 @@
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
   Image,
   TouchableOpacity,
-  Dimensions,
   FlatList,
+  Dimensions,
   ActivityIndicator,
+  Modal,
+  Pressable,
 } from "react-native";
-import React, { useEffect, useState } from "react";
-import { AntDesign, Ionicons, FontAwesome5 } from "@expo/vector-icons";
-import ButtomLogo1 from "../../images/ButtomLogo1.png";
-import CardImg from "../../images/VirtualCard.png";
+import { Ionicons, FontAwesome5, Entypo } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
+import CardImg from "../../images/VirtualCard.png";
+import ButtomLogo1 from "../../images/ButtomLogo1.png";
 import { useTranslation } from "react-i18next";
 import {
   useGetVirtualCardsQuery,
   useGetVirtualCardDetailsQuery,
+  useFreezeCardMutation,
+  useUnfreezeCardMutation,
+  useGetCardTransactionsQuery,
 } from "../../services/Card/cardApi";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const ManageVirtualCard = ({ navigation }) => {
   const { t } = useTranslation();
@@ -30,170 +36,325 @@ const ManageVirtualCard = ({ navigation }) => {
 
   const [selectedCardId, setSelectedCardId] = useState(null);
 
+ const {
+  data: cardDetails,
+  isLoading: isDetailsLoading,
+  error: detailsError,
+  refetch: refetchCardDetails, // <-- add this
+} = useGetVirtualCardDetailsQuery(selectedCardId, {
+  skip: !selectedCardId,
+});
+
+
+  const [freezeCard] = useFreezeCardMutation();
+  const [unfreezeCard] = useUnfreezeCardMutation();
+  const [showBalance, setShowBalance] = useState(false);
+
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalType, setModalType] = useState("success");
+  const [modalMessage, setModalMessage] = useState("");
+  
+  const cardData = cardDetails?.data;
+  const isCardFrozen = cardData?.isFrozen ?? cardData?.status === "FROZEN";
+
   const {
-    data: cardDetails,
-    isLoading: isDetailsLoading,
-    error: detailsError,
-  } = useGetVirtualCardDetailsQuery(selectedCardId, {
-    skip: !selectedCardId,
+    data: cardTransactions,
+    isLoading: isTransactionsLoading,
+    error: transactionsError,
+    refetch: refetchTransactions,
+  } = useGetCardTransactionsQuery(cardDetails?.data?.id, {
+    skip: !cardDetails?.data?.id,
   });
 
-  const cardData = cardDetails?.data;
- //console.log(cardData)
   useEffect(() => {
     if (cards?.data?.length > 0) {
-      setSelectedCardId(cards.data[0].cardId); // set correct cardId
+      setSelectedCardId(cards.data[0].cardId);
     }
   }, [cards]);
 
-  const TransactionCard = () => (
-    <View className="p-2 my-2 flex-row items-center gap-4">
-      <AntDesign name="checkcircle" size={30} color="#7ddd7d" />
-      <View className="flex-1">
-        <View className="flex-row justify-between border-b border-gray-400 py-2">
-          <Text className="font-bold text-gray-600">André Djoumdjeu</Text>
-          <Text className="text-gray-800 font-extrabold">20,000 FCFA</Text>
-        </View>
-        <View className="flex-row justify-between px-2">
-          <Text className="text-sm font-light">Eﬀectué</Text>
-          <Text className="text-sm font-light">21/12/2024 à 10:18</Text>
-        </View>
+  const showModal = (type, message) => {
+    setModalType(type);
+    setModalMessage(message);
+    setModalVisible(true);
+  };
+
+  const handleFreezeUnfreeze = async () => {
+  try {
+    const cardId = cardData?.cardId;
+
+    if (isCardFrozen) {
+      const response = await unfreezeCard(cardId).unwrap();
+      showModal("success", `Carte débloquée avec succès.\n${response?.message || ""}`);
+    } else {
+      const response = await freezeCard(cardId).unwrap();
+      showModal("success", `Carte bloquée avec succès.\n${response?.message || ""}`);
+    }
+
+    // 🔁 Refresh card details
+    refetchCardDetails();
+
+  } catch (err) {
+    let errorMessage = "Erreur lors de l'opération.";
+    if (err?.data?.message) {
+      errorMessage = err.data.message;
+    } else if (err?.error) {
+      errorMessage = err.error;
+    }
+    showModal("error", errorMessage);
+  }
+};
+
+
+
+
+
+  const ActionItem = ({ icon, label, onPress }) => (
+    <TouchableOpacity onPress={onPress} className="items-center flex-1">
+      <View className="bg-gray-200 p-3 rounded-full">
+        <Ionicons name={icon} size={24} color="#333" />
       </View>
-    </View>
+      <Text className="text-xs mt-2 text-center">{label}</Text>
+    </TouchableOpacity>
   );
 
-  if (isCardsLoading || (selectedCardId && isDetailsLoading)) {
+  const TransactionItem = ({ item }) => {
+    const isCashIn = item.type === "CASHOUT"; 
+    const icon = isCashIn ? (
+      <Ionicons name="arrow-down-circle-outline" size={20} color="#7ddd7d" />
+    ) : (
+      <Entypo name="credit-card" size={20} color="#f39c12" />
+    );
+
+    const transactionDate = new Date(item.createdAt);
+    const formattedDate = transactionDate.toLocaleDateString("fr-FR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+    return (
+      <TouchableOpacity
+        className="flex-row justify-between items-center py-3 border-b border-gray-200"
+        onPress={() => navigation.navigate("TransactionDetails", { transaction: item })}
+      >
+        <View className="flex-row items-center gap-2">
+          <View className="bg-gray-100 p-2 rounded-full">{icon}</View>
+          <View>
+            <Text className="font-semibold">
+              {isCashIn ? "Rechargement carte" : "Paiement avec carte"}
+            </Text>
+            <Text className="text-xs text-gray-500">{formattedDate}</Text>
+            <Text className="text-xs text-gray-500">
+              {item.status === "SUCCESSFUL" ? "Réussi" : "Échoué"}
+            </Text>
+          </View>
+        </View>
+        <Text
+          className={`font-bold ${isCashIn ? "text-green-600" : "text-red-500"}`}
+        >
+          {isCashIn ? "+" : "-"}
+          {item.amount.toLocaleString("fr-FR")} FCFA
+        </Text>
+      </TouchableOpacity>
+    );
+  };
+
+
+  const handleRefresh = () => {
+    refetchTransactions();
+  };
+
+  if (isCardsLoading || isDetailsLoading) {
     return (
       <View className="flex-1 justify-center items-center bg-white">
         <ActivityIndicator size="large" color="#7ddd7d" />
-        <Text>{t("loading")}</Text>
-      </View>
-    );
-  }
-
-  if (cardsError || detailsError) {
-    return (
-      <View className="flex-1 justify-center items-center bg-white px-4">
-        <Text className="text-red-500 text-center">
-          {t("error.loadingCardData")}
-        </Text>
       </View>
     );
   }
 
   return (
-    <View className="bg-[#7ddd7d] flex-1 pt-0 relative">
-      {/* Header */}
-      <View className="border-b border-dashed border-white flex-row justify-between py-4 mt-5 items-center mx-5 pt-5">
-        <Image source={ButtomLogo1} className="h-11 w-40" />
-        <TouchableOpacity onPress={() => navigation.openDrawer()}>
-          <Ionicons name="menu-outline" size={28} color="white" />
-        </TouchableOpacity>
-      </View>
-
-      {/* Title */}
-      <Text className="text-center text-white text-2xl my-1 font-bold">
-        {t("manageVirtualCard.title")}
-      </Text>
-
-      {/* Main Content */}
-      <View className="flex-1 gap-3 py-3 bg-white px-4 rounded-t-3xl">
-        <View className="w-4 h-4 bg-[#7ddd7d] rounded-full ml-auto" />
-
-        {/* Balance */}
-        <View className="flex-row items-center justify-between">
-          <Text className="text-black font-extralight">
-            {t("manageVirtualCard.balance")}
+    <View className="flex-1 bg-white">
+      <SafeAreaView className="bg-green-500"> 
+        <View className="flex-row items-center justify-between px-4  bg-green-500 border-b border-gray-200">
+          <TouchableOpacity
+            onPress={() => navigation.navigate("MainTabs")}
+            className="p-1"
+          >
+            <Ionicons name="arrow-back" size={24} color="#333" />
+          </TouchableOpacity>
+          <Text className="text-2xl font-bold text-gray-800 text-center flex-1">
+            {cardData?.cardName || "Ma Carte"}
           </Text>
-          <Text className="text-[#7ddd7d] font-bold text-lg">
-            {cardData?.balance ?? "0"} XAF
-          </Text>
+          <TouchableOpacity
+            onPress={() => navigation.openDrawer()}
+            className="p-1"
+          >
+            <Ionicons name="menu-outline" size={28} color="#333" />
+          </TouchableOpacity>
         </View>
+      </SafeAreaView>
 
-        {/* Virtual Card */}
-        <View className="relative">
+      <View className="px-4 pt-1">
+        {/* Virtual Card Design */}
+        <View
+          className="relative rounded-2xl overflow-hidden mt-2"
+          style={{ height: width / 1.66 }}
+        >
           <Image
             source={CardImg}
-            className="w-full"
-            style={{ height: width / 1.66 }}
+            className="w-full h-full absolute"
             resizeMode="contain"
           />
-          <View className="absolute top-0 bottom-0 left-0 right-[50%] px-4 py-6">
-            <View className="flex-1 justify-center">
-              <Text className="text-white font-light text-sm">
-                **** **** **** {cardData?.last4Digits ?? "0000"}
-              </Text>
-              <Text className="text-white font-light text-sm mt-2">
-                {t("manageVirtualCard.cvv")} ***
-              </Text>
+
+          {isCardFrozen && (
+            <View className="absolute inset-0 bg-blue-200 bg-opacity-40 z-10 justify-center items-center">
+              <FontAwesome5 name="snowflake" size={50} color="#a0e1f5" />
             </View>
-            <View className="mt-4">
-              <Text className="text-white font-extralight text-xl">
-                {t("manageVirtualCard.cardHolder")}
+          )}
+
+          <View className="flex-1 justify-between px-5 py-4">
+            <View className="mt-2">
+              <Text className="text-white text-sm mb-1">Solde actuel</Text>
+              <TouchableOpacity
+                onPress={() => setShowBalance(!showBalance)}
+                className="bg-white px-3 py-1 rounded-full self-start"
+              >
+                <Text className="text-[#0f1a38] font-semibold">
+                  {showBalance ? "Masquer le solde" : "Afficher le solde"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            <View className="mt-3">
+              <Text className="text-white text-lg tracking-widest font-semibold">
+                **** {cardData?.last4Digits || "****"}
               </Text>
-              <Text className="text-white font-bold text-sm">
+              <TouchableOpacity className="bg-[#7ddd7d] px-3 py-1 mt-1 rounded-md self-start">
+                <View className="bg-white px-2 py-1 rounded">
+                  <Text className="text-black text-sm">
+                    Voir les numéros de ma carte
+                  </Text>
+                </View>
+              </TouchableOpacity>
+
+            </View>
+
+            <View className="mt-3">
+              <Text className="text-white font-bold text-l">
                 {cardData?.cardName}
               </Text>
-              <Text className="font-extralight text-sm text-yellow-400 mt-3">
+              <Text className="text-white mt-3">
                 {t("manageVirtualCard.expires")} {cardData?.expirationDate}
               </Text>
             </View>
           </View>
         </View>
 
-        {/* Recharge & Withdraw Buttons with cardId */}
-        <View className="flex-row justify-between gap-4 w-[90%] mx-auto mt-2">
-          <TouchableOpacity
-            onPress={() =>
-              navigation.navigate("CardAction", {
-                cardId: cardData?.id,
-                action: "recharge",
-              })
-            }
-            className="bg-[#7ddd7d] flex-1 flex-row items-center justify-center py-3 rounded-lg shadow-sm shadow-black"
-          >
-            <Ionicons name="cash-outline" size={20} color="white" />
-            <Text className="text-white text-lg font-bold ml-2">
-              {t("manageVirtualCard.rechargeButton")}
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() =>
-              navigation.navigate("CardAction", {
-                cardId: cardData?.id,
-                action: "withdraw",
-              })
-            }
-            className="bg-red-400 flex-1 flex-row items-center justify-center py-3 rounded-lg shadow-sm shadow-black"
-          >
-            <FontAwesome5 name="money-bill-wave" size={18} color="white" />
-            <Text className="text-white text-lg font-bold ml-2">
-              {t("manageVirtualCard.withdrawButton")}
-            </Text>
-          </TouchableOpacity>
+        {/* Actions */}
+        <View className="flex-row justify-between mt-6">
+          <ActionItem icon="eye-outline" label="Afficher les informations" />
+          <ActionItem 
+            icon="snow-outline" 
+            label={isCardFrozen ? "Débloquer" : "Bloquer"} 
+            onPress={handleFreezeUnfreeze} 
+          />
+          {/* <ActionItem icon="grid-outline" label="Abonnement" /> */}
+          <ActionItem icon="settings" label="Paramètres" />
         </View>
 
-        {/* Transaction History */}
-        <View className="border-t border-dashed mt-4 flex-1">
-          <Text className="font-bold text-gray-600 py-2 px-2">
-            {t("manageVirtualCard.transactionHistory")}
-          </Text>
+        {/* Balance + Buttons */}
+        <View className="mt-6 bg-gray-100 rounded-xl p-4">
+          <View className="flex-row items-center justify-between">
+            <View className="flex-1">
+              <Text className="text-xl font-bold">
+                {showBalance ? `${cardData?.balance?.toLocaleString('fr-FR') ?? 0} XAF` : "**** XAF"}
+              </Text>
+              <Text className="text-sm text-gray-500">Solde disponible</Text>
+            </View>
 
-          <FlatList
-            data={[1, 2, 3, 4, 5, 6]}
-            renderItem={({ item }) => <TransactionCard />}
-            keyExtractor={(item, index) => index.toString()}
-            showsVerticalScrollIndicator={false}
-          />
+            <TouchableOpacity
+              className="bg-white flex-row items-center justify-center rounded-md px-3 py-2 border border-green-300 mr-2"
+              onPress={() =>
+                navigation.navigate("CardAction", {
+                  cardId: cardData?.id,
+                  action: "withdraw",
+                })
+              }
+            >
+              <Text className="text-black font-semibold ml-2">Retrait</Text>
+            </TouchableOpacity>
 
-          <Text className="text-center my-3 text-[#7ddd7d] text-lg">
-            {t("manageVirtualCard.showAllTransfers")}
-          </Text>
+            <TouchableOpacity
+              className="bg-green-600 flex-row items-center justify-center rounded-md px-3 py-2"
+              onPress={() =>
+                navigation.navigate("CardAction", {
+                  cardId: cardData?.id,
+                  action: "recharge",
+                })
+              }
+            >
+              <Text className="text-white font-semibold ml-2">Recharger</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Transactions */}
+        <View className="mt-6 mb-4">
+          <View className="flex-row justify-between items-center mb-2">
+            <Text className="font-bold text-gray-700">Historique des transactions</Text>
+            <TouchableOpacity onPress={handleRefresh}>
+              <Ionicons name="refresh" size={20} color="#7ddd7d" />
+            </TouchableOpacity>
+          </View>
+          
+          {isTransactionsLoading ? (
+            <ActivityIndicator size="small" color="#7ddd7d" />
+          ) : (
+            <FlatList
+              data={cardTransactions?.data || []}
+              renderItem={({ item }) => <TransactionItem item={item} />}
+              keyExtractor={(item) => item.id}
+              ListEmptyComponent={
+                <Text className="text-center py-4 text-gray-500">
+                  Aucune transaction récente
+                </Text>
+              }
+              showsVerticalScrollIndicator={false}
+            />
+          )}
         </View>
       </View>
 
-      <StatusBar style="light" />
+      {/* Modal */}
+      <Modal
+        transparent
+        visible={modalVisible}
+        animationType="fade"
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View className="flex-1 justify-center items-center bg-transparent bg-opacity-40">
+          <View className="bg-gray-200 p-6 rounded-xl w-4/5">
+            <View className="items-center mb-4">
+              {modalType === "success" ? (
+                <Ionicons name="checkmark-circle" size={48} color="#7ddd7d" />
+              ) : (
+                <Ionicons name="close-circle" size={48} color="#ff6b6b" />
+              )}
+            </View>
+            <Text className="text-center mb-4">{modalMessage}</Text>
+            <Pressable
+              className="bg-[#7ddd7d] py-3 rounded-md"
+              onPress={() => setModalVisible(false)}
+            >
+              <Text className="text-white text-center font-bold">OK</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
+
+      <StatusBar style="light" /> 
     </View>
   );
 };

@@ -589,7 +589,9 @@
     "submitAction": "Submit action",
     "processing": "Processing...",
     "rechargeAction": "Recharge Now",
-    "withdrawAction": "Withdraw Now"
+    "withdrawAction": "Withdraw Now",
+     "freezeButton": "Freeze",
+      "unfreezeButton": "Unfreeze"
 },
 "identityVerification": {
 "title": "Identity Verification",
@@ -625,7 +627,9 @@
   "missing_name": "Please enter your name",
   "request_success": "Request sent successfully",
   "request_failed": "Request failed",
-  "error_message": "An error occurred"
+  "error_message": "An error occurred",
+   "success_title": "Success",
+    "error_title": "Error"
 },
 
  "account": {
@@ -1457,7 +1461,51 @@
       "genericError": "An error occurred while resetting your password. Please try again.",
       "updateError": "Failed to update password. Please try again."
     }
+  },
+  
+
+  "onboardingCard": {
+    "title": "INTERNATIONAL MONEY\nMADE SIMPLE",
+    "subtitle": "Spend abroad like at home. No markups, no hide fees.",
+    "button": {
+      "default": "Order a debit card",
+      "pending": "Request in progress..."
+    },
+    "pending": {
+      "title": "Request in progress",
+      "subtitle": "We're reviewing your virtual card request. This may take up to 24 hours.",
+      "status": {
+        "pending": "In progress",
+        "waiting": "Waiting"
+      },
+      "timeline": {
+        "requested": "Requested",
+        "verification": "In verification",
+        "approved": "Approved"
+      },
+      "labels": {
+        "requestDate": "Request date:",
+        "timeLeft": "Time remaining:"
+      }
+    },
+    "cancelled": {
+      "title": "Request cancelled",
+      "subtitle": "Your card request has been cancelled. You can try again or contact support."
+    },
+    "toast": {
+      "success": {
+        "title": "Request sent",
+        "message": "Your card request has been successfully submitted."
+      },
+      "error": {
+        "title": "Request error",
+        "message": "An error occurred while processing your request.",
+        "generic": "An error occurred",
+        "requiredDocuments": "Required documents"
+      }
+    }
   }
+
 
   
   }

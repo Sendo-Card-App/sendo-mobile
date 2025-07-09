@@ -4,8 +4,8 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 const WALLET_ENDPOINTS = {
   BALANCE: '/wallet/balance',
   TRANSFER: '/wallet/transfer-funds',
-  RECHARGE: '/mobile-money/smobilpay/init/deposit',
-  WITHDRAWAL: '/mobile-money/smobilpay/init/withdrawal',
+  RECHARGE: '/mobile-money/neero/init/deposit',
+  WITHDRAWAL: '/mobile-money/neero/init/withdrawal',
   HISTORY: '/wallet/transactions',
 };
 

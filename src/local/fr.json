@@ -565,6 +565,8 @@
      "rechargeCard": "Recharger la carte",
     "withdrawCard": "Retirer de la carte",
     "amount": "Montant",
+     "freezeButton": "Geler",
+      "unfreezeButton": "Dégeler",
     "amountInput": "Champ de saisie du montant",
     "invalidAmount": "Veuillez entrer un montant valide supérieur à 0.",
     "missingMatricule": "Informations du portefeuille manquantes. Veuillez réessayer plus tard.",
@@ -614,7 +616,9 @@
   "missing_name": "Veuillez saisir votre nom",
   "request_success": "Demande envoyée avec succès",
   "request_failed": "Échec de la demande",
-  "error_message": "Une erreur est survenue"
+  "error_message": "Une erreur est survenue",
+   "success_title": "Succès",
+    "error_title": "Erreur"
 },
   "account": {
     "title": "Mon Compte",
@@ -1458,7 +1462,49 @@
     "errorShareFailed": "Échec du partage du code de parrainage",
     "title": "Rejoins {{appName}} avec mon code de parrainage",
     "message": "Salut ! Rejoins-moi sur {{appName}} en utilisant mon code de parrainage {{code}} et nous recevrons tous les deux un bonus !\n\nTélécharge l'application ici :\niOS : {{iosLink}}\nAndroid : {{androidLink}}\n\nUtilise mon code lors de l'inscription !"
+  },
+  "onboardingCard": {
+    "title": "L'ARGENT\nINTERNATIONAL\nSIMPLIFIÉ",
+    "subtitle": "Dépensez à l'étranger comme à la maison. Pas de majorations, pas de frais cachés.",
+    "button": {
+      "default": "Commandez une carte de débit",
+      "pending": "Demande en cours..."
+    },
+    "pending": {
+      "title": "Demande en traitement",
+      "subtitle": "Nous examinons votre demande de carte virtuelle. Cela peut prendre jusqu'à 24 heures.",
+      "status": {
+        "pending": "En cours",
+        "waiting": "En attente"
+      },
+      "timeline": {
+        "requested": "Demandé",
+        "verification": "En vérification",
+        "approved": "Approuvé"
+      },
+      "labels": {
+        "requestDate": "Date de demande:",
+        "timeLeft": "Temps restant:"
+      }
+    },
+    "cancelled": {
+      "title": "Demande annulée",
+      "subtitle": "Votre demande de carte a été annulée. Vous pouvez réessayer ou contacter le support."
+    },
+    "toast": {
+      "success": {
+        "title": "Demande envoyée",
+        "message": "Votre demande de carte a été envoyée avec succès."
+      },
+      "error": {
+        "title": "Erreur de demande",
+        "message": "Une erreur est survenue lors du traitement de votre demande.",
+        "generic": "Une erreur est survenue",
+        "requiredDocuments": "Documents requis"
+      }
+    }
   }
+
 
     
     

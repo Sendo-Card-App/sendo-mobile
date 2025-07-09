@@ -70,6 +70,7 @@ import OnboardingCard from "./src/screens/VirtualCard/OnboardingCard";
 import VerifyIdentity from "./src/screens/VirtualCard/VerifyIdentity";
 import KYCValidation from "./src/screens/VirtualCard/KYCValidation";
 import ManageVirtualCard from "./src/screens/VirtualCard/ManageVirtualCard";
+import TransactionDetails from "./src/screens/VirtualCard/TransactionDetails";
 import KycResume from "./src/screens/VirtualCard/KycResume";
 import KycSelfie from "./src/screens/VirtualCard/KycSelfie";
 import PersonalDetail from "./src/screens/VirtualCard/PersonalDetail";
@@ -294,7 +295,7 @@ function MainTabs() {
 
       <Tab.Screen 
         name="ManageVirtualCardTab" 
-        component={ManageVirtualCard} 
+        component={OnboardingCard} 
         options={{ 
           title: t('tabs.cards'),
           unmountOnBlur: true 
@@ -423,6 +424,7 @@ function MainStack() {
       <Stack.Screen name="CreateVirtualCard" component={CreateVirtualCard}options={{ headerTitle: t('screens.createCard') }} />
       <Stack.Screen name="VerifyIdentity" component={VerifyIdentity} options={{ headerShown: false }} />
       <Stack.Screen name="ManageVirtualCard" component={ManageVirtualCard} options={{ headerShown: false }} />
+      <Stack.Screen name="TransactionDetails" component={TransactionDetails} options={{ headerShown: false }} />
       <Stack.Screen name="KycResume" component={KycResume} options={{ headerShown: false }} />
       <Stack.Screen name="KycSelfie" component={KycSelfie} options={{ headerShown: false }} />
       <Stack.Screen name="PersonalDetail" component={PersonalDetail} options={{ headerShown: false }} />
