@@ -103,7 +103,16 @@
     "lastName": "Last Name",
     "lastNamePlaceholder": "Enter your last name",
     "email": "Email",
+     "next": "Next",
+      "back": "Back",
+      "dateOfBirthPlaceholder": "Select your date of birth",
+      "DOB": "Date of Birth",
+      "PD": "Personal Details",
+      "pob": "Place of Birth",
+       "dateOfBirth": "Select your date of birth",
+       "pfbPlaceholder": "Enter your place of birth",
     "emailPlaceholder": "Enter your email",
+     "infos": " Security Information ",
     "phone": "Phone",
     "phonePlaceholder": "Phone number",
     "address": "Address",
@@ -399,9 +408,15 @@
 "niu": {
 "title": "Unique Identification Number",
 "fileTooLarge": "Oops! File is too big",
+ "taxIdLabel": "Tax Identification Number",
+  "taxIdPlaceholder": "Enter your tax ID number",
 "documentSizeLimit": "Please choose a document smaller than 5MB",
 "imageSizeLimit": "Please choose an image smaller than 5MB",
 "error": "Something went wrong",
+"documentPreview": "Document Preview",
+  "backToEdit": "Back to Edit",
+  "taxIdInvalid": "Invalid Tax ID",
+"taxIdValidationMessage": "Your Tax ID must contain exactly 14 alphanumeric characters.",
 "removeDocument": "Remove the document",
 "documentSelectionError": "We couldn't select your document - please try again",
 "taxNumber": "Taxpayer Number",
@@ -409,7 +424,9 @@
 "description": "The unique identification number is a combination of letters and numbers assigned to taxpayers. This number is essential to identify the user as a taxpayer.",
 "takePhotoButton": "TAKE A PHOTO",
 "securityNotice": "Do not share your personal information",
-
+   "generalError": "An unexpected error occurred. Please try again later.",
+    "taxIdRequired": "Tax ID is required",
+    "noDocumentSelected": "Please select a document before continuing",
 "uploadDocumentButton": "Upload Document",
 "continueButton": "Continue",
 "cameraPermissionDenied": "Camera permission is required to take photos",
@@ -485,11 +502,11 @@
 "take_photo_back": "Take a photo of the back",
 "next_button": "NEXT",
 "privacy_notice": "Do not share your personal information",
-"document_types": {
-  "CNI": "National ID",
-  "PASSPORT": "Passport",
-  "DRIVING_LICENSE": "Driver's License"
-}
+"types": {
+    "cni": "National ID",
+    "passport": "Passport",
+    "drivers_license": "Driver's License"
+  }
 },
 "verifyIdentity": {
 "title": "Identity Verification",
@@ -509,7 +526,7 @@
 "connect_description": "Connect your bank account to start a transfer",
 "create_virtual": "CREATE A VIRTUAL CARD",
 "manage_virtual": "MANAGE MY VIRTUAL CARD",
-"get_visa": "GET A VISA CARD",
+"get_visa": "Submit KYC Documents",
 "bonus_balance": "Bonus balance",
 "referral_terms": "You will receive 5.00 CAD and your friend will receive 5.00 CAD on their first transfer. Minimum sending requirements may apply.",
 "terms_conditions": "Subject to conditions.",
@@ -582,10 +599,16 @@
 "privacyNotice": "Do not share your personal information..."
 },
 "virtual_card": {
-"card_price": "Card price:",
-"total": "Total:",
-"create_now": "CREATE NOW"
+  "enter_name": "Enter your full name",
+  "card_price": "Creation fees",
+  "total": "Total",
+  "create_now": "Create now",
+  "missing_name": "Please enter your name",
+  "request_success": "Request sent successfully",
+  "request_failed": "Request failed",
+  "error_message": "An error occurred"
 },
+
  "account": {
     "title": "My Account",
     "edit": "Edit",
@@ -727,13 +750,14 @@
     "resetFilters": "Reset Filters",
     "noTransactions": "No transactions found",
     "loadingUser": "Loading user information...",
-    "errorLoading": "Error loading transactions",
+   "errorLoading": "KYC not verified. Please submit your documents.",
     "transactions": "transactions",
     "todayTransactions": "Today's Transactions",
     "noTransactionsToday": "No transactions today",
     "page": "Page",
     "of": "of",
     "previous": "Previous",
+     "system": "System ",
     "next": "Next",
     "dateRange": "Date Range",
     "today": "Today",
@@ -1369,6 +1393,7 @@
     "virtualCard": "Virtual Card",
     "friendsShare": "Share with Friends",
     "fundRequest": "Fund Request",
+     "viewDocument": "Bank deposit document",
     "etontine": "E-Tontine",
     "payBills": "Payment estimator",
     "pubSection": "Advertisement Section",

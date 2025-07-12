@@ -85,7 +85,7 @@ const WalletTransfer = ({ navigation }) => {
 
   const validateAndOpenPinModal = () => {
     const transferAmount = parseFloat(amount);
-    if (!walletId || isNaN(transferAmount) || transferAmount <= 0) {
+    if (!walletId || isNaN(transferAmount) || transferAmount <= 500) {
       showErrorToast('ACTION_FAILED', 'Veuillez fournir un matricule valide et un montant supérieur à 0.');
       return;
     }
@@ -349,7 +349,7 @@ const WalletTransfer = ({ navigation }) => {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {/* 🔐 PIN Modal */}
+      {/*  PIN Modal */}
       <PinVerificationModal
         visible={showPinModal}
         onClose={() => {

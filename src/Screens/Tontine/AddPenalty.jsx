@@ -129,12 +129,18 @@ const confirmForm = async () => {
     navigation.goBack();
 
   } catch (error) {
-    console.error('AddPenalty error:', JSON.stringify(error, null, 2));
+  
+    const mainMessage = error?.data?.message || "Une erreur est survenue.";
+    const detailMessage =
+      error?.data?.data?.errors?.[0] || error?.error || "Veuillez réessayer.";
+
     Toast.show({
-      type: 'error',
-      text1: "Échec de l'enregistrement",
-      text2: error?.data?.message || 'Veuillez réessayer.',
+      type: "error",
+      text1: mainMessage,
+      text2: detailMessage,
+      position: "top",
     });
+  
   } finally {
     setLoading(false);
   }

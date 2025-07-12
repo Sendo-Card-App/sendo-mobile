@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Image, FlatList, Alert } from "react-native";
 import { useSelector, useDispatch } from 'react-redux';
-import { useSubmitKYCMutation, useSendSelfieMutation } from '../../services/Kyc/kycApi';
+import { useSubmitKYCMutation, useSendSelfieMutation, useUpdateProfileMutation } from '../../services/Kyc/kycApi';
 import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
 import { useNavigation } from '@react-navigation/native';
 import Toast from 'react-native-toast-message';
@@ -17,6 +17,8 @@ const KycResume = ({ navigation }) => {
   const dispatch = useDispatch();
   const [submitKYC] = useSubmitKYCMutation();
   const [sendSelfie] = useSendSelfieMutation(); 
+  const [updateProfile] = useUpdateProfileMutation();
+
   const { personalDetails, selfie, identityDocument, niuDocument, addressProof, submissionStatus } = useSelector(state => state.kyc);
   const isKYCComplete = useSelector(selectIsKYCComplete);
   const { t } = useTranslation();
@@ -28,8 +30,19 @@ const KycResume = ({ navigation }) => {
     { id: "1", name: t('kyc_resume.personal_details'), route: "PersonalDetail", 
       completed: !!personalDetails.profession && !!personalDetails.region && !!personalDetails.city && !!personalDetails.district },
     { id: "2", name: t('kyc_resume.selfie'), route: "KycSelfie", completed: !!selfie },
-    { id: "3", name: t('kyc_resume.id_document'), route: "IdentityCard", 
-      completed: !!identityDocument.front && (identityDocument.type !== 'cni' || !!identityDocument.back) },
+    {
+      id: "3",
+      name: t('kyc_resume.id_document'),
+      route: "IdentityCard",
+      completed:
+        !!identityDocument.front &&
+        (
+          identityDocument.type === 'passport' ||
+          (identityDocument.type === 'cni' && !!identityDocument.back) ||
+          (identityDocument.type === 'drivers_license' && !!identityDocument.back)
+        )
+    },
+
     { id: "4", name: t('kyc_resume.niu_document'), route: "NIU", completed: !!niuDocument },
     { id: "5", name: t('kyc_resume.address_proof'), route: "Addresse", completed: !!addressProof },
   ];
@@ -48,39 +61,12 @@ const KycResume = ({ navigation }) => {
     }
   };
 
-  const handleSubmit = async () => {
-  if (userProfile?.data?.isVerifiedKYC) {
-    Toast.show({
-      type: 'success',
-      text1: 'KYC Already Verified',
-      text2: 'Your KYC documents have already been verified',
-      visibilityTime: 3000,
-      onHide: () => {
-        Alert.alert(
-          'Create Virtual Card?',
-          'Would you like to create a virtual card now?',
-          [
-            {
-              text: 'Not Now',
-              style: 'cancel',
-              onPress: () => navigation.navigate('MainTabs'),
-            },
-            {
-              text: 'Create Virtual Card',
-              onPress: () => navigation.navigate('CreateVirtualCard'),
-            },
-          ]
-        );
-      }
-    });
-    return;
-  }
-
+const handleSubmit = async () => {
   if (!isKYCComplete) {
     Toast.show({
       type: 'error',
       text1: 'Incomplet',
-      text2: 'Veuillez compléter toutes les étapes avant de soumettre'
+      text2: 'Veuillez compléter toutes les étapes avant de soumettre',
     });
     return;
   }
@@ -88,88 +74,155 @@ const KycResume = ({ navigation }) => {
   dispatch(setSubmissionStatus('loading'));
 
   try {
-    const formData = new FormData();
+    const idDocumentNumber = personalDetails.cni;
 
-    formData.append('profession', personalDetails.profession);
-    formData.append('region', personalDetails.region);
-    formData.append('city', personalDetails.city);
-    formData.append('district', personalDetails.district);
-
-    // Upload selfie
-    if (selfie) {
-      const compressedSelfieUri = await compressImage(selfie.uri);
-      const selfieFormData = new FormData();
-      selfieFormData.append('picture', {
-        uri: compressedSelfieUri,
-        name: `picture_${Date.now()}.jpg`,
-        type: 'image/jpeg'
-      });
-      await sendSelfie(selfieFormData).unwrap();
-    }
-
-    // Upload documents
-    const addedDocuments = [];
-
-    const addDocumentWithType = async (doc, type) => {
-      if (!doc) return;
-      const compressedUri = await compressImage(doc.uri);
-      formData.append('documents', {
-        uri: compressedUri,
-        name: `${type.toLowerCase()}_${Date.now()}.jpg`,
-        type: 'image/jpeg'
-      });
-      formData.append('types', type);
-      addedDocuments.push(type);
+    const profilePayload = {
+      profession: personalDetails.profession,
+      region: personalDetails.region,
+      city: personalDetails.city,
+      district: personalDetails.district,
     };
 
-    await addDocumentWithType(identityDocument.front, 'ID_PROOF');
-    if (identityDocument.type === 'cni') {
-      await addDocumentWithType(identityDocument.back, 'ID_PROOF');
-    }
-    await addDocumentWithType(niuDocument, 'NIU_PROOF');
-    await addDocumentWithType(addressProof, 'ADDRESS_PROOF');
+    // Mise à jour du profil
+    await updateProfile(profilePayload).unwrap();
 
-    const uniqueTypes = [...new Set(addedDocuments)];
-    if (uniqueTypes.length < 4) {
+    const documents = [];
+    const files = [];
+
+    const addDocumentAndFile = async (doc, uri, index) => {
+      documents.push(doc);
+
+      const compressedUri = await compressImage(uri);
+      const name = `file_${index + 1}.jpg`;
+
+      files.push({
+        uri: compressedUri,
+        name,
+        type: 'image/jpeg',
+      });
+    };
+
+    let fileIndex = 0;
+
+    // 1. ID_PROOF — FRONT
+    if (identityDocument.front) {
+      await addDocumentAndFile(
+        { type: 'ID_PROOF', idDocumentNumber },
+        identityDocument.front.uri,
+        fileIndex++
+      );
+
+      if (identityDocument.type === 'passport') {
+        await addDocumentAndFile(
+          { type: 'ID_PROOF', idDocumentNumber },
+          identityDocument.front.uri,
+          fileIndex++
+        );
+      }
+    }
+
+    // Ajoute le verso si CNI ou permis
+    if (
+      (identityDocument.type === 'cni' || identityDocument.type === 'drivers_license') &&
+      identityDocument.back
+    ) {
+      await addDocumentAndFile(
+        { type: 'ID_PROOF', idDocumentNumber },
+        identityDocument.back.uri,
+        fileIndex++
+      );
+    }
+
+    // 3. NIU_PROOF
+    if (niuDocument?.document) {
+      await addDocumentAndFile(
+        { type: 'NIU_PROOF', taxIdNumber: niuDocument.taxIdNumber },
+        niuDocument.document.uri,
+        fileIndex++
+      );
+    }
+
+    // 4. ADDRESS_PROOF
+    if (addressProof) {
+      await addDocumentAndFile(
+        { type: 'ADDRESS_PROOF' },
+        addressProof.uri,
+        fileIndex++
+      );
+    }
+
+    // 5. SELFIE
+    if (selfie) {
+      await addDocumentAndFile(
+        { type: 'SELFIE' },
+        selfie.uri,
+        fileIndex++
+      );
+    }
+
+    // === Logs JSON pour debug ===
+    console.log('Documents to submit:', JSON.stringify(documents, null, 2));
+    console.log('Files to upload:', files);
+
+    // Validation stricte
+    if (documents.length !== 5 || files.length !== 5) {
       Toast.show({
         type: 'error',
-        text1: 'Documents manquants',
-        text2: 'Veuillez télécharger les 4 documents requis avant de soumettre.',
-        visibilityTime: 4000
+        text1: 'Erreur de validation',
+        text2: `5 documents et 5 fichiers sont requis. Actuellement: ${documents.length} doc(s), ${files.length} fichier(s)`,
+        visibilityTime: 5000
       });
       dispatch(setSubmissionStatus('idle'));
       return;
     }
 
-    const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('Request timeout')), 30000)
+    // Préparation FormData
+    const formData = new FormData();
+    formData.append('documents', JSON.stringify(documents), {
+      contentType: 'application/json',
+      name: 'documents'
+    });
+
+    files.forEach((file) => {
+      formData.append('files', file);
+    });
+
+    // Log FormData ready 
+    console.log('FormData ready with 5 files and documents');
+
+    // Timeout fallback 3s
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Request timeout')), 3000)
     );
 
+    // Envoi avec timeout
     const response = await Promise.race([
       submitKYC(formData).unwrap(),
       timeoutPromise
     ]);
-
+   console.log('KYC submission response:', JSON.stringify(response, null, 2));
     if (response.status === 201) {
       navigation.navigate('Success', {
         message: 'Votre KYC a été soumis avec succès',
         nextScreen: 'MainTabs'
       });
     }
+
   } catch (error) {
-    console.error('KYC submission error:', error);
+    console.error('KYC submission error:', JSON.stringify(error, null, 2));
+
     let errorMessage = 'Échec de la soumission du KYC';
 
     if (error.message === 'Request timeout') {
-      errorMessage = "La requête a pris trop de temps. Veuillez vérifier votre connexion et réessayer.";
+      errorMessage = "La requête a pris trop de temps. Veuillez vérifier votre connexion.";
     } else if (error?.data?.message?.includes('Aucun fichier fourni')) {
       errorMessage = `Documents requis: ${error.data.data.required.mandatoryTypes.join(', ')}`;
     } else if (error?.data?.code) {
       const errorCodes = {
         'ERR_MISSING': 'Veuillez remplir tous les champs obligatoires',
-        'ERR_FORMAT': 'Le format de certaines données est incorrect',
+        'ERR_FORMAT': 'Format invalide dans les données',
         'ERR_UPLOAD': 'Échec du téléchargement des documents',
-        'ERR_TECH': 'Une erreur technique est survenue'
+        'ERR_TECH': 'Erreur technique interne'
       };
       errorMessage = errorCodes[error.data.code] || errorMessage;
     }
@@ -184,8 +237,6 @@ const KycResume = ({ navigation }) => {
     dispatch(setSubmissionStatus('idle'));
   }
 };
-
-
   const KycOption = ({ id, name, route, completed }) => (
     <TouchableOpacity
       className={`py-2 px-4 my-2 rounded-2xl flex-row items-center gap-3 ${completed ? 'bg-green-100' : 'bg-[#ededed]'}`}
@@ -214,8 +265,8 @@ const KycResume = ({ navigation }) => {
       </View>
 
       <View className="border-b border-dashed border-white flex-row justify-between py-4 mt-10 items-center mx-5 pt-5">
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <AntDesign name="arrowleft" size={24} color="white" />
+       <TouchableOpacity onPress={() => navigation.navigate("MainTabs")}>
+          <Ionicons name="arrow-back" size={24} color="white" />
         </TouchableOpacity>
         <TouchableOpacity onPress={() => navigation.openDrawer()} className="ml-auto">
           <Ionicons name="menu-outline" size={24} color="white" />

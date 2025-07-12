@@ -66,6 +66,7 @@ import Receipt from "./src/Screens/Transfert/Receipt";
 import Account from "./src/Screens/Profile/Account";
 import Settings from "./src/Screens/Setting/Settings";
 import CreateVirtualCard from "./src/Screens/VirtualCard/CreateVirtualCard";
+import OnboardingCard from "./src/Screens/VirtualCard/OnboardingCard";
 import VerifyIdentity from "./src/Screens/VirtualCard/VerifyIdentity";
 import KYCValidation from "./src/Screens/VirtualCard/KYCValidation";
 import ManageVirtualCard from "./src/Screens/VirtualCard/ManageVirtualCard";
@@ -163,37 +164,52 @@ function CustomTabBar({ state, descriptors, navigation }) {
           }
         };
 
-        // Custom Floating Center Tab (Beneficiary)
+        // Custom Floating Center Tab (Send Money)
         if (route.name === 'BeneficiaryTab') {
           return (
             <TouchableOpacity
               key={route.key}
               onPress={onPress}
               style={styles.centerButton}
+              activeOpacity={0.8}
             >
-             <FontAwesome5 name="dollar-sign" size={30} color="#fff" />
+              <View style={styles.centerButtonInner}>
+                <FontAwesome5 
+                  name="money-bill-wave" 
+                  size={24} 
+                  color="#fff" 
+                />
+                {isFocused && (
+                  <View style={styles.activeIndicator} />
+                )}
+              </View>
             </TouchableOpacity>
           );
         }
 
         // Default tab icon logic
         let iconName;
+        let label;
         switch (route.name) {
           case 'HomeTab':
             iconName = isFocused ? 'home' : 'home-outline';
+            label = t('tabs.home');
             break;
           case 'TransferTab':
             iconName = isFocused ? 'swap-horizontal' : 'swap-horizontal-outline';
+            label = t('tabs.history');
             break;
           case 'ManageVirtualCardTab':
             iconName = isFocused ? 'card' : 'card-outline';
+            label = t('tabs.cards');
             break;
-          
           case 'SettingsTab':
             iconName = isFocused ? 'settings' : 'settings-outline';
+            label = t('tabs.settings');
             break;
           default:
             iconName = 'home-outline';
+            label = '';
         }
 
         return (
@@ -205,22 +221,36 @@ function CustomTabBar({ state, descriptors, navigation }) {
             testID={options.tabBarTestID}
             onPress={onPress}
             style={styles.tabButton}
+            activeOpacity={0.7}
           >
-            <Ionicons 
-              name={iconName} 
-              size={24} 
-              color={isFocused ? Colors.primary : Colors.text} 
-            />
-            <Text style={[styles.tabLabel, { color: isFocused ? Colors.primary : Colors.text }]}>
-              {options.title || t(`tabs.${route.name.toLowerCase().replace('tab', '')}`)}
-            </Text>
+            <View style={styles.tabButtonContent}>
+              <Ionicons 
+                name={iconName} 
+                size={24} 
+                color={isFocused ? Colors.primary : Colors.text} 
+              />
+              <Text 
+                style={[
+                  styles.tabLabel, 
+                  { 
+                    color: isFocused ? Colors.primary : Colors.text,
+                    fontFamily: isFocused ? 'Font-Bold' : 'Font-Regular'
+                  }
+                ]}
+                numberOfLines={1}
+              >
+                {label}
+              </Text>
+              {isFocused && (
+                <View style={styles.activeIndicator} />
+              )}
+            </View>
           </TouchableOpacity>
         );
       })}
     </View>
   );
 }
-
 
 // Tab Navigator
 function MainTabs() {
@@ -236,37 +266,53 @@ function MainTabs() {
       <Tab.Screen 
         name="HomeTab" 
         component={Home} 
-        options={{ title: t('tabs.home') }}
+        options={{ 
+          title: t('tabs.home'),
+          unmountOnBlur: true 
+        }}
       />
       
-       <Tab.Screen 
+      <Tab.Screen 
         name="TransferTab"
         component={History} 
-        options={{ title: t('tabs.history') }}
+        options={{ 
+          title: t('tabs.history'),
+          unmountOnBlur: true 
+        }}
       />
-      {/* Center Action Button (Green Floating) */}
+      
+      {/* Center Action Button */}
       <Tab.Screen 
         name="BeneficiaryTab" 
         component={BeneficiaryScreen} 
-        options={{ title: '' }} // No text under icon
+        options={{ 
+          title: '',
+          unmountOnBlur: true 
+        }}
       />
 
-     <Tab.Screen 
+      <Tab.Screen 
         name="ManageVirtualCardTab" 
         component={ManageVirtualCard} 
-        options={{ title: t('tabs.cards') }}
+        options={{ 
+          title: t('tabs.cards'),
+          unmountOnBlur: true 
+        }}
       />
+      
       <Tab.Screen 
         name="SettingsTab" 
         component={Settings} 
-        options={{ title: t('tabs.settings') }}
+        options={{ 
+          title: t('tabs.settings'),
+          unmountOnBlur: true 
+        }}
       />
     </Tab.Navigator>
-
   );
 }
 
-// Stack Navigator for auth screens
+// Stack Navigator for auth Screens
 function AuthStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -318,24 +364,24 @@ function MainStack() {
       <Stack.Screen 
         name="Account" 
         component={Account} 
-        options={{ headerTitle: t('screens.account') }} 
+        options={{ headerTitle: t('Screens.account') }} 
       />
       <Stack.Screen 
         name="NiuRequest" 
         component={NiuRequest} 
-        options={{ headerTitle: t('screens.niuRequest') }} 
+        options={{ headerTitle: t('Screens.niuRequest') }} 
       />
       <Stack.Screen name="BeneficiaryScreen" component={BeneficiaryScreen} options={{ headerShown: false }} />
       <Stack.Screen name="BeneficiarySelection" component={BeneficiarySelection} options={{ headerShown: false }} />
       <Stack.Screen 
         name="AboutUs" 
         component={AboutUs} 
-        options={{ headerTitle: t('screens.aboutUs') }} 
+        options={{ headerTitle: t('Screens.aboutUs') }} 
       />
       <Stack.Screen 
         name="ChangePassword" 
         component={ChangePassword} 
-        options={{ headerTitle: t('screens.changePassword') }} 
+        options={{ headerTitle: t('Screens.changePassword') }} 
       />
       <Stack.Screen name="BeneficiaryDetails" component={BeneficiaryDetails} options={{ headerShown: false }} />
       <Stack.Screen name="PaymentMethod" component={PaymentMethod} options={{ headerShown: false }} />
@@ -345,34 +391,35 @@ function MainStack() {
      <Stack.Screen 
         name="AddBeneficiary" 
         component={AddBeneficiary} 
-        options={{ headerTitle: t('screens.addBeneficiary') }} 
+        options={{ headerTitle: t('Screens.addBeneficiary') }} 
       />
       <Stack.Screen 
         name="SelectMethod" 
         component={SelectMethod} 
-        options={{ headerTitle: t('screens.selectMethod') }} 
+        options={{ headerTitle: t('Screens.selectMethod') }} 
       />
-      <Stack.Screen name="BankDepositRecharge" component={BankDepositRecharge} options={{ headerTitle: t('screens.bankDeposit') }}/>
-      <Stack.Screen name="PaymentSimulator" component={PaymentSimulator} options={{ headerTitle: t('screens.paymentSimulator') }} />
-      <Stack.Screen name="MethodType" component={MethodType} options={{ headerTitle: t('screens.selectMethod') }} />
-      <Stack.Screen name="WalletTransfer" component={WalletTransfer} options={{ headerTitle: t('screens.walletTransfer') }} />
-      <Stack.Screen name="AddContact" component={AddContact} options={{ headerTitle: t('screens.addContact') }} />
-      <Stack.Screen name="AddFavorite" component={AddFavorite} options={{ headerTitle: t('screens.addFavorite') }} />
+      <Stack.Screen name="BankDepositRecharge" component={BankDepositRecharge} options={{ headerTitle: t('Screens.bankDeposit') }}/>
+      <Stack.Screen name="PaymentSimulator" component={PaymentSimulator} options={{ headerTitle: t('Screens.paymentSimulator') }} />
+      <Stack.Screen name="MethodType" component={MethodType} options={{ headerTitle: t('Screens.selectMethod') }} />
+      <Stack.Screen name="WalletTransfer" component={WalletTransfer} options={{ headerTitle: t('Screens.walletTransfer') }} />
+      <Stack.Screen name="AddContact" component={AddContact} options={{ headerTitle: t('Screens.addContact') }} />
+      <Stack.Screen name="AddFavorite" component={AddFavorite} options={{ headerTitle: t('Screens.addFavorite') }} />
       <Stack.Screen name="WalletRecharge" component={WalletRecharge} options={{ headerShown: false }} />
       <Stack.Screen name="WalletWithdrawal" component={WalletWithdrawal} options={{ headerShown: false }} />
       <Stack.Screen name="WalletConfirm" component={WalletConfirm} options={{ headerShown: false }} />
       <Stack.Screen name="WalletOk" component={WalletOk} options={{ headerShown: false }} />
        <Stack.Screen name="ServiceScreen" component={ServiceScreen} options={{ headerShown: false }} />
+       <Stack.Screen name="OnboardingCard" component={OnboardingCard} options={{ headerShown: false }} />
       <Stack.Screen name="Confirme" component={Confirme} options={{ headerShown: false }} />
       <Stack.Screen name="Success" component={Success} options={{ headerShown: false }} />
-      <Stack.Screen name="Support" component={Support} options={{ headerTitle: t('screens.support') }}/>
-      <Stack.Screen name="ChatScreen" component={ChatScreen} options={{ headerTitle: t('screens.chat') }} />
-      <Stack.Screen name="Settings" component={Settings} options={{ headerTitle: t('screens.setting') }}/>
-      <Stack.Screen name="Payment" component={Payment} options={{ headerTitle: t('screens.payment') }} />
-      <Stack.Screen name="History" component={History} options={{ headerTitle: t('screens.history') }} />
-      <Stack.Screen name="Receipt" component={Receipt} options={{ headerTitle: t('screens.receipt') }}/>
-      <Stack.Screen name="NotificationComponent" component={NotificationComponent} options={{ headerTitle: t('screens.notification') }} />
-      <Stack.Screen name="CreateVirtualCard" component={CreateVirtualCard}options={{ headerTitle: t('screens.createCard') }} />
+      <Stack.Screen name="Support" component={Support} options={{ headerTitle: t('Screens.support') }}/>
+      <Stack.Screen name="ChatScreen" component={ChatScreen} options={{ headerTitle: t('Screens.chat') }} />
+      <Stack.Screen name="Settings" component={Settings} options={{ headerTitle: t('Screens.setting') }}/>
+      <Stack.Screen name="Payment" component={Payment} options={{ headerTitle: t('Screens.payment') }} />
+      <Stack.Screen name="History" component={History} options={{ headerTitle: t('Screens.history') }} />
+      <Stack.Screen name="Receipt" component={Receipt} options={{ headerTitle: t('Screens.receipt') }}/>
+      <Stack.Screen name="NotificationComponent" component={NotificationComponent} options={{ headerTitle: t('Screens.notification') }} />
+      <Stack.Screen name="CreateVirtualCard" component={CreateVirtualCard}options={{ headerTitle: t('Screens.createCard') }} />
       <Stack.Screen name="VerifyIdentity" component={VerifyIdentity} options={{ headerShown: false }} />
       <Stack.Screen name="ManageVirtualCard" component={ManageVirtualCard} options={{ headerShown: false }} />
       <Stack.Screen name="KycResume" component={KycResume} options={{ headerShown: false }} />
@@ -472,69 +519,92 @@ function DrawerNavigator() {
 }
 
 export default function App() {
- 
-  // Register for push notifications once on mount
   useEffect(() => {
     registerForPushNotificationsAsync().then((token) => {
       console.log("Expo Push Token:", token);
-      // TODO: send token to your backend here if needed
     });
   }, []);
- return (
+
+  return (
     <Provider store={store}>
       <NetworkProvider>
         <ThemeProvider>
-          <NavigationContainer>
-            <DrawerNavigator />
-            <Toast />
-          </NavigationContainer>
+          <>
+            <NavigationContainer>
+              <DrawerNavigator />
+            </NavigationContainer>
+            <Toast /> 
+          </>
         </ThemeProvider>
       </NetworkProvider>
     </Provider>
   );
 }
+
 const styles = StyleSheet.create({
   tabContainer: {
     flexDirection: 'row',
-    height: 65,
-    borderTopWidth: 1,
-    borderTopColor: Colors.borderTop,
+    height: 80,
+    borderTopWidth: 0.5,
+    borderTopColor: Colors.border,
     justifyContent: 'space-around',
     alignItems: 'center',
     backgroundColor: Colors.background2,
     shadowColor: Colors.shadow,
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowRadius: 6,
     elevation: 5,
+    paddingBottom: 10,
   },
-    centerButton: {
+  centerButton: {
     position: 'absolute',
-    bottom: 35,
+    bottom: 45,
     alignSelf: 'center',
-    backgroundColor:  Colors.primary,
+    backgroundColor: Colors.primary,
     width: 60,
     height: 60,
     borderRadius: 30,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
+    shadowColor: Colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 5,
+    shadowRadius: 6,
+    elevation: 8,
     zIndex: 10,
+    transform: [{ translateY: -10 }]
+  },
+  centerButtonInner: {
+    width: '50',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 30,
   },
   tabButton: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-     paddingVertical: 8,
-    borderRadius: 16,
+    paddingVertical: 8,
+    height: '100%',
+  },
+  tabButtonContent: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: '100%',
   },
   tabLabel: {
     fontSize: 12,
-    marginTop: 5,
-    color: Colors.text,
+    marginTop: 6,
+    maxWidth: '80%',
+  },
+  activeIndicator: {
+    position: 'absolute',
+    bottom: -12,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: Colors.primary,
   },
 });

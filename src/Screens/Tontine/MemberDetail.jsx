@@ -79,7 +79,7 @@ console.log("Penalties response:", penaltiesResponse);
 
       {/* HEADER */}
       <View className="bg-[#0C121D] pb-1">
-        <View className="flex-row mt-20 items-center justify-between px-4 pt-1">
+        <View className="flex-row mt-1 items-center justify-between px-4 pt-1">
           <TouchableOpacity onPress={() => navigation.goBack()}>
             <Ionicons name="arrow-back" size={24} color="#fff" />
           </TouchableOpacity>
@@ -91,7 +91,7 @@ console.log("Penalties response:", penaltiesResponse);
         <View className="absolute top-[-48] left-0 right-0 items-center">
           <Image
             source={TopLogo}
-            className="h-[150px] w-[160px]"
+            className="h-[100px] w-[160px]"
             resizeMode="contain"
           />
         </View>

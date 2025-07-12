@@ -65,7 +65,7 @@ const ForgetPassword = () => {
       </TouchableOpacity>
 
       <Image
-        source={require("../../Images/LogoSendo.png")}
+        source={require("../../Images/logo2.png")}
         className="mt-10 mb-10 w-28 h-28"
       />
 

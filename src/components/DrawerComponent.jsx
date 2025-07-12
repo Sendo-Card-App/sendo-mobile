@@ -206,47 +206,48 @@ const DrawerComponent = ({ navigation }) => {
       </SafeAreaView>
     );
   }
-  const shareReferralCode = () => {
-    if (!userProfile?.data?.referralCode) {
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: 'No referral code available',
-      });
-      return;
-    }
-  
-    // Customize these values according to your app
-    const appName = t('Sendo'); 
-    const appStoreLink = 'https://apps.apple.com/...'; 
-    const playStoreLink = 'https://play.google.com/...'; 
-    
-    const message = `Hey! Join me on ${appName} using my referral code ${userProfile.data.referralCode} and we both get a bonus!
-  
-  Download the app here:
-  iOS: ${appStoreLink}
-  Android: ${playStoreLink}
-  
-  Use my code when signing up!`;
-  
-    Share.share({
-      message: message,
-      title: `Join ${appName} with my referral code`,
-    })
+ const shareReferralCode = () => {
+  if (!userProfile?.data?.referralCode) {
+    Toast.show({
+      type: 'error',
+      text1: 'Erreur',
+      text2: 'Aucun code de parrainage disponible',
+    });
+    return;
+  }
+
+  const appName = 'Sendo'; 
+  const appStoreLink = 'https://apps.apple.com/...';
+  const playStoreLink = 'https://play.google.com/...';
+  const referralCode = userProfile.data.referralCode;
+
+  const message = `Salut ! Rejoins-moi sur ${appName} en utilisant mon code de parrainage ${referralCode} et nous recevrons tous les deux un bonus !
+
+Télécharge l'application ici :
+iOS : ${appStoreLink}
+Android : ${playStoreLink}
+
+Utilise mon code lors de ton inscription !`;
+
+  const title = `Rejoins ${appName} avec mon code de parrainage`;
+
+  Share.share({
+    message,
+    title,
+  })
     .then(result => {
       if (result.action === Share.sharedAction) {
-        // Track successful shares if needed
-        //console.log('Shared successfully');
+        // Partage réussi
       }
     })
     .catch(error => {
       Toast.show({
         type: 'error',
-        text1: 'Error',
-        text2: error.message || 'Failed to share referral code',
+        text1: 'Erreur',
+        text2: error.message || 'Échec du partage du code de parrainage',
       });
     });
-  };
+};
   
 
   return (
@@ -267,7 +268,7 @@ const DrawerComponent = ({ navigation }) => {
     </View>
   ) : (
     <>
-      <View className="flex-row justify-between items-center mt-10">
+      <View className="flex-row justify-between items-center mt-4">
         <Text className="text-white font-bold text-xl">
         </Text>
         <TouchableOpacity onPress={() => navigation.closeDrawer()}>

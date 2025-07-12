@@ -65,9 +65,9 @@ const HistoryCard = ({ transaction, user, onPress }) => {
         return require('../../Images/transaction.png'); // fallback générique
       }
     case 'BANK_TRANSFER':
-      return require('../../Images/RoyalBank.png');
+      return require('../../Images/uba.png');
     default:
-      return require('../../Images/transaction.png');
+      return require('../../Images/tontine.jpeg');
   }
 };
 
@@ -457,12 +457,12 @@ const History = () => {
     return (
       <View className="flex-1 justify-center items-center">
         <Text className="text-red-500">{t('history1.errorLoading')}</Text>
-        <TouchableOpacity 
+        {/* <TouchableOpacity 
           className="mt-4 px-4 py-2 bg-green-500 rounded"
           onPress={refetch}
         >
           <Text className="text-white">{t('common3.retry')}</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View>
     );
   }

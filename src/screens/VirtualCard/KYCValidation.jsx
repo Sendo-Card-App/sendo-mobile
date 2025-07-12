@@ -7,6 +7,7 @@ import {
   Image,
   Modal,
 } from "react-native";
+import Loader from "../../components/Loader";
 import { Ionicons, Feather } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useTranslation } from "react-i18next"; // ← Add this line
@@ -22,6 +23,7 @@ const KYCValidation = () => {
   const route = useRoute();
   const { documents } = route.params;
   const { t } = useTranslation(); // ← Hook for translations
+  const [loading, setLoading] = useState(false);
 
   const [visibleImages, setVisibleImages] = useState(null);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -117,15 +119,6 @@ const KYCValidation = () => {
 
               {/* Icons */}
               <View className="flex-row gap-2">
-                <TouchableOpacity
-                  onPress={() => {
-                    // handle upload/edit here
-                  }}
-                  className="p-2 bg-green-500 rounded-full"
-                >
-                  <Feather name="edit-3" size={16} color="white" />
-                </TouchableOpacity>
-
                 {item.urls.length > 0 && (
                   <TouchableOpacity
                     onPress={() => {
@@ -163,16 +156,38 @@ const KYCValidation = () => {
           }}
         >
           {visibleImages && visibleImages[currentIndex] && (
-            <Image
-              source={{ uri: visibleImages[currentIndex] }}
-              style={{
-                width: "100%",
-                height: "70%",
-                resizeMode: "contain",
-                borderRadius: 10,
-              }}
-            />
+            <>
+             {loading && (
+                <View style={{ 
+                  position: 'absolute', 
+                  top: 0, 
+                  left: 0, 
+                  right: 0, 
+                  bottom: 0, 
+                  justifyContent: 'center', 
+                  alignItems: 'center',
+                  zIndex: 10, // ensures it's above the image
+                  backgroundColor: 'rgba(0,0,0,0.6)', // optional dim
+                }}>
+                  <Loader size="large" color="#fff" />
+                </View>
+              )}
+
+              <Image
+                source={{ uri: visibleImages[currentIndex] }}
+                style={{
+                  width: "100%",
+                  height: "70%",
+                  resizeMode: "contain",
+                  borderRadius: 10,
+                  opacity: loading ? 0 : 1,
+                }}
+                onLoadStart={() => setLoading(true)}
+                onLoadEnd={() => setLoading(false)}
+              />
+            </>
           )}
+
 
           {/* Controls */}
           <View className="flex-row justify-between items-center mt-4 w-full px-10">

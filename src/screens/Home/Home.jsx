@@ -37,7 +37,7 @@ const HomeScreen = () => {
   const navigation = useNavigation();
     const { t } = useTranslation();
     const [showBalance, setShowBalance] = useState(false);
-    const [hasAcceptedTerms, setHasAcceptedTerms] = useState(false);
+    const [hasAcceptedTerms, setHasAcceptedTerms] = useState(null);
     const flatListRef = useRef(null);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [createToken] = useCreateTokenMutation();
@@ -58,8 +58,9 @@ const HomeScreen = () => {
         },
         { skip: !userId }
       );
+       //console.log('Liste des PUB:', JSON.stringify(history, null, 2));
      const { data: pubs, isLoading: isLoadingPubs, error: pubsError } = useGetPubsQuery();
-      //console.log('Liste des PUB:', JSON.stringify(pubs, null, 2));
+      //console.log('Liste des PUB:', JSON.stringify(history, null, 2));
 
     // Fetch balance and enable refetch
     const {
@@ -69,7 +70,7 @@ const HomeScreen = () => {
       isError: isBalanceError,
       refetch: refetchBalance,
     } = useGetBalanceQuery(userId, { skip: !userId });
-  
+    //console.log(balanceData, 'Balance Data:', JSON.stringify(balanceData, null, 2));
     const isLoading = isProfileLoading || isBalanceLoading;
     const { data: notificationsResponse, isLoadingNotification } = useGetNotificationsQuery({ userId });
       const { data: serverTokenData } = useGetTokenMutation(userId, {
@@ -81,43 +82,43 @@ const HomeScreen = () => {
   // Count unread notifications where `readed` is false
   const unreadCount = notifications.filter(notification => !notification.readed).length;
 
-   useEffect(() => {
+useEffect(() => {
   const checkAndUpdateToken = async () => {
     if (!userId) {
-      console.log(' No userId provided, skipping token update.');
+      console.log('No userId provided, skipping token update.');
       return;
     }
 
-    try {
-      const localToken = await getStoredPushToken();
-      const serverToken = serverTokenData?.data?.token;
+    while (true) {
+      try {
+        const localToken = await getStoredPushToken();
+        const serverToken = serverTokenData?.data?.token;
 
-      //console.log(' Local token from device:', localToken);
-     // console.log(' Token from server:', serverToken);
+        if (!localToken) {
+          console.log('No local push token available, cannot proceed.');
+          return;
+        }
 
-      if (!localToken) {
-        console.log(' No local push token available, cannot proceed.');
-        return;
+        if (localToken === serverToken) {
+          console.log('Push token already up to date.');
+          return;
+        }
+
+        const payload = { userId, token: localToken };
+        const response = await createToken(payload).unwrap();
+
+        console.log('Token successfully updated on backend:', response);
+        break; 
+      } catch (error) {
+        console.log('Error updating push token, retrying in 3s...', JSON.stringify(error, null, 2));
+        await new Promise(resolve => setTimeout(resolve, 3000));
       }
-
-      if (localToken === serverToken) {
-       
-        return;
-      }
-
-      const payload = { userId, token: localToken };
-     
-
-      const response = await createToken(payload).unwrap();
-      console.log(' Token successfully updated on backend:', response);
-
-    } catch (error) {
-      console.log(' Error updating push token:', JSON.stringify(error, null, 2));
     }
   };
 
   checkAndUpdateToken();
 }, [userId, serverTokenData]);
+
 
 
     // Refetch profile and balance when screen is focused
@@ -133,12 +134,24 @@ const HomeScreen = () => {
 
     
     useEffect(() => {
-      const checkTerms = async () => {
-        const value = await AsyncStorage.getItem("hasAcceptedTerms");
-        setHasAcceptedTerms(value === "true");
-      };
-      checkTerms();
-    }, []);
+    const checkTerms = async () => {
+      try {
+        const value = await AsyncStorage.getItem('hasAcceptedTerms');
+
+        if (value === null) {
+          // First time launch: set to false
+          await AsyncStorage.setItem('hasAcceptedTerms', 'false');
+          setHasAcceptedTerms(false);
+        } else {
+          setHasAcceptedTerms(value === 'true');
+        }
+      } catch (error) {
+        console.error('Error checking terms acceptance:', error);
+      }
+    };
+
+    checkTerms();
+  }, []);
      
     //    useEffect(() => {
     //   const backAction = () => {
@@ -189,14 +202,14 @@ const HomeScreen = () => {
     }, [balanceError]);
     
     const getStatusColor = (status) => {
-  switch (status?.toUpperCase()) {
-    case 'COMPLETED': return 'text-green-600';
-    case 'FAILED': return 'text-red-600';
-    case 'PENDING': return 'text-yellow-600';
-    case 'BLOCKED': return 'text-orange-600';
-    default: return 'text-gray-600';
-  }
-};
+      switch (status?.toUpperCase()) {
+        case 'COMPLETED': return 'text-green-600';
+        case 'FAILED': return 'text-red-600';
+        case 'PENDING': return 'text-yellow-600';
+        case 'BLOCKED': return 'text-orange-600';
+        default: return 'text-gray-600';
+      }
+    };
 
 const getTypeLabel = (type, t) => {
   switch (type?.toUpperCase()) {
@@ -218,13 +231,15 @@ const getMethodIcon = (transaction) => {
         return require('../../Images/om.png');
       } else if (transaction.provider === 'MTNMOMO') {
         return require('../../Images/mtn.png');
+      }else if (transaction.provider === 'WALLET_PAYMENT') {
+        return require('../../Images/tontine.jpeg');
       } else {
         return require('../../Images/transaction.png');
       }
     case 'BANK_TRANSFER':
-      return require('../../Images/RoyalBank.png');
+      return require('../../Images/uba.png');
     default:
-      return require('../../Images/transaction.png');
+      return require('../../Images/tontine.jpeg');
   }
 };
 
@@ -303,13 +318,13 @@ const getMethodIcon = (transaction) => {
             <View className="flex-row justify-between items-center my-2">
               <Text className="text-black text-xl">{t("home.balance")}</Text>
              <Text className="text-black text-4xl font-bold">
-                {isBalanceLoading ? (
-                  <Loader size="small" color="black" />
-                ) : showBalance ? (
-                  `${(balanceData?.data.balance || 0).toLocaleString('en-US')} ${balanceData?.data.currency}`
-                ) : (
-                  '****'
-                )}
+               {isBalanceLoading ? (
+                    <Loader size="small" color="black" />
+                  ) : showBalance ? (
+                    `${(balanceData?.data?.balance ?? 0).toFixed(2)} ${balanceData?.data?.currency ?? ''}`
+                  ) : (
+                    '****'
+                  )}
               </Text>
 
             </View>
@@ -465,6 +480,9 @@ const getMethodIcon = (transaction) => {
                 const typeLabel = getTypeLabel(item.type, t);
                 const iconSource = getMethodIcon(item);
 
+                const isPdfLink = typeof item.description === 'string' && item.description.endsWith('.pdf');
+                const readableDescription = isPdfLink ? t('home.viewDocument') : (item.description || typeLabel);
+
                 return (
                   <TouchableOpacity
                     key={index}
@@ -476,16 +494,18 @@ const getMethodIcon = (transaction) => {
                   >
                     <Image source={iconSource} className="w-10 h-10 mr-3 rounded-full" resizeMode="contain" />
                     <View className="flex-1">
-                      <Text className="text-black font-semibold">{item.description || typeLabel}</Text>
-                      <Text className="text-black text-sm">{item.amount?.toLocaleString()} {item.currency}</Text>
+                      <Text className="text-black font-semibold">
+                        {readableDescription}
+                      </Text>
+                      <Text className="text-black text-sm">
+                        {item.amount?.toLocaleString()} {item.currency}
+                      </Text>
                     </View>
                     <Text className={`text-xs font-semibold ${statusColor}`}>{item.status}</Text>
                   </TouchableOpacity>
-
                 );
               })}
             </ScrollView>
-
           )}
 
 

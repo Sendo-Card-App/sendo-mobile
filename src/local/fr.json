@@ -100,10 +100,19 @@
       "title": "Créer un compte",
       "title1": "Mon Compte",
        "firstName": "Prénom",
+       "dateOfBirthPlaceholder": "Sélectionnez votre date de naissance",
+       "DOB": "Date de naissance",
+  "PD": "Informations personnelles",
+  "pob": "Lieu de naissance",
+  "dateOfBirth": "Sélectionnez votre date de naissance",
+  "pfbPlaceholder": "Entrez votre lieu de naissance",
     "firstNamePlaceholder": "Entrez votre prénom",
     "lastName": "Nom",
     "lastNamePlaceholder": "Entrez votre nom",
     "email": "Email",
+     "next": "Suivant",
+      "back": "Retour",
+       "infos": "Informations de sécurité",
     "emailPlaceholder": "Entrez votre email",
     "phone": "Téléphone",
     "phonePlaceholder": "Numéro de téléphone",
@@ -241,19 +250,6 @@
   "description": "Explorez nos services sans créer de compte. Vous pourrez vous inscrire plus tard.",
   "referral_placeholder": "Code de parrainage (optionnel)",
   "continue_as_guest": "Continuer en tant qu'invité"
-},
-"referral": {
-  "title": "Inviter des Amis",
-  "description": "Partagez votre code de parrainage avec des amis et vous recevrez tous les deux un bonus après leur premier transfert valide.",
-  "your_code": "Votre Code de Parrainage",
-  "bonus_amount": "Montant du Bonus",
-  "how_it_works": "Comment ça marche :",
-  "step1": "Partagez votre code unique avec des amis",
-  "step2": "Ils s'inscrivent en utilisant votre code",
-  "step3": "Vous recevez tous les deux un bonus après leur premier transfert",
-  "share_button": "Partager l'Invitation",
-  "link_copied": "Lien Copié !",
-  "share_message": "Rejoignez-moi sur Sendo ! Utilisez mon code de parrainage :"
 },
 "errors": {
   "invalid_referral": "Code de parrainage invalide",
@@ -406,7 +402,16 @@
       "removeDocument": "Retire le document",
     "securityNotice": "Ne partagez pas vos informations personnelles",
     "uploadDocumentButton": "Upload Document",
+     "taxIdLabel": "Numéro d’identification fiscale",
+    "taxIdPlaceholder": "Entrez votre numéro NIU",
+     "backToEdit": "Retour à la modification",
+      "documentPreview": "Aperçu du document",
+      "taxIdInvalid": "NIU invalide",
+      "taxIdValidationMessage": "Votre NIU doit contenir exactement 14 caractères alphanumériques.",
     "fileTooLarge": "Fichier trop volumineux",
+     "generalError": "Une erreur inattendue est survenue. Veuillez réessayer plus tard.",
+    "taxIdRequired": "Le numéro fiscal est requis",
+    "noDocumentSelected": "Veuillez sélectionner un document avant de continuer",
     "documentSizeLimit": "La taille maximale des documents est de 5MB",
     "imageSizeLimit": "La taille maximale des images est de 5MB",
     "error": "Erreur",
@@ -464,11 +469,13 @@
   "country": "Pays",
   "region": "Région",
   "city": "Ville",
+  "cni": "CNI",
   "district": "Quartier",
   "profession": "Profession",
   "enterCountry": "Entrez votre pays",
   "enterRegion": "Entrez votre région",
   "enterCity": "Entrez votre ville",
+   "enterCni": "Entrez votre numéro de CNI",
   "enterDistrict": "Entrez votre quartier",
   "enterProfession": "Entrez votre profession",
   "confidentialNotice": "Vos informations sont confidentielles et sécurisées.",
@@ -485,10 +492,10 @@
     "take_photo_back": "Prendre une photo du verso",
     "next_button": "SUIVANT",
     "privacy_notice": "Ne partagez pas vos informations personnelles",
-    "document_types": {
-      "CNI": "CNI",
-      "PASSPORT": "Passeport",
-      "DRIVING_LICENSE": "Permis"
+    "types": {
+    "cni": "Carte nationale",
+    "passport": "Passeport",
+    "drivers_license": "Permis de conduire"
     }
   },
   "verifyIdentity": {
@@ -509,7 +516,7 @@
     "connect_description": "Connectez votre compte bancaire pour commencer un transfert",
     "create_virtual": "CRÉER UNE CARTE VIRTUELLE",
     "manage_virtual": "GÉRER MA CARTE VIRTUELLE",
-    "get_visa": "OBTENIR UNE CARTE VISA",
+    "get_visa": "Vérification d’identité (KYC)",
     "bonus_balance": "Solde bonus",
     "referral_terms": "Vous recevrez 5.00 CAD et votre ami recevra 5,00 CAD lors de son premier transfert. Des exigences d'envoi minimales peuvent s'appliquer.",
     "terms_conditions": "Sous réserve de conditions.",
@@ -581,11 +588,16 @@
     "validateButton": "Valider",
     "privacyNotice": "Ne partagez pas vos informations personnelles..."
   },
-  "virtual_card": {
-    "card_price": "Prix de la carte:",
-    "total": "Total:",
-    "create_now": "CRÉER MAINTENANT"
-  },
+ "virtual_card": {
+  "enter_name": "Entrez votre nom complet",
+  "card_price": "Frais de création",
+  "total": "Total",
+  "create_now": "Créer maintenant",
+  "missing_name": "Veuillez saisir votre nom",
+  "request_success": "Demande envoyée avec succès",
+  "request_failed": "Échec de la demande",
+  "error_message": "Une erreur est survenue"
+},
   "account": {
     "title": "Mon Compte",
     "edit": "Modifier",
@@ -729,7 +741,7 @@
      "todayTransactions": "Transactions d'aujourd'hui",
     "noTransactionsToday": "Aucune transaction aujourd'hui",
     "loadingUser": "Chargement des historique de transaction......",
-    "errorLoading": "Erreur lors du chargement des transactions",
+    "errorLoading": "KYC non vérifié. Veuillez soumettre vos documents.",
     "transactions": "transactions",
     "page": "Page",
     "of": "sur",
@@ -750,6 +762,7 @@
     "transfer": "Transfert",
      "share": "Paiement demande partagé",
       "payment": "Paiement ",
+      "system": "Systeme ",
       "tontine": "Paiement tontine ",
        "fund": " Demande de fonds ",
       "wallet": "Transfert de portefeuille",
@@ -1371,6 +1384,7 @@
      "seeAll": "Voir tout",
      "services": "Services",
     "transfer": "Transfert D'argent",
+    "viewDocument": "Document de versement Bancaire",
     "recharge": "créditer mon compte",
     "virtualCard": "Carte virtuelle",
     "friendsShare": "Partage entre amis",
@@ -1418,6 +1432,12 @@
       "genericError": "Une erreur est survenue lors de la réinitialisation du mot de passe. Veuillez réessayer.",
       "updateError": "Échec de la mise à jour du mot de passe. Veuillez réessayer."
     }
+  },
+  "referral": {
+    "errorNoCode": "Aucun code de parrainage disponible",
+    "errorShareFailed": "Échec du partage du code de parrainage",
+    "title": "Rejoins {{appName}} avec mon code de parrainage",
+    "message": "Salut ! Rejoins-moi sur {{appName}} en utilisant mon code de parrainage {{code}} et nous recevrons tous les deux un bonus !\n\nTélécharge l'application ici :\niOS : {{iosLink}}\nAndroid : {{androidLink}}\n\nUtilise mon code lors de l'inscription !"
   }
 
     

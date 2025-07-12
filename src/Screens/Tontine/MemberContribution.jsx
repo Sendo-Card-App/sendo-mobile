@@ -45,8 +45,10 @@ const MemberContribution = () => {
   const [payPenalty, { Loading, isSuccess, isError }] = usePayPenaltyMutation();
   const [contribute, { isLoading }] = useContributeMutation();
 
+  const [selectedCotisationId, setSelectedCotisationId] = useState(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [loadingPayment, setLoadingPayment] = useState(false);
+
 
   const { data: userProfile } = useGetUserProfileQuery();
   const userId = userProfile?.data.id;
@@ -111,11 +113,11 @@ const MemberContribution = () => {
       }, [userId])
     );
 
-      //console.log("Full response:", JSON.stringify(allCotisations, null, 2));
+     
   const memberCotisations = validatedCotisations?.data?.filter(
     cotisation => cotisation.membre?.id === membreId
   ) || [];
-
+   //console.log("Full response:", JSON.stringify(memberCotisations, null, 2));
 
   const { data: cotisations } = useGetCotisationsQuery({
     tontineId,
@@ -124,76 +126,86 @@ const MemberContribution = () => {
   
   const cotisationId = validatedCotisations?.data?.[0]?.id;
 
-  const handlePay = async () => {
-  if (balance < montant) {
-    Toast.show({
-      type: 'error',
-      text1: 'Solde insuffisant',
-      text2: 'Veuillez recharger votre solde.',
-      position: 'top',
-    });
-    return;
-  }
-
-  const payload = { tontineId, membreId, cotisationId};
-     console.log(payload)
-  try {
-    await contribute(payload).unwrap();
-
-    const notificationContent = {
-      title: "Cotisation Réussie",
-      body: `Une cotisation de ${montant} FCFA a été effectuée.`,
-      type: "TONTINE_CONTRIBUTION_SUCCESS",
-    };
-
-    let pushToken = await getStoredPushToken();
-    if (!pushToken) {
-      pushToken = await registerForPushNotificationsAsync();
-    }
-
-    if (pushToken) {
-      await sendPushTokenToBackend(
-        pushToken,
-        notificationContent.title,
-        notificationContent.body,
-        notificationContent.type,
-        {
-          amount: montant,
-          tontineId,
-          membreId,
-          timestamp: new Date().toISOString(),
-        }
-      );
-    } else {
-      await sendPushNotification(notificationContent.title, notificationContent.body, {
-        data: {
-          type: notificationContent.type,
-          amount: montant,
-          tontineId,
-          membreId,
-        },
+  const handlePay = async (cotisationIdToPay) => {
+    if (balance < montant) {
+      Toast.show({
+        type: 'error',
+        text1: 'Solde insuffisant',
+        text2: 'Veuillez recharger votre solde.',
+        position: 'top',
       });
+      return;
     }
 
-    Toast.show({
-      type: 'success',
-      text1: 'Cotisation réussie',
-      text2: `Une cotisation de ${montant} FCFA a été effectuée.`,
-      position: 'top',
-    });
+    const payload = { tontineId, membreId, cotisationId: cotisationIdToPay };
+    console.log("Paiement payload:", payload);
 
-    navigation.navigate("SuccessSharing", {
-      transactionDetails: "Votre cotisation a été effectuée avec succès",
-    });
-  } catch (error) {
-    console.error("Erreur cotisation:", JSON.stringify(error, null, 2));
+    try {
+      setLoadingPayment(true);
+      await contribute(payload).unwrap();
+
+      const notificationContent = {
+        title: "Cotisation Réussie",
+        body: `Une cotisation de ${montant} FCFA a été effectuée.`,
+        type: "TONTINE_CONTRIBUTION_SUCCESS",
+      };
+
+      let pushToken = await getStoredPushToken();
+      if (!pushToken) {
+        pushToken = await registerForPushNotificationsAsync();
+      }
+
+      if (pushToken) {
+        await sendPushTokenToBackend(
+          pushToken,
+          notificationContent.title,
+          notificationContent.body,
+          notificationContent.type,
+          {
+            amount: montant,
+            tontineId,
+            membreId,
+            cotisationId: cotisationIdToPay,
+            timestamp: new Date().toISOString(),
+          }
+        );
+      } else {
+        await sendPushNotification(notificationContent.title, notificationContent.body, {
+          data: {
+            type: notificationContent.type,
+            amount: montant,
+            tontineId,
+            membreId,
+          },
+        });
+      }
+
+      Toast.show({
+        type: 'success',
+        text1: 'Cotisation réussie',
+        text2: `Une cotisation de ${montant} FCFA a été effectuée.`,
+        position: 'top',
+      });
+
+      navigation.navigate("SuccessSharing", {
+        transactionDetails: "Votre cotisation a été effectuée avec succès",
+      });
+    } catch (error) {
+      const mainMessage = error?.data?.message || "Une erreur est survenue.";
+      const detailMessage =
+        error?.data?.data?.errors?.[0] || error?.error || "Veuillez réessayer.";
+
       Toast.show({
         type: "error",
-        text1: "Error",
-        text2: error?.data?.message,
+        text1: mainMessage,
+        text2: detailMessage,
+        position: "top",
       });
-  }
-};
+    } finally {
+      setLoadingPayment(false);
+    }
+  };
+
 
   const handlePayPenalty = async (penalty) => {
     console.log('penalty:', penalty);
@@ -227,17 +239,19 @@ const MemberContribution = () => {
       });
       refetchPenalties();
     } catch (error) {
-      const message =
-        error?.data?.message ||
-        error?.error ||
-        "Une erreur est survenue lors du paiement.";
+
+      const mainMessage = error?.data?.message || "Une erreur est survenue.";
+      const detailMessage =
+        error?.data?.data?.errors?.[0] || error?.error || "Veuillez réessayer.";
 
       Toast.show({
-        type: 'error',
-        text1: 'Erreur',
-        text2: message,
+        type: "error",
+        text1: mainMessage,
+        text2: detailMessage,
+        position: "top",
       });
     }
+
   };
 
   const adminMember = tontine?.membres?.find((m) => m.role === "ADMIN");
@@ -305,40 +319,23 @@ const MemberContribution = () => {
         <View className="bg-[#F0FFF5] rounded-xl p-4 border border-gray-200 mb-4">
           <Text className="text-green-700 font-semibold text-base mb-3">{t('memberContribution.myContributions')}</Text>
           <Info label={t('memberContribution.currentPeriod')} value={`${montant.toLocaleString()} xaf`} />
-        </View>
-
-        <TouchableOpacity
-          disabled={isLoading}
-           onPress={() => setShowPaymentModal(true)}
-          className="bg-[#4ADE80] py-3 rounded-full flex-row justify-center items-center mb-4"
-        >
-          {isLoading ? (
-            <>
-              <Loader size="small" color="#fff" />
-              <Text className="text-white font-semibold text-base ml-2">{t('memberContribution.paymentProcessing')}</Text>
-            </>
-          ) : (
-            <>
-              <Text className="text-white font-semibold text-base mr-2">{t('memberContribution.pay')}</Text>
-              <Ionicons name="card-outline" size={20} color="#fff" />
-            </>
-          )}
-        </TouchableOpacity>
-         
-         {showPaymentModal && (
+        </View>   
+         {showPaymentModal && selectedCotisationId && (
             <Modal
               transparent
               animationType="fade"
               visible={showPaymentModal}
-              onRequestClose={() => setShowPaymentModal(false)}
+              onRequestClose={() => {
+                setShowPaymentModal(false);
+                setSelectedCotisationId(null);
+              }}
             >
               <View className="flex-1 justify-center items-center bg-black/60 px-6">
                 <View className="bg-white rounded-2xl p-6 w-full">
                   <Text className="text-black text-large font-bold mb-4 text-center">
                     {t("cotisations.confirmPayment")}
                   </Text>
-                  
-                  {/* Show payment breakdown */}
+
                   <View className="mb-4">
                     <View className="flex-row justify-between mb-1">
                       <Text className="text-gray-700">{t('cotisations.baseAmount')}:</Text>
@@ -363,7 +360,10 @@ const MemberContribution = () => {
 
                   <View className="flex-row justify-between mt-4 space-x-2">
                     <TouchableOpacity
-                      onPress={() => setShowPaymentModal(false)}
+                      onPress={() => {
+                        setShowPaymentModal(false);
+                        setSelectedCotisationId(null);
+                      }}
                       className="flex-1 bg-gray-200 px-4 py-3 rounded-lg items-center"
                     >
                       <Text className="text-gray-800 font-medium">
@@ -374,7 +374,8 @@ const MemberContribution = () => {
                     <TouchableOpacity
                       onPress={async () => {
                         setShowPaymentModal(false);
-                        await handlePay();    
+                        await handlePay(selectedCotisationId);
+                        setSelectedCotisationId(null);
                       }}
                       disabled={loadingPayment}
                       className="flex-1 bg-green-500 px-4 py-3 rounded-lg items-center"
@@ -392,6 +393,7 @@ const MemberContribution = () => {
               </View>
             </Modal>
           )}
+
         <View className="flex-row justify-around mb-3">
           {[
             t('memberContribution.tabs.contributions'),
@@ -423,15 +425,28 @@ const MemberContribution = () => {
                       {item.createdAt ? formatDate(item.createdAt) : 'Date inconnue'}
                     </Text>
                   </View>
+
                   <View className="flex-row items-center px-7">
-                    <Text className={`font-semibold ${
-                      item.statutPaiement === 'VALIDATED' ? 'text-green-600' : 'text-orange-500'
-                    }`}>
-                      {item.montant.toLocaleString()} xaf
-                    </Text>
-                    <Text className="text-xs text-gray-500 ml-4">
-                      {item.statutPaiement === 'VALIDATED' ? t('memberContribution.paid') : t('memberContribution.pending')}
-                    </Text>
+                    <View className="items-end justify-center">
+                      {item.statutPaiement === 'VALIDATED' ? (
+                        <>
+                          <Text className="text-green-600 font-semibold">
+                            {item.montant.toLocaleString()} xaf
+                          </Text>
+                          <Text className="text-xs text-gray-500">{t('memberContribution.paid')}</Text>
+                        </>
+                      ) : (
+                        <TouchableOpacity
+                          onPress={() => {
+                            setSelectedCotisationId(item.id);
+                            setShowPaymentModal(true);
+                          }}
+                          className="bg-green-500 px-4 py-2 rounded"
+                        >
+                          <Text className="text-white text-sm">{t('memberContribution.pay')}</Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
                   </View>
                 </View>
               ))
@@ -442,6 +457,7 @@ const MemberContribution = () => {
             )}
           </View>
         )}
+
 
         {activeTab === t('memberContribution.tabs.penalties') && (
           <View className="space-y-2 mb-6">

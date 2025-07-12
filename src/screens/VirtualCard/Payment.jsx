@@ -53,7 +53,7 @@ const Payment = () => {
       <View className="py-4 mb-4 gap-4 border-b border-dashed">
         <TouchableOpacity
           className="bg-[#7ddd7d] py-3 rounded-lg shadow-sm shadow-black"
-          onPress={() => navigation.navigate("CreateVirtualCard")}
+          onPress={() => navigation.navigate("OnboardingCard")}
         >
           <Text className="text-center text-lg font-bold">
             {t('payment2.create_virtual')}

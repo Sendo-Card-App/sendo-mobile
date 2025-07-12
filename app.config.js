@@ -9,13 +9,13 @@ module.exports = {
   expo: {
     name: "Sendo",
     slug: "sendo",
-    version: "1.0.1",
+    version: "1.0.4",
     orientation: "portrait",
-    icon: "./assets/icon.png", 
+    icon: "./assets/logo.png", 
     userInterfaceStyle: "light",
     newArchEnabled: true,
     splash: {
-      image: "./assets/splash.png",
+      image: "./assets/logo.png",
       resizeMode: "contain",
       backgroundColor: "#181e25"
     },
@@ -23,12 +23,14 @@ module.exports = {
       supportsTablet: true,
       bundleIdentifier: "com.sfe.sendo",
       infoPlist: {
-        ITSAppUsesNonExemptEncryption: false
+        ITSAppUsesNonExemptEncryption: false,
+         NSNotificationsUsageDescription: "This app uses notifications to inform you about updates."
       }
     },
     android: {
+       googleServicesFile: "./google-services.json",
       adaptiveIcon: {
-        foregroundImage: "./assets/icon.png", 
+        foregroundImage: "./assets/logo.png", 
         backgroundColor: "#181e25"
       },
       permissions: [
@@ -38,12 +40,13 @@ module.exports = {
         "android.permission.READ_CONTACTS",
         "android.permission.WRITE_CONTACTS"
       ],
-      package: "com.sendo"
+      package: "com.sfe.sendo"
     },
     web: {
       favicon: "./assets/favicon.png"
     },
     plugins: [
+       "expo-notifications",
       [
         "expo-camera",
         {
@@ -62,9 +65,9 @@ module.exports = {
     extra: {
       eas: {
         apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL,
-        projectId: "08a59933-10e3-45bc-b064-54b97ea7eca9"
+       "projectId": "f317890d-1389-4b9e-9ce8-e1ffa7fe866e"
       }
     },
-    owner: "sfesendo"
+    
   }
 };

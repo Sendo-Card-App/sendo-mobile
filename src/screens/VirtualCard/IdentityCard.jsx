@@ -54,7 +54,11 @@ const IdentityCard = ({ navigation }) => {
   };
 
   const isNextEnabled = identityDocument.front &&
-    (identityDocument.type !== IDENTITY_TYPES.CNI && identityDocument.type !== IDENTITY_TYPES.DRIVERS_LICENSE || identityDocument.back);
+    (
+      identityDocument.type === IDENTITY_TYPES.PASSPORT ||
+      (identityDocument.type === IDENTITY_TYPES.CNI && identityDocument.back) ||
+      (identityDocument.type === IDENTITY_TYPES.DRIVERS_LICENSE && identityDocument.back)
+    );
 
   return (
     <View className="bg-[#181e25] flex-1 pt-0 relative">
@@ -95,7 +99,7 @@ const IdentityCard = ({ navigation }) => {
                 onPress={() => handleDocumentTypeChange(type)}
               >
                 <Text className={identityDocument.type === type ? 'text-white' : 'text-gray-800'}>
-                  {type}
+                  {t(`identity_card.types.${type}`)}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -135,7 +139,7 @@ const IdentityCard = ({ navigation }) => {
             </TouchableOpacity>
           )}
 
-          {/* Back Side (for CNI and DRIVERS_LICENSE) */}
+          {/* Back Side (CNI & DRIVERS_LICENSE only) */}
           {(identityDocument.type === IDENTITY_TYPES.CNI || identityDocument.type === IDENTITY_TYPES.DRIVERS_LICENSE) && (
             <>
               <Text className="font-bold text-gray-800 mb-1">{t('identity_card.back_side')}</Text>
@@ -179,7 +183,9 @@ const IdentityCard = ({ navigation }) => {
             onPress={() => navigation.navigate("KycResume")}
             disabled={!isNextEnabled}
           >
-            <Text className="text-xl text-center font-bold">{t('identity_card.next_button')}</Text>
+            <Text className="text-xl text-center font-bold text-white">
+              {t('identity_card.next_button')}
+            </Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
