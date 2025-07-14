@@ -73,7 +73,7 @@ const WalletWithdrawal = () => {
     const trimmedPhone = phone.trim();
     const normalizedPhone = trimmedPhone.startsWith("+237")
       ? trimmedPhone
-      : trimmedPhone.startsWith("237")
+      : trimmedPhone.startsWith("+237")
       ? `+${trimmedPhone}`
       : `+237${trimmedPhone}`;
 
@@ -105,7 +105,7 @@ const WalletWithdrawal = () => {
         matriculeWallet: userWalletId,
       }).unwrap();
        console.log(response)
-      const trid = response?.data?.mobileMoney?.trid;
+     const trid = response?.data?.mobileMoney?.id || response?.data?.transaction?.transactionReference;
       const type = response?.data?.transaction?.type;
       const transactionId = response?.data?.transaction?.transactionId;
 

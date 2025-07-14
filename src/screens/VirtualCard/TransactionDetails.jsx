@@ -1,27 +1,35 @@
 import React from "react";
-import { View, Text, ScrollView, TouchableOpacity, Share } from "react-native";
+import { StatusBar } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import * as Print from 'expo-print';
-import * as Sharing from 'expo-sharing';
+import * as Print from "expo-print";
+import * as Sharing from "expo-sharing";
+import { useTranslation } from "react-i18next";
 
 const TransactionDetails = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { transaction } = route.params;
+  const { t } = useTranslation();
 
   const isCashIn = transaction.type === "CASHOUT";
-
   const formattedAmount = transaction.amount.toLocaleString("fr-FR");
   const transactionDate = new Date(transaction.createdAt).toLocaleString("fr-FR");
 
   const source = transaction.sourcePaymentMethodDetails;
   const destination = transaction.destinationPaymentMethodDetails;
 
-  const sourceLabel = source?.shortInfo || "Source inconnue";
-  const destinationLabel = destination?.shortInfo || "Destination inconnue";
+  const sourceLabel = source?.shortInfo || t("unknownSource");
+  const destinationLabel = destination?.shortInfo || t("unknownDestination");
 
   const statusTimeline = transaction.statusUpdates || [];
+
+  const translatedType = (() => {
+    if (destination?.type === "NEERO_CARD") return t("sendoCard");
+    if (destination?.type === "NEERO_MERCHANT") return t("sendMerchant");
+    return destination?.type || "";
+  })();
 
   const generateReceiptHTML = () => {
     return `
@@ -43,52 +51,52 @@ const TransactionDetails = () => {
         </head>
         <body>
           <div class="header">
-            <div class="title">${isCashIn ? "Rechargement de carte" : "Paiement par carte"}</div>
+            <div class="title">${isCashIn ? t("cardTopUp") : t("cardPayment")}</div>
             <div class="transaction-id">ID: ${transaction.id}</div>
           </div>
-          
+
           <div class="section">
-            <div class="section-title">Montant</div>
+            <div class="section-title">${t("amount")}</div>
             <div class="amount">${formattedAmount} FCFA</div>
           </div>
-          
+
           <div class="section">
-            <div class="section-title">Statut</div>
+            <div class="section-title">${t("status")}</div>
             <div class="${transaction.status === "SUCCESSFUL" ? "status-success" : "status-failed"}">
-              ${transaction.status}
+              ${t(transaction.status.toLowerCase())}
             </div>
           </div>
-          
+
           <div class="section">
-            <div class="section-title">Date</div>
+            <div class="section-title">${t("date")}</div>
             <div>${transactionDate}</div>
           </div>
-          
+
           <div class="section">
-            <div class="section-title">Destination</div>
+            <div class="section-title">${t("destination")}</div>
             <div>${destinationLabel}</div>
-            <div style="font-size: 12px; color: #666;">${destination?.type}</div>
+            <div style="font-size: 12px; color: #666;">${translatedType}</div>
           </div>
-          
+
           ${transaction.fees?.sourceFee ? `
           <div class="section">
-            <div class="section-title">Frais</div>
+            <div class="section-title">${t("fees")}</div>
             <div>${transaction.fees.sourceFee.amount} ${transaction.currency}</div>
           </div>
           ` : ''}
-          
+
           <div class="section">
-            <div class="section-title">Historique des statuts</div>
+            <div class="section-title">${t("statusHistory")}</div>
             ${statusTimeline.map(entry => `
               <div class="timeline-item">
-                <span>${entry.status}</span>
+                <span>${t(entry.status.toLowerCase())}</span>
                 <span>${new Date(entry.updatedAt).toLocaleString("fr-FR")}</span>
               </div>
             `).join('')}
           </div>
-          
+
           <div class="footer">
-            Reçu généré le ${new Date().toLocaleString("fr-FR")}
+            ${t("receiptGenerated")} ${new Date().toLocaleString("fr-FR")}
           </div>
         </body>
       </html>
@@ -100,12 +108,12 @@ const TransactionDetails = () => {
       const html = generateReceiptHTML();
       const { uri } = await Print.printToFileAsync({ html });
       await Sharing.shareAsync(uri, {
-        mimeType: 'application/pdf',
-        dialogTitle: 'Partager le reçu Sendo',
-        UTI: 'com.adobe.pdf'
+        mimeType: "application/pdf",
+        dialogTitle: t("shareReceipt"),
+        UTI: "com.adobe.pdf",
       });
     } catch (error) {
-      console.error('Error sharing receipt:', error);
+      console.error("Error sharing receipt:", error);
     }
   };
 
@@ -114,100 +122,96 @@ const TransactionDetails = () => {
       const html = generateReceiptHTML();
       const { uri } = await Print.printToFileAsync({ html });
       await Sharing.shareAsync(uri, {
-        mimeType: 'application/pdf',
-        dialogTitle: 'Télécharger le reçu Sendo', 
-        UTI: 'com.adobe.pdf'
+        mimeType: "application/pdf",
+        dialogTitle: t("downloadReceipt"),
+        UTI: "com.adobe.pdf",
       });
     } catch (error) {
-      console.error('Error downloading receipt:', error);
+      console.error("Error downloading receipt:", error);
     }
   };
 
   return (
     <ScrollView className="flex-1 bg-white p-4">
-      {/* Header with back button */}
-      <View className="flex-row items-center mb-4">
-        <TouchableOpacity onPress={() => navigation.goBack()} className="mr-2">
-          <Ionicons name="arrow-back" size={24} color="#333" />
-        </TouchableOpacity>
-        <Text className="text-2xl font-bold">Détails de la transaction</Text>
-      </View>
+       <StatusBar backgroundColor="#16a34a" barStyle="light-content" />
+        <View className="flex-row items-center mt-10 mb-4 p-4 rounded-xl" style={{ backgroundColor: "#16a34a" }}>
+          <TouchableOpacity onPress={() => navigation.goBack()} className="mr-2">
+            <Ionicons name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+          <Text className="text-2xl font-bold text-white">{t("transactionDetails")}</Text>
+        </View>
 
-      {/* Transaction ID */}
       <Text className="text-sm text-gray-500 mb-4">ID: {transaction.id}</Text>
 
-      {/* Main transaction card */}
       <View className="bg-gray-50 rounded-lg p-4 mb-4 border border-gray-200">
         <Text className="text-lg font-bold mb-2">
-          {isCashIn ? "Rechargement de carte" : "Paiement par carte"}
+          {isCashIn ? t("cardTopUp") : t("cardPayment")}
         </Text>
-        
+
         <View className="flex-row justify-between items-center mb-3">
-          <Text className="font-semibold">Montant</Text>
+          <Text className="font-semibold">{t("amount")}</Text>
           <Text className="text-lg text-green-700 font-bold">
             {formattedAmount} FCFA
           </Text>
         </View>
 
         <View className="flex-row justify-between items-center mb-3">
-          <Text className="font-semibold">Statut</Text>
+          <Text className="font-semibold">{t("status")}</Text>
           <Text className={`text-base font-bold ${transaction.status === "SUCCESSFUL" ? "text-green-600" : "text-red-500"}`}>
-            {transaction.status}
+            {t(transaction.status.toLowerCase())}
           </Text>
         </View>
 
         <View className="flex-row justify-between items-center">
-          <Text className="font-semibold">Date</Text>
+          <Text className="font-semibold">{t("date")}</Text>
           <Text>{transactionDate}</Text>
         </View>
       </View>
 
-      {/* Details sections */}
       <View className="mb-6">
-        {/* Destination */}
         <View className="mb-4 p-3 bg-gray-50 rounded-lg">
-          <Text className="font-semibold mb-1">Destination</Text>
+          <Text className="font-semibold mb-1">{t("destination")}</Text>
           <Text className="text-gray-700">{destinationLabel}</Text>
-          <Text className="text-xs text-gray-400">{destination?.type}</Text>
+          <Text className="text-xs text-gray-400">{translatedType}</Text>
         </View>
 
-        {/* Fees */}
         {transaction.fees?.sourceFee && (
           <View className="mb-4 p-3 bg-gray-50 rounded-lg">
-            <Text className="font-semibold mb-1">Frais</Text>
+            <Text className="font-semibold mb-1">{t("fees")}</Text>
             <Text className="text-gray-700">
               {transaction.fees.sourceFee.amount} {transaction.currency}
             </Text>
           </View>
         )}
 
-        {/* Status Timeline */}
-        <View className="mb-4 p-3 bg-gray-50 rounded-lg">
-          <Text className="font-semibold mb-2">Historique des statuts</Text>
+        {/* <View className="mb-4 p-3 bg-gray-50 rounded-lg">
+          <Text className="font-semibold mb-2">{t("statusHistory")}</Text>
           {statusTimeline.map((entry, index) => (
-            <View key={index} className="flex-row justify-between mb-2 pb-2 border-b border-gray-100 last:border-0">
-              <Text className="text-gray-600">{entry.status}</Text>
+            <View
+              key={index}
+              className="flex-row justify-between mb-2 pb-2 border-b border-gray-100 last:border-0"
+            >
+              <Text className="text-gray-600">{t(entry.status.toLowerCase())}</Text>
               <Text className="text-gray-400 text-xs">
                 {new Date(entry.updatedAt).toLocaleString("fr-FR")}
               </Text>
             </View>
           ))}
-        </View>
+        </View> */}
       </View>
 
-      {/* Action buttons */}
       <View className="flex-row justify-between mb-6">
         <TouchableOpacity
           onPress={handleShareReceipt}
           className="flex-1 bg-green-600 p-3 rounded-md mr-2"
         >
-          <Text className="text-center text-white font-bold">Partager</Text>
+          <Text className="text-center text-white font-bold">{t("share")}</Text>
         </TouchableOpacity>
         <TouchableOpacity
           onPress={handleDownloadReceipt}
           className="flex-1 bg-green-600 p-3 rounded-md ml-2"
         >
-          <Text className="text-center text-white font-bold">Télécharger PDF</Text>
+          <Text className="text-center text-white font-bold">{t("downloadPdf")}</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>

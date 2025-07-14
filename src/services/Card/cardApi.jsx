@@ -6,6 +6,7 @@ const CARD_ENDPOINTS = {
   CREATE_VIRTUAL_CARD: '/cards',
   GET_VIRTUAL_CARDS: '/cards/user',
   GET_VIRTUAL_CARD_DETAILS: '/cards/', // with {cardId}
+   GET_VIRTUAL_CARD_HIDE: '/cards/details/', 
   FREEZE_CARD: '/cards/freeze/',
   UNFREEZE_CARD: '/cards/unfreeze/',
   DEPOSIT: '/cards/deposit',
@@ -78,6 +79,11 @@ export const cardApi = createApi({
       providesTags: ['Card'],
     }),
 
+     getVirtualCardDetailsHide: builder.query({
+      query: (cardId) => `${CARD_ENDPOINTS.GET_VIRTUAL_CARD_HIDE}${cardId}`,
+      providesTags: ['Card'],
+    }),
+
     freezeCard: builder.mutation({
       query: (cardId) => ({
         url: `${CARD_ENDPOINTS.FREEZE_CARD}${cardId}`,
@@ -117,6 +123,20 @@ export const cardApi = createApi({
       providesTags: ['Card'],
     }),
 
+    getCardBalance: builder.query({
+      query: (cardId) => `/cards/balance?idCard=${cardId}`,
+      providesTags: ['Card'],
+    }),
+
+    deleteCard: builder.mutation({
+      query: (cardId) => ({
+        url: `/cards/${cardId}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Card'],
+    }),
+
+
   }),
 });
 
@@ -126,10 +146,13 @@ export const {
   useGetVirtualCardStatusQuery,
   useGetVirtualCardsQuery,
   useGetVirtualCardDetailsQuery,
+  useGetVirtualCardDetailsHideQuery,
   useFreezeCardMutation,
   useUnfreezeCardMutation,
   useRechargeCardMutation,
   useWithdrawFromCardMutation,
   useGetCardTransactionsQuery,
+   useGetCardBalanceQuery,
+  useDeleteCardMutation,
 
 } = cardApi;

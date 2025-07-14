@@ -13,6 +13,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import Loader from './Loader';
 import { skipToken } from '@reduxjs/toolkit/query/react';
 import { TypesNotification } from '../utils/constants';
+import { useState } from 'react';
 
 export const getIconName = (type) => {
   const map = {
@@ -48,11 +49,15 @@ const NotificationComponent = () => {
   const { data: userProfile, isLoading: profileLoading } = useGetUserProfileQuery();
   const userId = userProfile?.data?.id;
 
+  const [page, setPage] = useState(1);
+    const limit = 20;
+
   const {
     data: notificationsResponse,
     isLoading: notificationsLoading,
     refetch,
-  } = useGetNotificationsQuery(userId ? { userId } : skipToken);
+  } = useGetNotificationsQuery(userId ? { userId, page, limit } : skipToken);
+
    //console.log('Liste des notification:', JSON.stringify(notificationsResponse, null, 2));
 
   const [markAsRead] = useMarkAsReadMutation();

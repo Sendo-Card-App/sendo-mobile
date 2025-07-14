@@ -173,12 +173,8 @@ const handleSubmit = async () => {
     }
 
     const formData = new FormData();
-    formData.append('documents', JSON.stringify(documents), {
-      contentType: 'application/json',
-      name: 'documents'
-    });
-
-    files.forEach((file) => {
+    formData.append('documents', JSON.stringify(documents));
+    files.forEach(file => {
       formData.append('files', file);
     });
 
@@ -204,29 +200,10 @@ const handleSubmit = async () => {
 
   } catch (error) {
     console.error('KYC submission error:', JSON.stringify(error ?? {}, null, 2));
-
-    let errorMessage = 'Échec de la soumission du KYC';
-
-    if (error?.message === 'Request timeout') {
-      errorMessage = "La requête a pris trop de temps. Veuillez vérifier votre connexion.";
-    } else if (error?.data?.message?.includes('Aucun fichier fourni')) {
-      const required = error?.data?.data?.required?.mandatoryTypes ?? [];
-      errorMessage = `Documents requis: ${required.join(', ')}`;
-    } else if (error?.data?.code) {
-      const errorCodes = {
-        'ERR_MISSING': 'Veuillez remplir tous les champs obligatoires',
-        'ERR_FORMAT': 'Format invalide dans les données',
-        'ERR_UPLOAD': 'Échec du téléchargement des documents',
-        'ERR_TECH': 'Erreur technique interne',
-      };
-      errorMessage = errorCodes[error.data.code] || errorMessage;
-    }
-
     Toast.show({
       type: 'error',
-      text1: 'Erreur',
-      text2: errorMessage,
-      visibilityTime: 5000,
+      text1: 'Erreur réseau ou serveur',
+      text2: error?.data?.message || 'Une erreur est survenue',
     });
   } finally {
     dispatch(setSubmissionStatus('idle'));

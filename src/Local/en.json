@@ -564,6 +564,22 @@
 "manageVirtualCard": {
 "title": "Manage my virtual card",
 "balance": "Balance:",
+ "currentBalance": "Current balance",
+   "viewNumbers": "View my card numbers",
+   "viewInfo": "View info",
+    "freeze": "Freeze",
+    "unfreeze": "Unfreeze",
+    "settings": "Settings",
+    "topUp": "Top up",
+    "availableBalance": "Available balance",
+    "createNew": "Create new card",
+    "history": "Transaction history",
+     "cancel": "Cancel",
+    "message": "Your card has been deleted. Would you like to create a new one?",
+    "terminatedMessage": "This card has been deleted. Please create a new one to continue using services.",
+    "topUp1": "Card top-up",
+    "payment": "Card payment",
+    "empty": "No recent transactions",
 "cvv": "CVV:",
 "cardHolder": "CARD HOLDER",
 "expires": "Expires :",
@@ -591,7 +607,10 @@
     "rechargeAction": "Recharge Now",
     "withdrawAction": "Withdraw Now",
      "freezeButton": "Freeze",
-      "unfreezeButton": "Unfreeze"
+      "unfreezeButton": "Unfreeze",
+     
+  "inTermination": "Votre carte est en cours de suppression.",
+  "suspended": "Votre carte a été suspendue en raison d'une activité suspecte."
 },
 "identityVerification": {
 "title": "Identity Verification",
@@ -1504,7 +1523,56 @@
         "requiredDocuments": "Required documents"
       }
     }
-  }
+  },
+   "transactionDetails": "Transaction Details",
+  "amount": "Amount",
+  "status": "Status",
+  "date": "Date",
+  "destination": "Destination",
+  "fees": "Fees",
+  "statusHistory": "Status History",
+  "receiptGenerated": "Receipt generated on",
+  "share": "Share",
+  "downloadPdf": "Download PDF",
+  "shareReceipt": "Share Sendo Receipt",
+  "downloadReceipt": "Download Sendo Receipt",
+  "cardTopUp": "Card Top-Up",
+  "cardPayment": "Card Payment",
+  "sendoCard": "SENDO CARD",
+  "sendMerchant": "SENDO MERCHANT",
+  "unknownSource": "Unknown source",
+  "unknownDestination": "Unknown destination",
+  "initialized": "Initialized",
+  "pending": "Pending",
+  "successful": "Successful",
+  "failed": "Failed",
+  "cardIdMissing": "Card ID is missing.",
+  "cardFrozen": "Card successfully frozen.\n{{message}}",
+  "cardUnfrozen": "Card successfully unfrozen.\n{{message}}",
+  "operationError": "An error occurred during the operation.",
+  "deleteCardTitle": "Delete Card",
+  "deleteCardConfirm": "Are you sure you want to delete this card?\nAll your funds will be transferred to your Sendo account.",
+  "cancel": "Cancel",
+  "delete": "Delete",
+  "myCard": "My Card",
+  "cardName": "Card Name",
+  "blockCard": "Block",
+  "blockCardDesc": "Block your card to prevent fraud and unwanted payments.",
+  "limits": "Limits",
+  "cardLimit": "Card Limit",
+  "cardLimitDesc": "Set a limit on your monthly spending.",
+  "limitDetailsTitle": "Card Limits",
+  "limitMaxTransaction": "Maximum per transaction: 500,000 FCFA",
+  "limitMaxDaily": "Maximum per day: 500,000 FCFA",
+  "limitMaxMonthly": "Maximum per month: 1,000,000 FCFA",
+  "close": "Close",
+  "other": "Others",
+  "deleteCard": "Delete Card",
+  "deleteCardFooter": "All your funds will be transferred to your Sendo account if you delete the card.",
+   "cardDeleted": "Card successfully deleted.",
+   
+ 
+
 
 
   

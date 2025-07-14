@@ -100,6 +100,12 @@ export const sharedExpenseApi = createApi({
       invalidatesTags: [TAG_TYPES.SHARED_EXPENSE],
     }),
 
+    getSharedList: builder.query({
+      query: (userId) => `/shared-expense/users/${userId}`,
+      providesTags: [TAG_TYPES.SHARED_EXPENSE],
+    }),
+
+
     paySharedExpense: builder.mutation({
       query: ({ expenseId }) => ({
         url: `/shared-expense/${expenseId}/pay`,
@@ -148,6 +154,7 @@ export const {
   useCancelSharedExpenseMutation,
   useUpdateSharedExpenseMutation,
   useGetSharedExpenseDetailsQuery,
+  useGetSharedListQuery,
   useSettleSharedExpenseMutation,
   useValidateAmountDistributionMutation,
 } = sharedExpenseApi;
