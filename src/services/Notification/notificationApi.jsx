@@ -20,10 +20,10 @@ export const notificationApi = createApi({
   tagTypes: ['Notifications'],
   endpoints: (builder) => ({
    getNotifications: builder.query({
-      query: ({ userId, limit = 10 }) => ({
+      query: ({ userId, page = 1, limit = 10 }) => ({
         url: `/notification/users/${userId}`,
         method: 'GET',
-        params: { limit },
+        params: { page, limit },
       }),
       providesTags: ['Notifications'],
     }),

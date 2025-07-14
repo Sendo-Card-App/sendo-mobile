@@ -372,7 +372,7 @@ const handleReject = async (item) => {
         </KeyboardAvoidingView>
       </Modal>
 
-      <View className="bg-green-400 pb-4 rounded-b-2xl">
+      <View className="bg-[#7ddd7d] pb-4 rounded-b-2xl">
         <View className="flex-row justify-between items-center px-4 pt-12">
           <Image source={ButtomLogo1} resizeMode="contain" className="h-[40px] w-[120px]" />
           <TouchableOpacity onPress={() => navigation.openDrawer()}>

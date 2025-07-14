@@ -6,11 +6,11 @@ import {
   ScrollView,
   TouchableOpacity,
   FlatList,
-  ActivityIndicator,
+  StyleSheet,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
-import { useGetSharedExpensesQuery } from "../../services/Shared/sharedExpenseApi";
+import { useGetSharedListQuery } from "../../services/Shared/sharedExpenseApi";
 import { skipToken } from "@reduxjs/toolkit/query";
 import { useTranslation } from "react-i18next";
 import TransactionSkeleton from "../../components/TransactionSkeleton";
@@ -22,13 +22,13 @@ export default function Historique({ navigation }) {
   const { data: userProfile, isLoading: profileLoading } = useGetUserProfileQuery();
   const userId = userProfile?.data?.id;
 
-  const {
-    data: sharedExpensesData,
-    isLoading: expensesLoading,
-  } = useGetSharedExpensesQuery(userId ? { userId } : skipToken);
+  const { data: sharedExpensesList, isLoading: expensesLoading } = useGetSharedListQuery(
+    userId ?? skipToken
+  );
+  console.log(sharedExpensesList);
 
-  const sharedExpenses = sharedExpensesData?.data || [];
-
+  const sharedExpenses = sharedExpensesList?.data || [];
+ //console.log("Full response:", JSON.stringify(sharedExpenses, null, 2));
   const getStatusColor = (status) => {
     switch (status) {
       case "PENDING":
@@ -43,48 +43,23 @@ export default function Historique({ navigation }) {
     }
   };
 
-  const getUserPart = (item) => {
-    const participant = item.participants?.find((p) => p.userId === userId);
-    return participant?.part;
-  };
-
   return (
-    <View style={{ flex: 1, backgroundColor: "#F0F3F5" }}>
+    <View style={styles.container}>
       {/* Header */}
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          paddingTop: 50,
-          paddingBottom: 15,
-          paddingHorizontal: 20,
-          backgroundColor: "#7ddd7d",
-          justifyContent: "space-between",
-        }}
-      >
+      <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color="black" />
         </TouchableOpacity>
-        <Text style={{ fontSize: 18, fontWeight: "bold", color: "#000" }}>
-          {t("his.title")}
-        </Text>
+        <Text style={styles.headerTitle}>{t("his.title")}</Text>
         <TouchableOpacity onPress={() => navigation.openDrawer()}>
           <Ionicons name="menu-outline" size={24} color="black" />
         </TouchableOpacity>
       </View>
 
       {/* Filter */}
-      <View
-        style={{
-          flexDirection: "row",
-          justifyContent: "flex-end",
-          paddingHorizontal: 20,
-          marginTop: 10,
-          marginBottom: 5,
-        }}
-      >
-        <TouchableOpacity style={{ flexDirection: "row", alignItems: "center" }}>
-          <Text style={{ marginRight: 5, color: "#444" }}>{t("his.filter")}</Text>
+      <View style={styles.filterContainer}>
+        <TouchableOpacity style={styles.filterButton}>
+          <Text style={styles.filterText}>{t("his.filter")}</Text>
           <Ionicons name="filter" size={18} color="#444" />
         </TouchableOpacity>
       </View>
@@ -99,80 +74,48 @@ export default function Historique({ navigation }) {
           showsVerticalScrollIndicator={false}
         />
       ) : (
-        <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 20 }}>
+        <ScrollView contentContainerStyle={styles.scrollViewContent}>
           {sharedExpenses.length === 0 ? (
-            <Text style={{ textAlign: "center", marginTop: 20, color: "#777" }}>
-             
+            <Text style={styles.noExpensesText}>
+              {t("his.no_expenses")}
             </Text>
           ) : (
             sharedExpenses.map((item) => {
-              const userPart = getUserPart(item);
-              const initiatorName = item.initiator
-                ? `${item.initiator.firstname} `
-                : t("his.unknown");
-              const status = item.status;
+              const expense = item.sharedExpense;
+              const status = expense.status;
               const isPayable = !(status === "CANCELLED" || status === "PAID" || status === "COMPLETED");
 
+              const initiatorName = expense.initiator
+                ? `${expense.initiator.firstname}`
+                : t("his.unknown");
+
               return (
-                <View
-                  key={item.id}
-                  style={{
-                    backgroundColor: "#fff",
-                    borderRadius: 10,
-                    padding: 15,
-                    marginBottom: 15,
-                    shadowColor: "#000",
-                    shadowOpacity: 0.1,
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowRadius: 4,
-                    elevation: 2,
-                  }}
-                >
+                <View key={item.id} style={styles.card}>
                   {/* Description and Amount */}
-                  <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 5 }}>
-                    <Text style={{ fontWeight: "bold", fontSize: 16, flex: 1 }}>
-                      {item.description}
-                    </Text>
-                    <View
-                      style={{
-                        backgroundColor: "#7ddd7d",
-                        borderRadius: 6,
-                        paddingHorizontal: 8,
-                        paddingVertical: 2,
-                        marginLeft: 8,
-                      }}
-                    >
-                      <Text style={{ fontWeight: "bold" }}>
-                        {item.totalAmount} {item.currency}
+                  <View style={styles.rowSpaceBetween}>
+                    <Text style={styles.descriptionText}>{expense.description}</Text>
+                    <View style={styles.amountContainer}>
+                      <Text style={styles.amountText}>
+                        {expense.totalAmount} {expense.currency}
                       </Text>
                     </View>
                   </View>
 
                   {/* Participants */}
-                  <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 5 }}>
-                    <Text style={{ fontWeight: "bold", flex: 1 }}>
-                      {item.participants?.length > 0
-                        ? item.participants.map((p) => `${p.user?.firstname || ""} `).join(", ")
-                        : initiatorName}
+                  {/* <View style={styles.rowSpaceBetween}>
+                    <Text style={styles.participantsText}>
+                      {expense.participants?.map((p) => p.user?.firstname || "").join(", ") || initiatorName}
                     </Text>
-                  </View>
+                  </View> */}
 
                   {/* Date and Status */}
-                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-                    <Text style={{ color: "#999", fontSize: 12 }}>
-                      {new Date(item.createdAt).toLocaleDateString()}
+                  <View style={styles.rowSpaceBetweenCenter}>
+                    <Text style={styles.dateText}>
+                      {new Date(expense.createdAt).toLocaleDateString()}
                     </Text>
-
                     {!isPayable && (
-                      <View
-                        style={{
-                          backgroundColor: getStatusColor(status),
-                          borderRadius: 10,
-                          paddingHorizontal: 10,
-                          paddingVertical: 4,
-                        }}
-                      >
-                        <Text style={{ color: "#fff", fontSize: 12 }}>
+                      <View style={[styles.statusBadge, { backgroundColor: getStatusColor(status) }]}>
+                        <Text style={styles.statusText}>
                           {t(`his.status.${status.toLowerCase()}`)}
                         </Text>
                       </View>
@@ -180,10 +123,10 @@ export default function Historique({ navigation }) {
                   </View>
 
                   {/* Cancel Reason */}
-                  {status === "CANCELLED" && item.cancelReason?.trim() !== "" && (
+                  {status === "CANCELLED" && expense.cancelReason?.trim() !== "" && (
                     <View style={{ marginTop: 8 }}>
-                      <Text style={{ fontSize: 13, color: "#F44336" }}>
-                        {t("his.cancel_reason")}: {item.cancelReason}
+                      <Text style={styles.cancelReasonText}>
+                        {t("his.cancel_reason")}: {expense.cancelReason}
                       </Text>
                     </View>
                   )}
@@ -192,15 +135,9 @@ export default function Historique({ navigation }) {
                   {isPayable && (
                     <TouchableOpacity
                       onPress={() => navigation.navigate("DemandDetailScreen", { item })}
-                      style={{
-                        backgroundColor: "#7ddd7d",
-                        paddingVertical: 10,
-                        borderRadius: 30,
-                        alignItems: "center",
-                        marginTop: 10,
-                      }}
+                      style={styles.payButton}
                     >
-                      <Text style={{ color: "#000", fontWeight: "bold" }}>
+                      <Text style={styles.payButtonText}>
                         {t("his.payer")}
                       </Text>
                     </TouchableOpacity>
@@ -214,3 +151,75 @@ export default function Historique({ navigation }) {
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: "#F0F3F5" },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingTop: 50,
+    paddingBottom: 15,
+    paddingHorizontal: 20,
+    backgroundColor: "#7ddd7d",
+    justifyContent: "space-between",
+  },
+  headerTitle: { fontSize: 18, fontWeight: "bold", color: "#000" },
+  filterContainer: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    paddingHorizontal: 20,
+    marginTop: 10,
+    marginBottom: 5,
+  },
+  filterButton: { flexDirection: "row", alignItems: "center" },
+  filterText: { marginRight: 5, color: "#444" },
+  scrollViewContent: { paddingHorizontal: 20, paddingBottom: 20 },
+  noExpensesText: { textAlign: "center", marginTop: 20, color: "#777" },
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 15,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  rowSpaceBetween: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 5,
+  },
+  rowSpaceBetweenCenter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  descriptionText: { fontWeight: "bold", fontSize: 16, flex: 1 },
+  amountContainer: {
+    backgroundColor: "#7ddd7d",
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    marginLeft: 8,
+  },
+  amountText: { fontWeight: "bold" },
+  participantsText: { fontWeight: "bold", flex: 1 },
+  dateText: { color: "#999", fontSize: 12 },
+  statusBadge: {
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  statusText: { color: "#fff", fontSize: 12 },
+  cancelReasonText: { fontSize: 13, color: "#F44336" },
+  payButton: {
+    backgroundColor: "#7ddd7d",
+    paddingVertical: 10,
+    borderRadius: 30,
+    alignItems: "center",
+    marginTop: 10,
+  },
+  payButtonText: { color: "#000", fontWeight: "bold" },
+});
