@@ -124,7 +124,7 @@ export const cardApi = createApi({
     }),
 
     getCardBalance: builder.query({
-      query: (cardId) => `/cards/balance?idCard=${cardId}&type=MERCHANT`,
+      query: (cardId) => `/cards/balance?idCard=${cardId}`,
       providesTags: ['Card'],
     }),
 
