@@ -17,11 +17,22 @@ import Loader from "../../components/Loader";
 import { useSimulatePaymentMutation } from '../../services/WalletApi/walletApi';
 import { useGetConfigQuery } from '../../services/Config/configApi';
 import { useTranslation } from 'react-i18next';
-
+import { useNavigation } from "@react-navigation/native";
+import {
+  useGetVirtualCardsQuery,
+  useGetVirtualCardDetailsQuery,
+} from "../../services/Card/cardApi";
 const { width } = Dimensions.get('window');
 
 const PaymentSimulator = () => {
   const { t } = useTranslation();
+  const navigation = useNavigation();
+   const {
+      data: cards,
+      isLoading: isCardsLoading,
+    } = useGetVirtualCardsQuery();
+  
+  const [selectedCardId, setSelectedCardId] = useState(null);
   const [amount, setAmount] = useState('100');
   const [currency, setCurrency] = useState('USD');
   const [conversionData, setConversionData] = useState({
@@ -41,6 +52,16 @@ const PaymentSimulator = () => {
   const [showCurrencyDropdown, setShowCurrencyDropdown] = useState(false);
   const [isCalculating, setIsCalculating] = useState(false);
   
+    const {
+      data: cardDetails,
+      isLoading: isDetailsLoading,
+      refetch: refetchCardDetails,
+    } = useGetVirtualCardDetailsQuery(selectedCardId, {
+      skip: !selectedCardId,
+    });
+
+    const cardData = cardDetails?.data;
+   
   const [simulatePayment] = useSimulatePaymentMutation();
   
   // Get config data
@@ -93,6 +114,12 @@ const getFlagEmoji = (currencyCode) => {
     setShowCurrencyDropdown(false);
   };
 
+   useEffect(() => {
+      if (cards?.data?.length > 0) {
+        setSelectedCardId(cards.data[0].cardId);
+      }
+    }, [cards]);
+
   useEffect(() => {
     const timer = setTimeout(() => {
       if (amount && !isNaN(parseFloat(amount))) {
@@ -128,9 +155,7 @@ const getFlagEmoji = (currencyCode) => {
     }
   };
 
-  const handleRecharge = () => {
-    console.log('next page');
-  };
+ 
 
   if (isConfigLoading) {
     return (
@@ -284,7 +309,12 @@ const getFlagEmoji = (currencyCode) => {
 
         <TouchableOpacity 
           style={styles.simulateButton}
-          onPress={handleRecharge}
+          onPress={() =>
+            navigation.navigate("CardAction", {
+              cardId: cardData?.id,
+              action: "recharge",
+            })
+          }
           disabled={isCalculating}
         >
           <Text style={styles.simulateButtonText}>

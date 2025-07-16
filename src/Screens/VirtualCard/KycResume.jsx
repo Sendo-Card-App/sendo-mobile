@@ -104,26 +104,39 @@ const handleSubmit = async () => {
     let fileIndex = 0;
 
     // 2. ID_PROOF
-    if (identityDocument.front) {
+    if (identityDocument.type === 'passport' && identityDocument.front) {
+      // Duplicate the single passport file
       await addDocumentAndFile(
         { type: 'ID_PROOF', idDocumentNumber },
         identityDocument.front.uri,
         fileIndex++
       );
-
-      if (identityDocument.type === 'passport') {
-        await addDocumentAndFile(
-          { type: 'ID_PROOF', idDocumentNumber },
-          identityDocument.front.uri,
-          fileIndex++
-        );
-      }
+      await addDocumentAndFile(
+        { type: 'ID_PROOF', idDocumentNumber },
+        identityDocument.front.uri,
+        fileIndex++
+      );
     }
 
-    if (
-      (identityDocument.type === 'cni' || identityDocument.type === 'drivers_license') &&
-      identityDocument.back
-    ) {
+    if (identityDocument.type === 'cni' && identityDocument.front && identityDocument.back) {
+      await addDocumentAndFile(
+        { type: 'ID_PROOF', idDocumentNumber },
+        identityDocument.front.uri,
+        fileIndex++
+      );
+      await addDocumentAndFile(
+        { type: 'ID_PROOF', idDocumentNumber },
+        identityDocument.back.uri,
+        fileIndex++
+      );
+    }
+
+    if (identityDocument.type === 'drivers_license' && identityDocument.front && identityDocument.back) {
+      await addDocumentAndFile(
+        { type: 'ID_PROOF', idDocumentNumber },
+        identityDocument.front.uri,
+        fileIndex++
+      );
       await addDocumentAndFile(
         { type: 'ID_PROOF', idDocumentNumber },
         identityDocument.back.uri,
@@ -181,7 +194,7 @@ const handleSubmit = async () => {
     console.log('FormData ready with 5 files and documents');
 
     const response = await submitKYC(formData).unwrap();
-    
+
     console.log('KYC submission response:', JSON.stringify(response, null, 2));
 
     if (response?.status === 201) {
@@ -209,6 +222,7 @@ const handleSubmit = async () => {
     dispatch(setSubmissionStatus('idle'));
   }
 };
+
 
 
   const KycOption = ({ id, name, route, completed }) => (

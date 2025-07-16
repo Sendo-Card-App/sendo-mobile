@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   View,
   Text,
@@ -18,7 +18,11 @@ import {
   useGetVirtualCardDetailsQuery,
 } from "../../services/Card/cardApi";
 import Loader from "../../components/Loader";
-import { useRoute, useNavigation } from "@react-navigation/native";
+import {
+  useRoute,
+  useNavigation,
+  useFocusEffect,
+} from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
 
 const CardSettingsScreen = () => {
@@ -33,18 +37,21 @@ const CardSettingsScreen = () => {
     isLoading,
   } = useGetVirtualCardDetailsQuery(cardId);
 
-  const [isBlocked, setIsBlocked] = useState(cardData?.isFrozen || false);
   const [freezeCard] = useFreezeCardMutation();
   const [unfreezeCard] = useUnfreezeCardMutation();
   const [deleteCard] = useDeleteCardMutation();
 
   const [isLimitModalVisible, setIsLimitModalVisible] = useState(false);
 
-  useEffect(() => {
-    if (cardData?.isFrozen !== undefined) {
-      setIsBlocked(cardData?.isFrozen);
-    }
-  }, [cardData]);
+  const isBlocked = cardData?.data?.status === "FROZEN";
+
+  
+
+  useFocusEffect(
+    useCallback(() => {
+      refetchCardDetails();
+    }, [cardId])
+  );
 
   const showModal = (type, message) => {
     Alert.alert(
@@ -61,11 +68,9 @@ const CardSettingsScreen = () => {
       if (isBlocked) {
         const response = await unfreezeCard(cardId).unwrap();
         showModal("success", t("cardUnfrozen", { message: response?.message || "" }));
-        setIsBlocked(false);
       } else {
         const response = await freezeCard(cardId).unwrap();
         showModal("success", t("cardFrozen", { message: response?.message || "" }));
-        setIsBlocked(true);
       }
 
       refetchCardDetails?.();
@@ -81,34 +86,33 @@ const CardSettingsScreen = () => {
   };
 
   const handleDeleteCard = () => {
-  Alert.alert(
-    t("deleteCardTitle"),
-    t("deleteCardConfirm"),
-    [
-      { text: t("cancel"), style: "cancel" },
-      {
-        text: t("delete"),
-        style: "destructive",
-        onPress: async () => {
-          try {
-            await deleteCard(cardId).unwrap();
-            showModal("success", t("cardDeleted"));
-            navigation.goBack();
-          } catch (err) {
-            let errorMessage = t("operationError");
-            if (err?.data?.message) {
-              errorMessage = err.data.message;
-            } else if (err?.error) {
-              errorMessage = err.error;
+    Alert.alert(
+      t("deleteCardTitle"),
+      t("deleteCardConfirm"),
+      [
+        { text: t("cancel"), style: "cancel" },
+        {
+          text: t("delete"),
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deleteCard(cardId).unwrap();
+              showModal("success", t("cardDeleted"));
+              navigation.goBack();
+            } catch (err) {
+              let errorMessage = t("operationError");
+              if (err?.data?.message) {
+                errorMessage = err.data.message;
+              } else if (err?.error) {
+                errorMessage = err.error;
+              }
+              showModal("error", errorMessage);
             }
-            showModal("error", errorMessage);
-          }
+          },
         },
-      },
-    ]
-  );
-};
-
+      ]
+    );
+  };
 
   if (isLoading) {
     return (
@@ -222,6 +226,8 @@ const CardSettingsScreen = () => {
           </View>
         </View>
       </Modal>
+
+      <StatusBar style="dark" />
     </View>
   );
 };
