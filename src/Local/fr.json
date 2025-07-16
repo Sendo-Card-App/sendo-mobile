@@ -496,7 +496,7 @@
     "types": {
     "cni": "Carte nationale",
     "passport": "Passeport",
-    "drivers_license": "Permis de conduire"
+    "drivers_license": " CNI ou Permis de conduire"
     }
   },
   "verifyIdentity": {

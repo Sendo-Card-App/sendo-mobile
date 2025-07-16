@@ -506,7 +506,7 @@
 "types": {
     "cni": "National ID",
     "passport": "Passport",
-    "drivers_license": "Driver's License"
+    "drivers_license": "National ID or Driver's License"
   }
 },
 "verifyIdentity": {

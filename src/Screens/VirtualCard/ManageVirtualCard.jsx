@@ -11,10 +11,11 @@ import {
   Pressable,
   Alert,
 } from "react-native";
+import { Feather } from '@expo/vector-icons';
 import { Ionicons, FontAwesome5, Entypo } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 import { useNavigation } from "@react-navigation/native";
-import CardImg from "../../images/VirtualCard.png";
+import CardImg from "../../images/virtual.png";
 import { useTranslation } from "react-i18next";
 import {
   useGetVirtualCardsQuery,
@@ -41,6 +42,7 @@ const ManageVirtualCard = () => {
   const [iframeModalVisible, setIframeModalVisible] = useState(false);
   const [iframeUrl, setIframeUrl] = useState("");
   const [isLoadingIframe, setIsLoadingIframe] = useState(false);
+  const [isLoadingFreeze, setIsLoadingFreeze] = useState(false);
 
   const {
     data: cardDetails,
@@ -115,27 +117,35 @@ const ManageVirtualCard = () => {
     setModalVisible(true);
   };
 
-  const handleFreezeUnfreeze = async () => {
-    try {
-      const cardId = cardData?.cardId;
-      if (isCardFrozen) {
-        const response = await unfreezeCard(cardId).unwrap();
-        showModal("success", `Carte débloquée avec succès.\n${response?.message || ""}`);
-      } else {
-        const response = await freezeCard(cardId).unwrap();
-        showModal("success", `Carte bloquée avec succès.\n${response?.message || ""}`);
-      }
-      refetchCardDetails();
-    } catch (err) {
-      let errorMessage = "Erreur lors de l'opération.";
-      if (err?.data?.message) {
-        errorMessage = err.data.message;
-      } else if (err?.error) {
-        errorMessage = err.error;
-      }
-      showModal("error", errorMessage);
+const handleFreezeUnfreeze = async () => {
+  const cardId = cardData?.cardId;
+  if (!cardId) return;
+
+  setIsLoadingFreeze(true); 
+
+  try {
+    if (isCardFrozen) {
+      const response = await unfreezeCard(cardId).unwrap();
+      showModal("success", `Carte débloquée avec succès.\n${response?.message || ""}`);
+    } else {
+      const response = await freezeCard(cardId).unwrap();
+      showModal("success", `Carte bloquée avec succès.\n${response?.message || ""}`);
     }
-  };
+
+    refetchCardDetails();
+  } catch (err) {
+    let errorMessage = "Erreur lors de l'opération.";
+    if (err?.data?.message) {
+      errorMessage = err.data.message;
+    } else if (err?.error) {
+      errorMessage = err.error;
+    }
+    showModal("error", errorMessage);
+  } finally {
+    setIsLoadingFreeze(false); // Stop loading
+  }
+};
+
 
   const handleShowCardDetails = async () => {
     try {
@@ -251,14 +261,19 @@ const ManageVirtualCard = () => {
           )}
 
           <View className="flex-1 justify-between px-5 py-4">
-            <View className="mt-2">
-              <Text className="text-white text-sm mb-1">{t('manageVirtualCard.currentBalance')}</Text>
+           <View className="mt-2">
+            <Text className="text-white text-sm mb-1">{t('manageVirtualCard.currentBalance')}</Text>
               <TouchableOpacity
                 onPress={() => setShowBalance(!showBalance)}
-                className="bg-white px-3 py-1 rounded-full self-start"
+                className="px-3 py-1 rounded-full self-start flex-row items-center space-x-2"
               >
+                <Feather
+                  name={showBalance ? "eye-off" : "eye"}
+                  size={20}
+                  color="#fff"
+                />
                 <Text className="text-[#0f1a38] font-semibold">
-                  {showBalance ? "Masquer le solde" : "Afficher le solde"}
+                  {showBalance}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -267,19 +282,6 @@ const ManageVirtualCard = () => {
               <Text className="text-white text-lg tracking-widest font-semibold">
                 **** {cardData?.last4Digits || "****"}
               </Text>
-              <TouchableOpacity 
-                className="bg-[#7ddd7d] px-3 py-1 mt-1 rounded-md self-start"
-                onPress={handleShowCardDetails}
-                disabled={isLoadingIframe}
-              >
-                <View className="bg-white px-2 py-1 rounded">
-                  {isLoadingIframe ? (
-                    <ActivityIndicator size="small" color="#000" />
-                  ) : (
-                    <Text className="text-black text-sm">{t('manageVirtualCard.viewNumbers')}</Text>
-                  )}
-                </View>
-              </TouchableOpacity>
             </View>
 
             <View className="mt-3">
@@ -304,6 +306,7 @@ const ManageVirtualCard = () => {
               icon="snow-outline" 
               label={isCardFrozen ? t('manageVirtualCard.unfreeze') : t('manageVirtualCard.freeze')} 
               onPress={handleFreezeUnfreeze} 
+               disabled={isLoadingFreeze}
             />
             <ActionItem
               icon="settings"

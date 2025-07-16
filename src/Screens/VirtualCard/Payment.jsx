@@ -29,7 +29,7 @@ const Payment = () => {
 
   return (
     <View className="flex-1 p-6">
-      <Text className="text-center text-sm text-gray-400">
+      {/* <Text className="text-center text-sm text-gray-400">
         {t('payment2.no_payment_method')}
       </Text>
 
@@ -38,7 +38,7 @@ const Payment = () => {
         onPress={() => navigation.navigate("BankCard")}
       >
         <Text className="text-center text-lg font-bold">{t('payment2.add_card')}</Text>
-      </TouchableOpacity>
+      </TouchableOpacity> */}
 
       <View className="border-y mt-6 border-dashed py-4">
         <View className="flex-row gap-2 items-end">
@@ -75,7 +75,7 @@ const Payment = () => {
 
       <TouchableOpacity
         className="bg-[#7ddd7d] py-3 rounded-lg shadow-sm shadow-black"
-        onPress={() => navigation.navigate("KycResume")}
+        onPress={() => navigation.navigate("VerifyIdentity")}
       >
         <Text className="text-center text-lg font-bold">
           {t('payment2.get_visa')}
