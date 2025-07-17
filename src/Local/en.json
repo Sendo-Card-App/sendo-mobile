@@ -7,6 +7,7 @@
   "no_invitation": "No pending invitations.",
   "tontine_members_count": "Number of members",
   "tontine_admin": "Admin",
+   "back": "Back",
   "tontine_frequency": "Frequency",
   "tontine_amount": "Contribution amount",
   "join_button": "Join",
@@ -354,12 +355,12 @@
 "help_available": "Help is available through the following channels:",
 "faq": "FAQ",
 "faq_description": "Frequently asked questions",
-"email": "Email supportsendo@sf-e.ca",
+"email": "Email infosendo@sf-e.ca",
 "email_description": "For a faster response",
 "phone": "Call 581 907 2096",
 "phone_description": "24/7",
-"contact_instructions": "If you can't reach us by phone, please email us at supportsendo@sf-e.ca",
-"account_deletion": "If you wish to request deletion of your account information, please email us at supportsendo@sf-e.ca"
+"contact_instructions": "If you can't reach us by phone, please email us at infosendo@sf-e.ca",
+"account_deletion": "If you wish to request deletion of your account information, please email us at infosendo@sf-e.ca"
 },
 "address_verification": {
 "identity_verification": "Identity Verification",
@@ -563,14 +564,34 @@
 "manageVirtualCard": {
 "title": "Manage my virtual card",
 "balance": "Balance:",
-"cardNumber": "7433 0001 4302 7995",
-"cvv": "CVV: 432",
+"cvv": "CVV:",
 "cardHolder": "CARD HOLDER",
-"expires": "Expires : 03/27",
+"expires": "Expires :",
 "rechargeButton": "Recharge",
+ "withdrawButton": "Withdraw",
 "transactionHistory": "Transaction history",
 "hide": "Hide",
-"showAllTransfers": "SHOW ALL TRANSFERS"
+"showAllTransfers": "SHOW ALL TRANSFERS",
+ "enterAmount": "Enter amount",
+   "rechargeCard": "Recharge Card",
+    "withdrawCard": "Withdraw from Card",
+    "amount": "Amount",
+    "amountInput": "Amount input field",
+    "invalidAmount": "Please enter a valid amount greater than 0.",
+    "missingMatricule": "Wallet information is missing. Please try again later.",
+    "rechargedSuccessfully": "The card has been recharged successfully.",
+    "withdrawnSuccessfully": "The amount has been withdrawn successfully.",
+    "actionFailed": "An error occurred while processing the request.",
+    "selectRecharge": "Select recharge option",
+    "selectWithdraw": "Select withdraw option",
+    "recharge": "Recharge",
+    "withdraw": "Withdraw",
+    "submitAction": "Submit action",
+    "processing": "Processing...",
+    "rechargeAction": "Recharge Now",
+    "withdrawAction": "Withdraw Now",
+     "freezeButton": "Freeze",
+      "unfreezeButton": "Unfreeze"
 },
 "identityVerification": {
 "title": "Identity Verification",
@@ -606,11 +627,14 @@
   "missing_name": "Please enter your name",
   "request_success": "Request sent successfully",
   "request_failed": "Request failed",
-  "error_message": "An error occurred"
+  "error_message": "An error occurred",
+   "success_title": "Success",
+    "error_title": "Error"
 },
 
  "account": {
     "title": "My Account",
+     "language_changed_to": "Language change in",
     "edit": "Edit",
     "close": "Close",
     "fullName": "Full Name",
@@ -1405,6 +1429,7 @@
     "id_proof": "ID (Passport, Driver's License, etc.)",
     "address_proof": "Location Plan",
     "niu_proof": "NIU",
+      "selfie": "Selfie",
     "approved": "Approved",
     "rejected": "Rejected",
     "pending": "Pending"
@@ -1436,7 +1461,51 @@
       "genericError": "An error occurred while resetting your password. Please try again.",
       "updateError": "Failed to update password. Please try again."
     }
+  },
+  
+
+  "onboardingCard": {
+    "title": "INTERNATIONAL MONEY\nMADE SIMPLE",
+    "subtitle": "Spend abroad like at home. No markups, no hide fees.",
+    "button": {
+      "default": "Order a debit card",
+      "pending": "Request in progress..."
+    },
+    "pending": {
+      "title": "Request in progress",
+      "subtitle": "We're reviewing your virtual card request. This may take up to 24 hours.",
+      "status": {
+        "pending": "In progress",
+        "waiting": "Waiting"
+      },
+      "timeline": {
+        "requested": "Requested",
+        "verification": "In verification",
+        "approved": "Approved"
+      },
+      "labels": {
+        "requestDate": "Request date:",
+        "timeLeft": "Time remaining:"
+      }
+    },
+    "cancelled": {
+      "title": "Request cancelled",
+      "subtitle": "Your card request has been cancelled. You can try again or contact support."
+    },
+    "toast": {
+      "success": {
+        "title": "Request sent",
+        "message": "Your card request has been successfully submitted."
+      },
+      "error": {
+        "title": "Request error",
+        "message": "An error occurred while processing your request.",
+        "generic": "An error occurred",
+        "requiredDocuments": "Required documents"
+      }
+    }
   }
+
 
   
   }

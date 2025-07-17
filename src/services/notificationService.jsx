@@ -36,7 +36,7 @@ export async function registerForPushNotificationsAsync() {
       const token = (await Notifications.getExpoPushTokenAsync()).data;
       if (!token) {
         console.warn('No push token retrieved. Retrying in 3 seconds...');
-        await new Promise(resolve => setTimeout(resolve, 300000));
+        await new Promise(resolve => setTimeout(resolve, 3000));
         continue;
       }
 
@@ -64,7 +64,7 @@ export async function getStoredPushToken() {
       if (newToken) return newToken;
 
       console.log('Retrying getStoredPushToken in 3 seconds...');
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      await new Promise(resolve => setTimeout(resolve, 300000));
     } catch (error) {
       console.warn('Failed to retrieve push token:', error);
       await new Promise(resolve => setTimeout(resolve, 3000));

@@ -70,12 +70,14 @@ import OnboardingCard from "./src/Screens/VirtualCard/OnboardingCard";
 import VerifyIdentity from "./src/Screens/VirtualCard/VerifyIdentity";
 import KYCValidation from "./src/Screens/VirtualCard/KYCValidation";
 import ManageVirtualCard from "./src/Screens/VirtualCard/ManageVirtualCard";
+import TransactionDetails from "./src/Screens/VirtualCard/TransactionDetails";
 import KycResume from "./src/Screens/VirtualCard/KycResume";
 import KycSelfie from "./src/Screens/VirtualCard/KycSelfie";
 import PersonalDetail from "./src/Screens/VirtualCard/PersonalDetail";
 import NIU from "./src/Screens/VirtualCard/NIU";
 import Addresse from "./src/Screens/VirtualCard/Adresse";
 import IdentityCard from "./src/Screens/VirtualCard/IdentityCard";
+import CardAction from "./src/Screens/VirtualCard/CardAction";
 import IdentityVerification from "./src/Screens/VirtualCard/IdentityVerification";
 import AddressSelect from "./src/Screens/VirtualCard/AddressSelect";
 import AddressConfirm from "./src/Screens/VirtualCard/AddressConfirm";
@@ -293,7 +295,7 @@ function MainTabs() {
 
       <Tab.Screen 
         name="ManageVirtualCardTab" 
-        component={ManageVirtualCard} 
+        component={OnboardingCard} 
         options={{ 
           title: t('tabs.cards'),
           unmountOnBlur: true 
@@ -340,7 +342,7 @@ function MainStack() {
           statusBarTranslucent: false,              // ← obligatoire
           headerStyle: {
             backgroundColor: Colors.primary,
-            height: Platform.select({ ios: 60, android: 60 }), 
+            height: Platform.select({ ios: 60, android: 80 }), 
             elevation: 0,
             shadowOpacity: 0,
           },
@@ -422,6 +424,7 @@ function MainStack() {
       <Stack.Screen name="CreateVirtualCard" component={CreateVirtualCard}options={{ headerTitle: t('Screens.createCard') }} />
       <Stack.Screen name="VerifyIdentity" component={VerifyIdentity} options={{ headerShown: false }} />
       <Stack.Screen name="ManageVirtualCard" component={ManageVirtualCard} options={{ headerShown: false }} />
+      <Stack.Screen name="TransactionDetails" component={TransactionDetails} options={{ headerShown: false }} />
       <Stack.Screen name="KycResume" component={KycResume} options={{ headerShown: false }} />
       <Stack.Screen name="KycSelfie" component={KycSelfie} options={{ headerShown: false }} />
       <Stack.Screen name="PersonalDetail" component={PersonalDetail} options={{ headerShown: false }} />
@@ -438,6 +441,7 @@ function MainStack() {
       <Stack.Screen name="WelcomeShare" component={WelcomeShare} options={{ headerShown: false }} />
       <Stack.Screen name="Destinators" component={Destinators} options={{ headerShown: false }} />
       <Stack.Screen name="Request" component={Request} options={{ headerShown: false }} />
+      <Stack.Screen name="CardAction" component={CardAction} options={{headerShown:false}} />
       <Stack.Screen name="SuccessSharing" component={SuccessSharing} options={{ headerShown: false }} />
       <Stack.Screen name="CreateShare" component={CreateShare} options={{ headerShown: false }} />
       <Stack.Screen name="DistributionMethod" component={DistributionMethod} options={{ headerShown: false }} />

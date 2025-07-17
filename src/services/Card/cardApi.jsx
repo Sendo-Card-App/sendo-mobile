@@ -4,39 +4,57 @@ const CARD_ENDPOINTS = {
   SEND_REQUEST: '/cards/onboarding/send-request',
   GET_USER_REQUEST: '/cards/onboarding/requests/user',
   CREATE_VIRTUAL_CARD: '/cards',
+  GET_VIRTUAL_CARDS: '/cards/user',
+  GET_VIRTUAL_CARD_DETAILS: '/cards/', // with {cardId}
+  FREEZE_CARD: '/cards/freeze/',
+  UNFREEZE_CARD: '/cards/unfreeze/',
+  DEPOSIT: '/cards/deposit',
+  WITHDRAW: '/cards/withdrawal',
 };
 
 export const cardApi = createApi({
   reducerPath: 'cardApi',
   baseQuery: fetchBaseQuery({
     baseUrl: process.env.EXPO_PUBLIC_API_URL,
-   prepareHeaders: (headers, { getState }) => {
-    const token = getState().auth.accessToken;
+    prepareHeaders: (headers, { getState, endpoint }) => {
+      const { accessToken } = getState().auth;
+      const { passcode } = getState().passcode;
 
-    if (token) {
-        // console.log(' Token présent :', token); 
-        headers.set('Authorization', `Bearer ${token}`);
-    } else {
-        // console.warn(' Aucun token trouvé dans le state'); 
+      headers.set('Accept', 'application/json');
+      headers.set('Content-Type', 'application/json');
+
+      if (accessToken) {
+        headers.set('Authorization', `Bearer ${accessToken}`);
+      }
+
+      const passcodeRequiredEndpoints = [
+        'rechargeCard',
+        'withdrawFromCard',
+      ];
+
+      if (passcodeRequiredEndpoints.includes(endpoint)) {
+        if (passcode) {
+          headers.set('X-Passcode', passcode);
+        } else {
+          console.warn(`⚠️ Missing or invalid passcode (${passcode}) for endpoint: ${endpoint}`);
+        }
+      }
+
+      return headers;
     }
-
-    return headers;
-    }
-
   }),
   tagTypes: ['Card'],
-
   endpoints: (builder) => ({
     requestVirtualCard: builder.mutation({
-      query: () => ({
+      query: (documentType) => ({
         url: CARD_ENDPOINTS.SEND_REQUEST,
         method: 'POST',
-        body: {},
+        body: { documentType },
       }),
       invalidatesTags: ['Card'],
     }),
 
-     createVirtualCard: builder.mutation({
+    createVirtualCard: builder.mutation({
       query: (body) => ({
         url: CARD_ENDPOINTS.CREATE_VIRTUAL_CARD,
         method: 'POST',
@@ -49,6 +67,56 @@ export const cardApi = createApi({
       query: () => CARD_ENDPOINTS.GET_USER_REQUEST,
       providesTags: ['Card'],
     }),
+
+    getVirtualCards: builder.query({
+      query: () => CARD_ENDPOINTS.GET_VIRTUAL_CARDS,
+      providesTags: ['Card'],
+    }),
+
+    getVirtualCardDetails: builder.query({
+      query: (cardId) => `${CARD_ENDPOINTS.GET_VIRTUAL_CARD_DETAILS}${cardId}`,
+      providesTags: ['Card'],
+    }),
+
+    freezeCard: builder.mutation({
+      query: (cardId) => ({
+        url: `${CARD_ENDPOINTS.FREEZE_CARD}${cardId}`,
+        method: 'PUT',
+      }),
+      invalidatesTags: ['Card'],
+    }),
+
+    unfreezeCard: builder.mutation({
+      query: (cardId) => ({
+        url: `${CARD_ENDPOINTS.UNFREEZE_CARD}${cardId}`,
+        method: 'PUT',
+      }),
+      invalidatesTags: ['Card'],
+    }),
+
+    rechargeCard: builder.mutation({
+      query: ({ matriculeWallet, amount, idCard }) => ({
+        url: CARD_ENDPOINTS.DEPOSIT,
+        method: 'POST',
+        body: { matriculeWallet, amount, idCard },
+      }),
+      invalidatesTags: ['Card'],
+    }),
+
+    withdrawFromCard: builder.mutation({
+      query: ({ matriculeWallet, amount, idCard }) => ({
+        url: CARD_ENDPOINTS.WITHDRAW,
+        method: 'POST',
+        body: { matriculeWallet, amount, idCard },
+      }),
+      invalidatesTags: ['Card'],
+    }),
+
+    getCardTransactions: builder.query({
+      query: (cardId) => `/cards/${cardId}/transactions`,
+      providesTags: ['Card'],
+    }),
+
   }),
 });
 
@@ -56,4 +124,12 @@ export const {
   useRequestVirtualCardMutation,
   useCreateVirtualCardMutation,
   useGetVirtualCardStatusQuery,
+  useGetVirtualCardsQuery,
+  useGetVirtualCardDetailsQuery,
+  useFreezeCardMutation,
+  useUnfreezeCardMutation,
+  useRechargeCardMutation,
+  useWithdrawFromCardMutation,
+  useGetCardTransactionsQuery,
+
 } = cardApi;

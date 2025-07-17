@@ -111,7 +111,7 @@ useEffect(() => {
         break; 
       } catch (error) {
         console.log('Error updating push token, retrying in 3s...', JSON.stringify(error, null, 2));
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        await new Promise(resolve => setTimeout(resolve, 30000));
       }
     }
   };

@@ -83,7 +83,7 @@ const handleSubmit = async () => {
       district: personalDetails.district,
     };
 
-    // Mise à jour du profil
+    // 1. Update profile
     await updateProfile(profilePayload).unwrap();
 
     const documents = [];
@@ -91,7 +91,6 @@ const handleSubmit = async () => {
 
     const addDocumentAndFile = async (doc, uri, index) => {
       documents.push(doc);
-
       const compressedUri = await compressImage(uri);
       const name = `file_${index + 1}.jpg`;
 
@@ -104,7 +103,7 @@ const handleSubmit = async () => {
 
     let fileIndex = 0;
 
-    // 1. ID_PROOF — FRONT
+    // 2. ID_PROOF
     if (identityDocument.front) {
       await addDocumentAndFile(
         { type: 'ID_PROOF', idDocumentNumber },
@@ -121,7 +120,6 @@ const handleSubmit = async () => {
       }
     }
 
-    // Ajoute le verso si CNI ou permis
     if (
       (identityDocument.type === 'cni' || identityDocument.type === 'drivers_license') &&
       identityDocument.back
@@ -160,23 +158,20 @@ const handleSubmit = async () => {
       );
     }
 
-    // === Logs JSON pour debug ===
     console.log('Documents to submit:', JSON.stringify(documents, null, 2));
     console.log('Files to upload:', files);
 
-    // Validation stricte
     if (documents.length !== 5 || files.length !== 5) {
       Toast.show({
         type: 'error',
         text1: 'Erreur de validation',
         text2: `5 documents et 5 fichiers sont requis. Actuellement: ${documents.length} doc(s), ${files.length} fichier(s)`,
-        visibilityTime: 5000
+        visibilityTime: 5000,
       });
       dispatch(setSubmissionStatus('idle'));
       return;
     }
 
-    // Préparation FormData
     const formData = new FormData();
     formData.append('documents', JSON.stringify(documents), {
       contentType: 'application/json',
@@ -187,42 +182,42 @@ const handleSubmit = async () => {
       formData.append('files', file);
     });
 
-    // Log FormData ready 
     console.log('FormData ready with 5 files and documents');
 
-    // Timeout fallback 3s
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Request timeout')), 3000)
-    );
+    const response = await submitKYC(formData).unwrap();
+    
+    console.log('KYC submission response:', JSON.stringify(response, null, 2));
 
-    // Envoi avec timeout
-    const response = await Promise.race([
-      submitKYC(formData).unwrap(),
-      timeoutPromise
-    ]);
-   console.log('KYC submission response:', JSON.stringify(response, null, 2));
-    if (response.status === 201) {
+    if (response?.status === 201) {
       navigation.navigate('Success', {
         message: 'Votre KYC a été soumis avec succès',
-        nextScreen: 'MainTabs'
+        nextScreen: 'MainTabs',
+      });
+    } else {
+      Toast.show({
+        type: 'error',
+        text1: 'Échec',
+        text2: 'Le serveur a répondu, mais la soumission a échoué.',
+        visibilityTime: 5000,
       });
     }
 
   } catch (error) {
-    console.error('KYC submission error:', JSON.stringify(error, null, 2));
+    console.error('KYC submission error:', JSON.stringify(error ?? {}, null, 2));
 
     let errorMessage = 'Échec de la soumission du KYC';
 
-    if (error.message === 'Request timeout') {
+    if (error?.message === 'Request timeout') {
       errorMessage = "La requête a pris trop de temps. Veuillez vérifier votre connexion.";
     } else if (error?.data?.message?.includes('Aucun fichier fourni')) {
-      errorMessage = `Documents requis: ${error.data.data.required.mandatoryTypes.join(', ')}`;
+      const required = error?.data?.data?.required?.mandatoryTypes ?? [];
+      errorMessage = `Documents requis: ${required.join(', ')}`;
     } else if (error?.data?.code) {
       const errorCodes = {
         'ERR_MISSING': 'Veuillez remplir tous les champs obligatoires',
         'ERR_FORMAT': 'Format invalide dans les données',
         'ERR_UPLOAD': 'Échec du téléchargement des documents',
-        'ERR_TECH': 'Erreur technique interne'
+        'ERR_TECH': 'Erreur technique interne',
       };
       errorMessage = errorCodes[error.data.code] || errorMessage;
     }
@@ -231,12 +226,14 @@ const handleSubmit = async () => {
       type: 'error',
       text1: 'Erreur',
       text2: errorMessage,
-      visibilityTime: 5000
+      visibilityTime: 5000,
     });
   } finally {
     dispatch(setSubmissionStatus('idle'));
   }
 };
+
+
   const KycOption = ({ id, name, route, completed }) => (
     <TouchableOpacity
       className={`py-2 px-4 my-2 rounded-2xl flex-row items-center gap-3 ${completed ? 'bg-green-100' : 'bg-[#ededed]'}`}

@@ -40,7 +40,7 @@ const AboutUs = () => {
           <Text className="text-gray-400 text-sm ml-4 mt-3">
             Siège social : 2001 Boulevard Robert-Bourassa, Montréal, Québec,
             Canada, H3A 2A6. {"\n"}
-            Courriel de contact : supportsendo@sf-e.ca. {"\n"}
+            Courriel de contact : infosendo@sf-e.ca. {"\n"}
             Numéro de téléphone du service client : 581 907 2096. Numéro
             d’entreprise du Québec (NEQ) : 1180279300.
           </Text>
@@ -119,7 +119,7 @@ const AboutUs = () => {
           </Text>
           <Text className="text-gray-400 text-sm ml-4 -mt-3">
             Pour toute question ou assistance, vous pouvez nous contacter via le
-            service client intégré ou par courriel à supportsendo@sf-e.ca ou au
+            service client intégré ou par courriel à infosendo@sf-e.ca ou au
             581 907 2096.
           </Text>
         </View>

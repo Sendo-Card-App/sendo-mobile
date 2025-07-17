@@ -68,11 +68,12 @@ const WalletRecharge = () => {
   const trimmedPhone = phone.trim();
   const normalizedPhone = trimmedPhone.startsWith("+237")
     ? trimmedPhone
-    : trimmedPhone.startsWith("237")
+    : trimmedPhone.startsWith("+237")
     ? `+${trimmedPhone}`
-    : `237${trimmedPhone}`;
+    : `+237${trimmedPhone}`;
+     console.log("✅ Phone after normalization:", normalizedPhone);
 
-  if (normalizedPhone.length !== 12) {
+  if (normalizedPhone.length !== 12 && !normalizedPhone.startsWith("+237")) {
     Toast.show({
       type: "error",
       text1: "Numéro invalide",
@@ -177,7 +178,7 @@ const WalletRecharge = () => {
       });
     }
       } catch (error) {
-        console.log(error)
+          console.log(' Réponse du backend :', JSON.stringify(error, null, 2));
       const status = error?.data?.status;
       const respCode = error?.data?.data?.details?.respCode || error?.data?.data?.detaila?.response;
       const usrMsg = error?.data?.data?.details?.usrMsg;

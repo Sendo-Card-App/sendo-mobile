@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useState, useRef  } from 'react';
+import React, { useEffect, useCallback, useState, useRef } from 'react';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import {
   View,
@@ -9,9 +9,11 @@ import {
   Dimensions,
   ActivityIndicator,
   Animated,
-   Easing 
+  Easing 
 } from 'react-native';
+import Toast from 'react-native-toast-message';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useTranslation } from 'react-i18next';
 
 import {
   useRequestVirtualCardMutation,
@@ -23,37 +25,37 @@ const REQUEST_DATE_KEY = '@cardRequestDate';
 
 const OnboardingCardScreen = () => {
   const navigation = useNavigation();
+  const { t } = useTranslation();
   const [requestCard, { isLoading: isRequesting }] = useRequestVirtualCardMutation();
   const {
     data: cardRequest,
     isLoading: isFetchingStatus,
     refetch,
   } = useGetVirtualCardStatusQuery();
-
-  const status = cardRequest?.data?.onboardingSessionStatus;
+ 
+  const status = cardRequest?.data?.onboardingSession?.onboardingSessionStatus;
   const [requestDate, setRequestDate] = useState(null);
   const [remainingTime, setRemainingTime] = useState(null);
   const rotation = useRef(new Animated.Value(0)).current;
+  const DEFAULT_DOCUMENT_TYPE = "NATIONALID";
 
   useEffect(() => {
-  Animated.loop(
-    Animated.timing(rotation, {
-      toValue: 1,
-      duration: 10000, 
-      easing: Easing.linear,
-      useNativeDriver: true,
-    })
-  ).start();
-}, []);
+    Animated.loop(
+      Animated.timing(rotation, {
+        toValue: 1,
+        duration: 10000, 
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    ).start();
+  }, []);
 
-  // Redirection automatique
   useEffect(() => {
-    if (status === 'APPROVED') {
+    if (status === 'VERIFIED') {
       navigation.replace('CreateVirtualCard');
     }
   }, [status, navigation]);
 
-  // Charger la date
   useEffect(() => {
     const loadDate = async () => {
       const savedDate = await AsyncStorage.getItem(REQUEST_DATE_KEY);
@@ -62,7 +64,6 @@ const OnboardingCardScreen = () => {
     loadDate();
   }, []);
 
-  // Timer
   useEffect(() => {
     if (!requestDate) return;
 
@@ -86,7 +87,6 @@ const OnboardingCardScreen = () => {
     return () => clearInterval(interval);
   }, [requestDate]);
 
-  // Refetch régulier
   useFocusEffect(
     useCallback(() => {
       const interval = setInterval(() => {
@@ -98,18 +98,33 @@ const OnboardingCardScreen = () => {
 
   const handleRequestCard = async () => {
     try {
-      const response = await requestCard().unwrap();
-      console.log('✅ Réponse du backend :', JSON.stringify(response, null, 2));
+      const response = await requestCard({ documentType: DEFAULT_DOCUMENT_TYPE }).unwrap();
+
+      Toast.show({
+        type: 'success',
+        text1: t('onboardingCard.toast.success.title'),
+        text2: t('onboardingCard.toast.success.message'),
+      });
+
       const now = new Date().toISOString();
       await AsyncStorage.setItem(REQUEST_DATE_KEY, now);
       setRequestDate(now);
       await refetch();
     } catch (error) {
-      if (error?.data) {
-        console.error('Erreur API (backend) :', JSON.stringify(error.data, null, 2));
-      } else {
-        console.error('Erreur inconnue :', JSON.stringify(error, null, 2));
+      const backendMessage = error?.data?.message || t('onboardingCard.toast.error.generic');
+      const details = error?.data?.data?.details?.required;
+
+      let fullMessage = backendMessage;
+
+      if (details?.mandatoryTypes) {
+        fullMessage += `\n${t('onboardingCard.toast.error.requiredDocuments')}: ${details.mandatoryTypes.join(', ')}`;
       }
+
+      Toast.show({
+        type: 'error',
+        text1: t('onboardingCard.toast.error.title'),
+        text2: fullMessage,
+      });
     }
   };
 
@@ -128,14 +143,16 @@ const OnboardingCardScreen = () => {
               status === 'PENDING' ? styles.statusBadgePending : styles.statusBadgeWaiting
             ]}>
               <Text style={styles.statusBadgeText}>
-                {status === 'PENDING' ? 'En cours' : 'En attente'}
+                {status === 'PENDING' 
+                  ? t('onboardingCard.pending.status.pending') 
+                  : t('onboardingCard.pending.status.waiting')}
               </Text>
             </View>
           </View>
           
-          <Text style={styles.pendingTitle}>Demande en traitement</Text>
+          <Text style={styles.pendingTitle}>{t('onboardingCard.pending.title')}</Text>
           <Text style={styles.pendingSubtitle}>
-            Nous examinons votre demande de carte virtuelle. Cela peut prendre jusqu'à 24 heures.
+            {t('onboardingCard.pending.subtitle')}
           </Text>
           
           <View style={styles.timelineContainer}>
@@ -154,15 +171,15 @@ const OnboardingCardScreen = () => {
             </View>
             
             <View style={styles.timelineLabels}>
-              <Text style={styles.timelineLabel}>Demandé</Text>
-              <Text style={styles.timelineLabel}>En vérification</Text>
-              <Text style={styles.timelineLabel}>Approuvé</Text>
+              <Text style={styles.timelineLabel}>{t('onboardingCard.pending.timeline.requested')}</Text>
+              <Text style={styles.timelineLabel}>{t('onboardingCard.pending.timeline.verification')}</Text>
+              <Text style={styles.timelineLabel}>{t('onboardingCard.pending.timeline.approved')}</Text>
             </View>
           </View>
           
           <View style={styles.detailsContainer}>
             <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Date de demande:</Text>
+              <Text style={styles.detailLabel}>{t('onboardingCard.pending.labels.requestDate')}</Text>
               <Text style={styles.detailValue}>
                 {requestDate ? new Date(requestDate).toLocaleString() : '--'}
               </Text>
@@ -170,7 +187,7 @@ const OnboardingCardScreen = () => {
             
             {remainingTime && (
               <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>Temps restant:</Text>
+                <Text style={styles.detailLabel}>{t('onboardingCard.pending.labels.timeLeft')}</Text>
                 <View style={styles.timerContainer}>
                   <Text style={styles.timerText}>{remainingTime}</Text>
                 </View>
@@ -189,9 +206,9 @@ const OnboardingCardScreen = () => {
             style={styles.statusImage}
             resizeMode="contain"
           />
-          <Text style={styles.statusTitle}>Demande annulée</Text>
+          <Text style={styles.statusTitle}>{t('onboardingCard.cancelled.title')}</Text>
           <Text style={styles.statusSubtitle}>
-            Votre demande de carte a été annulée. Vous pouvez réessayer ou contacter le support.
+            {t('onboardingCard.cancelled.subtitle')}
           </Text>
         </View>
       );
@@ -215,16 +232,16 @@ const OnboardingCardScreen = () => {
             ]}
           />
           <Image
-            source={require('../../Images/VirtualCard.png')}
+            source={require('../../Images/virtual.png')}
             style={styles.cardImage}
             resizeMode="contain"
           />
         </View>
         <Text style={styles.title}>
-          L'ARGENT{'\n'}INTERNATIONAL{'\n'}SIMPLIFIÉ
+          {t('onboardingCard.title')}
         </Text>
         <Text style={styles.subtitle}>
-          Dépensez à l'étranger comme à la maison. Pas de majorations, pas de frais de transaction.
+          {t('onboardingCard.subtitle')}
         </Text>
       </>
     );
@@ -248,8 +265,8 @@ const OnboardingCardScreen = () => {
         ) : (
           <Text style={styles.buttonText}>
             {['PENDING', 'WAITING_FOR_INFORMATION'].includes(status)
-              ? 'Demande en cours...'
-              : 'Commandez une carte de débit'}
+              ? t('onboardingCard.button.pending')
+              : t('onboardingCard.button.default')}
           </Text>
         )}
       </TouchableOpacity>
