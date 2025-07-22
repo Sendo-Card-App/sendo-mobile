@@ -35,19 +35,16 @@ const Address = () => {
     provider,
   } = route.params;
 
-  const nameParts = contact.name.split(" ");
-  const firstname = nameParts[0];
-  const lastname = nameParts.slice(1).join(" ");
-
-  const [formData, setFormData] = useState({
-    firstname,
-    lastname,
-    phone: contact.phone,
-    country: countryName,
-    address: "",
-    email: "",
-    description: "",
-  });
+    const user = contact.ownerUser;
+    const [formData, setFormData] = useState({
+      firstname: user?.firstname || contact.name?.split(" ")[0] || "",
+      lastname: user?.lastname || contact.name?.split(" ").slice(1).join(" ") || "",
+      phone: contact.phone || user?.phone || "",
+      country: countryName,
+      address: user?.address || "",
+      email: user?.email || "",
+      description: "",
+    });
 
   const handleInputChange = (name, value) => {
     setFormData((prev) => ({ ...prev, [name]: value }));

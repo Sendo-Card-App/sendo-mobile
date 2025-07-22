@@ -70,6 +70,7 @@ import Account from "./src/screens/Profile/Account";
 import Settings from "./src/screens/Setting/Settings";
 import CreateVirtualCard from "./src/screens/VirtualCard/CreateVirtualCard";
 import CardSettings from "./src/screens/VirtualCard/CardSettings";
+import TransactionHistory from "./src/screens/VirtualCard/TransactionHistory";
 import OnboardingCard from "./src/screens/VirtualCard/OnboardingCard";
 import VerifyIdentity from "./src/screens/VirtualCard/VerifyIdentity";
 import KYCValidation from "./src/screens/VirtualCard/KYCValidation";
@@ -262,27 +263,27 @@ function CustomTabBar({ state, descriptors, navigation }) {
 // Tab Navigator
 function MainTabs() {
   const { t } = useTranslation();
-  const VirtualCardTab = () => {
+const VirtualCardTab = () => {
   const { data: userProfile, isLoading: isProfileLoading } = useGetUserProfileQuery();
   const navigation = useNavigation();
 
   useEffect(() => {
     if (!isProfileLoading) {
       const status = userProfile?.virtualCard?.status;
-      if (status === "ACTIVE" || status === "PRE_ACTIVE") {
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'MainTabs' }], 
-        });
-      } else {
-        navigation.navigate('MainStack', { 
-          screen: 'OnboardingCard' 
-        });
+      if (status !== "ACTIVE" && status !== "PRE_ACTIVE") {
+        navigation.navigate('OnboardingCard');
       }
     }
   }, [userProfile, isProfileLoading]);
 
-  return <ManageVirtualCard />; 
+  // Only render ManageVirtualCard if status is valid
+  const status = userProfile?.virtualCard?.status;
+  if (isProfileLoading || status === "ACTIVE" || status === "PRE_ACTIVE") {
+    return <ManageVirtualCard />;
+  }
+  
+  // Return null or loading indicator while redirecting
+  return null;
 };
 
   return (
@@ -440,6 +441,7 @@ function MainStack() {
        <Stack.Screen name="ServiceScreen" component={ServiceScreen} options={{ headerShown: false }} />
        <Stack.Screen name="OnboardingCard" component={OnboardingCard} options={{ headerShown: false }} />
       <Stack.Screen name="Confirme" component={Confirme} options={{ headerShown: false }} />
+      <Stack.Screen name="TransactionHistory" component={TransactionHistory} options={{ headerShown: false }} />
       <Stack.Screen name="Success" component={Success} options={{ headerShown: false }} />
       <Stack.Screen name="Support" component={Support} options={{ headerTitle: t('screens.support') }}/>
       <Stack.Screen name="ChatScreen" component={ChatScreen} options={{ headerTitle: t('screens.chat') }} />

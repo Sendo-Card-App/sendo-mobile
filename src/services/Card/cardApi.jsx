@@ -124,9 +124,11 @@ export const cardApi = createApi({
     }),
 
     getCardBalance: builder.query({
-      query: (cardId) => `/cards/balance?idCard=${cardId}`,
+      query: ({ idCard }) => `/cards/balance?idCard=${idCard}`,
       providesTags: ['Card'],
     }),
+
+
 
     deleteCard: builder.mutation({
       query: (cardId) => ({
@@ -135,6 +137,14 @@ export const cardApi = createApi({
       }),
       invalidatesTags: ['Card'],
     }),
+
+    getCardDebts: builder.query({
+      query: (idCard) => `/cards/${idCard}/debts`,
+    }),
+
+  getUnlockStatus: builder.query({
+    query: (cardId) => `/cards/${cardId}/unlock`,
+  }),
 
 
   }),
@@ -154,5 +164,7 @@ export const {
   useGetCardTransactionsQuery,
    useGetCardBalanceQuery,
   useDeleteCardMutation,
+  useGetCardDebtsQuery,
+  useGetUnlockStatusQuery,
 
 } = cardApi;

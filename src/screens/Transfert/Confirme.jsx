@@ -46,7 +46,7 @@ const ConfirmeTheTransfer = () => {
     toCurrency,
     cadRealTimeValue,
   } = route.params;
-
+  
   const providerImage =
     provider === "Orange Money"
       ? om
@@ -63,7 +63,7 @@ const handleConfirmPress = () => {
       onSuccess: async (pin) => {
         const notificationData = {
           title: "Transfert Initié",
-          body: `Vous avez envoyé ${totalAmount} ${toCurrency}  a ${formData.firstname} via ${provider}.`,
+          body: `Vous avez envoyé ${convertedAmount} ${toCurrency}  a ${formData.firstname} via ${provider}.`,
           type: "SUCCESS_TRANSFER_FUNDS",
         };
 
@@ -76,7 +76,7 @@ const handleConfirmPress = () => {
             country: formData.country,
             address: formData.address,
             description: formData.description,
-            amount: totalAmount,
+            amount: convertedAmount,
             provider,
             pin,
           }).unwrap();
@@ -218,7 +218,7 @@ const handleConfirmPress = () => {
             },
             {
               label: t("confirmeTheTransfer.transferFee"),
-              value: `${transferFee} ${toCurrency}`,
+              value: '0 XAF',
             },
             {
               label: t("confirmeTheTransfer.exchangeRate"),
@@ -230,7 +230,7 @@ const handleConfirmPress = () => {
             },
             {
               label: t("confirmeTheTransfer.totalDebited"),
-              value: `${totalAmount} ${toCurrency}`,
+              value: `${convertedAmount} ${toCurrency}`,
             },
           ].map((item, index) => (
             <View

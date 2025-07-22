@@ -47,11 +47,12 @@ const filteredContacts = useMemo(() => {
 
   return synchronizedContacts.filter((friend) => {
     const friendName = friend?.name?.toLowerCase() || '';
-    const contactUserId = friend?.contactUser?.id;
+    const contactUserId = friend?.ownerUser?.id;
 
     return contactUserId !== userId && friendName.includes(searchQuery.toLowerCase());
   });
 }, [searchQuery, synchronizedContacts, userId]);
+
 
 
 
@@ -76,17 +77,18 @@ const filteredContacts = useMemo(() => {
     setIsSubmitting(true);
 
     try {
-     const participants = selectedFriends.map((friendId) => {
-        const friend = synchronizedContacts.find((f) => f.id === friendId);
-        const firstName = friend?.contactUser?.firstname || "";
-        const lastName = friend?.contactUser?.lastname || "";
-        return {
-          id: friend.id,
-          matriculeWallet: friend?.contactUser?.wallet?.matricule,
-          name: `${firstName} ${lastName}`.trim(),
-          amount: 0,
-        };
-      });
+    const participants = selectedFriends.map((friendId) => {
+      const friend = synchronizedContacts.find((f) => f.id === friendId);
+      const firstName = friend?.ownerUser?.firstname || "";
+      const lastName = friend?.ownerUser?.lastname || "";
+      return {
+        id: friend.id,
+        matriculeWallet: friend?.ownerUser?.wallet?.matricule,
+        name: `${firstName} ${lastName}`.trim(),
+        amount: 0,
+      };
+    });
+
     
       navigation.navigate("DistributionMethod", {
         ...route.params,

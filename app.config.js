@@ -21,14 +21,13 @@ module.exports = {
     },
     ios: {
       supportsTablet: true,
-      bundleIdentifier: "com.sfe.sendo",
+      bundleIdentifier: "com.sfe.sendo2025",
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
          NSNotificationsUsageDescription: "This app uses notifications to inform you about updates."
       }
     },
     android: {
-       googleServicesFile: "./google-services.json",
       adaptiveIcon: {
         foregroundImage: "./assets/logo.png", 
         backgroundColor: "#181e25"
@@ -40,7 +39,7 @@ module.exports = {
         "android.permission.READ_CONTACTS",
         "android.permission.WRITE_CONTACTS"
       ],
-      package: "com.sfe.sendo"
+      package: "com.sfe.sendo2025"
     },
     web: {
       favicon: "./assets/favicon.png"

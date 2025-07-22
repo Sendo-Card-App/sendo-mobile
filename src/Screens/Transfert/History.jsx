@@ -101,7 +101,10 @@ const HistoryCard = ({ transaction, user, onPress }) => {
         </Text>
         <View className="items-end">
           <Text className="text-gray-600 text-sm">
-            {transaction.createdAt ? moment(transaction.createdAt).format('DD/MM/YYYY HH:mm') : 'N/A'}
+            {transaction.createdAt ? 
+              moment.utc(transaction.createdAt).local().format('DD/MM/YYYY HH:mm') : 
+              'N/A'
+            }
           </Text>
           <Text className={`text-sm font-bold ${getStatusColor(transaction.status)}`}>
             {t(`history1.${transaction.status?.toLowerCase()}`)}
@@ -120,10 +123,15 @@ const FilterModal = ({ visible, onClose, filters, setFilters, applyFilters }) =>
   const handleDateChange = (event, selectedDate) => {
     setShowDatePicker(false);
     if (selectedDate) {
-      setFilters(prev => ({
-        ...prev,
+      const newFilters = {
+        ...filters,
         [dateType === 'start' ? 'startDate' : 'endDate']: selectedDate
-      }));
+      };    
+      // If end date is before start date, auto-adjust it
+      if (dateType === 'start' && newFilters.endDate && moment(selectedDate).isAfter(newFilters.endDate)) {
+        newFilters.endDate = selectedDate;
+      }   
+      setFilters(newFilters);
     }
   };
 
@@ -187,26 +195,33 @@ const FilterModal = ({ visible, onClose, filters, setFilters, applyFilters }) =>
               </View>
 
               {filters.dateRange === 'custom' && (
-                <View className="flex-row justify-between mt-2">
-                  <TouchableOpacity 
-                    className="border p-2 rounded flex-1 mr-2"
-                    onPress={() => {
-                      setDateType('start');
-                      setShowDatePicker(true);
-                    }}
-                  >
-                    <Text>{filters.startDate ? moment(filters.startDate).format('DD/MM/YYYY') : t('history1.startDate')}</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity 
-                    className="border p-2 rounded flex-1 ml-2"
-                    onPress={() => {
-                      setDateType('end');
-                      setShowDatePicker(true);
-                    }}
-                  >
-                    <Text>{filters.endDate ? moment(filters.endDate).format('DD/MM/YYYY') : t('history1.endDate')}</Text>
-                  </TouchableOpacity>
-                </View>
+                <>
+                  <View className="flex-row justify-between mt-2">
+                    <TouchableOpacity 
+                      className="border p-2 rounded flex-1 mr-2"
+                      onPress={() => {
+                        setDateType('start');
+                        setShowDatePicker(true);
+                      }}
+                    >
+                      <Text>{filters.startDate ? moment(filters.startDate).format('DD/MM/YYYY') : t('history1.startDate')}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      className="border p-2 rounded flex-1 ml-2"
+                      onPress={() => {
+                        setDateType('end');
+                        setShowDatePicker(true);
+                      }}
+                    >
+                      <Text>{filters.endDate ? moment(filters.endDate).format('DD/MM/YYYY') : t('history1.endDate')}</Text>
+                    </TouchableOpacity>
+                  </View>
+                  {filters.startDate && filters.endDate && moment(filters.endDate).isBefore(filters.startDate) && (
+                    <Text className="text-red-500 text-sm mt-1">
+                      {t('history1.endDateBeforeStart')}
+                    </Text>
+                  )}
+                </>
               )}
             </View>
 
@@ -274,7 +289,7 @@ const FilterModal = ({ visible, onClose, filters, setFilters, applyFilters }) =>
             </View>
           </ScrollView>
 
-          <View className="flex-row justify-between">
+<View className="flex-row justify-between">
             <TouchableOpacity 
               className="px-4 py-3 bg-gray-200 rounded-full flex-1 mr-2"
               onPress={() => {
@@ -291,16 +306,35 @@ const FilterModal = ({ visible, onClose, filters, setFilters, applyFilters }) =>
               <Text className="text-center font-bold">{t('history1.reset')}</Text>
             </TouchableOpacity>
             <TouchableOpacity 
-              className="px-4 py-3 bg-green-500 rounded-full flex-1 ml-2"
+              className={`px-4 py-3 rounded-full flex-1 ml-2 ${
+                filters.dateRange === 'custom' && 
+                filters.startDate && 
+                filters.endDate && 
+                moment(filters.endDate).isBefore(filters.startDate)
+                  ? 'bg-gray-400'
+                  : 'bg-green-500'
+              }`}
               onPress={() => {
+                if (filters.dateRange === 'custom' && 
+                    filters.startDate && 
+                    filters.endDate && 
+                    moment(filters.endDate).isBefore(filters.startDate)) {
+                  Alert.alert(t('history1.invalidDateRange'));
+                  return;
+                }
                 applyFilters();
                 onClose();
               }}
+              disabled={
+                filters.dateRange === 'custom' && 
+                filters.startDate && 
+                filters.endDate && 
+                moment(filters.endDate).isBefore(filters.startDate)
+              }
             >
               <Text className="text-center text-white font-bold">{t('history1.apply')}</Text>
             </TouchableOpacity>
           </View>
-
         </View>
       </View>
 
@@ -318,7 +352,8 @@ const FilterModal = ({ visible, onClose, filters, setFilters, applyFilters }) =>
                 mode="date"
                 display={Platform.OS === 'ios' ? 'spinner' : 'default'}
                 onChange={handleDateChange}
-                style={Platform.OS === 'android' ? { alignSelf: 'center' } : {}}
+                maximumDate={dateType === 'end' ? null : filters.endDate || null}
+                minimumDate={dateType === 'start' ? null : filters.startDate || null}
               />
               <TouchableOpacity
                 onPress={() => setShowDatePicker(false)}
@@ -383,41 +418,45 @@ const History = () => {
   }
 
   const applyFilters = () => {
-    const params = {
-      page: 1,
-      limit: 10,
-      ...(filters.method && { method: filters.method }),
-      ...(filters.type && { type: filters.type }),
-      ...(filters.status && { status: filters.status }),
-    };
-    
-    if (filters.dateRange) {
-      switch(filters.dateRange) {
-        case 'today':
-          params.startDate = moment().startOf('day').format('YYYY-MM-DD');
-          params.endDate = moment().endOf('day').format('YYYY-MM-DD');
-          break;
-        case 'week':
-          params.startDate = moment().startOf('week').format('YYYY-MM-DD');
-          params.endDate = moment().endOf('week').format('YYYY-MM-DD');
-          break;
-        case 'month':
-          params.startDate = moment().startOf('month').format('YYYY-MM-DD');
-          params.endDate = moment().endOf('month').format('YYYY-MM-DD');
-          break;
-        case 'custom':
-          if (filters.startDate) params.startDate = moment(filters.startDate).format('YYYY-MM-DD');
-          if (filters.endDate) params.endDate = moment(filters.endDate).format('YYYY-MM-DD');
-          break;
-      }
-    } else {
-      params.startDate = moment().startOf('day').format('YYYY-MM-DD');
-      params.endDate = moment().endOf('day').format('YYYY-MM-DD');
-    }
-    
-    setCurrentPage(1);
-    setAppliedFilters(params);
+  const params = {
+    page: 1,
+    limit: 10,
+    ...(filters.method && { method: filters.method }),
+    ...(filters.type && { type: filters.type }),
+    ...(filters.status && { status: filters.status }),
   };
+  
+  if (filters.dateRange) {
+    switch(filters.dateRange) {
+      case 'today':
+        params.startDate = moment().startOf('day').utc().format();
+        params.endDate = moment().endOf('day').utc().format();
+        break;
+      case 'week':
+        params.startDate = moment().startOf('week').utc().format();
+        params.endDate = moment().endOf('week').utc().format();
+        break;
+      case 'month':
+        params.startDate = moment().startOf('month').utc().format();
+        params.endDate = moment().endOf('month').utc().format();
+        break;
+      case 'custom':
+        if (filters.startDate) {
+          params.startDate = moment(filters.startDate).startOf('day').utc().format();
+        }
+        if (filters.endDate) {
+          params.endDate = moment(filters.endDate).endOf('day').utc().format();
+        }
+        break;
+    }
+  } else {
+    params.startDate = moment().startOf('day').utc().format();
+    params.endDate = moment().endOf('day').utc().format();
+  }
+  
+  setCurrentPage(1);
+  setAppliedFilters(params);
+};
 
   const handleNextPage = () => {
     const newPage = currentPage + 1;

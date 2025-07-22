@@ -38,7 +38,10 @@ const NiuRequest = () => {
   };
 
   const { data: userProfile, isLoading: isProfileLoading, refetch } = useGetUserProfileQuery();
+  //console.log('User Profile:', JSON.stringify(userProfile, null, 2));
   const userId = userProfile?.data.id;
+  const hasNiuProof = userProfile?.data?.kycDocuments?.some(doc => doc.type === "NIU_PROOF");
+
   const [niuRequest, { isLoading: isSubmitting }] = useNiuResquestMutation();
 
   const {
@@ -47,7 +50,7 @@ const NiuRequest = () => {
     error: requestsError,
     refetch: refetchRequests,
   } = useGetUserRequestsQuery(userId, { skip: !userId });
- console.log(JSON.stringify(userRequests, null, 2));
+   //console.log(JSON.stringify(userRequests, null, 2));
 
   const {
     data: configData,
@@ -76,6 +79,17 @@ const NiuRequest = () => {
       showToast('error', t('niu.errors.title'), t('niu.errors.requestsFetchFailed'));
     }
   }, [configError, requestsError]);
+
+  useEffect(() => {
+  const interval = setInterval(() => {
+    if (userId) {
+      refetchRequests();
+    }
+  }, 1000); 
+
+  return () => clearInterval(interval); 
+}, [userId]);
+
 
   useEffect(() => {
     if (userRequests?.data?.items) {
@@ -254,15 +268,18 @@ const NiuRequest = () => {
         </View>
 
         {/* Pay Button */}
-        {!completedSteps[1] && (
-          <TouchableOpacity
-            onPress={handlePayPress}
-            className="bg-green-600 mx-5 mb-5 rounded-lg py-4 items-center"
-            disabled={isSubmitting}
-          >
-            <Text className="text-white text-lg font-semibold">{t('niu.request.payButton')}</Text>
-          </TouchableOpacity>
-        )}
+      {!completedSteps[1] && !hasNiuProof && (
+        <TouchableOpacity
+          onPress={handlePayPress}
+          className="bg-green-600 mx-5 mb-5 rounded-lg py-4 items-center"
+          disabled={isSubmitting}
+        >
+          <Text className="text-white text-lg font-semibold">
+            {t('niu.request.payButton')}
+          </Text>
+        </TouchableOpacity>
+      )}
+
       </ScrollView>
 
       {/* Modal */}

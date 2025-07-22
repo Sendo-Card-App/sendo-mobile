@@ -31,7 +31,7 @@ const { width, height } = Dimensions.get('window');
 const isSmallScreen = width < 375;
 const isIOS = Platform.OS === 'ios';
 const scale = (size) => (width / 375) * size;
-const ITEM_WIDTH = width - 70;
+const ITEM_WIDTH = width - 50;
 
 const HomeScreen = () => {
   const navigation = useNavigation();
@@ -318,15 +318,17 @@ const getMethodIcon = (transaction) => {
             <View className="flex-row justify-between items-center my-2">
               <Text className="text-black text-xl">{t("home.balance")}</Text>
              <Text className="text-black text-4xl font-bold">
-               {isBalanceLoading ? (
-                    <Loader size="small" color="black" />
-                  ) : showBalance ? (
-                    `${(balanceData?.data?.balance ?? 0).toFixed(2)} ${balanceData?.data?.currency ?? ''}`
-                  ) : (
-                    '****'
-                  )}
+                {isBalanceLoading ? (
+                  <Loader size="small" color="black" />
+                ) : showBalance ? (
+                  `${(balanceData?.data?.balance ?? 0).toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })} ${balanceData?.data?.currency ?? ''}`
+                ) : (
+                  '****'
+                )}
               </Text>
-
             </View>
 
             <View className="flex-row mt-4 gap-4">

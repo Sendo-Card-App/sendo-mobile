@@ -30,7 +30,7 @@ const MethodType = ({ navigation }) => {
     ribKey: "26",
     swiftBic: "UNAFCMCX",
     iban: "CM21 10033 06870 000237000456001 26",
-    note: 'IMPORTANT : Insérez cette référence dans le champ "motif du virement" : 👉 IDENTIFIANT SENDO : *SD638468*'
+   
   };
 
   return (
@@ -175,8 +175,7 @@ const MethodType = ({ navigation }) => {
               borderLeftWidth: 4,
               borderLeftColor: '#FFA500'
             }}>
-              <Text style={{ color: '#000', fontSize: 13, fontWeight: 'bold' }}>ℹ️ {t('method.note')}</Text>
-              <Text style={{ color: '#333', fontSize: 13 }}>{bankDetails.note}</Text>
+
             </View>
           </View>
         )}

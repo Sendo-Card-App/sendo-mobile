@@ -79,13 +79,14 @@ export const authApi = createApi({
       invalidatesTags: [TAG_TYPES.AUTH],
     }),
 
-    sendOtp: builder.mutation({
-      query: (phone) => ({
-        url: AUTH_ENDPOINTS.SEND_OTP,
-        method: 'POST',
-        body: { phone },
-      }),
+   sendOtp: builder.mutation({
+    query: ({ phone }) => ({
+      url: AUTH_ENDPOINTS.SEND_OTP,
+      method: 'POST',
+      body: { phone },
     }),
+  }),
+
 
     resendOtp: builder.mutation({
       query: ({ phone }) => ({
@@ -219,6 +220,15 @@ export const authApi = createApi({
         body: { passcode: parseInt(passcode) },
       }),
     }),
+
+    updatePasscode: builder.mutation({
+      query: ({ passcode, code }) => ({
+        url: '/users/update-passcode',
+        method: 'PUT',
+        body: { passcode, code },
+      }),
+    }),
+
     
    getToken: builder.mutation({
       query: (userId) => ({
@@ -279,6 +289,7 @@ export const {
   useResetPasswordMutation,
   useUpdatePasswordMutation,
   useGetMyProfileQuery,
+  useUpdatePasscodeMutation ,
   useGetUserByIdQuery,
   useGetUserProfileQuery,
   useGetTokenMutation,

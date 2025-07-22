@@ -36,7 +36,7 @@ const SelectRecipients = ({ navigation, route }) => {
     data: contactsData,
     isLoading: isLoadingContacts,
   } = useGetSynchronizedContactsQuery(userId, { skip: !userId });
-
+  //console.log("Contacts Data:", contactsData);
   const synchronizedContacts = contactsData?.data ?? [];
 
   const filteredContacts = useMemo(() => {
@@ -44,7 +44,8 @@ const SelectRecipients = ({ navigation, route }) => {
 
     return synchronizedContacts.filter((friend) => {
       const friendName = friend?.name?.toLowerCase() || '';
-      const contactUserId = friend?.contactUser?.id;
+      const contactUserId = friend?.ownerUser?.id;
+
 
       return contactUserId !== userId && friendName.includes(searchQuery.toLowerCase());
     });
@@ -75,10 +76,11 @@ const SelectRecipients = ({ navigation, route }) => {
         const friend = synchronizedContacts.find((f) => f.id === id);
         if (friend) {
           recipients.push({
-            id: friend.id,
-            matriculeWallet: friend.contactUser?.wallet?.matricule,
-            name: friend.name,
-          });
+          id: friend.id,
+          matriculeWallet: friend.ownerUser?.wallet?.matricule,
+          name: friend.name,
+        });
+
         }
       });
 
@@ -143,7 +145,7 @@ const SelectRecipients = ({ navigation, route }) => {
   const renderEmptyList = () => (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: 50 }}>
       <Text style={{ color: '#fff', marginBottom: 20 }}>
-        {t("selectRecipient.no_contacts_found")}
+        {t("selectRecipient.no_contacts")}
       </Text>
       <TouchableOpacity
         onPress={() => navigation.navigate("AddFavorite")}
