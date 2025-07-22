@@ -22,6 +22,7 @@ const ReceiptScreen = () => {
   const route = useRoute();
   const user = route.params?.user;
   const transaction = route.params?.transaction;
+  console.log(transaction)
   const [isGenerating, setIsGenerating] = React.useState(false);
   const { t } = useTranslation();
 
@@ -260,18 +261,24 @@ const ReceiptScreen = () => {
             ))}
           </View>
 
-          <Text className="text-gray-800 font-semibold text-sm mb-2">
-            {transaction.recipient_name || 'Le bénéficiaire'} a reçu votre transfert.
-          </Text>
+          
 
-          <Text className="text-gray-600 text-sm">
-            Bénéficiaire :{" "}
-            <Text className="font-semibold">{user?.firstname} {user?.lastname}</Text>
-          </Text>
-          <Text className="text-gray-600 text-sm">Methode de Paiement : {getTypeLabel1(transaction.provider) || 'N/A'}</Text>
+          {transaction.description !== 'National Identification Number request' && (
+            <>
+            <Text className="text-gray-800 font-semibold text-sm mb-2">
+              {transaction.recipient_name || 'Le bénéficiaire'} a reçu votre transfert.
+            </Text>
+              <Text className="text-gray-600 text-sm">
+                Bénéficiaire :{" "}
+                <Text className="font-semibold">{user?.firstname} {user?.lastname}</Text>
+              </Text>
+              <Text className="text-gray-600 text-sm">
+                Methode de Paiement : {getTypeLabel1(transaction.provider) || 'N/A'}
+              </Text>
+              <Text className="text-gray-600 text-sm mb-2">Numéro : {user?.phone}</Text>
+            </>
+          )}
           <Text className="text-gray-600 text-sm">Type de Paiement : {getTypeLabel(transaction.type) || 'N/A'}</Text>
-          <Text className="text-gray-600 text-sm mb-2">Numéro : {user?.phone}</Text>
-
           <Text className="text-green-600 font-semibold my-1">Reçu</Text>
           <Text className="text-gray-600 text-sm">Montant du transfert: {transaction.amount} {transaction.currency}</Text>
           <Text className="text-gray-600 text-sm">Frais de transfert: {transaction.sendoFees || 0} XAF</Text>

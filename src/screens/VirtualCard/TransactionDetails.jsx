@@ -137,9 +137,9 @@ const TransactionDetails = () => {
 
   return (
     <ScrollView className="flex-1 bg-white p-4">
-      <StatusBar backgroundColor="#16a34a" barStyle="light-content" />
+      <StatusBar backgroundColor="#7ddd7d" barStyle="light-content" />
       
-      <View className="flex-row items-center mt-10 mb-4 p-4 rounded-xl" style={{ backgroundColor: "#16a34a" }}>
+      <View className="flex-row items-center mt-10 mb-4 p-4 rounded-xl" style={{ backgroundColor: "#7ddd7d" }}>
         <TouchableOpacity onPress={() => navigation.goBack()} className="mr-2">
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
@@ -209,10 +209,10 @@ const TransactionDetails = () => {
       </View>
 
       <View className="flex-row justify-between mb-6">
-        <TouchableOpacity onPress={handleShareReceipt} className="flex-1 bg-green-600 p-3 rounded-md mr-2">
+        <TouchableOpacity onPress={handleShareReceipt} className="flex-1 bg-[#7ddd7d] p-3 rounded-md mr-2">
           <Text className="text-center text-white font-bold">{t("share")}</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={handleDownloadReceipt} className="flex-1 bg-green-600 p-3 rounded-md ml-2">
+        <TouchableOpacity onPress={handleDownloadReceipt} className="flex-1 bg-[#7ddd7d] p-3 rounded-md ml-2">
           <Text className="text-center text-white font-bold">{t("downloadPdf")}</Text>
         </TouchableOpacity>
       </View>

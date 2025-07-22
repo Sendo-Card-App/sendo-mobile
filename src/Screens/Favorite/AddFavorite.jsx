@@ -60,7 +60,7 @@ const AddFavorite = () => {
   const navigation = useNavigation();
   const { data: userProfile } = useGetUserProfileQuery();
   const userId = userProfile?.data.id;
-  
+   console.log(userId)
   // API hooks
   const [synchronizeContacts] = useSynchronizeContactsMutation();
   const [addFavorite, { isLoading: isAddingFavorite }] = useAddFavoriteMutation();
@@ -70,7 +70,7 @@ const AddFavorite = () => {
     isLoading: isLoadingFavorites, 
     refetch: refetchFavorites 
   } = useGetFavoritesQuery(userId, { skip: !userId });
-  
+   console.log('Favorites:', JSON.stringify(favoritesResponse, null, 2));
   const { 
     data: synchronizedContacts, 
     isLoading: isLoadingContacts,
@@ -268,7 +268,7 @@ const AddFavorite = () => {
       refetchFavorites();
     })
     .catch(error => {
-      console.log('Error adding favorite:', error);
+      console.log('Favorites:', JSON.stringify(error, null, 2));
       Toast.show({
         type: 'error',
         text1: 'Error',
@@ -443,7 +443,7 @@ const AddFavorite = () => {
           }}
         >
           <Text className={`text-base font-semibold ${activeTab === 'favorites' ? 'text-green-500' : 'text-gray-500'}`}>
-             {t('contacts.favorites')} ({favoritesResponse?.length || 0})
+           {t('contacts.favorites')} ({favoritesResponse?.data?.length || 0})
           </Text>
         </TouchableOpacity>
       </View>

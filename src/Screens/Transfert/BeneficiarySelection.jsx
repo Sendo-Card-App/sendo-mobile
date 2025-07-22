@@ -65,7 +65,7 @@ const BeneficiarySelection = ({ route }) => {
     isLoading: isLoadingFavorites,
     isError: isFavoritesError
   } = useGetFavoritesQuery(userId, { skip: !userId });
-
+    //console.log(favoritesResponse)
   const {
     data: transfersResponse,
     isLoading: isLoadingTransfers,
@@ -75,6 +75,7 @@ const BeneficiarySelection = ({ route }) => {
   const [initTransfer, { isLoading: isTransferLoading }] = useInitTransferToDestinataireMutation();
 
   const favorites = favoritesResponse?.data || [];
+
   const transfers = transfersResponse?.data || [];
 
   const filteredFavorites = favorites.filter(fav =>
@@ -85,31 +86,47 @@ const BeneficiarySelection = ({ route }) => {
   );
 
   const handleSelectContact = (contact) => {
-    navigation.navigate('PaymentMethod', {
-      contact,
-      amount,
-      convertedAmount,
-      totalAmount,
-      transferFee,
-      fromCurrency,
-      toCurrency,
-      countryName,
-      cadRealTimeValue
-    });
+  const fullContact = {
+    ...contact,
+    firstname: contact?.user?.firstname || '',
+    lastname: contact?.user?.lastname || '',
+    email: contact?.user?.email || '',
   };
-   const handleSelectBeneficiary = (contact) => {
-    navigation.navigate('PaymentMethod', {
-      contact,
-      amount,
-      convertedAmount,
-      totalAmount,
-      transferFee,
-      fromCurrency,
-      toCurrency,
-      countryName,
-      cadRealTimeValue
-    });
+
+  navigation.navigate('PaymentMethod', {
+    contact: fullContact,
+    amount,
+    convertedAmount,
+    totalAmount,
+    transferFee,
+    fromCurrency,
+    toCurrency,
+    countryName,
+    cadRealTimeValue
+  });
+};
+
+const handleSelectBeneficiary = (contact) => {
+  const fullContact = {
+    ...contact,
+    firstname: contact?.user?.firstname || '',
+    lastname: contact?.user?.lastname || '',
+    email: contact?.user?.email || '',
   };
+
+  navigation.navigate('PaymentMethod', {
+    contact: fullContact,
+    amount,
+    convertedAmount,
+    totalAmount,
+    transferFee,
+    fromCurrency,
+    toCurrency,
+    countryName,
+    cadRealTimeValue
+  });
+};
+
 
  const handleInitTransfer = async (receiver, destinataireId) => {
   setSelectedReceiverId(destinataireId);

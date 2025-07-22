@@ -57,7 +57,7 @@ const Curency = () => {
 
   const isToCameroon = countryName === 'Cameroon';
   const TRANSFER_FEES = parseFloat(getConfigValue('TRANSFER_FEES'));
-  const MIN_AMOUNT_TO_TRANSFER_FROM_CANADA = parseFloat(getConfigValue('MIN_AMOUNT_TO_TRANSFER_FROM_CANADA'));
+  const CAD_SENDO_VALUE = parseFloat(getConfigValue('CAD_SENDO_VALUE'));
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -110,7 +110,7 @@ const Curency = () => {
   };
 
   const handleNext = () => {
-    if (isToCameroon && parseFloat(convertedAmount) < MIN_AMOUNT_TO_TRANSFER_FROM_CANADA) {
+    if (isToCameroon && parseFloat(convertedAmount) < CAD_SENDO_VALUE) {
       setShowAlert(true);
       return;
     }
@@ -339,9 +339,9 @@ const Curency = () => {
           }}>
             <Text style={{ color: 'white', fontSize: 16, textAlign: 'center', marginBottom: 15 }}>
               Le montant minimum d'une transaction pour le Cameroun est de{' '}
-              <Text style={{ fontWeight: 'bold' }}>{MIN_AMOUNT_TO_TRANSFER_FROM_CANADA} XAF</Text>.
+              <Text style={{ fontWeight: 'bold' }}>{CAD_SENDO_VALUE} XAF</Text>.
               {'\n'}Veuillez ressayer avec un montant supérieur à{' '}
-              <Text style={{ fontWeight: 'bold' }}>{MIN_AMOUNT_TO_TRANSFER_FROM_CANADA} XAF</Text>.
+              <Text style={{ fontWeight: 'bold' }}>{CAD_SENDO_VALUE} XAF</Text>.
             </Text>
             <TouchableOpacity
               onPress={() => setShowAlert(false)}

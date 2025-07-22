@@ -24,7 +24,7 @@ const initialState = {
   },
   selfie: null,
   identityDocument: {
-    type: IDENTITY_TYPES.CNI, // default to CNI
+    type: IDENTITY_TYPES.DRIVERS_LICENSE, // default to CNI
     front: null,
     back: null,
   },

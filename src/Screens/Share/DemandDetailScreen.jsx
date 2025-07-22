@@ -33,7 +33,7 @@ const DemandDetailScreen = () => {
   const route = useRoute();
   const { item } = route.params;
   const sharedExpense = item.sharedExpense ?? item;
-
+  console.log(sharedExpense)
   const [modalVisible, setModalVisible] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
 
@@ -71,6 +71,7 @@ const DemandDetailScreen = () => {
         transactionDetails: t("demandDetail.paymentSuccess") || "Payment completed successfully",
       });
     } catch (error) {
+       console.log('Response:', JSON.stringify(error, null, 2));
       const msg = error?.data?.data?.errors?.[0] || error?.data?.message || t("demandDetail.paymentError") || "An error occurred while processing the payment";
       showToast(msg, "error");
     }

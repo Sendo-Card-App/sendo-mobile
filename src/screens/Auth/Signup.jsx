@@ -181,23 +181,7 @@ const Signup = () => {
       if (response.accessToken) {
         await AsyncStorage.setItem('@accessToken', response.accessToken);
       }
-      
-      try {
-        await emailSend({ email: signupDetails.email }).unwrap();
-        Toast.show({
-          type: 'success',
-          text1: 'Success',
-          text2: 'Verification email sent successfully',
-        });
-      } catch (emailError) {
-        console.error('Failed to send email:', emailError);
-        Toast.show({
-          type: 'info',
-          text1: 'Notice',
-          text2: 'Account created but email verification not sent',
-        });
-      }
-      
+       
       dispatch(signupSuccess(response));
       Toast.show({
         type: 'success',

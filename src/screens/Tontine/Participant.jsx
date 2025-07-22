@@ -39,7 +39,7 @@ const Participant = () => {
     data: contactsData,
     isLoading: isLoadingContacts,
   } = useGetSynchronizedContactsQuery(userId, { skip: !userId });
-
+  //console.log("Contacts Data:", contactsData);
   const synchronizedContacts = contactsData?.data ?? [];
 
   const [addMembers] = useAddTontineMembersMutation();
@@ -47,7 +47,7 @@ const Participant = () => {
   const filteredContacts = useMemo(() => {
     return synchronizedContacts.filter((friend) => {
       const friendName = friend?.name?.toLowerCase() || "";
-      const contactUserId = friend?.contactUser?.id;
+      const contactUserId = friend?.ownerUser?.id;
       return contactUserId !== userId && friendName.includes(searchQuery.toLowerCase());
     });
   }, [searchQuery, synchronizedContacts, userId]);
@@ -75,7 +75,7 @@ const Participant = () => {
       const selectedUserIds = selectedFriends
         .map((friendId) => {
           const friend = synchronizedContacts.find((f) => f.id === friendId);
-          return friend?.contactUser?.id;
+          return friend?.ownerUser?.id;
         })
         .filter(id => id !== undefined);
 
