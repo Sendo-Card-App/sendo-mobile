@@ -74,7 +74,7 @@ const PinCode = ({ navigation, route }) => {
       } catch (error) {
         console.error('Failed to refetch user profile:', error);
       }
-    }, 10000);
+    }, 1000);
 
     // Clear interval on component unmount
     return () => clearInterval(intervalId);
@@ -260,7 +260,7 @@ const handleComplete = async (enteredPin) => {
           dispatch(lockPasscode(lockTime.toISOString()));
 
           try {
-            await sendOtp({ email: userProfile?.data?.phone });
+            await sendOtp({ phone: userProfile?.data?.phone });
             showToast('info', t('pin.otpSentTitle'), t('pin.otpSentMessage'));
             setShowResetModal(true);
           } catch (err) {

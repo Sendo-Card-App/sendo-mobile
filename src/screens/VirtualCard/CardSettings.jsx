@@ -130,8 +130,8 @@ const CardSettingsScreen = () => {
   return (
     <View className="flex-1 bg-white">
       {/* Custom Header */}
-      <SafeAreaView className="bg-green-500 rounded-b-2xl">
-        <View className="flex-row items-center justify-between px-4 py-3 bg-green-500 border-b border-gray-200 rounded-b-2xl">
+      <SafeAreaView className="bg-[#7ddd7d]   rounded-b-2xl">
+        <View className="flex-row items-center justify-between px-4 py-3  border-b border-gray-200 rounded-b-2xl">
           <TouchableOpacity onPress={() => navigation.goBack()} className="p-1">
             <Ionicons name="arrow-back" size={24} color="#333" />
           </TouchableOpacity>

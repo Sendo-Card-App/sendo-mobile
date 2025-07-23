@@ -50,7 +50,7 @@ const TontineDetail = () => {
                 tontine,
               })
             }
-            className="bg-[#6EE7B7] rounded-lg w-[47%] h-32 justify-center items-center"
+            className="bg-[#7ddd7d] rounded-lg w-[47%] h-32 justify-center items-center"
           >
             <Ionicons name="people" size={40} color="#000" />
             <Text className="text-black font-semibold mt-2">{t("tontineDetail.members")}</Text>
@@ -63,7 +63,7 @@ const TontineDetail = () => {
                 tontine,
               })
             }
-            className="bg-[#6EE7B7] rounded-lg w-[47%] h-32 justify-center items-center"
+            className="bg-[#7ddd7d] rounded-lg w-[47%] h-32 justify-center items-center"
           >
             <Ionicons name="cash-outline" size={40} color="#000" />
             <Text className="text-black font-semibold mt-2">{t("tontineDetail.contributions")}</Text>
@@ -78,7 +78,7 @@ const TontineDetail = () => {
                 tontine,
               })
             }
-            className="bg-[#6EE7B7] rounded-lg mt-5 w-[47%] h-32 justify-center items-center"
+            className="bg-[#7ddd7d] rounded-lg mt-5 w-[47%] h-32 justify-center items-center"
           >
             <Ionicons name="settings-outline" size={40} color="#000" />
             <Text className="text-black font-semibold mt-2">{t("tontineDetail.settings")}</Text>
@@ -91,7 +91,7 @@ const TontineDetail = () => {
                 tontine,
               })
             }
-            className="bg-[#6EE7B7] rounded-lg mt-5 w-[47%] h-32 justify-center items-center"
+            className="bg-[#7ddd7d] rounded-lg mt-5 w-[47%] h-32 justify-center items-center"
           >
             <Ionicons name="hand-left-outline" size={40} color="#000" />
             <Text className="text-black font-semibold mt-2">{t("tontineDetail.contribute")}</Text>

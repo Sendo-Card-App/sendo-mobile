@@ -443,7 +443,7 @@ const AddFavorite = () => {
           }}
         >
           <Text className={`text-base font-semibold ${activeTab === 'favorites' ? 'text-green-500' : 'text-gray-500'}`}>
-           {t('contacts.favorites')} ({favoritesResponse?.data?.length || 0})
+           {t('contacts.favorites')} ({favoritesResponse?.length || 0})
           </Text>
         </TouchableOpacity>
       </View>

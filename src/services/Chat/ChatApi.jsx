@@ -58,29 +58,12 @@ export const chatApi = createApi({
 
     // Send message
     sendMessage: builder.mutation({
-      query: (messageData) => ({
+      query: (formData) => ({
         url: CHAT_ENDPOINTS.MESSAGES,
         method: 'POST',
-        body: messageData,
+        body: formData,
       }),
       invalidatesTags: [TAG_TYPES.MESSAGE],
-    }),
-
-    // Upload attachment
-    uploadAttachment: builder.mutation({
-      query: (fileData) => {
-        const formData = new FormData();
-        formData.append('file', fileData);
-        
-        return {
-          url: CHAT_ENDPOINTS.UPLOAD,
-          method: 'POST',
-          body: formData,
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        };
-      },
     }),
 
     // Get single message

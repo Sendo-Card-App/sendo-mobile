@@ -6,6 +6,7 @@ import {
   FlatList,
   ActivityIndicator,
   StyleSheet,
+  StatusBar,
 } from 'react-native';
 import { useGetNotificationsQuery, useMarkAsReadMutation } from '../services/Notification/notificationApi';
 import { useGetUserProfileQuery } from '../services/Auth/authAPI';

@@ -5,6 +5,7 @@
   "tab_my_tontines": "Mes tontines",
   "tab_invitations": "Invitations",
   "no_tontine": "Aucune tontine disponible.",
+  "no_transfers_found": "Aucune transaction disponible.",
    "back": "Retour",
   "no_invitation": "Aucune invitation en attente.",
   "tontine_members_count": "Nombre de membres",
@@ -29,7 +30,7 @@
   "sort_by_name": "Tri: A → Z",
   "member_list": "Liste des Membre",
   "my_destinataires": "Mes Destinataires",
-  "transfer_fee": "Frais de transfert",
+  "transfer_fee": "1$ CAD = ",
 "total_to_send": "Total à envoyer",
   "conversionRateCAD": "1,00 CAD = {{value}} FCFA",
   "conversionRateXAF": "{{value}} FCFA = 1,00 CAD",
@@ -518,18 +519,14 @@
     "alreadyVerifiedButton": "Déjà soumi"
   },
   "payment2": {
-    "no_payment_method": "Aucun moyen de paiement n'est actuellement lié à votre compte. Ajoutez un nouveau moyen de paiement pour vos transferts.",
-    "add_card": "AJOUTER UNE CARTE",
-    "connect_bank": "Connecter un compte bancaire",
-    "connect_description": "Connectez votre compte bancaire pour commencer un transfert",
-    "create_virtual": "CRÉER UNE CARTE VIRTUELLE",
-    "manage_virtual": "GÉRER MA CARTE VIRTUELLE",
-    "get_visa": "Vérification d’identité (KYC)",
-    "bonus_balance": "Solde bonus",
-    "referral_terms": "Vous recevrez 5.00 CAD et votre ami recevra 5,00 CAD lors de son premier transfert. Des exigences d'envoi minimales peuvent s'appliquer.",
-    "terms_conditions": "Sous réserve de conditions.",
-    "share_referral": "PARTAGEZ VOTRE CODE DE PARRAINAGE",
-    "generate_code": "GEN"
+    "virtual_card_title": "Options de carte virtuelle",
+    "virtual_card_description": "Créez, gérez ou vérifiez votre carte virtuelle ci-dessous.",
+    "create_virtual": "Créer une carte virtuelle",
+    "manage_virtual": "Gérer ma carte virtuelle",
+    "connect_bank": "Vérification de votre KYC ",
+    "connect_description": "Liez votre compte bancaire pour faciliter les paiements et recharges.",
+    "get_visa": "Vérification d’identité (KYC)"
+    
   },
   "kycSelfie": {
     "title": "Vériﬁcation de l'identité",

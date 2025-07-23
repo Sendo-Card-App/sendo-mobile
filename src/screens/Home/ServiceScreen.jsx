@@ -12,7 +12,7 @@ const ServiceScreen = () => {
   const [screenWidth, setScreenWidth] = useState(Dimensions.get("window").width);
 
   const numColumns = 2;
-  const spacing = 30;
+  const spacing = 20;
   const itemSize = (screenWidth - spacing * (numColumns + 1)) / numColumns;
 
   useEffect(() => {
@@ -81,14 +81,14 @@ const ServiceScreen = () => {
       }}
     >
       <Ionicons name={item.icon} size={48} color="#7ddd7d" style={{ marginBottom: 10 }} />
-      <Text className="text-black text-sm text-center font-semibold">{item.label}</Text>
+      <Text className="text-black text-l text-center font-semibold">{item.label}</Text>
     </TouchableOpacity>
   );
 };
 
 
   return (
-    <View className="flex-1 bg-black">
+    <View className="flex-1 bg-white">
       {/* Header */}
       <View
         style={{

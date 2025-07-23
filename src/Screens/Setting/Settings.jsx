@@ -168,7 +168,7 @@ const Settings = ({ navigation }) => {
           <Text style={styles.settingSubtitle}>{t('ensure_notifications')}</Text>
         </View>
         <Switch
-          trackColor={{ true: "green", false: "#f1f1f1" }}
+          trackColor={{ true: "#7ddd7d", false: "#f1f1f1" }}
           thumbColor={isNotificationsEnabled ? "#ffffff" : "#f8f8f8"}
           onValueChange={toggleNotifications}
           value={isNotificationsEnabled}
