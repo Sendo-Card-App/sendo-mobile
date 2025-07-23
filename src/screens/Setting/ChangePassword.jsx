@@ -288,7 +288,7 @@ const ChangePassword = () => {
           onPress={handleSubmit}
           disabled={isLoading}
           style={{
-            backgroundColor: '#4CAF50',
+            backgroundColor: '#7ddd7d',
             paddingVertical: 15,
             borderRadius: 10,
             alignItems: 'center',
