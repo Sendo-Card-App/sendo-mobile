@@ -59,6 +59,21 @@ module.exports = {
         {
           contactsPermission: "Allow $(PRODUCT_NAME) to access your contacts"
         }
+      ],
+      [
+        "expo-build-properties",
+        {
+          ios: {
+            deploymentTarget: "15.1",
+            useFrameworks: "static",
+            modularHeaders: true
+          },
+          android: {
+            compileSdkVersion: 35,
+            targetSdkVersion: 35,
+            buildToolsVersion: "35.0.0"
+          }
+        }
       ]
     ],
     extra: {
