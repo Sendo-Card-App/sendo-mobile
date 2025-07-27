@@ -39,7 +39,7 @@ module.exports = {
         "android.permission.READ_CONTACTS",
         "android.permission.WRITE_CONTACTS"
       ],
-      package: "com.sfe.sendo2025"
+      package: "com.sfe.sendo"
     },
     web: {
       favicon: "./assets/favicon.png"
