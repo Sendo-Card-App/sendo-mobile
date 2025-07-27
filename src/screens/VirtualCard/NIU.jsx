@@ -156,7 +156,7 @@ const NIU = ({ navigation }) => {
       />
 
       <View className="w-[85%] mx-auto mt-8 space-y-4">
-        <TouchableOpacity
+        {/* <TouchableOpacity
           className={`flex-row items-center justify-center py-3 mb-8 rounded-full border-2 ${taxIdNumber.trim() ? "border-[#7ddd7d] bg-[#7ddd7d]/20" : "border-gray-300 bg-gray-100"}`}
           onPress={handleTakePhoto}
           disabled={!taxIdNumber.trim()}
@@ -169,7 +169,7 @@ const NIU = ({ navigation }) => {
           <Text className={`ml-2 text-lg font-bold ${taxIdNumber.trim() ? "text-[#7ddd7d]" : "text-gray-500"}`}>
             {t("niu.takePhotoButton")}
           </Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
 
         <TouchableOpacity
           className={`flex-row items-center justify-center py-3 rounded-full border-2 ${taxIdNumber.trim() ? "border-gray-300" : "border-gray-300 bg-gray-100"}`}

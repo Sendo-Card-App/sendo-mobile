@@ -104,26 +104,39 @@ const handleSubmit = async () => {
     let fileIndex = 0;
 
     // 2. ID_PROOF
-    if (identityDocument.front) {
+    if (identityDocument.type === 'passport' && identityDocument.front) {
+      // Duplicate the single passport file
       await addDocumentAndFile(
         { type: 'ID_PROOF', idDocumentNumber },
         identityDocument.front.uri,
         fileIndex++
       );
-
-      if (identityDocument.type === 'passport') {
-        await addDocumentAndFile(
-          { type: 'ID_PROOF', idDocumentNumber },
-          identityDocument.front.uri,
-          fileIndex++
-        );
-      }
+      await addDocumentAndFile(
+        { type: 'ID_PROOF', idDocumentNumber },
+        identityDocument.front.uri,
+        fileIndex++
+      );
     }
 
-    if (
-      (identityDocument.type === 'cni' || identityDocument.type === 'drivers_license') &&
-      identityDocument.back
-    ) {
+    if (identityDocument.type === 'cni' && identityDocument.front && identityDocument.back) {
+      await addDocumentAndFile(
+        { type: 'ID_PROOF', idDocumentNumber },
+        identityDocument.front.uri,
+        fileIndex++
+      );
+      await addDocumentAndFile(
+        { type: 'ID_PROOF', idDocumentNumber },
+        identityDocument.back.uri,
+        fileIndex++
+      );
+    }
+
+    if (identityDocument.type === 'drivers_license' && identityDocument.front && identityDocument.back) {
+      await addDocumentAndFile(
+        { type: 'ID_PROOF', idDocumentNumber },
+        identityDocument.front.uri,
+        fileIndex++
+      );
       await addDocumentAndFile(
         { type: 'ID_PROOF', idDocumentNumber },
         identityDocument.back.uri,
@@ -173,19 +186,15 @@ const handleSubmit = async () => {
     }
 
     const formData = new FormData();
-    formData.append('documents', JSON.stringify(documents), {
-      contentType: 'application/json',
-      name: 'documents'
-    });
-
-    files.forEach((file) => {
+    formData.append('documents', JSON.stringify(documents));
+    files.forEach(file => {
       formData.append('files', file);
     });
 
     console.log('FormData ready with 5 files and documents');
 
     const response = await submitKYC(formData).unwrap();
-    
+
     console.log('KYC submission response:', JSON.stringify(response, null, 2));
 
     if (response?.status === 201) {
@@ -204,34 +213,16 @@ const handleSubmit = async () => {
 
   } catch (error) {
     console.error('KYC submission error:', JSON.stringify(error ?? {}, null, 2));
-
-    let errorMessage = 'Échec de la soumission du KYC';
-
-    if (error?.message === 'Request timeout') {
-      errorMessage = "La requête a pris trop de temps. Veuillez vérifier votre connexion.";
-    } else if (error?.data?.message?.includes('Aucun fichier fourni')) {
-      const required = error?.data?.data?.required?.mandatoryTypes ?? [];
-      errorMessage = `Documents requis: ${required.join(', ')}`;
-    } else if (error?.data?.code) {
-      const errorCodes = {
-        'ERR_MISSING': 'Veuillez remplir tous les champs obligatoires',
-        'ERR_FORMAT': 'Format invalide dans les données',
-        'ERR_UPLOAD': 'Échec du téléchargement des documents',
-        'ERR_TECH': 'Erreur technique interne',
-      };
-      errorMessage = errorCodes[error.data.code] || errorMessage;
-    }
-
     Toast.show({
       type: 'error',
-      text1: 'Erreur',
-      text2: errorMessage,
-      visibilityTime: 5000,
+      text1: 'Erreur réseau ou serveur',
+      text2: error?.data?.message || 'Une erreur est survenue',
     });
   } finally {
     dispatch(setSubmissionStatus('idle'));
   }
 };
+
 
 
   const KycOption = ({ id, name, route, completed }) => (

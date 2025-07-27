@@ -164,7 +164,7 @@ const CardActionScreen = ({ route }) => {
       <TouchableOpacity
         disabled={isLoading || !amount || isNaN(amount) || Number(amount) <= 0}
         onPress={handleSubmit}
-        className={`p-4 rounded-lg flex-row justify-center items-center ${isLoading || !amount || isNaN(amount) || Number(amount) <= 0 ? 'bg-blue-300' : 'bg-green-600'}`}
+        className={`p-4 rounded-lg flex-row justify-center items-center ${isLoading || !amount || isNaN(amount) || Number(amount) <= 0 ? 'bg-green-300' : 'bg-green-600'}`}
         accessibilityLabel={t('manageVirtualCard.submitAction')}
       >
         {isLoading ? (

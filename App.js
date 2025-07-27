@@ -2,6 +2,7 @@ import "./global.css";
 import { ThemeProvider } from './src/constants/ThemeContext';
 import React, { useEffect } from "react";
 import { Colors } from './src/constants/colors'; // Adjust the path as needed
+import { useNavigation } from "@react-navigation/native";
 
 import { StyleSheet, View, Text, TouchableOpacity,Platform,Dimensions  } from "react-native";
 import { Provider } from "react-redux";
@@ -20,6 +21,8 @@ import { Ionicons, AntDesign,FontAwesome,FontAwesome5   } from "@expo/vector-ico
 import * as Notifications from "expo-notifications";
 import { registerForPushNotificationsAsync } from "./src/services/notificationService";
 import app from "./src/configs/firebaseConfig";
+ 
+import { useGetUserProfileQuery } from "./src/services/Auth/authAPI";
 
 // Screens & Components
 import Home from "./src/Screens/Home/Home";
@@ -66,6 +69,7 @@ import Receipt from "./src/Screens/Transfert/Receipt";
 import Account from "./src/Screens/Profile/Account";
 import Settings from "./src/Screens/Setting/Settings";
 import CreateVirtualCard from "./src/Screens/VirtualCard/CreateVirtualCard";
+import CardSettings from "./src/Screens/VirtualCard/CardSettings";
 import OnboardingCard from "./src/Screens/VirtualCard/OnboardingCard";
 import VerifyIdentity from "./src/Screens/VirtualCard/VerifyIdentity";
 import KYCValidation from "./src/Screens/VirtualCard/KYCValidation";
@@ -143,7 +147,8 @@ const headerHeight = Platform.select({
   android: 56, // Standard Android header height
 });
 const screenWidth = Dimensions.get('window').width;
-// Custom tab bar component
+
+
 function CustomTabBar({ state, descriptors, navigation }) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
@@ -257,7 +262,29 @@ function CustomTabBar({ state, descriptors, navigation }) {
 // Tab Navigator
 function MainTabs() {
   const { t } = useTranslation();
-  
+  const VirtualCardTab = () => {
+  const { data: userProfile, isLoading: isProfileLoading } = useGetUserProfileQuery();
+  const navigation = useNavigation();
+
+  useEffect(() => {
+    if (!isProfileLoading) {
+      const status = userProfile?.virtualCard?.status;
+      if (status === "ACTIVE" || status === "PRE_ACTIVE") {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'MainTabs' }], 
+        });
+      } else {
+        navigation.navigate('MainStack', { 
+          screen: 'OnboardingCard' 
+        });
+      }
+    }
+  }, [userProfile, isProfileLoading]);
+
+  return <ManageVirtualCard />; 
+};
+
   return (
     <Tab.Navigator
       tabBar={(props) => <CustomTabBar {...props} />}
@@ -293,9 +320,9 @@ function MainTabs() {
         }}
       />
 
-      <Tab.Screen 
+       <Tab.Screen 
         name="ManageVirtualCardTab" 
-        component={OnboardingCard} 
+        component={VirtualCardTab} 
         options={{ 
           title: t('tabs.cards'),
           unmountOnBlur: true 
@@ -427,6 +454,7 @@ function MainStack() {
       <Stack.Screen name="TransactionDetails" component={TransactionDetails} options={{ headerShown: false }} />
       <Stack.Screen name="KycResume" component={KycResume} options={{ headerShown: false }} />
       <Stack.Screen name="KycSelfie" component={KycSelfie} options={{ headerShown: false }} />
+       <Stack.Screen name="CardSettings" component={CardSettings} options={{ headerShown: false }} />
       <Stack.Screen name="PersonalDetail" component={PersonalDetail} options={{ headerShown: false }} />
       <Stack.Screen name="NIU" component={NIU} options={{ headerShown: false }} />
       <Stack.Screen name="Addresse" component={Addresse} options={{ headerShown: false }} />

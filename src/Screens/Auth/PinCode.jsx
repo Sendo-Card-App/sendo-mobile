@@ -42,7 +42,7 @@ const PinCode = ({ navigation, route }) => {
     error: profileError,
     refetch 
   } = useGetUserProfileQuery();
-  
+ 
   const userId = userProfile?.data?.id;
   const { data: serverTokenData } = useGetTokenMutation(userId, {
     skip: !userId

@@ -12,61 +12,51 @@ import {
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import TopLogo from '../../Images/TopLogo.png';
+import Toast from 'react-native-toast-message';
+
 import {
   useUpdateRecipientStatusMutation,
   usePayFundRequestMutation,
 } from '../../services/Fund/fundApi';
 import { useGetBalanceQuery } from '../../services/WalletApi/walletApi';
-import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
+import { useGetUserProfileQuery } from '../../services/Auth/authAPI';
 
 const RequestPay = ({ navigation, route }) => {
   const { demand } = route.params;
 
-   //console.log(JSON.stringify(demand, null, 2));
+  const requestFund = demand?.requestFund ?? demand ?? {};
+  const recipients = requestFund?.recipients ?? [];
+  const initiator = requestFund?.requesterFund ?? null;
+
   const [updateRecipientStatus, { isLoading: isUpdating }] = useUpdateRecipientStatusMutation();
   const [payFundRequest, { isLoading: isPaying }] = usePayFundRequestMutation();
-      const { data: userProfile, isLoading: isProfileLoading } = useGetUserProfileQuery();
-       const userId = userProfile?.data.id;
-     
-      const { 
-         data: balanceData, 
-         error: balanceError,
-         isLoading: isBalanceLoading
-       } = useGetBalanceQuery(userId, { skip: !userId });
-       const balance = balanceData?.data.balance || 0;
-    // console.log(balance)
-     
+  const { data: userProfile } = useGetUserProfileQuery();
+  const userId = userProfile?.data?.id;
+
+  const { data: balanceData } = useGetBalanceQuery(userId, { skip: !userId });
+  const balance = balanceData?.data?.balance ?? 0;
+
   const [modalVisible, setModalVisible] = useState(false);
   const [amountToPay, setAmountToPay] = useState('');
   const [currentRecipientId, setCurrentRecipientId] = useState(null);
 
-  const requestFund = demand.requestFund ?? {};
-  const totalPaid = requestFund.recipients?.reduce((sum, r) => sum + (r.amountPaid || 0), 0) ?? 0;
+  const totalPaid = recipients.reduce((sum, r) => sum + (r.amountPaid || 0), 0);
   const remaining = (requestFund.amount ?? 0) - totalPaid;
-  const initiator = requestFund.requesterFund;
-  const recipientRequestId = requestFund.recipients[0]?.id;
- 
-  const getStatusLabel = (status) => {
-    switch (status) {
-      case 'PENDING':
-        return { label: 'En attente', colorBg: '#FFF3CD', colorText: '#856404' };
-      case 'PAID':
-        return { label: 'Payé', colorBg: '#D4EDDA', colorText: '#155724' };
-      case 'CANCELLED':
-        return { label: 'Annulé', colorBg: '#F8D7DA', colorText: '#721C24' };
-      default:
-        return { label: status, colorBg: '#E2E3E5', colorText: '#383D41' };
-    }
-  };
 
-  const handleStatusUpdate = async ( currentRecipientId, status) => {
+  const handleStatusUpdate = async (recipientId, status) => {
     try {
-      await updateRecipientStatus({  requestRecipientId: currentRecipientId, status }).unwrap();
-      Alert.alert('Succès', `Le statut a été mis à jour en "${status}"`);
+      await updateRecipientStatus({ requestRecipientId: recipientId, status }).unwrap();
+      Toast.show({
+        type: 'success',
+        text1: `Statut mis à jour : ${status}`,
+      });
       navigation.goBack();
     } catch (error) {
-      console.error(error);
-      Alert.alert('Erreur', "Impossible de mettre à jour le statut.");
+      Toast.show({
+        type: 'error',
+        text1: 'Erreur',
+        text2: 'Impossible de mettre à jour le statut.',
+      });
     }
   };
 
@@ -77,67 +67,67 @@ const RequestPay = ({ navigation, route }) => {
   };
 
   const handlePay = async () => {
-  const amount = parseFloat(amountToPay);
-  if (!amount || amount <= 0) {
-    Alert.alert('Erreur', 'Veuillez entrer un montant valide.');
-    return;
-  }
+    const amount = parseFloat(amountToPay);
+    if (!amount || amount <= 0) {
+      Alert.alert('Erreur', 'Veuillez entrer un montant valide.');
+      return;
+    }
 
-  if (balance < amount) {
-    Alert.alert('Erreur', 'Solde insuffisant pour effectuer ce paiement.');
-    return;
-  }
+    if (balance < amount) {
+      Alert.alert('Erreur', 'Solde insuffisant pour effectuer ce paiement.');
+      return;
+    }
 
-  const payloadToSend = {
-    amount,
-    fundRequestId: requestFund.id,
-    description: requestFund.description,
+    const payloadToSend = {
+      amount,
+      fundRequestId: requestFund.id,
+      description: requestFund.description,
+    };
+    console.log(payloadToSend)
+    try {
+      await payFundRequest({
+        requestRecipientId: currentRecipientId,
+        payload: payloadToSend,
+      }).unwrap();
+
+      Toast.show({
+        type: 'success',
+        text1: 'Paiement effectué avec succès.',
+        visibilityTime: 1000,
+        onHide: () => navigation.goBack(),
+      });
+
+      setModalVisible(false);
+    } catch (error) {
+      console.log("Full response:", JSON.stringify(error, null, 2));
+      Toast.show({
+        type: 'error',
+        text1: 'Erreur de paiement',
+        text2: error?.data?.message || 'Une erreur est survenue',
+      });
+    }
   };
 
-  try {
-    const res = await payFundRequest({
-      requestRecipientId: currentRecipientId,
-      payload: payloadToSend,
-    }).unwrap();
-
-    Toast.show({
-      type: 'success',
-      text1: 'Succès',
-      text2: 'Paiement effectué avec succès.',
-      visibilityTime: 500,
-      onHide: () => {
-        navigation.goBack();
-      },
-    });
-
-    setModalVisible(false);
-  } catch (error) {
-    console.error('Payment error:', error);
-    Toast.show({
-      type: "error",
-      text1: "Error",
-      text2: error?.data?.message,
-    });
+  if (!requestFund?.id) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0A0F1F' }}>
+        <Text style={{ color: '#fff' }}>Chargement des détails...</Text>
+      </View>
+    );
   }
-};
-
-
-  const statusStyle = getStatusLabel(requestFund.status);
 
   return (
     <>
       <StatusBar style="light" />
-      <View
-        style={{
-          height: 100,
-          paddingHorizontal: 20,
-          paddingTop: 48,
-          backgroundColor: '#0A0F1F',
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-        }}
-      >
+      <View style={{
+        height: 100,
+        paddingHorizontal: 20,
+        paddingTop: 48,
+        backgroundColor: '#0A0F1F',
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+      }}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
@@ -146,15 +136,13 @@ const RequestPay = ({ navigation, route }) => {
         </TouchableOpacity>
       </View>
 
-      <View
-        style={{
-          position: 'absolute',
-          top: -48,
-          left: 0,
-          right: 0,
-          alignItems: 'center',
-        }}
-      >
+      <View style={{
+        position: 'absolute',
+        top: -48,
+        left: 0,
+        right: 0,
+        alignItems: 'center',
+      }}>
         <Image source={TopLogo} style={{ height: 120, width: 160 }} resizeMode="contain" />
       </View>
 
@@ -168,19 +156,19 @@ const RequestPay = ({ navigation, route }) => {
             Facture No.{requestFund.reference}
           </Text>
 
-          <Text style={{ fontWeight: 'bold', fontSize: 15, marginBottom: 4, color: '#000' }}>
-            Description du service
-          </Text>
+          <Text style={{ fontWeight: 'bold', fontSize: 15, marginBottom: 4, color: '#000' }}>Description</Text>
           <Text style={{ color: '#444', marginBottom: 12 }}>{requestFund.description}</Text>
 
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
             <Text style={{ fontWeight: 'bold', color: '#000' }}>Montant total</Text>
-            <Text style={{ color: 'green' }}>{(requestFund.amount ?? 0).toLocaleString()} XAF</Text>
+            <Text style={{ color: 'green' }}>{(requestFund.amount || 0).toLocaleString()} XAF</Text>
           </View>
+
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
             <Text style={{ fontWeight: 'bold', color: '#000' }}>Payé</Text>
             <Text>{totalPaid.toLocaleString()} XAF</Text>
           </View>
+
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 }}>
             <Text style={{ fontWeight: 'bold', color: '#000' }}>Reste</Text>
             <Text>{remaining.toLocaleString()} XAF</Text>
@@ -190,27 +178,25 @@ const RequestPay = ({ navigation, route }) => {
             <Text style={{ fontWeight: 'bold', color: '#000' }}>Créé le</Text>
             <Text>{requestFund.createdAt?.split('T')[0]}</Text>
           </View>
+
           {requestFund.deadline && (
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 24 }}>
               <Text style={{ fontWeight: 'bold', color: '#000' }}>Délai</Text>
-              <Text>{requestFund.deadline?.split('T')[0]}</Text>
+              <Text>{requestFund.deadline.split('T')[0]}</Text>
             </View>
           )}
 
           {initiator && (
-            <View
-              style={{
-                backgroundColor: '#F5F6FA',
-                padding: 12,
-                borderRadius: 12,
-                marginBottom: 12,
-                alignItems: 'flex-start',
-                borderLeftWidth: 4,
-                borderLeftColor: 'green',
-              }}
-            >
+            <View style={{
+              backgroundColor: '#F5F6FA',
+              padding: 12,
+              borderRadius: 12,
+              marginBottom: 12,
+              borderLeftWidth: 4,
+              borderLeftColor: 'green',
+            }}>
               <Text style={{ fontSize: 13, fontWeight: '600', color: '#4ade80', marginBottom: 4 }}>
-                Initiateur de la demande
+                Initiateur
               </Text>
               <Text style={{ fontSize: 14, color: '#333' }}>
                 {initiator.firstname} {initiator.lastname}
@@ -218,108 +204,77 @@ const RequestPay = ({ navigation, route }) => {
             </View>
           )}
 
-          <Text
-            style={{
-              fontWeight: 'bold',
-              color: '#000',
-              marginBottom: 8,
-              borderTopWidth: 1,
-              borderTopColor: '#999',
-              borderStyle: 'dashed',
-              paddingTop: 16,
-            }}
-          >
+          <Text style={{
+            fontWeight: 'bold',
+            color: '#000',
+            marginBottom: 8,
+            borderTopWidth: 1,
+            borderTopColor: '#999',
+            borderStyle: 'dashed',
+            paddingTop: 16,
+          }}>
             Destinataire(s)
           </Text>
 
-          {requestFund.recipients
-  ?.filter((r) => r.recipientId === userId)
-  .map((r, i) => (
-    <View key={i} style={{ marginBottom: 24 }}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
-        <Text style={{ fontWeight: '600', color: '#000' }}>Nom</Text>
-        <Text>{r.recipient?.firstname} {r.recipient?.lastname}</Text>
-      </View>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
-        <Text style={{ fontWeight: '600', color: '#000' }}>Email</Text>
-        <Text>{r.recipient?.email}</Text>
-      </View>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
-        <Text style={{ fontWeight: '600', color: '#000' }}>Téléphone</Text>
-        <Text>{r.recipient?.phone}</Text>
-      </View>
+          {recipients.filter(r => r.recipientId === userId).map((r, index) => (
+            <View key={index} style={{ marginBottom: 24 }}>
+              <Text style={{ fontWeight: '600', color: '#000' }}>Nom: {r.recipient?.firstname} {r.recipient?.lastname}</Text>
+              <Text style={{ fontWeight: '600', color: '#000' }}>Email: {r.recipient?.email}</Text>
+              <Text style={{ fontWeight: '600', color: '#000' }}>Téléphone: {r.recipient?.phone}</Text>
 
-      <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginTop: 8 }}>
-        {['ACCEPTED', 'REJECTED', 'PAID'].map((status) => (
-          <TouchableOpacity
-            key={status}
-            style={{
-              backgroundColor:
-                status === 'ACCEPTED'
-                  ? '#4ade80'
-                  : status === 'REJECTED'
-                  ? '#f87171'
-                  : '#60a5fa',
-              paddingVertical: 6,
-              paddingHorizontal: 12,
-              borderRadius: 8,
-            }}
-            onPress={() => handleStatusUpdate(r.id, status)}
-            disabled={isUpdating}
-          >
-            <Text style={{ color: '#fff', fontWeight: '600', fontSize: 12 }}>
-              {status}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginTop: 12 }}>
+                {['ACCEPTED', 'REJECTED', 'PAID'].map(status => (
+                  <TouchableOpacity
+                    key={status}
+                    style={{
+                      backgroundColor:
+                        status === 'ACCEPTED' ? '#4ade80' :
+                          status === 'REJECTED' ? '#f87171' : '#60a5fa',
+                      paddingVertical: 6,
+                      paddingHorizontal: 12,
+                      borderRadius: 8,
+                    }}
+                    onPress={() => handleStatusUpdate(r.id, status)}
+                    disabled={isUpdating}
+                  >
+                    <Text style={{ color: '#fff', fontWeight: '600', fontSize: 12 }}>{status}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
 
-      <TouchableOpacity
-        style={{
-          marginTop: 10,
-          backgroundColor: '#16a34a',
-          paddingVertical: 8,
-          borderRadius: 8,
-          alignItems: 'center',
-        }}
-        onPress={() => openPaymentModal(r.id)}
-        disabled={isPaying}
-      >
-        <Text style={{ color: '#fff', fontWeight: '600' }}>Payer</Text>
-      </TouchableOpacity>
-    </View>
-))}
-
+              <TouchableOpacity
+                style={{
+                  marginTop: 10,
+                  backgroundColor: '#16a34a',
+                  paddingVertical: 8,
+                  borderRadius: 8,
+                  alignItems: 'center',
+                }}
+                onPress={() => openPaymentModal(r.id)}
+                disabled={isPaying}
+              >
+                <Text style={{ color: '#fff', fontWeight: '600' }}>Payer</Text>
+              </TouchableOpacity>
+            </View>
+          ))}
         </View>
       </ScrollView>
 
-      {/* Payment Modal */}
-      <Modal
-        animationType="slide"
-        transparent
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View
-          style={{
-            flex: 1,
-            justifyContent: 'center',
-            alignItems: 'center',
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
-          }}
-        >
-          <View
-            style={{
-              width: '90%',
-              backgroundColor: '#fff',
-              borderRadius: 16,
-              padding: 20,
-              alignItems: 'center',
-            }}
-          >
-            <Text style={{ fontWeight: 'bold', fontSize: 16, marginBottom: 12 }}>
-              Saisir le montant à payer
-            </Text>
+      {/* Modal Paiement */}
+      <Modal visible={modalVisible} transparent animationType="slide">
+        <View style={{
+          flex: 1,
+          justifyContent: 'center',
+          alignItems: 'center',
+          backgroundColor: 'rgba(0,0,0,0.5)',
+        }}>
+          <View style={{
+            width: '90%',
+            backgroundColor: '#fff',
+            borderRadius: 16,
+            padding: 20,
+          }}>
+            <Text style={{ fontWeight: 'bold', fontSize: 16, marginBottom: 12 }}>Montant à payer</Text>
             <TextInput
               keyboardType="numeric"
               placeholder="Montant"
@@ -329,12 +284,11 @@ const RequestPay = ({ navigation, route }) => {
                 borderWidth: 1,
                 borderColor: '#ccc',
                 borderRadius: 8,
-                width: '100%',
                 padding: 12,
                 marginBottom: 16,
               }}
             />
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%' }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
               <TouchableOpacity
                 onPress={() => setModalVisible(false)}
                 style={{

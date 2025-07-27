@@ -240,7 +240,10 @@ export const authApi = createApi({
       }),
     }),
 
-     
+     getUserById: builder.query({
+        query: (id) => `/users/${id}`,
+      }),
+
     
 
     // Logout
@@ -276,6 +279,7 @@ export const {
   useResetPasswordMutation,
   useUpdatePasswordMutation,
   useGetMyProfileQuery,
+  useGetUserByIdQuery,
   useGetUserProfileQuery,
   useGetTokenMutation,
   useCreateTokenMutation,

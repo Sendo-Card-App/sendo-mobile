@@ -65,19 +65,19 @@ const DemandList = () => {
   </TouchableOpacity>
 );
 
-
 const renderRecipientRequest = ({ item }) => {
-  const fund = item.requestFund;
+  const fund = item.requestFund || item; // Handle both cases
   if (!fund) return null;
 
   const recipients = fund.recipients || [];
-  const isDisabled = item.status === 'COMPLETED' || recipients.every(r => r.status === 'PAID');
+  const isDisabled = fund.status === 'COMPLETED' || fund.status === 'FULLY_FUNDED' || 
+                    recipients.every(r => r.status === 'PAID');
 
   return (
     <TouchableOpacity
       onPress={() => {
         if (!isDisabled) {
-          navigation.navigate("RequestPay", { demand: item });
+          navigation.navigate("RequestPay", { demand: fund });
         }
       }}
       className={`bg-white rounded-xl p-4 mb-4 ${isDisabled ? 'opacity-80' : ''}`}
@@ -89,16 +89,20 @@ const renderRecipientRequest = ({ item }) => {
         {t('recipientStatus.requester')}: {fund.requesterFund?.firstname} {fund.requesterFund?.lastname}
       </Text>
       <View className="absolute right-3 top-3 space-y-1">
-        <View className={`px-3 py-1 rounded-full ${item.status === 'COMPLETED' ? 'bg-green-100' : 'bg-orange-100'}`}>
-          <Text className={`text-xs font-semibold ${item.status === 'COMPLETED' ? 'text-green-500' : 'text-orange-500'}`}>
-            {item.status === 'FULLY_FUNDED' ? t('demandList.completed') : t('demandList.pending')}
+        <View className={`px-3 py-1 rounded-full ${
+          fund.status === 'COMPLETED' || fund.status === 'FULLY_FUNDED' ? 'bg-green-100' : 'bg-orange-100'
+        }`}>
+          <Text className={`text-xs font-semibold ${
+            fund.status === 'COMPLETED' || fund.status === 'FULLY_FUNDED' ? 'text-green-500' : 'text-orange-500'
+          }`}>
+            {fund.status === 'FULLY_FUNDED' || fund.status === 'COMPLETED' ? 
+              t('demandList.completed') : t('demandList.pending')}
           </Text>
         </View>
       </View>
     </TouchableOpacity>
   );
 };
-
 
 
 
@@ -188,7 +192,7 @@ const renderRecipientRequest = ({ item }) => {
         <FlatList
           data={filteredPublicRequests}
           renderItem={renderRecipientRequest}
-          keyExtractor={(item) => item.id.toString()}
+         keyExtractor={(item, index) => item?.id?.toString() || index.toString()}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: 30 }}
         />

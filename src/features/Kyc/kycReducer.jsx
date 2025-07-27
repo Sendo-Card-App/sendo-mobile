@@ -11,9 +11,8 @@ const DOCUMENT_TYPES = {
 };
 
 const IDENTITY_TYPES = {
-  CNI: 'cni',
+  DRIVERS_LICENSE: 'drivers_license',
   PASSPORT: 'passport',
-  DRIVERS_LICENSE: 'drivers_license'
 };
 
 const initialState = {

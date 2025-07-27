@@ -64,14 +64,14 @@ const WalletRecharge = () => {
     }
   }, [statusData]);
 
- const handleRecharge = async () => {
+const handleRecharge = async () => {
   const trimmedPhone = phone.trim();
   const normalizedPhone = trimmedPhone.startsWith("+237")
     ? trimmedPhone
     : trimmedPhone.startsWith("+237")
     ? `+${trimmedPhone}`
     : `+237${trimmedPhone}`;
-     console.log("✅ Phone after normalization:", normalizedPhone);
+ 
 
   if (normalizedPhone.length !== 12 && !normalizedPhone.startsWith("+237")) {
     Toast.show({
@@ -82,7 +82,6 @@ const WalletRecharge = () => {
     return;
   }
 
- 
   if (!trimmedPhone || isNaN(amount) || parseFloat(amount) < 500) {
     Toast.show({
       type: "error",
@@ -92,7 +91,6 @@ const WalletRecharge = () => {
     return;
   }
 
- 
   if (!userWalletId) {
     Toast.show({
       type: "error",
@@ -112,9 +110,10 @@ const WalletRecharge = () => {
       matriculeWallet: userWalletId,
     }).unwrap();
   
-    const trid = response?.data?.mobileMoney?.trid;
+   const trid = response?.data?.mobileMoney?.id || response?.data?.transaction?.transactionReference;
     const type = response?.data?.transaction?.type;
     const transactionId = response?.data?.transaction?.transactionId;
+
 
     if (trid && transactionId) {
       Toast.show({
@@ -122,46 +121,6 @@ const WalletRecharge = () => {
         text1: "Succès",
         text2: "Transaction initiée, vérification du statut...",
       });
-
-      const notificationContent = {
-        title: "Recharge Initiée",
-        body: `Vous avez initié une recharge de ${amount} FCFA.`,
-        type: "SUCCESS_DEPOSIT_WALLET",
-      };
-
-      try {
-        let pushToken = await getStoredPushToken();
-        if (!pushToken) {
-          pushToken = await registerForPushNotificationsAsync();
-        }
-
-        if (pushToken) {
-          await sendPushTokenToBackend(
-            pushToken,
-            notificationContent.title,
-            notificationContent.body,
-            notificationContent.type,
-            {
-              phone: normalizedPhone,
-              amount: parseFloat(amount),
-              transactionId,
-              timestamp: new Date().toISOString(),
-            }
-          );
-        }
-      } catch (notificationError) {
-        await sendPushNotification(
-          notificationContent.title,
-          notificationContent.body,
-          {
-            data: {
-              type: notificationContent.type,
-              phone: normalizedPhone,
-              amount: parseFloat(amount),
-            },
-          }
-        );
-      }
 
       setCheckParams({
         trid,
@@ -177,42 +136,42 @@ const WalletRecharge = () => {
         text2: "Une erreur s'est produite. Veuillez réessayer.",
       });
     }
-      } catch (error) {
-          console.log(' Réponse du backend :', JSON.stringify(error, null, 2));
-      const status = error?.data?.status;
-      const respCode = error?.data?.data?.details?.respCode || error?.data?.data?.detaila?.response;
-      const usrMsg = error?.data?.data?.details?.usrMsg;
-      const customerMsgs = error?.data?.data?.detaila?.customerMsg;
+  } catch (error) {
+    console.log(' Réponse du backend :', JSON.stringify(error, null, 2));
+    const status = error?.data?.status;
+    const respCode = error?.data?.data?.details?.respCode || error?.data?.data?.detaila?.response;
+    const usrMsg = error?.data?.data?.details?.usrMsg;
+    const customerMsgs = error?.data?.data?.detaila?.customerMsg;
 
-      // Try to get a localized French error message
-      let localizedMsg;
-      if (Array.isArray(customerMsgs)) {
-        const frMsg = customerMsgs.find(msg => msg.language === 'fr');
-        localizedMsg = frMsg?.content;
-      }
-
-      if (status === 500 && respCode === 4204) {
-        Toast.show({
-          type: "error",
-          text1: "Numéro invalide",
-          text2: usrMsg || "Le numéro de téléphone est invalide.",
-        });
-      } else if (status === 500 && respCode === 40002) {
-        Toast.show({
-          type: "error",
-          text1: "Erreur technique",
-          text2: localizedMsg || "Une erreur technique est survenue. Veuillez contacter le support.",
-        });
-      } else {
-        Toast.show({
-          type: "error",
-          text1: "Erreur",
-          text2: error?.data?.message || "Échec de la recharge.",
-        });
-      }
+    // Try to get a localized French error message
+    let localizedMsg;
+    if (Array.isArray(customerMsgs)) {
+      const frMsg = customerMsgs.find(msg => msg.language === 'fr');
+      localizedMsg = frMsg?.content;
     }
 
+    if (status === 500 && respCode === 4204) {
+      Toast.show({
+        type: "error",
+        text1: "Numéro invalide",
+        text2: usrMsg || "Le numéro de téléphone est invalide.",
+      });
+    } else if (status === 500 && respCode === 40002) {
+      Toast.show({
+        type: "error",
+        text1: "Erreur technique",
+        text2: localizedMsg || "Une erreur technique est survenue. Veuillez contacter le support.",
+      });
+    } else {
+      Toast.show({
+        type: "error",
+        text1: "Erreur",
+        text2: error?.data?.message || "Échec de la recharge.",
+      });
+    }
+  }
 };
+
 
 
     

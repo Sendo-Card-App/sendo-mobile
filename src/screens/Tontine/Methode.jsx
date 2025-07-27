@@ -13,12 +13,12 @@ export default function Method({ navigation, route }) {
   const [loading, setLoading] = useState(false);
 
   const options = [
-    {
-      id: "AUTOMATIC ",
-      title: t("method1.automatic"),
-      description: t("method1.automaticDescription"),
-      icon: "sync-outline"
-    },
+    // {
+    //   id: "AUTOMATIC ",
+    //   title: t("method1.automatic"),
+    //   description: t("method1.automaticDescription"),
+    //   icon: "sync-outline"
+    // },
     {
       id: "MANUAL",
       title: t("method1.manual"),
