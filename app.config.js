@@ -28,7 +28,6 @@ module.exports = {
       }
     },
     android: {
-       googleServicesFile: "./google-services.json",
       adaptiveIcon: {
         foregroundImage: "./assets/logo.png", 
         backgroundColor: "#181e25"
@@ -40,7 +39,7 @@ module.exports = {
         "android.permission.READ_CONTACTS",
         "android.permission.WRITE_CONTACTS"
       ],
-      package: "com.sfe.sendo"
+      package: "com.sfe.sendo2025"
     },
     web: {
       favicon: "./assets/favicon.png"
@@ -65,7 +64,7 @@ module.exports = {
     extra: {
       eas: {
         apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL,
-       "projectId": "f317890d-1389-4b9e-9ce8-e1ffa7fe866e"
+        projectId: "f317890d-1389-4b9e-9ce8-e1ffa7fe866e"
       }
     },
     

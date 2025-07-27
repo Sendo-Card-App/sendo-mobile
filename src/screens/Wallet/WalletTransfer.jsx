@@ -105,92 +105,40 @@ const WalletTransfer = ({ navigation }) => {
   };
 
   const handlePinVerified = async () => {
-    if (!pendingTransferData) return;
-    const { fromWallet, toWallet, amount: transferAmount, description } = pendingTransferData;
+  if (!pendingTransferData) return;
 
-    try {
-      await transferFunds({
-        fromWallet,
-        toWallet,
-        amount: transferAmount,
-        transfer_description: description,
-      }).unwrap();
+  const { fromWallet, toWallet, amount: transferAmount, description } = pendingTransferData;
 
-      const notificationContent = {
-        title: 'Transfert effectué',
-        body: `Vous avez envoyé ${transferAmount} FCFA à ${recipientName || walletId}`,
-        type: 'TRANSFER_SUCCESS',
-      };
+  try {
+    await transferFunds({
+      fromWallet,
+      toWallet,
+      amount: transferAmount,
+      transfer_description: description,
+    }).unwrap();
 
-      try {
-        let pushToken = await getStoredPushToken();
-        if (!pushToken) {
-          pushToken = await registerForPushNotificationsAsync();
-        }
+    setShowPinModal(false);
+    setPendingTransferData(null);
 
-        if (pushToken) {
-          await sendPushTokenToBackend(
-            pushToken,
-            notificationContent.title,
-            notificationContent.body,
-            notificationContent.type,
-            {
-              amount: transferAmount,
-              recipient: recipientName || walletId,
-              timestamp: new Date().toISOString(),
-            }
-          );
-        }
-      } catch (notificationError) {
-        await sendPushNotification(
-          notificationContent.title,
-          notificationContent.body,
-          {
-            data: {
-              type: notificationContent.type,
-              amount: transferAmount,
-              recipient: recipientName || walletId,
-            },
-          }
-        );
-      }
+    navigation.navigate('Success', {
+      message: 'Transfer completed successfully!',
+      nextScreen: 'MainTabs',
+    });
+  } catch (error) {
+    console.log('Response:', JSON.stringify(error, null, 2));
+    const status = error?.status;
 
-      setShowPinModal(false);
-      setPendingTransferData(null);
+    if (status === 503) showErrorToast('SERVICE_UNAVAILABLE');
+    else if (status === 500) showErrorToast('ACTION_FAILED', 'Erreur serveur lors du transfert');
+    else if (status === 400) showErrorToast('ACTION_FAILED', 'Veuillez remplir tous les champs.');
+    else if (status === 404) showErrorToast('ACTION_FAILED', 'Portefeuille introuvable');
+    else showErrorToast('ACTION_FAILED', error?.data?.message || 'Une erreur est survenue.');
 
-      navigation.navigate('Success', {
-        message: 'Transfer completed successfully!',
-        nextScreen: 'MainTabs',
-      });
-    } catch (error) {
-      const status = error?.status;
+    setShowPinModal(false);
+    setPendingTransferData(null);
+  }
+};
 
-      if (status === 503) showErrorToast('SERVICE_UNAVAILABLE');
-      else if (status === 500) showErrorToast('ACTION_FAILED', 'Erreur serveur lors du transfert');
-      else if (status === 400) showErrorToast('ACTION_FAILED', 'Veuillez remplir tous les champs.');
-      else if (status === 404) showErrorToast('ACTION_FAILED', 'Portefeuille introuvable');
-      else showErrorToast('ACTION_FAILED', error?.data?.message || 'Une erreur est survenue.');
-
-      try {
-        await sendPushNotification(
-          'Échec du transfert',
-          error?.data?.message || 'Le transfert a échoué.',
-          {
-            data: {
-              type: 'TRANSFER_FAILED',
-              amount: transferAmount,
-              recipient: recipientName || walletId,
-            },
-          }
-        );
-      } catch (pushError) {
-        console.warn("Notification d'erreur non envoyée:", pushError);
-      }
-
-      setShowPinModal(false);
-      setPendingTransferData(null);
-    }
-  };
 
   const isLoading = isProfileLoading || isBalanceLoading;
 

@@ -111,6 +111,7 @@ const OnboardingCardScreen = () => {
       setRequestDate(now);
       await refetch();
     } catch (error) {
+       console.log("Full response:", JSON.stringify(error, null, 2));
       const backendMessage = error?.data?.message || t('onboardingCard.toast.error.generic');
       const details = error?.data?.data?.details?.required;
 

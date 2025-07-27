@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import { StatusBar, Platform, View, Text, TouchableOpacity, Image, SafeAreaView, Alert } from 'react-native';
+import { StatusBar, Platform, View, Text, ScrollView, TouchableOpacity, Image, TextInput ,SafeAreaView, Alert } from 'react-native';
+import Modal from 'react-native-modal';
 import { useCreatePasscodeMutation } from '../../services/Auth/authAPI';
 import { useSelector, useDispatch } from 'react-redux';
 import { setPasscode, incrementAttempt, resetAttempts, lockPasscode, toggleBiometric, clearPasscode, setIsNewUser } from '../../features/Auth/passcodeSlice';
@@ -13,6 +14,7 @@ import * as LocalAuthentication from 'expo-local-authentication';
 import { useTranslation } from 'react-i18next';
 import { getStoredPushToken } from '../../services/notificationService';
 import { useGetTokenMutation, useCreateTokenMutation } from '../../services/Auth/authAPI';
+import { useSendOtpMutation, useUpdatePasscodeMutation } from '../../services/Auth/authAPI';
 
 const PinCode = ({ navigation, route }) => {
   const { t } = useTranslation();
@@ -47,20 +49,38 @@ const PinCode = ({ navigation, route }) => {
   const { data: serverTokenData } = useGetTokenMutation(userId, {
     skip: !userId
   });
-  
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [otpCode, setOtpCode] = useState('');
+  const [newPasscode, setNewPasscode] = useState('');
+  const [sendOtp] = useSendOtpMutation();
+  const [updatePasscode] = useUpdatePasscodeMutation();
+
+
   const isNewUser = useSelector((state) => state.auth.isNewUser);
   const isSetup = route.params?.setup ?? !hasStoredPasscode;
   const isLocked = lockedUntil && new Date(lockedUntil) > new Date();
 
   useEffect(() => {
-  if (userProfile) {
-    if (userProfile?.data?.passcode) {
-      setPasscodeExists(true);
-    } else {
-      setPasscodeExists(false);
-    }
-  }
-}, [userProfile]);
+    const intervalId = setInterval(async () => {
+      try {
+        const result = await refetch(); // fetch latest user profile
+        const profile = result?.data?.data;
+
+        if (profile?.passcode) {
+          setPasscodeExists(true);
+        } else {
+          setPasscodeExists(false);
+        }
+      } catch (error) {
+        console.error('Failed to refetch user profile:', error);
+      }
+    }, 1000);
+
+    // Clear interval on component unmount
+    return () => clearInterval(intervalId);
+  }, []);
+
+
   // Check and update token when component mounts or user profile changes
 //  useEffect(() => {
 //   const checkAndUpdateToken = async () => {
@@ -84,18 +104,7 @@ const PinCode = ({ navigation, route }) => {
 
 
   // Clear session function
-    const clearSession = async () => {
-      try {
-        await removeData('@authData');
-        await removeData('@passcode'); 
-        dispatch(clearAuth());
-        dispatch(clearPasscode());
-      } catch (error) {
-        console.error('Error clearing session:', error);
-      }
-    };
-
-
+    
   const showToast = (type, title, message) => {
     Toast.show({
       type: type,
@@ -107,11 +116,6 @@ const PinCode = ({ navigation, route }) => {
     });
   };
 
-  useFocusEffect(
-    useCallback(() => {
-      refetch(); // force a query to the backend
-    }, [])
-  );
  useEffect(() => {
     const loadInitialData = async () => {
       const data = await getData('@authData');
@@ -230,7 +234,6 @@ const handleBiometricAuth = async () => {
 const handleComplete = async (enteredPin) => {
   setIsLoading(true);
   try {
-
     const storedPasscode = await getData('@passcode');
     if (storedPasscode) {
       if (enteredPin === storedPasscode) {
@@ -248,33 +251,29 @@ const handleComplete = async (enteredPin) => {
           navigation.replace('Main');
         }
       } else {
-        // PIN incorrect
-        setError(t('pin.incorrectPin'));
-        setPin('');
+        const newAttempts = attempts + 1;
         dispatch(incrementAttempt());
 
-        if (attempts + 1 >= 3) {
+        if (newAttempts >= 3) {
           const lockTime = new Date();
           lockTime.setMinutes(lockTime.getMinutes() + 5);
           dispatch(lockPasscode(lockTime.toISOString()));
 
-          Alert.alert(
-            t('pin.accountLocked'),
-            t('pin.lockedFor5Minutes'),
-            [
-              {
-                text: t('common.ok'),
-                onPress: () => {
-                  if (biometricAvailable) {
-                    handleBiometricAuth();
-                  }
-                },
-              },
-            ]
-          );
+          try {
+            await sendOtp({ phone: userProfile?.data?.phone });
+            showToast('info', t('pin.otpSentTitle'), t('pin.otpSentMessage'));
+            setShowResetModal(true);
+          } catch (err) {
+            showToast('error', t('errors.title'), t('pin.otpSendFailed'));
+          }
+        } else {
+          setError(t('pin.incorrectPin'));
+          setPin('');
         }
+        return;
       }
     } else {
+      // Setup phase or pin not stored locally
       if (userProfile?.data?.passcode) {
         if (enteredPin === userProfile?.data?.passcode) {
           await storeData('@passcode', enteredPin);
@@ -307,6 +306,7 @@ const handleComplete = async (enteredPin) => {
 };
 
 
+
   const renderDots = () => (
     <View style={{ flexDirection: 'row', justifyContent: 'center', marginVertical: 20 }}>
       {[...Array(4)].map((_, index) => (
@@ -324,56 +324,40 @@ const handleComplete = async (enteredPin) => {
     </View>
   );
 
-  const handleForgotPin = async () => {
-  Alert.alert(
-    t('pin.forgotPin'),
-    t('pin.forgotPinMessage'),
-    [
-      {
-        text: t('common.cancel'),
-        style: 'cancel',
-        onPress: () => console.log('Cancel pressed') // Optional logging
-      },
-      {
-        text: t('common.signIn'),
-        onPress: async () => {
-          try {
-            // Clear authentication data
-            await removeData('@authData');
-            await removeData('@passcode');
-            
-            // Update state
-            setAuthData(null);
-            
-            // Navigate to sign in after a slight delay for better UX
-            setTimeout(() => {
-              navigation.navigate('SignIn', { 
-                screen: 'Auth',
-                params: { showForgotPinMessage: true }
-              });
-            });
-            
-          } catch (error) {
-            console.error('Error clearing auth data:', error);
-            Toast.show({
-              type: 'error',
-              text1: t('common.error'),
-              text2: t('pin.clearDataError')
-            });
-          }
-        }
-      },
-    ],
-    { cancelable: false } // Prevent dismissing by tapping outside
-  );
-};
+    const handleForgotPin = async () => {
+      Alert.alert(
+        t('pin.forgotPin'),
+        t('pin.forgotPinMessage'),
+        [
+          {
+            text: t('common.cancel'),
+            style: 'cancel',
+            onPress: () => console.log('Cancel pressed')
+          },
+          {
+            text: t('pin.sendOtp'),
+            onPress: async () => {
+              try {
+               await sendOtp({ phone: userProfile?.data?.phone });
+                showToast('info', t('pin.otpSentTitle'), t('pin.otpSentMessage'));
+                setShowResetModal(true); // show the modal for user to enter OTP and new passcode
+              } catch (error) {
+                console.log('❌ OTP send error:', JSON.stringify(error, null, 2));
+                showToast('error', t('errors.title'), t('pin.otpSendFailed'));
+              }
+            }
+          },
+        ],
+        { cancelable: false }
+      );
+    };
 
   // Get appropriate biometric icon
     const getBiometricIcon = () => {
     if (biometricType === 'face') {
       return require('../../Images/face-id.png');
     } else if (biometricType === 'fingerprint') {
-      return require('../../Images/fingerprint.png');
+      return require('../../../assets/fingerprint.png');
     }
     return null;
   };
@@ -503,6 +487,126 @@ const handleComplete = async (enteredPin) => {
           </View>
         )}
       </View>
+     <Modal 
+  isVisible={showResetModal} 
+  backdropOpacity={0.5}
+  style={{ margin: 0, justifyContent: 'flex-start' }} // Align to top
+>
+  <SafeAreaView style={{ flex: 1 }}>
+    <ScrollView 
+      contentContainerStyle={{ 
+        padding: 20,
+        paddingTop: 50, // Add extra padding at top
+        backgroundColor: 'white',
+        borderRadius: 10,
+      }}
+      keyboardShouldPersistTaps="handled" // Allows tapping buttons when keyboard is open
+    >
+      <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 20 }}>
+        {t('pin.resetPasscode')}
+      </Text>
+
+      <Text style={{ marginBottom: 5, color: '#555' }}>
+        {t('pin.enterOtp')}
+      </Text>
+      <TextInput
+        placeholder={t('pin.enterOtp')}
+        value={otpCode}
+        onChangeText={setOtpCode}
+        keyboardType="numeric"
+        maxLength={6}
+        style={{
+          borderColor: '#ccc',
+          borderWidth: 1,
+          borderRadius: 8,
+          padding: 10,
+          marginBottom: 15,
+        }}
+      />
+
+      <Text style={{ marginBottom: 5, color: '#555' }}>
+        {t('pin.enterNewPin')}
+      </Text>
+      <TextInput
+        placeholder={t('pin.enterNewPin')}
+        value={newPasscode}
+        onChangeText={setNewPasscode}
+        secureTextEntry
+        keyboardType="numeric"
+        maxLength={4}
+        style={{
+          borderColor: '#ccc',
+          borderWidth: 1,
+          borderRadius: 8,
+          padding: 10,
+          marginBottom: 25, // Increased margin
+          color: '#000',
+          backgroundColor: '#fff'
+        }}
+      />
+
+      <View style={{ marginBottom: 20 }}> {/* Added container for buttons */}
+        <TouchableOpacity
+          onPress={async () => {
+            try {
+              if (newPasscode.length !== 4 || otpCode.length !== 6) {
+                showToast('error', t('errors.title'), t('pin.invalidInputs'));
+                return;
+              }
+
+              const res = await updatePasscode({
+                passcode: newPasscode,
+                code: otpCode,
+              }).unwrap();
+              console.log(res)
+              if (res.status === 200) {
+                await storeData('@passcode', newPasscode);
+                dispatch(setPasscode(newPasscode));
+                dispatch(resetAttempts());
+                setShowResetModal(false);
+                setOtpCode('');
+                setNewPasscode('');
+                showToast('success', t('pin.successTitle'), t('pin.resetSuccess'));
+                navigation.navigate('Main');
+              } else {
+                showToast('error', t('errors.title'), t('pin.resetFailed'));
+              }
+            } catch (err) {
+              showToast('error', t('errors.title'), err?.data?.message || t('pin.resetFailed'));
+            }
+          }}
+          style={{
+            backgroundColor: '#7ddd7d',
+            padding: 15, // Increased padding
+            borderRadius: 8,
+            alignItems: 'center',
+            marginBottom: 15, // Added margin between buttons
+          }}
+        >
+          <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 16 }}>
+            {t('pin.confirmReset')}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={() => setShowResetModal(false)}
+          style={{
+            padding: 15,
+            borderRadius: 8,
+            alignItems: 'center',
+            borderWidth: 1,
+            borderColor: '#ccc',
+          }}
+        >
+          <Text style={{ color: 'red', fontWeight: 'bold', fontSize: 16 }}>
+            {t('common.cancel')}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </ScrollView>
+  </SafeAreaView>
+</Modal>
+
     </SafeAreaView>
   );
 };

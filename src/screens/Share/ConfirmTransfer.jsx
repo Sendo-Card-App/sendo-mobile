@@ -37,7 +37,7 @@ const ConfirmationScreen = () => {
   userFullName 
 } = route.params;
   console.log(participants)
-//  console.log(userFullName)
+  console.log(userFullName)
 
   const [createSharedExpense, { isLoading }] = useCreateSharedExpenseMutation();
   const [reason, setReason] = useState(route.params.description || "");

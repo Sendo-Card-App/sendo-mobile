@@ -37,7 +37,7 @@ const BeneficiaryScreen = () => {
     return configItem ? configItem.value : null;
   };
 
-  const CAD_REAL_TIME_VALUE = getConfigValue('CAD_REAL_TIME_VALUE');
+  const CAD_SENDO_VALUE = getConfigValue('CAD_SENDO_VALUE');
    
 
     useEffect(() => {
@@ -127,8 +127,8 @@ const BeneficiaryScreen = () => {
             }}
             onPress={() => navigation.navigate("Curency", {
               countryName: "Cameroon",
-              conversionRate: t('conversionRateCAD', { value: CAD_REAL_TIME_VALUE }),
-              cadRealTimeValue: CAD_REAL_TIME_VALUE,
+              conversionRate: t('conversionRateCAD', { value: CAD_SENDO_VALUE }),
+              cadRealTimeValue: CAD_SENDO_VALUE,
               flagImage: Cameroon
             })}
           >
@@ -139,7 +139,7 @@ const BeneficiaryScreen = () => {
             />
             <Text style={{ color: "white", marginLeft: 10 }}>{t('cameroon')}</Text>
             <Text style={{ color: "white", marginLeft: "auto" }}>
-              {t('conversionRateCAD', { value: CAD_REAL_TIME_VALUE })}
+              {t('conversionRateCAD', { value: CAD_SENDO_VALUE })}
             </Text>
           </TouchableOpacity>
           {/* <TouchableOpacity
@@ -150,8 +150,8 @@ const BeneficiaryScreen = () => {
             }}
             onPress={() => navigation.navigate("Curency", {
               countryName: "Canada",
-              conversionRate: t('conversionRateXAF', { value: CAD_REAL_TIME_VALUE }),
-              cadRealTimeValue: CAD_REAL_TIME_VALUE,
+              conversionRate: t('conversionRateXAF', { value: CAD_SENDO_VALUE }),
+              cadRealTimeValue: CAD_SENDO_VALUE,
               flagImage: Canada
             })}
           >
@@ -162,7 +162,7 @@ const BeneficiaryScreen = () => {
             />
             <Text style={{ color: "white", marginLeft: 10 }}>{t('canada')}</Text>
             <Text style={{ color: "white", marginLeft: "auto" }}>
-              {t('conversionRateXAF', { value: CAD_REAL_TIME_VALUE })}
+              {t('conversionRateXAF', { value: CAD_SENDO_VALUE })}
             </Text>
           </TouchableOpacity> */}
         </ScrollView>

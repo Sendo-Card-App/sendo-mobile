@@ -16,6 +16,7 @@ import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
 import {
   useWithdrawalWalletMutation,
   useCheckTransactionStatusQuery,
+  useGetBalanceQuery,
 } from "../../services/WalletApi/walletApi";
 import Toast from "react-native-toast-message";
 import Loader from "../../components/Loader";
@@ -35,6 +36,11 @@ const WalletWithdrawal = () => {
   const [transactionStatus, setTransactionStatus] = useState(null);
 
   const { data: userProfile } = useGetUserProfileQuery();
+    const userId = userProfile?.data?.id;
+  
+    const { data: balanceData } = useGetBalanceQuery(userId, { skip: !userId });
+    const balance = balanceData?.data?.balance ?? 0;
+    
   const [withdrawaleWallet, { isLoading: isRecharging }] =
     useWithdrawalWalletMutation();
 
@@ -86,6 +92,16 @@ const WalletWithdrawal = () => {
       return;
     }
 
+    if (parseFloat(amount) > balance) {
+      Toast.show({
+        type: "error",
+        text1: "Montant trop élevé",
+        text2: "Le montant dépasse votre solde disponible.",
+      });
+      return;
+    }
+
+
     if (!userWalletId) {
       Toast.show({
         type: "error",
@@ -135,6 +151,7 @@ const WalletWithdrawal = () => {
         });
       }
     } catch (error) {
+      console.log('Response:', JSON.stringify(error, null, 2));
         const status = error?.status;
     
         // Error model 1

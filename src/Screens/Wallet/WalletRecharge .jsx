@@ -15,6 +15,7 @@ import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
 import {
   useRechargeWalletMutation,
   useCheckTransactionStatusQuery,
+  useGetBalanceQuery,
 } from "../../services/WalletApi/walletApi";
 import { useSendNotificationMutation } from "../../services/Notification/notificationApi";
 import { 
@@ -36,7 +37,10 @@ const WalletRecharge = () => {
   const [checkParams, setCheckParams] = useState(null);
   const [isButtonDisabled, setIsButtonDisabled] = useState(false);
 
-  const { data: userProfile } = useGetUserProfileQuery();
+   const userId = userProfile?.data?.id;
+    
+      const { data: balanceData } = useGetBalanceQuery(userId, { skip: !userId });
+      const balance = balanceData?.data?.balance ?? 0;
   const [rechargeWallet, { isLoading: isRecharging }] = useRechargeWalletMutation();
   const [sendNotification] = useSendNotificationMutation();
 
@@ -82,7 +86,7 @@ const handleRecharge = async () => {
     return;
   }
 
-  if (!trimmedPhone || isNaN(amount) || parseFloat(amount) < 500) {
+    if (!trimmedPhone || isNaN(amount) || parseFloat(amount) < 500) {
     Toast.show({
       type: "error",
       text1: "Erreur",
@@ -90,6 +94,16 @@ const handleRecharge = async () => {
     });
     return;
   }
+
+  if (parseFloat(amount) > balance) {
+    Toast.show({
+      type: "error",
+      text1: "Montant trop élevé",
+      text2: "Le montant dépasse votre solde disponible.",
+    });
+    return;
+  }
+
 
   if (!userWalletId) {
     Toast.show({
@@ -214,6 +228,7 @@ const handleRecharge = async () => {
               keyboardType="phone-pad"
               value={phone}
               onChangeText={setPhone}
+               maxLength={9}
             />
           </View>
 

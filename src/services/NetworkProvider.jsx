@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import NetInfo from '@react-native-community/netinfo';
-import { View, Text, StyleSheet, Animated, Easing } from 'react-native';
+import { View, Text, StyleSheet, Animated, Easing, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 const NetworkProvider = ({ children }) => {
@@ -104,12 +104,13 @@ const NetworkProvider = ({ children }) => {
               borderLeftColor: isError ? '#D70015' : '#248A3D',
             }
           ]}>
-            <Ionicons 
-              name={isError ? 'wifi-off-outline' : 'wifi-outline'} 
-              size={24} 
-              color="white" 
-              style={styles.icon}
+            <Image
+              source={isError 
+                ? require('../Images/no-wifi.png') 
+                : require('../Images/wifi.png')}
+              style={[styles.icon, { width: 24, height: 24, tintColor: 'white' }]}
             />
+
             <View style={styles.textContainer}>
               <Text style={styles.notificationText}>
                 {notificationMessage}

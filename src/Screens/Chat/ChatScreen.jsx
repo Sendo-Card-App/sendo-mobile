@@ -11,10 +11,12 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  Linking ,
   Modal
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import * as DocumentPicker from 'expo-document-picker';
+import * as ImageManipulator from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
 import { 
   useSendMessageMutation, 
@@ -122,30 +124,36 @@ const ChatScreen = ({ route, navigation }) => {
     }
   };
 
-  const pickImage = async () => {
-    try {
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        quality: 0.7,
-      });
-      
-      if (!result.canceled && result.assets[0]) {
-        setAttachments(prev => [...prev, {
-          uri: result.assets[0].uri,
-          name: `image_${Date.now()}.jpg`,
-          type: result.assets[0].mimeType || 'image/jpeg'
-        }]);
-      }
-    } catch (err) {
-      console.log('Image picker error:', err);
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: 'Failed to pick image',
-      });
+ const pickImage = async () => {
+  try {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 1,
+    });
+
+    if (!result.canceled && result.assets[0]) {
+      const compressed = await ImageManipulator.manipulateAsync(
+        result.assets[0].uri,
+        [],
+        { compress: 0.5, format: ImageManipulator.SaveFormat.JPEG }
+      );
+
+      setAttachments(prev => [...prev, {
+        uri: compressed.uri,
+        name: `image_${Date.now()}.jpg`,
+        type: 'image/jpeg'
+      }]);
     }
-  };
+  } catch (err) {
+    console.log('Image picker error:', err);
+    Toast.show({
+      type: 'error',
+      text1: 'Error',
+      text2: 'Failed to pick image',
+    });
+  }
+};
 
   const removeAttachment = (index: number) => {
     setAttachments(prev => prev.filter((_, i) => i !== index));
@@ -169,14 +177,24 @@ const ChatScreen = ({ route, navigation }) => {
         return; // Return early and let the user send the message again
       }
 
-      const messageData = {
-        conversationId: currentConversationId,
-        content: input.trim() !== "" ? input : attachments.length > 0 ? "[Attachment]" : "",
-        senderType: "CUSTOMER",
-        attachments: attachments.map((a) => a.uri),
-      };
+      const formData = new FormData();
+      formData.append('conversationId', currentConversationId);
+      formData.append(
+        'content',
+        input.trim() !== '' ? input : attachments.length > 0 ? '[Attachment]' : ''
+      );
+      formData.append('senderType', 'CUSTOMER');
 
-      await sendMessage(messageData).unwrap();
+      attachments.forEach((file, index) => {
+        formData.append('attachments', {
+          uri: file.uri,
+          name: file.name,
+          type: file.type,
+        }); 
+      });
+
+      await sendMessage(formData).unwrap();
+
 
       setInput('');
       setAttachments([]);
@@ -186,7 +204,7 @@ const ChatScreen = ({ route, navigation }) => {
         flatListRef.current?.scrollToEnd({ animated: true });
       }, 100);
     } catch (error) {
-      console.error('Failed to send message:', error);
+       console.error('Failed to send message:', JSON.stringify(error, null, 2));
       Toast.show({
         type: 'error',
         text1: 'Error',
@@ -242,28 +260,36 @@ const ChatScreen = ({ route, navigation }) => {
     </View>
   );
 
-  const renderAttachmentPreview = () => (
-    <View style={styles.attachmentsPreview}>
-      {attachments.map((file, index) => (
-        <View key={index} style={styles.attachmentPreview}>
-          {file.type.startsWith('image/') ? (
-            <Image 
-              source={{ uri: file.uri }} 
+const renderAttachmentPreview = () => (
+  <View style={styles.attachmentsPreview}>
+    {attachments.map((attachment, index) => (
+      <View key={index} style={styles.attachmentPreview}>
+        <TouchableOpacity onPress={() => Linking.openURL(attachment.uri)} style={{ flex: 1 }}>
+          {attachment.type.includes('image') ? (
+            <Image
+              source={{ uri: attachment.uri }}
               style={styles.previewImage}
+              resizeMode="cover"
             />
           ) : (
-            <Icon name="insert-drive-file" size={30} color="#555" />
+            <View style={styles.fileAttachment}>
+              <Icon name="insert-drive-file" size={24} color="#555" />
+              <Text style={styles.previewText} numberOfLines={1}>
+                {attachment.name}
+              </Text>
+            </View>
           )}
-          <Text style={styles.previewText} numberOfLines={1}>
-            {file.name}
-          </Text>
-          <TouchableOpacity onPress={() => removeAttachment(index)}>
-            <Icon name="close" size={18} color="#ff4444" />
-          </TouchableOpacity>
-        </View>
-      ))}
-    </View>
-  );
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={() => removeAttachment(index)} style={styles.closeIcon}>
+          <Icon name="close" size={18} color="#fff" />
+        </TouchableOpacity>
+      </View>
+    ))}
+  </View>
+);
+
+
 
   if (isLoadingConversations || isLoadingMessages) {
     return (
@@ -280,7 +306,7 @@ const ChatScreen = ({ route, navigation }) => {
       keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
     >
       {/* Conversation Selector */}
-      <TouchableOpacity 
+      {/* <TouchableOpacity 
         style={styles.conversationSelector}
         onPress={() => setShowConversationPicker(true)}
       >
@@ -292,10 +318,10 @@ const ChatScreen = ({ route, navigation }) => {
               : 'Select a conversation'}
         </Text>
         <Icon name="arrow-drop-down" size={24} color="#555" />
-      </TouchableOpacity>
+      </TouchableOpacity> */}
 
       {/* Conversation Picker Modal */}
-      <Modal
+      {/* <Modal
         visible={showConversationPicker}
         transparent={true}
         animationType="slide"
@@ -332,7 +358,7 @@ const ChatScreen = ({ route, navigation }) => {
             </TouchableOpacity>
           </View>
         </View>
-      </Modal>
+      </Modal> */}
 
       <FlatList
         ref={flatListRef}
@@ -393,6 +419,54 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+attachmentsPreview: {
+  flexDirection: 'row',
+  flexWrap: 'wrap',
+  paddingHorizontal: 10,
+  marginBottom: 8,
+  gap: 10,
+},
+
+attachmentPreview: {
+  position: 'relative',
+  width: 100,
+  height: 100,
+  borderRadius: 8,
+  overflow: 'hidden',
+  backgroundColor: '#e9ecef',
+  justifyContent: 'center',
+  alignItems: 'center',
+},
+
+previewImage: {
+  width: '100%',
+  height: '100%',
+  borderRadius: 8,
+},
+
+fileAttachment: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: 8,
+},
+
+previewText: {
+  fontSize: 12,
+  textAlign: 'center',
+  marginTop: 4,
+  color: '#333',
+},
+
+closeIcon: {
+  position: 'absolute',
+  top: 4,
+  right: 4,
+  backgroundColor: '#00000088',
+  borderRadius: 10,
+  padding: 2,
+  zIndex: 1,
+},
   conversationSelector: {
     flexDirection: 'row',
     justifyContent: 'space-between',

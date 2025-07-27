@@ -16,7 +16,7 @@ const documentTypeMap = {
   ID_PROOF: "kyc.id_proof",
   ADDRESS_PROOF: "kyc.address_proof",
   NIU_PROOF: "kyc.niu_proof",
-  SELFIE: "kyc.selfie", // ✅ Added SELFIE
+  SELFIE: "kyc.selfie", // 
 };
 
 const KYCValidation = () => {
@@ -33,6 +33,7 @@ const KYCValidation = () => {
     acc[doc.type].push(doc);
     return acc;
   }, {});
+  const hasRejectedDoc = documents.some((doc) => doc.status === "REJECTED");
 
   const kycItems = Object.keys(documentTypeMap).map((type) => {
     const docList = groupedDocs[type] || [];
@@ -130,6 +131,19 @@ const KYCValidation = () => {
                 )}
               </View>
             </View>
+            {hasRejectedDoc && (
+              <View className="bg-white p-4 border-t border-gray-200">
+                <TouchableOpacity
+                  onPress={() => navigation.navigate("KycResume")}
+                  className="bg-red-600 py-3 rounded-full"
+                >
+                  <Text className="text-center text-white font-bold">
+                    {t("kyc.resubmit") || "Soumettre à nouveau"}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
           </View>
         ))}
       </ScrollView>

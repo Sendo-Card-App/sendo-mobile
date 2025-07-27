@@ -76,12 +76,13 @@ const PaymentSimulator = () => {
     const configItem = configData?.data?.find(item => item.name === name);
     return configItem ? configItem.value : null;
   };
+  
 
   const USD_REAL_TIME_VALUE = getConfigValue('USD_REAL_TIME_VALUE') || 625;
   const EUR_REAL_TIME_VALUE = getConfigValue('EUR_REAL_TIME_VALUE') || 655;
   const CAD_REAL_TIME_VALUE = getConfigValue('CAD_REAL_TIME_VALUE') || 480;
   const PARTNER_VISA_FEES = getConfigValue('PARTNER_VISA_FEES') || 1.79;
-  const SENDO_SERVICE_FEES = getConfigValue('SENDO_SERVICE_FEES') || 0.01;
+  const SENDO_SERVICE_FEES = getConfigValue('SENDO_SERVICE_FEES') || 2.73;
 
   const currencies = [
     { code: 'USD', name: 'US Dollar', rate: USD_REAL_TIME_VALUE },

@@ -54,10 +54,11 @@ const Curency = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showAlert, setShowAlert] = useState(false);
+  const [showMaxAmountAlert, setShowMaxAmountAlert] = useState(false);
 
   const isToCameroon = countryName === 'Cameroon';
   const TRANSFER_FEES = parseFloat(getConfigValue('TRANSFER_FEES'));
-  const MIN_AMOUNT_TO_TRANSFER_FROM_CANADA = parseFloat(getConfigValue('MIN_AMOUNT_TO_TRANSFER_FROM_CANADA'));
+  const CAD_SENDO_VALUE = parseFloat(getConfigValue('CAD_SENDO_VALUE'));
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -110,7 +111,12 @@ const Curency = () => {
   };
 
   const handleNext = () => {
-    if (isToCameroon && parseFloat(convertedAmount) < MIN_AMOUNT_TO_TRANSFER_FROM_CANADA) {
+     const numericTotal = parseFloat(totalAmount);
+      if (numericTotal > 500000) {
+        setShowMaxAmountAlert(true);
+        return;
+      }
+    if (isToCameroon && parseFloat(convertedAmount) < CAD_SENDO_VALUE) {
       setShowAlert(true);
       return;
     }
@@ -339,9 +345,9 @@ const Curency = () => {
           }}>
             <Text style={{ color: 'white', fontSize: 16, textAlign: 'center', marginBottom: 15 }}>
               Le montant minimum d'une transaction pour le Cameroun est de{' '}
-              <Text style={{ fontWeight: 'bold' }}>{MIN_AMOUNT_TO_TRANSFER_FROM_CANADA} XAF</Text>.
+              <Text style={{ fontWeight: 'bold' }}>{CAD_SENDO_VALUE} XAF</Text>.
               {'\n'}Veuillez ressayer avec un montant supérieur à{' '}
-              <Text style={{ fontWeight: 'bold' }}>{MIN_AMOUNT_TO_TRANSFER_FROM_CANADA} XAF</Text>.
+              <Text style={{ fontWeight: 'bold' }}>{CAD_SENDO_VALUE} XAF</Text>.
             </Text>
             <TouchableOpacity
               onPress={() => setShowAlert(false)}
@@ -357,6 +363,41 @@ const Curency = () => {
           </View>
         </View>
       </Modal>
+      <Modal transparent animationType="fade" visible={showMaxAmountAlert}>
+        <View style={{
+          flex: 1,
+          justifyContent: 'center',
+          alignItems: 'center',
+          backgroundColor: 'rgba(0,0,0,0.6)'
+        }}>
+          <View style={{
+            backgroundColor: '#222',
+            padding: 20,
+            borderRadius: 12,
+            width: '80%',
+            alignItems: 'center'
+          }}>
+            <Text style={{ color: 'white', fontSize: 16, textAlign: 'center', marginBottom: 15 }}>
+              Pour les transactions entre le Canada et le Cameroun, le montant maximum autorisé est de{' '}
+              <Text style={{ fontWeight: 'bold' }}>500 000 XAF</Text>.
+              {'\n'}Merci de saisir un montant inférieur ou égal à cette limite.
+            </Text>
+
+            <TouchableOpacity
+              onPress={() => setShowMaxAmountAlert(false)}
+              style={{
+                backgroundColor: '#7ddd7d',
+                paddingVertical: 10,
+                paddingHorizontal: 25,
+                borderRadius: 8
+              }}
+            >
+              <Text style={{ color: 'black', fontWeight: 'bold' }}>OK</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
     </View>
   );
 };

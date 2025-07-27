@@ -50,7 +50,7 @@ const DrawerComponent = ({ navigation }) => {
     isLoading: isProfileLoading,
     refetch: refetchProfile,
   } = useGetUserProfileQuery();
-
+  //console.log('Response:', JSON.stringify(userProfile, null, 2));
   const [logout, { isLoading: isLoggingOut }] = useLogoutMutation();
   const isLoading = isProfileLoading || isProfileFetching;
    
@@ -277,29 +277,53 @@ Utilise mon code lors de ton inscription !`;
       </View>
 
       <View className="mt-4 bg-white px-4 py-3 rounded-xl shadow-sm border border-gray-100">
-        <View className="flex-row items-center justify-between">
-          <Text className="text-lg font-semibold text-gray-800">
-            {userProfile?.data?.firstname} {userProfile?.data?.lastname}
-            {userProfile?.data?.isVerifiedEmail && (
-              <Text className="ml-2">
-                <Ionicons name="checkmark-circle" size={18} color="#10B981" />
-              </Text>
-            )}
-          </Text>
+  <View className="flex-row items-center justify-between">
+    {/* 👤 Avatar */}
+    <View className="flex-row items-center">
+      {userProfile?.data?.kycDocuments?.find(doc => doc.type === "SELFIE") ? (
+        <Image
+          source={{ uri: userProfile.data.kycDocuments.find(doc => doc.type === "SELFIE").url }}
+          style={{ width: 50, height: 50, borderRadius: 25, marginRight: 10 }}
+        />
+      ) : (
+        <View
+          style={{
+            width: 50,
+            height: 50,
+            borderRadius: 25,
+            marginRight: 10,
+            backgroundColor: '#E5E7EB', // Tailwind gray-200
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+        >
+          <Ionicons name="person-circle-outline" size={30} color="#9CA3AF" /> 
         </View>
-        
-        <View className="mt-2">
-          <View className="flex-row items-center">
-            <Ionicons name="mail-outline" size={14} color="#6B7280" className="mr-2" />
-            <Text className="text-sm text-gray-600">{userProfile?.data?.email}</Text>
-          </View>
-          
-          <View className="flex-row items-center mt-1">
-            <Ionicons name="call-outline" size={14} color="#6B7280" className="mr-2" />
-            <Text className="text-sm text-gray-600">{userProfile?.data?.phone}</Text>
-          </View>
-        </View>
-      </View>
+      )}
+
+      <Text className="text-lg font-semibold text-gray-800">
+        {userProfile?.data?.firstname} {userProfile?.data?.lastname}
+       {userProfile?.data?.kycDocuments?.some(doc => doc.status === "APPROVED") && (
+          <Ionicons name="checkmark-circle" size={18} color="#10B981" style={{ marginLeft: 6 }} />
+        )}
+
+      </Text>
+    </View>
+  </View>
+
+  <View className="mt-2">
+    <View className="flex-row items-center">
+      <Ionicons name="mail-outline" size={14} color="#6B7280" style={{ marginRight: 4 }} />
+      <Text className="text-sm text-gray-600">{userProfile?.data?.email}</Text>
+    </View>
+
+    <View className="flex-row items-center mt-1">
+      <Ionicons name="call-outline" size={14} color="#6B7280" style={{ marginRight: 4 }} />
+      <Text className="text-sm text-gray-600">{userProfile?.data?.phone}</Text>
+    </View>
+  </View>
+</View>
+
     </>
   )}
 </View>
@@ -342,7 +366,7 @@ Utilise mon code lors de ton inscription !`;
             <View>
               <Text className="font-bold text-gray-500">{t('drawer.history')}</Text>
               <Text className="text-sm text-gray-500">
-                Listing chronologique de vos transactions
+               {t('drawer.transactionHistory')}
               </Text>
             </View>
           </TouchableOpacity>
@@ -355,7 +379,7 @@ Utilise mon code lors de ton inscription !`;
             <View>
               <Text className="font-bold text-gray-500">{t('drawer.account')}</Text>
               <Text className="text-sm text-gray-500">
-                Gérez vos informations personnelles
+              {t('drawer.personalInfo')}
               </Text>
             </View>
           </TouchableOpacity>
@@ -393,11 +417,11 @@ Utilise mon code lors de ton inscription !`;
                       <View>
                         <Text className="font-bold text-gray-500">{t('drawer.balance')}</Text>
                         <Text className="text-sm text-gray-500">
-                         Calculer et estimer le montant en USD, \n EUR et CAD
+                        {t('drawer.currencyEstimator')}
                         </Text>
                       </View>
                    </TouchableOpacity>
-          <TouchableOpacity
+          {/* <TouchableOpacity
             onPress={() => navigation2.navigate("Payment")}
             className="flex-row gap-2 my-2 mb-5"
           >
@@ -405,10 +429,10 @@ Utilise mon code lors de ton inscription !`;
             <View>
               <Text className="font-bold text-gray-500">{t('drawer.payment')}</Text>
               <Text className="text-sm text-gray-500">
-                Gérez vos méthodes de paiement
+               {t('drawer.paymentMethods')}
               </Text>
             </View>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
           <TouchableOpacity
             onPress={() => navigation2.navigate("AddFavorite")}
             className="flex-row gap-2 my-2 mb-5"
@@ -467,7 +491,7 @@ Utilise mon code lors de ton inscription !`;
             <AntDesign name="setting" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
             <View>
               <Text className="font-bold text-gray-500">{t('drawer.settings')}</Text>
-              <Text className="text-sm text-gray-500">Options & securite</Text>
+              <Text className="text-sm text-gray-500">{t('drawer.security')}</Text>
             </View>
           </TouchableOpacity>
 
@@ -479,7 +503,7 @@ Utilise mon code lors de ton inscription !`;
             <View>
               <Text className="font-bold text-gray-500">{t('drawer.support')}</Text>
               <Text className="text-sm text-gray-500">
-                Service client, aide et contacts
+               {t('drawer.support2')}
               </Text>
             </View>
           </TouchableOpacity>
@@ -492,7 +516,7 @@ Utilise mon code lors de ton inscription !`;
             <View>
               <Text className="font-bold text-gray-500">{t('drawer.about_us')}</Text>
               <Text className="text-sm text-gray-500 pr-8">
-                Mentions légales et conditions d'utilisation
+              {t('drawer.legal')}
               </Text>
             </View>
           </TouchableOpacity>
