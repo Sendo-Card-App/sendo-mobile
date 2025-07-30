@@ -1,10 +1,10 @@
 import "./global.css";
 import { ThemeProvider } from './src/constants/ThemeContext';
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Colors } from './src/constants/colors'; // Adjust the path as needed
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useIsFocused  } from "@react-navigation/native";
 
-import { StyleSheet, View, Text, TouchableOpacity,Platform,Dimensions  } from "react-native";
+import { StyleSheet, View, Text, TouchableOpacity,Platform,Dimensions,ActivityIndicator  } from "react-native";
 import { Provider } from "react-redux";
 import { store } from "./src/store/store";
 import Toast from "react-native-toast-message";
@@ -23,7 +23,7 @@ import { registerForPushNotificationsAsync } from "./src/services/notificationSe
 import app from "./src/configs/firebaseConfig";
  
 import { useGetUserProfileQuery } from "./src/services/Auth/authAPI";
-
+import CustomTabBar from './src/components/CustomTabBar';
 // Screens & Components
 import Home from "./src/screens/Home/Home";
 import ServiceScreen from "./src/screens/Home/ServiceScreen";
@@ -149,198 +149,86 @@ const headerHeight = Platform.select({
 });
 const screenWidth = Dimensions.get('window').width;
 
-
-function CustomTabBar({ state, descriptors, navigation }) {
-  const { t } = useTranslation();
-  const insets = useSafeAreaInsets();
-
-  return (
-    <View style={styles.tabContainer}>
-      {state.routes.map((route, index) => {
-        const { options } = descriptors[route.key];
-        const isFocused = state.index === index;
-
-        const onPress = () => {
-          const event = navigation.emit({
-            type: 'tabPress',
-            target: route.key,
-            canPreventDefault: true,
-          });
-
-          if (!isFocused && !event.defaultPrevented) {
-            navigation.navigate(route.name);
-          }
-        };
-
-        // Custom Floating Center Tab (Send Money)
-        if (route.name === 'BeneficiaryTab') {
-          return (
-            <TouchableOpacity
-              key={route.key}
-              onPress={onPress}
-              style={styles.centerButton}
-              activeOpacity={0.8}
-            >
-              <View style={styles.centerButtonInner}>
-                <FontAwesome5 
-                  name="money-bill-wave" 
-                  size={24} 
-                  color="#fff" 
-                />
-                {isFocused && (
-                  <View style={styles.activeIndicator} />
-                )}
-              </View>
-            </TouchableOpacity>
-          );
-        }
-
-        // Default tab icon logic
-        let iconName;
-        let label;
-        switch (route.name) {
-          case 'HomeTab':
-            iconName = isFocused ? 'home' : 'home-outline';
-            label = t('tabs.home');
-            break;
-          case 'TransferTab':
-            iconName = isFocused ? 'swap-horizontal' : 'swap-horizontal-outline';
-            label = t('tabs.history');
-            break;
-          case 'ManageVirtualCardTab':
-            iconName = isFocused ? 'card' : 'card-outline';
-            label = t('tabs.cards');
-            break;
-          case 'SettingsTab':
-            iconName = isFocused ? 'settings' : 'settings-outline';
-            label = t('tabs.settings');
-            break;
-          default:
-            iconName = 'home-outline';
-            label = '';
-        }
-
-        return (
-          <TouchableOpacity
-            key={route.key}
-            accessibilityRole="button"
-            accessibilityState={isFocused ? { selected: true } : {}}
-            accessibilityLabel={options.tabBarAccessibilityLabel}
-            testID={options.tabBarTestID}
-            onPress={onPress}
-            style={styles.tabButton}
-            activeOpacity={0.7}
-          >
-            <View style={styles.tabButtonContent}>
-              <Ionicons 
-                name={iconName} 
-                size={24} 
-                color={isFocused ? Colors.primary : Colors.text} 
-              />
-              <Text 
-                style={[
-                  styles.tabLabel, 
-                  { 
-                    color: isFocused ? Colors.primary : Colors.text,
-                    fontFamily: isFocused ? 'Font-Bold' : 'Font-Regular'
-                  }
-                ]}
-                numberOfLines={1}
-              >
-                {label}
-              </Text>
-              {isFocused && (
-                <View style={styles.activeIndicator} />
-              )}
-            </View>
-          </TouchableOpacity>
-        );
-      })}
-    </View>
-  );
-}
-
 // Tab Navigator
 function MainTabs() {
   const { t } = useTranslation();
-const VirtualCardTab = () => {
-  const { data: userProfile, isLoading: isProfileLoading } = useGetUserProfileQuery();
   const navigation = useNavigation();
-
-  useEffect(() => {
-    if (!isProfileLoading) {
-      const status = userProfile?.virtualCard?.status;
-      if (status !== "ACTIVE" && status !== "PRE_ACTIVE") {
-        navigation.navigate('OnboardingCard');
-      }
-    }
-  }, [userProfile, isProfileLoading]);
-
-  // Only render ManageVirtualCard if status is valid
-  const status = userProfile?.virtualCard?.status;
-  if (isProfileLoading || status === "ACTIVE" || status === "PRE_ACTIVE") {
-    return <ManageVirtualCard />;
-  }
-  
-  // Return null or loading indicator while redirecting
-  return null;
-};
+  const { data: userProfile, isLoading: isProfileLoading } = useGetUserProfileQuery();
 
   return (
     <Tab.Navigator
       tabBar={(props) => <CustomTabBar {...props} />}
-      screenOptions={{
+      screenOptions={({ route }) => ({
         headerShown: false,
-      }}
+        tabBarButton: (props) => <TouchableOpacity {...props} />,
+      })}
     >
-      <Tab.Screen 
-        name="HomeTab" 
-        component={Home} 
-        options={{ 
+      <Tab.Screen
+        name="HomeTab"
+        component={Home}
+        options={{
           title: t('tabs.home'),
-          unmountOnBlur: true 
+          unmountOnBlur: true,
         }}
       />
-      
-      <Tab.Screen 
+      <Tab.Screen
         name="TransferTab"
-        component={History} 
-        options={{ 
+        component={History}
+        options={{
           title: t('tabs.history'),
-          unmountOnBlur: true 
+          unmountOnBlur: true,
         }}
       />
-      
-      {/* Center Action Button */}
-      <Tab.Screen 
-        name="BeneficiaryTab" 
-        component={BeneficiaryScreen} 
-        options={{ 
+      <Tab.Screen
+        name="BeneficiaryTab"
+        component={BeneficiaryScreen}
+        options={{
           title: '',
-          unmountOnBlur: true 
+          unmountOnBlur: true,
         }}
       />
-
-       <Tab.Screen 
+      <Tab.Screen 
         name="ManageVirtualCardTab" 
-        component={VirtualCardTab} 
+        component={ManageVirtualCardWrapper} 
         options={{ 
           title: t('tabs.cards'),
           unmountOnBlur: true 
         }}
       />
-      
-      <Tab.Screen 
-        name="SettingsTab" 
-        component={Settings} 
-        options={{ 
+      <Tab.Screen
+        name="SettingsTab"
+        component={Settings}
+        options={{
           title: t('tabs.settings'),
-          unmountOnBlur: true 
+          unmountOnBlur: true,
         }}
       />
     </Tab.Navigator>
   );
 }
+function ManageVirtualCardWrapper() {
+  const { t } = useTranslation();
+  const { data: userProfile, isLoading: isProfileLoading } = useGetUserProfileQuery();
+  const navigation = useNavigation();
+
+  useEffect(() => {
+    if (!isProfileLoading) {
+      const virtualCard = userProfile?.data?.virtualCard;
+      const isCardMissingOrEmpty =
+        !virtualCard || (typeof virtualCard === 'object' && Object.keys(virtualCard).length === 0);
+      const status = virtualCard?.status;
+
+      if (isCardMissingOrEmpty || (status !== 'ACTIVE' && status !== 'PRE_ACTIVE')) {
+        navigation.navigate('OnboardingCard');
+      }
+    }
+  }, [userProfile, isProfileLoading, navigation]);
+
+  // If checks pass, render the actual ManageVirtualCard component
+  return <ManageVirtualCard />;
+}
+
+
 
 // Stack Navigator for auth screens
 function AuthStack() {
@@ -544,10 +432,6 @@ function DrawerNavigator() {
           options={{ headerShown: false }} 
         />
       </Drawer.Navigator>
-      {/* Floating notification (adjust positioning as needed)
-      <View style={{ position: 'absolute', top: 54, right: 70 }}>
-       // <NotificationComponent />
-      </View> */}
     </>
   );
 }
@@ -575,70 +459,4 @@ export default function App() {
   );
 }
 
-const styles = StyleSheet.create({
-  tabContainer: {
-    flexDirection: 'row',
-    height: 80,
-    borderTopWidth: 0.5,
-    borderTopColor: Colors.border,
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    backgroundColor: Colors.background2,
-    shadowColor: Colors.shadow,
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 5,
-    paddingBottom: 10,
-  },
-  centerButton: {
-    position: 'absolute',
-    bottom: 45,
-    alignSelf: 'center',
-    backgroundColor: Colors.primary,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 8,
-    zIndex: 10,
-    transform: [{ translateY: -10 }]
-  },
-  centerButtonInner: {
-    width: '50',
-    height: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 30,
-  },
-  tabButton: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 8,
-    height: '100%',
-  },
-  tabButtonContent: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: '100%',
-  },
-  tabLabel: {
-    fontSize: 12,
-    marginTop: 6,
-    maxWidth: '80%',
-  },
-  activeIndicator: {
-    position: 'absolute',
-    bottom: -12,
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: Colors.primary,
-  },
-});
+

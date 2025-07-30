@@ -153,14 +153,16 @@ const renderRecipientRequest = ({ item }) => {
           <TouchableOpacity
             key={status}
             onPress={() => setStatusFilter(status)}
-            className={`px-3 py-1 rounded-full ${statusFilter === status ? 'bg-white' : 'bg-gray-500'}`}
+            className={`px-2 py-2 rounded-full items-center justify-center ${statusFilter === status ? 'bg-white' : 'bg-gray-500'}`}
+            style={{ flexGrow: 1, flexBasis: '23%' }}
           >
-            <Text className={`text-sm font-semibold ${statusFilter === status ? 'text-black' : 'text-white'}`}>
+            <Text className={`text-sm font-semibold text-center ${statusFilter === status ? 'text-black' : 'text-white'}`}>
               {status === 'ALL' ? t('demandList.all') : t(`demandList.${status.toLowerCase()}`)}
             </Text>
           </TouchableOpacity>
         ))}
       </View>
+
 
       {activeTab === 'historique' ? (
         loadingRequests ? (

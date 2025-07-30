@@ -291,14 +291,16 @@ const handleSubmit = async () => {
         </View>
 
         {/* Confirm Button */}
-        <TouchableOpacity
+       <TouchableOpacity
           onPress={handleSubmit}
+          disabled={isLoading}
           style={{
             backgroundColor: "#7ddd7d",
             paddingVertical: 14,
             borderRadius: 30,
             alignItems: "center",
             marginTop: 20,
+            opacity: isLoading ? 0.6 : 1, // visually indicate disabled state
           }}
         >
           {isLoading ? (
@@ -309,6 +311,7 @@ const handleSubmit = async () => {
             </Text>
           )}
         </TouchableOpacity>
+
       </ScrollView>
 
       <Toast />

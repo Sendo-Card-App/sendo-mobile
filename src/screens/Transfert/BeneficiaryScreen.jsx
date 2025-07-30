@@ -7,6 +7,7 @@ import {
   ScrollView,
   SafeAreaView,
   Image,
+  StyleSheet,
 } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -29,8 +30,8 @@ const BeneficiaryScreen = () => {
     isLoading: isConfigLoading,
     error: configError
   } = useGetConfigQuery();
-    const [showVerifiedMessage, setShowVerifiedMessage] = useState(false);
-   const { data: userProfile, isLoading: isProfileLoading } = useGetUserProfileQuery();
+  const [showVerifiedMessage, setShowVerifiedMessage] = useState(false);
+  const { data: userProfile, isLoading: isProfileLoading } = useGetUserProfileQuery();
   
   const getConfigValue = (name) => {
     const configItem = configData?.data?.find(item => item.name === name);
@@ -39,92 +40,67 @@ const BeneficiaryScreen = () => {
 
   const CAD_SENDO_VALUE = getConfigValue('CAD_SENDO_VALUE');
    
-
-    useEffect(() => {
-      if (userProfile?.data?.isVerifiedKYC) {
+  useEffect(() => {
+    if (userProfile?.data?.isVerifiedKYC) {
+      setShowVerifiedMessage(false);
+      const timer = setTimeout(() => {
         setShowVerifiedMessage(false);
-        const timer = setTimeout(() => {
-          setShowVerifiedMessage(false);
-        }, 10000); // 20 seconds
-        return () => clearTimeout(timer);
-      }
-    }, [userProfile]);
+      }, 10000); // 10 seconds
+      return () => clearTimeout(timer);
+    }
+  }, [userProfile]);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#0D0D0D" }}>
-      <StatusBar backgroundColor="#0D0D0D" />
-      <View style={{ padding: 20, flex: 1 }}>
+    <SafeAreaView style={styles.container}>
+      <StatusBar backgroundColor="#F2F2F2" />
+      <View style={styles.content}>
         {/* Header */}
-        <View style={{
-          flexDirection: "row",
-          alignItems: "center",
-          marginBottom: 20,
-        }}>
-          <TouchableOpacity>
-            <AntDesign name="arrowleft" size={24} color="white" onPress={() => navigation.goBack()} />
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <AntDesign name="arrowleft" size={24} color="black" />
           </TouchableOpacity>
 
           <Image
             source={button}
             resizeMode="contain"
-            style={{ width: 100, height: 80, marginLeft: 50 }}
+            style={styles.logo}
           />
           <Image
             source={HomeImage}
             resizeMode="contain"
-            style={{ width: 70, height: 70, marginTop: -15, marginLeft: 10 }}
+            style={styles.homeImage}
           />
           <MaterialIcons
             name="menu"
             size={24}
-            color="white"
-            style={{ marginLeft: "auto" }}
+            color="black"
+            style={styles.menuIcon}
             onPress={() => navigation.openDrawer()}
           />
         </View>
+        
         {showVerifiedMessage && (
-          <View className="bg-green-100 p-3 rounded-md mb-4">
-            <Text className="text-green-800 text-center font-bold text-lg">
+          <View style={styles.verifiedMessage}>
+            <Text style={styles.verifiedMessageText}>
               {t('verifyIdentity.kycRequiredMessage')}
             </Text>
           </View>
         )}
 
-        <Text style={{
-          color: "white",
-          fontSize: 30,
-          marginBottom: 10,
-          fontWeight: "bold",
-        }}>
-          {t('welcome')}
-        </Text>
-        <Text style={{ color: "white", fontSize: 16, marginBottom: 20 }}>
-          {t('chooseCountry')}
-        </Text>
+        <Text style={styles.title}>{t('welcome')}</Text>
+        <Text style={styles.subtitle}>{t('chooseCountry')}</Text>
 
         {/* Search Input */}
         <TextInput
-          style={{
-            height: 50,
-            borderColor: "gray",
-            borderWidth: 1,
-            borderRadius: 8,
-            paddingHorizontal: 10,
-            color: "black",
-            backgroundColor: "white",
-          }}
+          style={styles.searchInput}
           placeholder={t('searchPlaceholder')}
           placeholderTextColor="#aaa"
         />
 
         {/* Country List */}
-        <ScrollView style={{ marginTop: 20 }}>
+        <ScrollView style={styles.countryList}>
           <TouchableOpacity
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              paddingVertical: 15,
-            }}
+            style={styles.countryItem}
             onPress={() => navigation.navigate("Curency", {
               countryName: "Cameroon",
               conversionRate: t('conversionRateCAD', { value: CAD_SENDO_VALUE }),
@@ -135,19 +111,17 @@ const BeneficiaryScreen = () => {
             <Image
               source={Cameroon}
               resizeMode="contain"
-              style={{ width: 50, height: 50 }}
+              style={styles.flag}
             />
-            <Text style={{ color: "white", marginLeft: 10 }}>{t('cameroon')}</Text>
-            <Text style={{ color: "white", marginLeft: "auto" }}>
+            <Text style={styles.countryName}>{t('cameroon')}</Text>
+            <Text style={styles.conversionRate}>
               {t('conversionRateCAD', { value: CAD_SENDO_VALUE })}
             </Text>
           </TouchableOpacity>
+          
+          {/* Uncomment if you want to include Canada */}
           {/* <TouchableOpacity
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              paddingVertical: 15,
-            }}
+            style={styles.countryItem}
             onPress={() => navigation.navigate("Curency", {
               countryName: "Canada",
               conversionRate: t('conversionRateXAF', { value: CAD_SENDO_VALUE }),
@@ -158,10 +132,10 @@ const BeneficiaryScreen = () => {
             <Image
               source={Canada}
               resizeMode="contain"
-              style={{ width: 50, height: 50 }}
+              style={styles.flag}
             />
-            <Text style={{ color: "white", marginLeft: 10 }}>{t('canada')}</Text>
-            <Text style={{ color: "white", marginLeft: "auto" }}>
+            <Text style={styles.countryName}>{t('canada')}</Text>
+            <Text style={styles.conversionRate}>
               {t('conversionRateXAF', { value: CAD_SENDO_VALUE })}
             </Text>
           </TouchableOpacity> */}
@@ -169,10 +143,10 @@ const BeneficiaryScreen = () => {
       </View>
 
       {/* Footer */}
-      <View style={{ paddingVertical: 12, backgroundColor: '#0D0D0D' }}>
-        <View style={{ flexDirection: "row", justifyContent: "center", alignItems: "center" }}>
-          <Ionicons name="shield-checkmark" size={18} color="orange" />
-          <Text style={{ color: "white", fontSize: 12, marginLeft: 5 }}>
+      <View style={styles.footer}>
+        <View style={styles.footerContent}>
+          <Ionicons name="shield-checkmark" size={18} color="#7ddd7d" />
+          <Text style={styles.footerText}>
             {t('securityWarning')}
           </Text>
         </View>
@@ -180,5 +154,115 @@ const BeneficiaryScreen = () => {
     </SafeAreaView>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#F2F2F2",
+  },
+  content: {
+    padding: 20,
+    flex: 1,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 15,
+    marginTop: 1,
+  },
+  logo: {
+    width: 100,
+    height: 80,
+    marginLeft: 50
+  },
+  homeImage: {
+    width: 70,
+    height: 70,
+    marginTop: -15,
+    marginLeft: 10
+  },
+  menuIcon: {
+    marginLeft: "auto"
+  },
+  verifiedMessage: {
+    backgroundColor: "#e6f7e6",
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+    borderLeftWidth: 4,
+    borderLeftColor: "#7ddd7d"
+  },
+  verifiedMessageText: {
+    color: "#2e7d32",
+    textAlign: "center",
+    fontWeight: "bold",
+    fontSize: 16
+  },
+  title: {
+    color: "black",
+    fontSize: 30,
+    marginBottom: 10,
+    fontWeight: "bold",
+  },
+  subtitle: {
+    color: "black",
+    fontSize: 16,
+    marginBottom: 20
+  },
+  searchInput: {
+    height: 50,
+    borderColor: "#7ddd7d",
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 15,
+    color: "black",
+    backgroundColor: "white",
+    fontSize: 16
+  },
+  countryList: {
+    marginTop: 20,
+    flex: 1
+  },
+  countryItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: "#e0e0e0"
+  },
+  flag: {
+    width: 50,
+    height: 50,
+    borderRadius: 25
+  },
+  countryName: {
+    color: "black",
+    marginLeft: 15,
+    fontSize: 16,
+    fontWeight: "500"
+  },
+  conversionRate: {
+    color: "#7ddd7d",
+    marginLeft: "auto",
+    fontWeight: "bold",
+    fontSize: 14
+  },
+  footer: {
+    paddingVertical: 12,
+    backgroundColor: "#F2F2F2",
+    borderTopWidth: 1,
+    borderTopColor: "#e0e0e0"
+  },
+  footerContent: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center"
+  },
+  footerText: {
+    color: "black",
+    fontSize: 12,
+    marginLeft: 5
+  }
+});
 
 export default BeneficiaryScreen;

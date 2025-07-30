@@ -9,7 +9,8 @@ import {
   FlatList,
   Alert,
   Image,
-  ActivityIndicator
+  ActivityIndicator,
+  StyleSheet
 } from 'react-native';
 import { AntDesign } from '@expo/vector-icons';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -20,7 +21,7 @@ import Loader from '../../components/Loader';
 import SkeletonLoader from "../../components/SkeletonLoader";
 import HomeImage from "../../images/HomeImage2.png";
 import button from "../../images/ButtomLogo.png";
-import {  Feather as MaterialIcons } from '@expo/vector-icons';
+import { Feather as MaterialIcons } from '@expo/vector-icons';
 import {
   useGetFavoritesQuery
 } from '../../services/Contact/contactsApi';
@@ -31,13 +32,6 @@ import {
 import {
   useGetUserProfileQuery
 } from '../../services/Auth/authAPI';
-
-import {
-  sendPushNotification,
-  sendPushTokenToBackend,
-  registerForPushNotificationsAsync,
-  getStoredPushToken
-} from '../../services/notificationService';
 
 const BeneficiarySelection = ({ route }) => {
   const { t } = useTranslation();
@@ -65,7 +59,10 @@ const BeneficiarySelection = ({ route }) => {
     isLoading: isLoadingFavorites,
     isError: isFavoritesError
   } = useGetFavoritesQuery(userId, { skip: !userId });
-    //console.log(favoritesResponse)
+  console.log('Favorites Response:', favoritesResponse);
+   const favorites = Array.isArray(favoritesResponse) ? favoritesResponse : [];
+
+    console.log('Favorites:', favorites);
   const {
     data: transfersResponse,
     isLoading: isLoadingTransfers,
@@ -73,8 +70,6 @@ const BeneficiarySelection = ({ route }) => {
   } = useGetTransfersQuery();
 
   const [initTransfer, { isLoading: isTransferLoading }] = useInitTransferToDestinataireMutation();
-
-  const favorites = favoritesResponse?.data || [];
 
   const transfers = transfersResponse?.data || [];
 
@@ -86,210 +81,185 @@ const BeneficiarySelection = ({ route }) => {
   );
 
   const handleSelectContact = (contact) => {
-  const fullContact = {
-    ...contact,
-    firstname: contact?.user?.firstname || '',
-    lastname: contact?.user?.lastname || '',
-    email: contact?.user?.email || '',
-  };
+    const fullContact = {
+      ...contact,
+      firstname: contact?.user?.firstname || '',
+      lastname: contact?.user?.lastname || '',
+      email: contact?.user?.email || '',
+    };
 
-  navigation.navigate('PaymentMethod', {
-    contact: fullContact,
-    amount,
-    convertedAmount,
-    totalAmount,
-    transferFee,
-    fromCurrency,
-    toCurrency,
-    countryName,
-    cadRealTimeValue
-  });
-};
-
-const handleSelectBeneficiary = (contact) => {
-  const fullContact = {
-    ...contact,
-    firstname: contact?.user?.firstname || '',
-    lastname: contact?.user?.lastname || '',
-    email: contact?.user?.email || '',
-  };
-
-  navigation.navigate('PaymentMethod', {
-    contact: fullContact,
-    amount,
-    convertedAmount,
-    totalAmount,
-    transferFee,
-    fromCurrency,
-    toCurrency,
-    countryName,
-    cadRealTimeValue
-  });
-};
-
-
- const handleInitTransfer = async (receiver, destinataireId) => {
-  setSelectedReceiverId(destinataireId);
-
-  
-  const notificationData = {
-    title: 'Transfert Initié',
-    body: `Vous avez envoyé ${totalAmount} ${toCurrency}.`,
-    type: 'SUCCESS_TRANSFER_FUNDS',
-  };
-
-  try {
-    const response = await initTransfer({
-      destinataireId,
-      amount: totalAmount,
-    }).unwrap();
-
-    console.log('Transfer response:', response);
-
-    if (response?.status === 200) {
-      Toast.show({
-        type: 'success',
-        text1: 'Transfert initié',
-        text2: 'Veuillez suivre l’évolution du statut dans l’historique.',
-      });
-
-      let pushToken = await getStoredPushToken();
-      if (!pushToken) {
-        pushToken = await registerForPushNotificationsAsync();
-      }
-
-      await sendPushTokenToBackend(
-        notificationData.title,
-        notificationData.body,
-        notificationData.type,
-        {
-          amount: totalAmount,
-          destinataireId,
-          timestamp: new Date().toISOString(),
-        }
-      );
-
-      navigation.navigate('Success', { result: response });
-    } else {
-      throw new Error(response?.message || 'Erreur lors du transfert.');
-    }
-  } catch (error) {
-    console.log('Transfer error:', error);
-    Toast.show({
-      type: 'error',
-      text1: 'Erreur',
-      text2: error.message || 'Une erreur est survenue.',
+    navigation.navigate('PaymentMethod', {
+      contact: fullContact,
+      amount,
+      convertedAmount,
+      totalAmount,
+      transferFee,
+      fromCurrency,
+      toCurrency,
+      countryName,
+      cadRealTimeValue
     });
+  };
 
-    await sendPushNotification(
-      'Échec du transfert',
-      error.message || 'Impossible d’envoyer les fonds.'
-    );
-  } finally {
-    setSelectedReceiverId(null);
-  }
-};
+  const handleSelectBeneficiary = (contact) => {
+    const fullContact = {
+      ...contact,
+      firstname: contact?.user?.firstname || '',
+      lastname: contact?.user?.lastname || '',
+      email: contact?.user?.email || '',
+    };
 
+    navigation.navigate('PaymentMethod', {
+      contact: fullContact,
+      amount,
+      convertedAmount,
+      totalAmount,
+      transferFee,
+      fromCurrency,
+      toCurrency,
+      countryName,
+      cadRealTimeValue
+    });
+  };
 
+  const handleInitTransfer = async (receiver, destinataireId) => {
+    setSelectedReceiverId(destinataireId);
+    
+    try {
+      const response = await initTransfer({
+        destinataireId,
+        amount: totalAmount,
+      }).unwrap();
+
+      if (response?.status === 200) {
+        Toast.show({
+          type: 'success',
+          text1: t('transfer_initiated'),
+          text2: t('transfer_status_message'),
+        });
+        navigation.navigate('Success', { result: response });
+      } else {
+        throw new Error(response?.message || t('transfer_error'));
+      }
+    } catch (error) {
+      Toast.show({
+        type: 'error',
+        text1: t('error'),
+        text2: error.message || t('generic_error'),
+      });
+    } finally {
+      setSelectedReceiverId(null);
+    }
+  };
 
   const renderContact = ({ item }) => (
     <TouchableOpacity
-      className="flex-row items-center py-4 border-b border-gray-700 px-5"
+      style={styles.contactItem}
       onPress={() => handleSelectContact(item)}
     >
-      <View className="w-10 h-10 rounded-full bg-white justify-center items-center mr-3">
-        <Text className="text-gray-700 text-lg font-semibold">
+      <View style={styles.contactAvatar}>
+        <Text style={styles.avatarText}>
           {item.name?.charAt(0).toUpperCase()}
         </Text>
       </View>
-      <View className="flex-1">
-        <Text className="text-white text-base">{item.name}</Text>
-        <Text className="text-gray-400 text-sm mt-1">{item.phone}</Text>
+      <View style={styles.contactInfo}>
+        <Text style={styles.contactName}>{item.name}</Text>
+        <Text style={styles.contactPhone}>{item.phone}</Text>
       </View>
     </TouchableOpacity>
   );
 
- const renderTransfer = ({ item }) => {
-  const receiver = item.destinataire;
-  if (!receiver) return null;
+  const renderTransfer = ({ item }) => {
+    const receiver = item.destinataire;
+    if (!receiver) return null;
 
-  const fullName = `${receiver.firstname || ''} ${receiver.lastname || ''}`.trim();
+    const fullName = `${receiver.firstname || ''} ${receiver.lastname || ''}`.trim();
 
-  const confirmTransfer = () => {
-    Alert.alert(
-      'Confirmer le transfert',
-      `Voulez-vous envoyer ${totalAmount} ${toCurrency} à ${fullName} ?`,
-      [
-        {
-          text: 'Annuler',
-          style: 'cancel',
-        },
-        {
-          text: 'Confirmer',
-          onPress: () => handleInitTransfer(receiver, receiver.id),
-        },
-      ],
-      { cancelable: true }
+    const confirmTransfer = () => {
+      Alert.alert(
+        t('confirm_transfer'),
+        t('transfer_confirmation_message', { amount: totalAmount, currency: toCurrency, name: fullName }),
+        [
+          {
+            text: t('cancel'),
+            style: 'cancel',
+          },
+          {
+            text: t('confirm'),
+            onPress: () => handleInitTransfer(receiver, receiver.id),
+          },
+        ],
+        { cancelable: true }
+      );
+    };
+
+    return (
+      <TouchableOpacity
+        style={styles.contactItem}
+        onPress={confirmTransfer}
+        disabled={isTransferLoading}
+      >
+        <View style={styles.contactAvatar}>
+          <Text style={styles.avatarText}>
+            {fullName.charAt(0).toUpperCase()}
+          </Text>
+        </View>
+        <View style={styles.contactInfo}>
+          <Text style={styles.contactName}>{fullName}</Text>
+          <Text style={styles.contactPhone}>{receiver.phone}</Text>
+        </View>
+        {selectedReceiverId === receiver.id && (
+          <ActivityIndicator size="small" color="#7ddd7d" />
+        )}
+      </TouchableOpacity>
     );
   };
 
   return (
-    <TouchableOpacity
-      className="flex-row items-center py-4 border-b border-gray-700 px-5"
-      onPress={confirmTransfer}
-      disabled={isTransferLoading}
-    >
-      <View className="w-10 h-10 rounded-full bg-white justify-center items-center mr-3">
-        <Text className="text-gray-700 text-lg font-semibold">
-          {fullName.charAt(0).toUpperCase()}
-        </Text>
-      </View>
-      <View className="flex-1">
-        <Text className="text-white text-base">{fullName}</Text>
-        <Text className="text-gray-400 text-sm mt-1">{receiver.phone}</Text>
-      </View>
-      {selectedReceiverId === receiver.id && (
-        <ActivityIndicator size="small" color="#7ddd7d" />
-      )}
-    </TouchableOpacity>
-  );
-};
-
-
-  return (
-    <SafeAreaView className="flex-1 bg-black">
-      <StatusBar barStyle="light-content" />
-       <View className="flex-row items-center justify-between p-5">
+    <SafeAreaView style={styles.container}>
+      <StatusBar backgroundColor="#F2F2F2" barStyle="dark-content" />
+      
+      {/* Header */}
+      <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <AntDesign name="arrowleft" size={24} color="white" />
+          <AntDesign name="arrowleft" size={24} color="black" />
         </TouchableOpacity>
-        <Image source={button} resizeMode="contain" style={{ width: 100, height: 70, marginLeft: 50 }} />
-        <Image source={HomeImage} resizeMode="contain" style={{ width: 70, height: 70, marginTop: -15, marginLeft: 10 }} />
-        <MaterialIcons name="menu" size={24} color="white" onPress={() => navigation.openDrawer()} />
+        <Image source={button} resizeMode="contain" style={styles.logo} />
+        <Image source={HomeImage} resizeMode="contain" style={styles.homeImage} />
+        <MaterialIcons 
+          name="menu" 
+          size={24} 
+          color="black" 
+          onPress={() => navigation.openDrawer()} 
+        />
       </View>
-      <View className="px-4 py-3 border-b border-gray-800">
-        <Text className="text-white text-xl font-bold">{t('choose_beneficiary')}</Text>
-         <TouchableOpacity
-            className="flex-row items-center bg-black px-5 py-3"
-            onPress={() =>
-              navigation.navigate('AddContact', {
-                onSave: handleSelectBeneficiary,
-                amount, convertedAmount, totalAmount, transferFee,
-                fromCurrency, toCurrency, countryName, cadRealTimeValue
-              })
-            }
-          >
-            <View className="bg-green-500 rounded-full w-12 h-12 justify-center items-center">
-              <AntDesign name="user" size={20} color="white" />
-            </View>
-            <Text className="ml-4 text-white text-base">{t('add_new_beneficiary')}</Text>
-          </TouchableOpacity>
 
+      {/* Main Content */}
+      <View style={styles.contentContainer}>
+        <Text style={styles.title}>{t('choose_beneficiary')}</Text>
+        
+        {/* Add New Beneficiary */}
+        <TouchableOpacity
+          style={styles.addBeneficiaryButton}
+          onPress={() =>
+            navigation.navigate('AddContact', {
+              onSave: handleSelectBeneficiary,
+              amount, convertedAmount, totalAmount, transferFee,
+              fromCurrency, toCurrency, countryName, cadRealTimeValue
+            })
+          }
+        >
+          <View style={styles.addBeneficiaryIcon}>
+            <AntDesign name="user" size={20} color="black" />
+          </View>
+          <Text style={styles.addBeneficiaryText}>{t('add_new_beneficiary')}</Text>
+        </TouchableOpacity>
 
-        <View className="flex-row mt-4 bg-gray-800 rounded-lg items-center px-3 py-2">
+        {/* Search Bar */}
+        <View style={styles.searchContainer}>
           <AntDesign name="search1" size={18} color="#aaa" />
           <TextInput
-            className="flex-1 text-white ml-2"
+            style={styles.searchInput}
             placeholder={t('search')}
             placeholderTextColor="#aaa"
             value={searchQuery}
@@ -297,68 +267,223 @@ const handleSelectBeneficiary = (contact) => {
           />
         </View>
 
-        <View className="flex-row mt-4">
+        {/* Tab Selector */}
+        <View style={styles.tabContainer}>
           <TouchableOpacity
-            className={`flex-1 py-2 rounded-l-lg ${activeTab === 'contacts' ? 'bg-green-500' : 'bg-gray-700'}`}
+            style={[styles.tabButton, activeTab === 'contacts' && styles.activeTab]}
             onPress={() => setActiveTab('contacts')}
           >
-            <Text className={`text-center font-semibold ${activeTab === 'contacts' ? 'text-black' : 'text-white'}`}>
+            <Text style={[styles.tabText, activeTab === 'contacts' && styles.activeTabText]}>
               {t('contacts.contact')}
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            className={`flex-1 py-2 rounded-r-lg ${activeTab === 'transfers' ? 'bg-green-500' : 'bg-gray-700'}`}
+            style={[styles.tabButton, activeTab === 'transfers' && styles.activeTab]}
             onPress={() => setActiveTab('transfers')}
           >
-            <Text className={`text-center font-semibold ${activeTab === 'transfers' ? 'text-black' : 'text-white'}`}>
+            <Text style={[styles.tabText, activeTab === 'transfers' && styles.activeTabText]}>
               {t('my_destinataires')}
             </Text>
           </TouchableOpacity>
         </View>
+
+        {/* List Content */}
+        <View style={styles.listContainer}>
+          {activeTab === 'contacts' ? (
+            isLoadingFavorites ? (
+              <SkeletonLoader />
+            ) : isFavoritesError ? (
+              <Text style={styles.errorText}>{t('error_loading_contacts')}</Text>
+            ) : (
+              <FlatList
+                data={filteredFavorites}
+                keyExtractor={(item) => item.phone}
+                renderItem={renderContact}
+                ListEmptyComponent={() => (
+                  <Text style={styles.emptyText}>{t('no_contacts_found')}</Text>
+                )}
+              />
+            )
+          ) : (
+            isLoadingTransfers ? (
+              <SkeletonLoader />
+            ) : isTransfersError ? (
+              <Text style={styles.errorText}>{t('error_loading_transfers')}</Text>
+            ) : (
+              <FlatList
+                data={filteredTransfers}
+                keyExtractor={(item) => item.id.toString()}
+                renderItem={renderTransfer}
+                ListEmptyComponent={() => (
+                  <Text style={styles.emptyText}>{t('no_transfers_found')}</Text>
+                )}
+              />
+            )
+          )}
+        </View>
       </View>
 
-      <View className="flex-1">
-        {activeTab === 'contacts' ? (
-          isLoadingFavorites ? (
-            <SkeletonLoader />
-          ) : isFavoritesError ? (
-            <Text className="text-red-500 text-center mt-20">{t('error_loading_contacts')}</Text>
-          ) : (
-            <FlatList
-              data={favoritesResponse || []}
-              keyExtractor={(item) => item.phone}   
-              renderItem={renderContact}
-              ListEmptyComponent={() => (
-                <Text className="text-white text-center mt-20">{t('no_contacts_found')}</Text>
-              )}
-            />
-          )
-        ) : (
-          isLoadingTransfers ? (
-            <SkeletonLoader />
-          ) : isTransfersError ? (
-            <Text className="text-red-500 text-center mt-20">{t('error_loading_transfers')}</Text>
-          ) : (
-            <FlatList
-              data={filteredTransfers}
-              keyExtractor={(item) => item.id.toString()}
-              renderItem={renderTransfer}
-              ListEmptyComponent={() => (
-                <Text className="text-white text-center mt-20">{t('no_transfers_found')}</Text>
-              )}
-            />
-          )
-        )}
-      </View>
-
-      <View className="absolute bottom-5 left-0 right-0 flex-row justify-center items-center">
-        <Ionicons name="shield-checkmark" size={18} color="orange" />
-        <Text className="text-white text-xs ml-2">{t('disclaimer')}</Text>
+      {/* Footer */}
+      <View style={styles.footer}>
+        <Ionicons name="shield-checkmark" size={18} color="#7ddd7d" />
+        <Text style={styles.footerText}>{t('disclaimer')}</Text>
       </View>
 
       <Toast />
     </SafeAreaView>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#F2F2F2',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    paddingTop: 24,
+  },
+  logo: {
+    width: 100,
+    height: 70,
+  },
+  homeImage: {
+    width: 70,
+    height: 70,
+    marginTop: -15,
+  },
+  contentContainer: {
+    flex: 1,
+    paddingHorizontal: 16,
+  },
+  title: {
+    color: 'black',
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 16,
+  },
+  addBeneficiaryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F2F2F2',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  addBeneficiaryIcon: {
+    backgroundColor: '#7ddd7d',
+    borderRadius: 20,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  addBeneficiaryText: {
+    color: 'black',
+    fontSize: 16,
+    marginLeft: 12,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'white',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#7ddd7d',
+  },
+  searchInput: {
+    flex: 1,
+    color: 'black',
+    marginLeft: 8,
+    fontSize: 16,
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    borderRadius: 8,
+    overflow: 'hidden',
+    marginBottom: 16,
+  },
+  tabButton: {
+    flex: 1,
+    paddingVertical: 12,
+    backgroundColor: '#333',
+  },
+  activeTab: {
+    backgroundColor: '#7ddd7d',
+  },
+  tabText: {
+    color: 'white',
+    textAlign: 'center',
+    fontWeight: 'bold',
+  },
+  activeTabText: {
+    color: 'black',
+  },
+  listContainer: {
+    flex: 1,
+  },
+  contactItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  contactAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'white',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  avatarText: {
+    color: '#333',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  contactInfo: {
+    flex: 1,
+  },
+  contactName: {
+    color: 'black',
+    fontSize: 16,
+  },
+  contactPhone: {
+    color: '#666',
+    fontSize: 14,
+    marginTop: 4,
+  },
+  errorText: {
+    color: 'red',
+    textAlign: 'center',
+    marginTop: 40,
+  },
+  emptyText: {
+    color: 'black',
+    textAlign: 'center',
+    marginTop: 40,
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+    backgroundColor: '#F2F2F2',
+  },
+  footerText: {
+    color: 'black',
+    fontSize: 12,
+    marginLeft: 8,
+  },
+});
 
 export default BeneficiarySelection;

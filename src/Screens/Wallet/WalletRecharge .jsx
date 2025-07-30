@@ -36,7 +36,7 @@ const WalletRecharge = () => {
   const [userWalletId, setUserWalletId] = useState("");
   const [checkParams, setCheckParams] = useState(null);
   const [isButtonDisabled, setIsButtonDisabled] = useState(false);
-
+  const { data: userProfile, isLoading: isProfileLoading } = useGetUserProfileQuery();
    const userId = userProfile?.data?.id;
     
       const { data: balanceData } = useGetBalanceQuery(userId, { skip: !userId });

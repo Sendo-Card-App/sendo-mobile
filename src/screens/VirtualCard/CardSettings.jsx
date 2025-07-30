@@ -30,6 +30,7 @@ const CardSettingsScreen = () => {
   const route = useRoute();
   const navigation = useNavigation();
   const { cardName, cardId } = route.params;
+  console.log("CardSettingsScreen params:", cardId);
   const { t } = useTranslation();
 
   const {
@@ -105,6 +106,8 @@ const CardSettingsScreen = () => {
               showModal("success", t("cardDeleted"));
               navigation.goBack();
             } catch (err) {
+             console.log("Delete card error:", JSON.stringify(err, null, 2));
+
               let errorMessage = t("operationError");
               if (err?.data?.message) {
                 errorMessage = err.data.message;

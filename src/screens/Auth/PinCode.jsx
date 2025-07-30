@@ -44,7 +44,7 @@ const PinCode = ({ navigation, route }) => {
     error: profileError,
     refetch 
   } = useGetUserProfileQuery();
- 
+
   const userId = userProfile?.data?.id;
   const { data: serverTokenData } = useGetTokenMutation(userId, {
     skip: !userId
@@ -121,7 +121,7 @@ const PinCode = ({ navigation, route }) => {
       const data = await getData('@authData');
       setAuthData(data);
 
-      const savedPasscode = await getData('@passcode');
+      const savedPasscode = userProfile?.data?.passcode;
       if (savedPasscode) {
         setHasStoredPasscode(true);
         dispatch(setPasscode(savedPasscode));
@@ -234,7 +234,7 @@ const handleBiometricAuth = async () => {
 const handleComplete = async (enteredPin) => {
   setIsLoading(true);
   try {
-    const storedPasscode = await getData('@passcode');
+    const storedPasscode = userProfile?.data?.passcode;
     if (storedPasscode) {
       if (enteredPin === storedPasscode) {
         dispatch(resetAttempts());

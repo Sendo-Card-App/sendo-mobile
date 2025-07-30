@@ -50,7 +50,7 @@ const DrawerComponent = ({ navigation }) => {
     isLoading: isProfileLoading,
     refetch: refetchProfile,
   } = useGetUserProfileQuery();
-  //console.log('Response:', JSON.stringify(userProfile, null, 2));
+  //console.log("userProfile", userProfile);
   const [logout, { isLoading: isLoggingOut }] = useLogoutMutation();
   const isLoading = isProfileLoading || isProfileFetching;
    
@@ -277,56 +277,64 @@ Utilise mon code lors de ton inscription !`;
       </View>
 
       <View className="mt-4 bg-white px-4 py-3 rounded-xl shadow-sm border border-gray-100">
-  <View className="flex-row items-center justify-between">
-    {/* 👤 Avatar */}
-    <View className="flex-row items-center">
-      {userProfile?.data?.kycDocuments?.find(doc => doc.type === "SELFIE") ? (
-        <Image
-          source={{ uri: userProfile.data.kycDocuments.find(doc => doc.type === "SELFIE").url }}
-          style={{ width: 50, height: 50, borderRadius: 25, marginRight: 10 }}
-        />
-      ) : (
-        <View
-          style={{
-            width: 50,
-            height: 50,
-            borderRadius: 25,
-            marginRight: 10,
-            backgroundColor: '#E5E7EB', // Tailwind gray-200
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
-        >
-          <Ionicons name="person-circle-outline" size={30} color="#9CA3AF" /> 
+        <View className="flex-row items-center justify-between">
+          {/* 👤 Avatar */}
+          <View className="flex-row items-center">
+            {userProfile?.data?.kycDocuments?.find(doc => doc.type === "SELFIE") ? (
+              <Image
+                source={{ uri: userProfile.data.kycDocuments.find(doc => doc.type === "SELFIE").url }}
+                style={{ width: 50, height: 50, borderRadius: 25, marginRight: 10 }}
+              />
+            ) : (
+              <View
+                style={{
+                  width: 50,
+                  height: 50,
+                  borderRadius: 25,
+                  marginRight: 10,
+                  backgroundColor: '#E5E7EB',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}
+              >
+                <Ionicons name="person-circle-outline" size={30} color="#9CA3AF" />
+              </View>
+            )}
+
+            <Text className="text-lg font-semibold text-gray-800">
+              {userProfile?.data?.firstname} {userProfile?.data?.lastname}
+              {userProfile?.data?.kycDocuments?.some(doc => doc.status === "APPROVED") && (
+                <Ionicons name="checkmark-circle" size={18} color="#10B981" style={{ marginLeft: 6 }} />
+              )}
+            </Text>
+          </View>
         </View>
-      )}
 
-      <Text className="text-lg font-semibold text-gray-800">
-        {userProfile?.data?.firstname} {userProfile?.data?.lastname}
-       {userProfile?.data?.kycDocuments?.some(doc => doc.status === "APPROVED") && (
-          <Ionicons name="checkmark-circle" size={18} color="#10B981" style={{ marginLeft: 6 }} />
+        <View className="mt-2">
+          <View className="flex-row items-center">
+            <Ionicons name="mail-outline" size={14} color="#6B7280" style={{ marginRight: 4 }} />
+            <Text className="text-sm text-gray-600">{userProfile?.data?.email}</Text>
+          </View>
+
+          <View className="flex-row items-center mt-1">
+            <Ionicons name="call-outline" size={14} color="#6B7280" style={{ marginRight: 4 }} />
+            <Text className="text-sm text-gray-600">{userProfile?.data?.phone}</Text>
+          </View>
+
+          {/*  Matricule */}
+          <View className="flex-row items-center mt-1">
+            <Ionicons name="card-outline" size={14} color="#6B7280" style={{ marginRight: 4 }} />
+            <Text className="text-sm text-gray-600">
+             {t('drawer.matricule')} <Text className="font-medium">{userProfile?.data?.wallet?.matricule}</Text>
+            </Text>
+          </View>
+        </View>
+      </View>
+
+
+          </>
         )}
-
-      </Text>
-    </View>
-  </View>
-
-  <View className="mt-2">
-    <View className="flex-row items-center">
-      <Ionicons name="mail-outline" size={14} color="#6B7280" style={{ marginRight: 4 }} />
-      <Text className="text-sm text-gray-600">{userProfile?.data?.email}</Text>
-    </View>
-
-    <View className="flex-row items-center mt-1">
-      <Ionicons name="call-outline" size={14} color="#6B7280" style={{ marginRight: 4 }} />
-      <Text className="text-sm text-gray-600">{userProfile?.data?.phone}</Text>
-    </View>
-  </View>
-</View>
-
-    </>
-  )}
-</View>
+      </View>
 
 
       {/* Body */}

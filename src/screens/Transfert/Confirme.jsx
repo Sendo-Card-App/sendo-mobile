@@ -46,7 +46,11 @@ const ConfirmeTheTransfer = () => {
     toCurrency,
     cadRealTimeValue,
   } = route.params;
-  
+  const fullName = formData.fullname || '';
+const nameParts = fullName.trim().split(' ');
+const firstname = nameParts[0] || '';
+const lastname = nameParts.slice(1).join(' ') || '';
+
   const providerImage =
     provider === "Orange Money"
       ? om
@@ -69,8 +73,8 @@ const handleConfirmPress = () => {
 
         try {
           const response = await initTransfer({
-            firstname: formData.firstname,
-            lastname: formData.lastname,
+            firstname,
+            lastname,
             email: formData.email,
             phone: formData.phone,
             country: formData.country,
@@ -80,6 +84,7 @@ const handleConfirmPress = () => {
             provider,
             pin,
           }).unwrap();
+
 
           if (response.status === 200 && response.data) {
             Toast.show({
@@ -207,7 +212,7 @@ const handleConfirmPress = () => {
           {[
             {
               label: t("confirmeTheTransfer.fullname"),
-              value: `${formData.firstname} ${formData.lastname}`,
+             value: `${firstname} ${lastname}`,
             },
             { label: t("confirmeTheTransfer.phone"), value: formData.phone },
             { label: t("confirmeTheTransfer.country"), value: formData.country },

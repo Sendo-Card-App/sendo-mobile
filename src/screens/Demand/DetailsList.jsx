@@ -22,6 +22,7 @@ const DetailsList = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { demand } = route.params;
+  console.log("Demand details:", JSON.stringify(demand, null, 2));
   const { t } = useTranslation();
   const { data: userProfile } = useGetUserProfileQuery();
   const currentUserId = userProfile?.data?.id;
@@ -309,61 +310,64 @@ const handleDeleteRequest = () => {
           </View>
         ))}
 
-        {demand.status === 'PENDING' && demand.userId === currentUserId && (
-          <View
-            style={{
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              marginTop: 20,
-            }}
-          >
-            {/* Cancel Button */}
-            <TouchableOpacity
-              onPress={handleCancelRequest}
-              disabled={isLoading}
+       {demand.status === 'PENDING' &&
+          demand.userId === currentUserId &&
+          !demand.recipients?.some(r => r.status === 'PAID') && (
+            <View
               style={{
-                backgroundColor: '#7f1d1d',
-                padding: 12,
-                borderRadius: 8,
-                alignItems: 'center',
-                justifyContent: 'center',
-                flex: 1,
-                marginRight: 8,
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                marginTop: 20,
               }}
             >
-              {isLoading ? (
-                <Loader color="#fff" />
-              ) : (
-                <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 12 }}>
-                  {t('detailsList.actions.cancel')}
-                </Text>
-              )}
-            </TouchableOpacity>
+              {/* Cancel Button */}
+              <TouchableOpacity
+                onPress={handleCancelRequest}
+                disabled={isLoading}
+                style={{
+                  backgroundColor: '#7f1d1d',
+                  padding: 12,
+                  borderRadius: 8,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flex: 1,
+                  marginRight: 8,
+                }}
+              >
+                {isLoading ? (
+                  <Loader color="#fff" />
+                ) : (
+                  <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 12 }}>
+                    {t('detailsList.actions.cancel')}
+                  </Text>
+                )}
+              </TouchableOpacity>
 
-            {/* Delete Button */}
-            <TouchableOpacity
-              onPress={handleDeleteRequest}
-              disabled={isDeleting}
-              style={{
-                backgroundColor: '#DC2626',
-                padding: 12,
-                borderRadius: 8,
-                alignItems: 'center',
-                justifyContent: 'center',
-                flex: 1,
-                marginLeft: 8,
-              }}
-            >
-              {isDeleting ? (
-                <Loader color="#fff" />
-              ) : (
-                <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 12 }}>
-                  {t('detailsList.actions.delete')}
-                </Text>
-              )}
-            </TouchableOpacity>
-          </View>
+              {/* Delete Button */}
+              <TouchableOpacity
+                onPress={handleDeleteRequest}
+                disabled={isDeleting}
+                style={{
+                  backgroundColor: '#DC2626',
+                  padding: 12,
+                  borderRadius: 8,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flex: 1,
+                  marginLeft: 8,
+                }}
+              >
+                {isDeleting ? (
+                  <Loader color="#fff" />
+                ) : (
+                  <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 12 }}>
+                    {t('detailsList.actions.delete')}
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </View>
         )}
+
       </View>
     </ScrollView>
   );

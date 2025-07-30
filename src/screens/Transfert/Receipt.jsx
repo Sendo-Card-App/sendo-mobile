@@ -20,9 +20,9 @@ import { useTranslation } from 'react-i18next';
 const ReceiptScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const user = route.params?.user;
   const transaction = route.params?.transaction;
-  console.log(transaction)
+  console.log("Transaction details:", transaction);
+  const user = transaction?.destinataire; 
   const [isGenerating, setIsGenerating] = React.useState(false);
   const { t } = useTranslation();
 
@@ -47,38 +47,41 @@ const ReceiptScreen = () => {
       case 'TRANSFER': return t('history1.transfer');
       case 'SHARED_PAYMENT': return t('history1.share');
       case 'WALLET_TO_WALLET': return t('history1.wallet');
-     case 'WALLET_PAYMENT': return t('history1.walletPayment');
+      case 'WALLET_PAYMENT': return t('history1.walletPayment');
       case 'TONTINE_PAYMENT': return t('history1.tontine');
       case 'PAYMENT': return t('history1.payment');
       default: return type;
     }
   };
-    const getTypeLabel1 = (provider) => {
+
+  const getTypeLabel1 = (provider) => {
     switch(provider?.toUpperCase()) {
       case 'SYSTEM': return t('history1.system');
-       case 'WALLET_PAYMENT': return t('history1.walletPayment');
+      case 'MTN': return t('history1.mtn');
+      case 'ORANGE': return t('history1.orange');
+      case 'WALLET_PAYMENT': return t('history1.walletPayment');
       case 'TONTINE_PAYMENT': return t('history1.tontine');
       case 'PAYMENT': return t('history1.payment');
       default: return provider;
     }
   };
 
-    const getMethodIcon = () => {
-  switch (transaction.method?.toUpperCase()) {
-    case 'MOBILE_MONEY':
-      if (transaction.provider === 'CMORANGEOM') {
-        return require('../../images/om.png');
-      } else if (transaction.provider === 'MTNMOMO') {
-        return require('../../images/mtn.png');
-      } else {
-        return require('../../images/transaction.png'); // fallback générique
-      }
-    case 'BANK_TRANSFER':
-      return require('../../images/RoyalBank.png');
-    default:
-      return require('../../images/transaction.png');
-  }
-};
+  const getMethodIcon = () => {
+    switch (transaction.method?.toUpperCase()) {
+      case 'MOBILE_MONEY':
+        if (transaction.provider === 'ORANGE') {
+          return require('../../images/om.png');
+        } else if (transaction.provider === 'MTN' || transaction.provider === 'MTN') {
+          return require('../../images/mtn.png');
+        } else {
+          return require('../../images/transaction.png');
+        }
+      case 'BANK_TRANSFER':
+        return require('../../images/RoyalBank.png');
+      default:
+        return require('../../images/transaction.png');
+    }
+  };
 
   const handleDownloadReceipt = async () => {
     if (transaction.status !== 'COMPLETED') {
@@ -99,16 +102,10 @@ const ReceiptScreen = () => {
 
       const html = generateReceiptHTML(transaction, user, logoDataUri, getTypeLabel);
 
-      const file = await Print.printToFileAsync({
-        html,
-        base64: false
-      });
+      const file = await Print.printToFileAsync({ html, base64: false });
 
       const fileUri = `${FileSystem.documentDirectory}Reçu transaction Sendo.pdf`;
-      await FileSystem.moveAsync({
-        from: file.uri,
-        to: fileUri
-      });
+      await FileSystem.moveAsync({ from: file.uri, to: fileUri });
 
       await Sharing.shareAsync(fileUri);
     } catch (error) {
@@ -119,83 +116,57 @@ const ReceiptScreen = () => {
     }
   };
 
-  const generateReceiptHTML = (transaction, user, logoUri, getTypeLabel) => {
-    return `
-      <html>
-        <head>
-          <style>
-            body { font-family: Arial, sans-serif; padding: 20px; }
-            .header { text-align: center; margin-bottom: 20px; }
-            .logo { width: 100px; margin: 0 auto; }
-            .title { font-size: 18px; font-weight: bold; margin: 10px 0; }
-            .section { margin-bottom: 15px; }
-            .section-title { font-weight: bold; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
-            .row { display: flex; justify-content: space-between; margin: 5px 0; }
-            .footer { margin-top: 30px; font-size: 12px; text-align: center; color: #666; }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <img src="${logoUri}" alt="Logo Sendo" class="logo" />
-            <div class="title">Reçu de transfert Sendo</div>
-            <div>Référence de transaction: ${transaction.transactionId}</div>
-          </div>
+  const generateReceiptHTML = (transaction, user, logoUri, getTypeLabel) => `
+  <html>
+    <head>
+      <style>
+        body { font-family: Arial; padding: 20px; }
+        .header { text-align: center; margin-bottom: 20px; }
+        .logo { width: 100px; }
+        .title { font-size: 18px; font-weight: bold; }
+        .section { margin-top: 20px; }
+        .row { display: flex; justify-content: space-between; margin: 5px 0; }
+        .footer { margin-top: 30px; font-size: 12px; text-align: center; color: #666; }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <img src="${logoUri}" alt="Logo" class="logo" />
+        <div class="title">Reçu de transfert Sendo</div>
+        <div>Référence: ${transaction.transactionId}</div>
+      </div>
 
-          <div class="section">
-            <div class="section-title">Détails de la transaction</div>
-            <div class="row">
-              <span>Date:</span>
-              <span>${transaction.createdAt ? moment(transaction.createdAt).format('DD/MM/YYYY HH:mm') : 'N/A'}</span>
-            </div>
-            <div class="row">
-              <span>Statut:</span>
-              <span>${transaction.status}</span>
-            </div>
-          </div>
+      <div class="section">
+        <div class="row"><strong>Date:</strong><span>${moment(transaction.createdAt).format('DD/MM/YYYY HH:mm')}</span></div>
+        <div class="row"><strong>Statut:</strong><span>${transaction.status}</span></div>
+      </div>
 
-          <div class="section">
-            <div class="section-title">Bénéficiaire</div>
-            <div class="row">
-              <span>Nom:</span>
-              <span>${user?.firstname} ${user?.lastname}</span>
-            </div>
-            <div class="row">
-              <span>Numéro:</span>
-              <span>${user?.phone}</span>
-            </div>
-            <div class="row">
-              <span>Méthode:</span>
-              <span>${transaction.provider || 'N/A'}</span>
-            </div>
-            <div class="row">
-              <span>Type:</span>
-              <span>${getTypeLabel(transaction.type) || 'N/A'}</span>
-            </div>
-          </div>
+      <div class="section">
+        <div class="row"><strong>Type:</strong><span>${getTypeLabel(transaction.type)}</span></div>
+        <div class="row"><strong>Méthode:</strong><span>${transaction.method}</span></div>
+      </div>
 
-          <div class="section">
-            <div class="section-title">Montant</div>
-            <div class="row">
-              <span>Montant envoyé:</span>
-              <span>${transaction.amount} ${transaction.currency}</span>
-            </div>
-            <div class="row">
-              <span>Frais:</span>
-              <span>${transaction.partnerFees || 0} FCFA</span>
-            </div>
-            <div class="row">
-              <span>Total:</span>
-              <span>${transaction.totalAmount} ${transaction.currency}</span>
-            </div>
-          </div>
+      <div class="section">
+        <div class="row"><strong>Montant envoyé:</strong><span>${transaction.amount} ${transaction.currency}</span></div>
+        <div class="row"><strong>Frais:</strong><span>${transaction.partnerFees || 0} XAF</span></div>
+        <div class="row"><strong>Total:</strong><span>${transaction.totalAmount} ${transaction.currency}</span></div>
+      </div>
 
-          <div class="footer">
-            Ce reçu est généré automatiquement et peut être utilisé comme justificatif.
-          </div>
-        </body>
-      </html>
-    `;
-  };
+      ${transaction.method === 'VIRTUAL_CARD' && transaction.card ? `
+        <div class="section">
+          <div class="row"><strong>Nom sur la carte:</strong><span>${transaction.card.cardName}</span></div>
+          <div class="row"><strong>Numéro:</strong><span>**** **** **** ${transaction.card.last4Digits}</span></div>
+          <div class="row"><strong>Expiration:</strong><span>${transaction.card.expirationDate}</span></div>
+        </div>
+      ` : ''}
+
+      <div class="footer">
+        Ce reçu est généré automatiquement et peut être utilisé comme justificatif.
+      </div>
+    </body>
+  </html>
+`;
+
 
   const getStatusSteps = () => {
     const formatDate = (date) => date ? moment(date).format('DD/MM/YYYY HH:mm') : 'N/A';
@@ -261,23 +232,32 @@ const ReceiptScreen = () => {
             ))}
           </View>
 
-          
-
-          {transaction.description !== 'National Identification Number request' && (
+         {transaction.method !== 'VIRTUAL_CARD' && transaction.description !== 'National Identification Number request' && (
             <>
-            <Text className="text-gray-800 font-semibold text-sm mb-2">
-              {transaction.recipient_name || 'Le bénéficiaire'} a reçu votre transfert.
-            </Text>
+              <Text className="text-gray-800 font-semibold text-sm mb-2">
+                {transaction.recipient_name || 'Le bénéficiaire'} a reçu votre transfert.
+              </Text>
               <Text className="text-gray-600 text-sm">
                 Bénéficiaire :{" "}
                 <Text className="font-semibold">{user?.firstname} {user?.lastname}</Text>
               </Text>
               <Text className="text-gray-600 text-sm">
-                Methode de Paiement : {getTypeLabel1(transaction.provider) || 'N/A'}
+                Méthode de Paiement : {getTypeLabel1(transaction.provider) || 'N/A'}
               </Text>
-              <Text className="text-gray-600 text-sm mb-2">Numéro : {user?.phone}</Text>
+              <Text className="text-gray-600 text-sm mb-2">
+                Numéro : {user?.phone}
+              </Text>
             </>
           )}
+
+            {transaction.method === 'VIRTUAL_CARD' && transaction.card && (
+                <>
+                  <Text className="text-gray-600 text-sm">Nom sur la carte : {transaction.card.cardName}</Text>
+                  <Text className="text-gray-600 text-sm">Numéro : **** **** **** {transaction.card.last4Digits}</Text>
+                  <Text className="text-gray-600 text-sm mb-2">Date d’expiration : {transaction.card.expirationDate}</Text>
+                </>
+              )}
+
           <Text className="text-gray-600 text-sm">Type de Paiement : {getTypeLabel(transaction.type) || 'N/A'}</Text>
           <Text className="text-green-600 font-semibold my-1">Reçu</Text>
           <Text className="text-gray-600 text-sm">Montant du transfert: {transaction.amount} {transaction.currency}</Text>
@@ -285,8 +265,8 @@ const ReceiptScreen = () => {
           <Text className="text-gray-600 text-sm mb-2">Total: {transaction.totalAmount} {transaction.currency}</Text>
 
           <Text className="text-green-600 font-semibold mt-2">Détails du transfert</Text>
-          <Text className="text-gray-600 text-sm">Envoyé : {transaction.createdAt ? moment(transaction.createdAt).format('DD/MM/YYYY HH:mm') : 'N/A'}</Text>
-          <Text className="text-gray-600 text-sm">Reference du transfert : {transaction.transactionId}</Text>
+          <Text className="text-gray-600 text-sm">Envoyé : {moment(transaction.createdAt).format('DD/MM/YYYY HH:mm')}</Text>
+          <Text className="text-gray-600 text-sm">Référence du transfert : {transaction.transactionId}</Text>
 
           <TouchableOpacity
             onPress={handleDownloadReceipt}

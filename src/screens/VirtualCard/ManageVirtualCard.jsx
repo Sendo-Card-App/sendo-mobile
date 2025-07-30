@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useFocusEffect } from '@react-navigation/native';
 import {
   View,
   Text,
@@ -30,6 +31,7 @@ import {
 } from "../../services/Card/cardApi";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { WebView } from 'react-native-webview';
+import * as ScreenCapture from 'expo-screen-capture';
 
 const ManageVirtualCard = () => {
   const { t } = useTranslation();
@@ -42,7 +44,8 @@ const ManageVirtualCard = () => {
 
   const [selectedCardId, setSelectedCardId] = useState(null);
   const [iframeModalVisible, setIframeModalVisible] = useState(false);
-  const [iframeUrl, setIframeUrl] = useState("");
+  const [iframeUrl, setIframeUrl] = useState('');
+  const [isPreventingScreenshot, setIsPreventingScreenshot] = useState(false);
   const [isLoadingIframe, setIsLoadingIframe] = useState(false);
   const [isLoadingFreeze, setIsLoadingFreeze] = useState(false);
 
@@ -114,6 +117,22 @@ const {
     }
   }, [cards]);
 
+   useFocusEffect(
+    React.useCallback(() => {
+      if (!cardData?.id) return; // No card id, do nothing
+
+      const interval = setInterval(() => {
+        refetchDebts();
+        refetchBalance();
+        refetchTransactions();
+        refetchCardDetails();
+        refetchCardDetailsHide(); 
+      }, 1000);
+
+      return () => clearInterval(interval); // Clean up on blur/unfocus
+    }, [cardData?.id, refetchDebts, refetchBalance, refetchTransactions, refetchCardDetails, refetchCardDetailsHide])
+  );
+
   useEffect(() => {
     if (cardStatus === "TERMINATED") {
       setModalType("terminated");
@@ -131,6 +150,38 @@ const {
       );
     }
   }, [cardStatus]);
+
+  
+  // Prevent screenshots when modal is visible
+  useEffect(() => {
+    const preventScreenshot = async () => {
+      try {
+        await ScreenCapture.preventScreenCaptureAsync();
+        setIsPreventingScreenshot(true);
+      } catch (error) {
+        console.error('Could not prevent screenshots:', error);
+      }
+    };
+
+    const allowScreenshot = async () => {
+      try {
+        await ScreenCapture.allowScreenCaptureAsync();
+        setIsPreventingScreenshot(false);
+      } catch (error) {
+        console.error('Could not re-enable screenshots:', error);
+      }
+    };
+
+    if (iframeModalVisible) {
+      preventScreenshot();
+    } else {
+      allowScreenshot();
+    }
+
+    return () => {
+      allowScreenshot();
+    };
+  }, [iframeModalVisible]);
 
   const showModal = (type, message) => {
     setModalType(type);
@@ -300,7 +351,7 @@ const handleFreezeUnfreeze = async () => {
 
             <View className="mt-3">
               <Text className="text-white text-lg tracking-widest font-semibold">
-                **** {cardData?.last4Digits || "****"}
+                **** {cardData?.last4Digits}
               </Text>
             </View>
 
@@ -603,7 +654,7 @@ const handleFreezeUnfreeze = async () => {
                     <ActivityIndicator size="large" color="#7ddd7d" />
                   </View>
                 )}
-                style={{ flex: 1 }}
+                style={{ flex: 1,  opacity: isPreventingScreenshot ? 0 : 1 }}
               />
             ) : (
               <View className="flex-1 justify-center items-center">

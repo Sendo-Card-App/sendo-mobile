@@ -6,6 +6,7 @@ import {
   Image,
   TouchableOpacity,
   Platform,
+  StyleSheet,
 } from "react-native";
 import { AntDesign, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useRoute, useNavigation } from "@react-navigation/native";
@@ -16,6 +17,15 @@ import { StatusBar } from "expo-status-bar";
 
 import button from "../../images/ButtomLogo.png";
 import HomeImage from "../../images/HomeImage2.png";
+
+const COLORS = {
+  background: "#F2F2F2",
+  primary: "#7ddd7d",
+  danger: "red",
+  text: "black",
+  white: "white",
+  border: "#7ddd7d",
+};
 
 const Address = () => {
   const route = useRoute();
@@ -35,30 +45,26 @@ const Address = () => {
     provider,
   } = route.params;
 
-    const user = contact.ownerUser;
-    const [formData, setFormData] = useState({
-      firstname: user?.firstname || contact.name?.split(" ")[0] || "",
-      lastname: user?.lastname || contact.name?.split(" ").slice(1).join(" ") || "",
-      phone: contact.phone || user?.phone || "",
-      country: countryName,
-      address: user?.address || "",
-      email: user?.email || "",
-      description: "",
-    });
+  const user = contact.ownerUser;
+
+  const [formData, setFormData] = useState({
+    fullname:
+      (user?.firstname && user?.lastname
+        ? `${user.firstname} ${user.lastname}`
+        : contact.name) || "",
+    phone: contact.phone || user?.phone || "",
+    country: countryName,
+    address: user?.address || "",
+    email: user?.email || "",
+    description: "",
+  });
 
   const handleInputChange = (name, value) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleNext = () => {
-    const requiredFields = [
-      "firstname",
-      "lastname",
-      "phone",
-      "country",
-      "email",
-      "address",
-    ];
+    const requiredFields = ["fullname", "phone", "email", "address"];
     const emptyFields = requiredFields.filter(
       (field) => !formData[field]?.trim()
     );
@@ -66,8 +72,8 @@ const Address = () => {
     if (emptyFields.length > 0) {
       Toast.show({
         type: "error",
-        text1: "Champs requis",
-        text2: "Veuillez remplir tous les champs obligatoires.",
+        text1: "Required Fields",
+        text2: "Please fill in all required fields.",
       });
       return;
     }
@@ -86,78 +92,54 @@ const Address = () => {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#000000" }}>
+    <View style={styles.container}>
       <StatusBar style="light" />
-      <View style={{ flexDirection: "row", alignItems: "center", padding: 10 }}>
+      <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <AntDesign name="arrowleft" size={24} color="white" />
+          <AntDesign name="arrowleft" size={24} color={COLORS.text} />
         </TouchableOpacity>
-        <Image
-          source={button}
-          style={{ width: 100, height: 80, marginLeft: 50 }}
-          resizeMode="contain"
-        />
-        <Image
-          source={HomeImage}
-          style={{ width: 70, height: 70, marginTop: -15, marginLeft: 10 }}
-          resizeMode="contain"
-        />
+        <Image source={button} style={styles.logo} resizeMode="contain" />
+        <Image source={HomeImage} style={styles.icon} resizeMode="contain" />
         <MaterialIcons
           name="menu"
           size={24}
-          color="white"
+          color={COLORS.text}
           style={{ marginLeft: "auto" }}
           onPress={() => navigation.openDrawer()}
         />
       </View>
 
-      <View
-        style={{
-          borderColor: "gray",
-          borderWidth: 1,
-          borderStyle: "dashed",
-          marginBottom: 10,
-        }}
-      />
-      <Text
-        style={{
-          textAlign: "center",
-          color: "white",
-          fontSize: 24,
-          fontWeight: "bold",
-        }}
-      >
-        {t("addressScreen.title")}
-      </Text>
+      <View style={styles.divider} />
+
+      <Text style={styles.title}>{t("addressScreen.title")}</Text>
 
       <KeyboardAwareScrollView
-        contentContainerStyle={{ padding: 20 }}
+        contentContainerStyle={styles.formContainer}
         enableOnAndroid
         extraScrollHeight={Platform.OS === "ios" ? 100 : 120}
         keyboardShouldPersistTaps="handled"
       >
-        {[
-          "firstname",
-          "lastname",
-          "phone",
-          "country",
-          "email",
-          "address",
-          "description",
-        ].map((field) => (
-          <View key={field} style={{ marginBottom: 15 }}>
-            <Text style={{ color: "white", marginBottom: 5 }}>
+        <View style={styles.inputWrapper}>
+          <Text style={styles.label}>
+            {t("addressScreen.fields.fullname")}
+            <Text style={styles.required}> *</Text>
+          </Text>
+          <TextInput
+            style={styles.input}
+            value={formData.fullname}
+            onChangeText={(text) => handleInputChange("fullname", text)}
+            placeholder={t("addressScreen.placeholders.fullname")}
+          />
+        </View>
+
+        {["phone", "email", "address", "description"].map((field) => (
+          <View key={field} style={styles.inputWrapper}>
+            <Text style={styles.label}>
               {t(`addressScreen.fields.${field}`)}
-              {field !== "description" && (
-                <Text style={{ color: "red" }}> *</Text>
-              )}
+              {field !== "description" && <Text style={styles.required}> *</Text>}
             </Text>
             <TextInput
-              style={{
-                backgroundColor: "white",
-                borderRadius: 10,
-                padding: 12,
-              }}
+              style={styles.input}
               value={formData[field]}
               editable={field !== "phone"}
               onChangeText={(text) => handleInputChange(field, text)}
@@ -166,32 +148,16 @@ const Address = () => {
           </View>
         ))}
 
-        <TouchableOpacity
-          style={{
-            backgroundColor: "green",
-            padding: 15,
-            borderRadius: 15,
-            alignItems: "center",
-            marginTop: 10,
-          }}
-          onPress={handleNext}
-        >
-          <Text style={{ color: "white", fontSize: 18, fontWeight: "bold" }}>
+        <TouchableOpacity style={styles.button} onPress={handleNext}>
+          <Text style={styles.buttonText}>
             {t("addressScreen.nextButton")}
           </Text>
         </TouchableOpacity>
       </KeyboardAwareScrollView>
 
-      <View
-        style={{
-          padding: 15,
-          alignItems: "center",
-          flexDirection: "row",
-          justifyContent: "center",
-        }}
-      >
+      <View style={styles.footerNote}>
         <Ionicons name="shield-checkmark" size={18} color="orange" />
-        <Text style={{ color: "white", marginLeft: 5, fontSize: 12 }}>
+        <Text style={styles.footerText}>
           {t("addressScreen.footerNote")}
         </Text>
       </View>
@@ -200,5 +166,84 @@ const Address = () => {
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 10,
+    marginTop:20,
+  },
+  logo: {
+    width: 100,
+    height: 80,
+    marginLeft: 50,
+  },
+  icon: {
+    width: 70,
+    height: 70,
+    marginTop: -15,
+    marginLeft: 10,
+  },
+  divider: {
+    borderColor: "gray",
+    borderWidth: 1,
+    borderStyle: "dashed",
+    marginBottom: 10,
+  },
+  title: {
+    textAlign: "center",
+    color: COLORS.text,
+    fontSize: 24,
+    fontWeight: "bold",
+  },
+  formContainer: {
+    padding: 20,
+  },
+  inputWrapper: {
+    marginBottom: 15,
+  },
+  label: {
+    color: COLORS.text,
+    marginBottom: 5,
+  },
+  required: {
+    color: COLORS.danger,
+  },
+  input: {
+    backgroundColor: COLORS.white,
+    borderRadius: 10,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  button: {
+    backgroundColor: COLORS.primary,
+    padding: 15,
+    borderRadius: 15,
+    alignItems: "center",
+    marginTop: 10,
+  },
+  buttonText: {
+    color: COLORS.white,
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  footerNote: {
+    padding: 15,
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "center",
+  },
+  footerText: {
+    color: COLORS.text,
+    marginLeft: 5,
+    fontSize: 12,
+  },
+});
 
 export default Address;

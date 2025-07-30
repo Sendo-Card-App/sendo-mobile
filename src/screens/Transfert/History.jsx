@@ -54,22 +54,41 @@ const HistoryCard = ({ transaction, user, onPress }) => {
     }
   };
 
-  const getMethodIcon = () => {
-  switch (transaction.method?.toUpperCase()) {
+const getMethodIcon = () => {
+  const method = transaction.method?.toUpperCase() || '';
+  const provider = transaction.provider;
+
+  switch (method) {
     case 'MOBILE_MONEY':
-      if (transaction.provider === 'CMORANGEOM') {
+      if (provider === 'Orange') {
         return require('../../images/om.png');
-      } else if (transaction.provider === 'MTNMOMO') {
+      } else if (provider === 'MTN') {
+        return require('../../images/mtn.png');
+      } else if (provider === 'WALLET_PAYMENT') {
+        return require('../../images/wallet.jpeg');
+      } else {
+        return require('../../images/transaction.png');
+      }
+
+    case 'WALLET':
+      if (provider === 'CMORANGEOM') {
+        return require('../../images/om.png');
+      } else if (provider === 'MTNMOMO') {
         return require('../../images/mtn.png');
       } else {
-        return require('../../images/transaction.png'); // fallback générique
+        return require('../../images/transaction.png');
       }
+
+    case 'VIRTUAL_CARD':
+       return require('../../images/virtual.png');
     case 'BANK_TRANSFER':
       return require('../../images/uba.png');
+
     default:
-      return require('../../images/tontine.jpeg');
+      return require('../../images/tontine.jpeg'); // fallback if method is null or unknown
   }
 };
+
 
 
   return (
@@ -144,6 +163,7 @@ const FilterModal = ({ visible, onClose, filters, setFilters, applyFilters }) =>
 
   const methods = [
     { label: t('history1.mobileMoney'), value: 'MOBILE_MONEY' },
+    { label: t('history1.Portefeuille'), value: 'WALLET' },
     { label: t('history1.bankTransfer'), value: 'BANK_TRANSFER' }
   ];
 

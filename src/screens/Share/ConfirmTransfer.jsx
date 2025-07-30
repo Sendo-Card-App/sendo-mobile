@@ -147,9 +147,9 @@ const handleConfirm = async () => {
             console.log("Pressed back button");
             navigation.goBack();
           }}
-        >
-  <AntDesign name="arrowleft" size={24} color="white" />
-</TouchableOpacity>
+       >
+          <AntDesign name="arrowleft" size={24} color="white" />
+        </TouchableOpacity>
 
         <TouchableOpacity onPress={() => navigation.openDrawer()}>
           <Ionicons name="menu-outline" size={24} color="white" />

@@ -7,7 +7,8 @@ import {
   Image,
   ScrollView,
   StatusBar,
-  Modal
+  Modal,
+  StyleSheet
 } from 'react-native';
 import { AntDesign } from '@expo/vector-icons';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -111,11 +112,11 @@ const Curency = () => {
   };
 
   const handleNext = () => {
-     const numericTotal = parseFloat(totalAmount);
-      if (numericTotal > 500000) {
-        setShowMaxAmountAlert(true);
-        return;
-      }
+    const numericTotal = parseFloat(totalAmount);
+    if (numericTotal > 500000) {
+      setShowMaxAmountAlert(true);
+      return;
+    }
     if (isToCameroon && parseFloat(convertedAmount) < CAD_SENDO_VALUE) {
       setShowAlert(true);
       return;
@@ -135,194 +136,109 @@ const Curency = () => {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#0D0D0D', padding: 16 }}>
-      <StatusBar barStyle="light-content" />
+    <View style={styles.container}>
+      <StatusBar backgroundColor="#F2F2F2" />
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10, marginTop: 25 }}>
+      <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <AntDesign name="arrowleft" size={24} color="white" />
+          <AntDesign name="arrowleft" size={24} color="black" />
         </TouchableOpacity>
 
-        <Image source={button} style={{ width: 100, height: 70, marginLeft: 50 }} resizeMode="contain" />
-        <Image source={HomeImage} style={{ width: 70, height: 70, marginTop: -15, marginLeft: 10 }} resizeMode="contain" />
+        <Image source={button} style={styles.logo} resizeMode="contain" />
+        <Image source={HomeImage} style={styles.homeImage} resizeMode="contain" />
 
         <MaterialIcons
           name="menu"
           size={24}
-          color="white"
-          style={{ marginLeft: 'auto' }}
+          color="black"
+          style={styles.menuIcon}
           onPress={() => navigation.openDrawer()}
         />
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={{ alignItems: 'center', marginTop: 20 }}>
-          <Image source={flagImage} style={{ width: 50, height: 50, marginBottom: 10 }} resizeMode="contain" />
-          <Text style={{ color: 'white', fontSize: 20 }}>{countryName}</Text>
-          <Text style={{ color: 'white', marginTop: 15 }}>{conversionRate}</Text>
+      <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollView}>
+        <View style={styles.countryHeader}>
+          <Image source={flagImage} style={styles.flag} resizeMode="contain" />
+          <Text style={styles.countryName}>{countryName}</Text>
+          <Text style={styles.conversionRateText}>{conversionRate}</Text>
         </View>
 
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 30 }}>
-          <View style={{
-            flex: 1,
-            paddingHorizontal: 2,
-            borderRadius: 10,
-            borderColor: '#7f7f7f',
-            borderWidth: 1,
-            paddingVertical: 5,
-            flexDirection: 'row',
-            alignItems: 'center',
-            height: 50
-          }}>
+        <View style={styles.amountContainer}>
+          <View style={styles.amountInputContainer}>
             <TextInput
               keyboardType="decimal-pad"
               placeholder={isToCameroon ? t('amount_cad') : t('amount_xaf')}
               placeholderTextColor="#aaa"
-              style={{ flex: 1, color: 'white', height: '100%' }}
+              style={styles.amountInput}
               value={amount}
               onChangeText={handleAmountChange}
             />
           </View>
 
-          <Image source={ArrowGoRound} style={{ width: 24, height: 24, marginLeft: 10 }} />
+          <Image source={ArrowGoRound} style={styles.arrowIcon} />
 
-          <View style={{
-            flex: 1.5,
-            paddingHorizontal: 2,
-            borderRadius: 10,
-            borderColor: '#7f7f7f',
-            borderWidth: 1,
-            paddingVertical: 5,
-            flexDirection: 'row',
-            alignItems: 'center',
-            height: 50
-          }}>
+          <View style={styles.amountInputContainer}>
             {isLoading ? (
               <Loader size="small" color="#7ddd7d" style={{ flex: 1 }} />
             ) : (
               <TextInput
                 placeholder={isToCameroon ? t('amount_xaf') : t('amount_cad')}
                 placeholderTextColor="#aaa"
-                style={{ flex: 1, color: 'white', height: '100%' }}
+                style={styles.amountInput}
                 value={convertedAmount}
                 editable={false}
               />
             )}
           </View>
         </View>
-          {error && (
-            <View style={{
-              backgroundColor: '#441111',
-              padding: 12,
-              borderRadius: 10,
-              marginTop: 10,
-              marginHorizontal: 20,
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
-              <Ionicons name="warning-outline" size={20} color="#ff6b6b" style={{ marginRight: 8 }} />
-              <Text style={{ color: '#ff6b6b', fontSize: 14, textAlign: 'center', flex: 1 }}>
-                {error}
+
+        {error && (
+          <View style={styles.errorContainer}>
+            <Ionicons name="warning-outline" size={20} color="#ff6b6b" style={styles.warningIcon} />
+            <Text style={styles.errorText}>
+              {error}
+            </Text>
+          </View>
+        )}
+
+        {/* {convertedAmount && (
+          <View style={styles.totalContainer}>
+            <View style={styles.totalRow}>
+              <Text style={styles.totalLabel}>{t('total_to_send')} :</Text>
+              <Text style={styles.totalAmount}>
+                {totalAmount} {isToCameroon ? 'XAF' : 'CAD'}
               </Text>
             </View>
-          )}
+          </View>
+        )} */}
 
-          {convertedAmount && (
-            <View style={{
-              backgroundColor: '#1a1a1a',
-              borderRadius: 10,
-              padding: 16,
-              marginTop: 20,
-              marginHorizontal: 20
-            }}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 }}>
-                <Text style={{ color: '#ccc', fontSize: 14 }}>{t('transfer_fee')}</Text>
-                <Text style={{ color: 'white', fontSize: 14 }}>
-                  {transferFee} {isToCameroon ? 'XAF' : 'CAD'}
-                </Text>
-              </View>
+        <View style={styles.divider} />
 
-              <View style={{
-                height: 1,
-                backgroundColor: '#333',
-                marginVertical: 6
-              }} />
-
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <Text style={{ color: '#ccc', fontSize: 14 }}>{t('total_to_send')}</Text>
-                <Text style={{ color: '#7ddd7d', fontSize: 16, fontWeight: 'bold' }}>
-                  {totalAmount} {isToCameroon ? 'XAF' : 'CAD'}
-                </Text>
-              </View>
-            </View>
-          )}
-
-
-        <View style={{ borderColor: 'gray', borderWidth: 1, borderStyle: 'dashed', marginTop: 20, marginBottom: 4 }} />
-
-        {/* <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 20 }}>
-          <Text style={{ color: 'white', marginRight: 8 }}>{t('promo_code')}</Text>
-          <TextInput
-            style={{
-              flex: 1,
-              borderWidth: 1,
-              borderColor: '#7f7f7f',
-              borderRadius: 8,
-              paddingHorizontal: 8,
-              paddingVertical: 4,
-              color: 'white',
-              height: 40
-            }}
-            placeholderTextColor="#aaa"
-          />
-          <TouchableOpacity style={{
-            backgroundColor: '#7ddd7d',
-            borderRadius: 8,
-            paddingVertical: 6,
-            paddingHorizontal: 12,
-            marginLeft: 8
-          }}>
-            <Text style={{ color: 'black' }}>{t('ok')}</Text>
-          </TouchableOpacity>
-        </View> */}
-
-        {/* <View style={{ borderColor: 'gray', borderWidth: 1, borderStyle: 'dashed', marginTop: 20, marginBottom: 4 }} /> */}
-
-        <View style={{ backgroundColor: '#333', borderRadius: 16, padding: 24, marginLeft: 5, marginTop: 50 }}>
-          <Text style={{ color: 'white', fontSize: 14, textAlign: 'center' }}>
+        <View style={styles.infoCard}>
+          <Text style={styles.infoCardTitle}>
             {t('sending_money_to', { country: countryName })}
           </Text>
-          <Text style={{ color: 'white', marginTop: 10, fontSize: 10, textAlign: 'center' }}>
+          <Text style={styles.infoCardSubtitle}>
             {t('fast_and_free')}
           </Text>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginTop: 15 }}>
-            <Image source={person} style={{ width: 70, height: 70, marginTop: -15 }} />
-            <Image source={mtn} style={{ width: 70, height: 70, marginTop: -15 }} />
-            <Image source={om} style={{ width: 70, height: 70, marginTop: -15 }} />
+          <View style={styles.paymentMethods}>
+            <Image source={person} style={styles.paymentMethodIcon} />
+            <Image source={mtn} style={styles.paymentMethodIcon} />
+            <Image source={om} style={styles.paymentMethodIcon} />
           </View>
         </View>
 
         <TouchableOpacity
-          style={{
-            backgroundColor: '#7ddd7d',
-            borderRadius: 8,
-            paddingVertical: 12,
-            alignItems: 'center',
-            width: 200,
-            alignSelf: 'center',
-            marginTop: 50,
-            opacity: (!amount || !convertedAmount) ? 0.5 : 1
-          }}
+          style={[styles.nextButton, (!amount || !convertedAmount) && styles.disabledButton]}
           onPress={handleNext}
           disabled={!amount || !convertedAmount}
         >
-          <Text style={{ color: 'black', fontSize: 18 }}>{t('next')}</Text>
+          <Text style={styles.nextButtonText}>{t('next')}</Text>
         </TouchableOpacity>
 
-        <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 20 }}>
-          <Ionicons name="shield-checkmark" size={18} color="orange" />
-          <Text style={{ color: 'white', marginLeft: 5, fontSize: 12 }}>
+        <View style={styles.securityInfo}>
+          <Ionicons name="shield-checkmark" size={18} color="#7ddd7d" />
+          <Text style={styles.securityText}>
             {t('disclaimer')}
           </Text>
         </View>
@@ -330,76 +246,258 @@ const Curency = () => {
 
       {/* Custom Alert Modal */}
       <Modal transparent animationType="fade" visible={showAlert}>
-        <View style={{
-          flex: 1,
-          justifyContent: 'center',
-          alignItems: 'center',
-          backgroundColor: 'rgba(0,0,0,0.6)'
-        }}>
-          <View style={{
-            backgroundColor: '#222',
-            padding: 20,
-            borderRadius: 12,
-            width: '80%',
-            alignItems: 'center'
-          }}>
-            <Text style={{ color: 'white', fontSize: 16, textAlign: 'center', marginBottom: 15 }}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalText}>
               Le montant minimum d'une transaction pour le Cameroun est de{' '}
-              <Text style={{ fontWeight: 'bold' }}>{CAD_SENDO_VALUE} XAF</Text>.
+              <Text style={styles.boldText}>{CAD_SENDO_VALUE} XAF</Text>.
               {'\n'}Veuillez ressayer avec un montant supérieur à{' '}
-              <Text style={{ fontWeight: 'bold' }}>{CAD_SENDO_VALUE} XAF</Text>.
+              <Text style={styles.boldText}>{CAD_SENDO_VALUE} XAF</Text>.
             </Text>
             <TouchableOpacity
               onPress={() => setShowAlert(false)}
-              style={{
-                backgroundColor: '#7ddd7d',
-                paddingVertical: 10,
-                paddingHorizontal: 25,
-                borderRadius: 8
-              }}
+              style={styles.modalButton}
             >
-              <Text style={{ color: 'black', fontWeight: 'bold' }}>OK</Text>
+              <Text style={styles.modalButtonText}>OK</Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
+
       <Modal transparent animationType="fade" visible={showMaxAmountAlert}>
-        <View style={{
-          flex: 1,
-          justifyContent: 'center',
-          alignItems: 'center',
-          backgroundColor: 'rgba(0,0,0,0.6)'
-        }}>
-          <View style={{
-            backgroundColor: '#222',
-            padding: 20,
-            borderRadius: 12,
-            width: '80%',
-            alignItems: 'center'
-          }}>
-            <Text style={{ color: 'white', fontSize: 16, textAlign: 'center', marginBottom: 15 }}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalText}>
               Pour les transactions entre le Canada et le Cameroun, le montant maximum autorisé est de{' '}
-              <Text style={{ fontWeight: 'bold' }}>500 000 XAF</Text>.
+              <Text style={styles.boldText}>500 000 XAF</Text>.
               {'\n'}Merci de saisir un montant inférieur ou égal à cette limite.
             </Text>
-
             <TouchableOpacity
               onPress={() => setShowMaxAmountAlert(false)}
-              style={{
-                backgroundColor: '#7ddd7d',
-                paddingVertical: 10,
-                paddingHorizontal: 25,
-                borderRadius: 8
-              }}
+              style={styles.modalButton}
             >
-              <Text style={{ color: 'black', fontWeight: 'bold' }}>OK</Text>
+              <Text style={styles.modalButtonText}>OK</Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
-
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#F2F2F2',
+    padding: 16
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+    marginTop: 25
+  },
+  logo: {
+    width: 100,
+    height: 70,
+    marginLeft: 50
+  },
+  homeImage: {
+    width: 70,
+    height: 70,
+    marginTop: -15,
+    marginLeft: 10
+  },
+  menuIcon: {
+    marginLeft: 'auto'
+  },
+  scrollView: {
+    flex: 1
+  },
+  countryHeader: {
+    alignItems: 'center',
+    marginTop: 20
+  },
+  flag: {
+    width: 50,
+    height: 50,
+    marginBottom: 10
+  },
+  countryName: {
+    color: 'black',
+    fontSize: 20
+  },
+  conversionRateText: {
+    color: 'black',
+    marginTop: 15,
+    fontWeight: 'bold'
+  },
+  amountContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 30
+  },
+  amountInputContainer: {
+    flex: 1,
+    paddingHorizontal: 2,
+    borderRadius: 10,
+    borderColor: '#7ddd7d',
+    borderWidth: 1,
+    paddingVertical: 5,
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 50,
+    backgroundColor: 'white'
+  },
+  amountInput: {
+    flex: 1,
+    color: 'black',
+    height: '100%',
+    paddingHorizontal: 10
+  },
+  arrowIcon: {
+    width: 24,
+    height: 24,
+    marginLeft: 10,
+    marginRight: 10
+  },
+  errorContainer: {
+    backgroundColor: '#ffecec',
+    padding: 12,
+    borderRadius: 10,
+    marginTop: 10,
+    marginHorizontal: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderLeftWidth: 4,
+    borderLeftColor: '#ff6b6b'
+  },
+  warningIcon: {
+    marginRight: 8
+  },
+  errorText: {
+    color: '#d32f2f',
+    fontSize: 14,
+    textAlign: 'center',
+    flex: 1
+  },
+  totalContainer: {
+    backgroundColor: '#333',
+    borderRadius: 10,
+    padding: 16,
+    marginTop: 20,
+    marginHorizontal: 20
+  },
+  totalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between'
+  },
+  totalLabel: {
+    color: '#fff',
+    fontSize: 17
+  },
+  totalAmount: {
+    color: '#7ddd7d',
+    fontSize: 17,
+    fontWeight: 'bold'
+  },
+  divider: {
+    borderColor: '#ddd',
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    marginTop: 20,
+    marginBottom: 4
+  },
+  infoCard: {
+    backgroundColor: '#333',
+    borderRadius: 16,
+    padding: 24,
+    marginLeft: 5,
+    marginTop: 50
+  },
+  infoCardTitle: {
+    color: 'white',
+    fontSize: 14,
+    textAlign: 'center'
+  },
+  infoCardSubtitle: {
+    color: '#7ddd7d',
+    marginTop: 10,
+    fontSize: 10,
+    textAlign: 'center'
+  },
+  paymentMethods: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginTop: 15
+  },
+  paymentMethodIcon: {
+    width: 70,
+    height: 70,
+    marginTop: -15
+  },
+  nextButton: {
+    backgroundColor: '#7ddd7d',
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: 'center',
+    width: 200,
+    alignSelf: 'center',
+    marginTop: 50
+  },
+  disabledButton: {
+    opacity: 0.5
+  },
+  nextButtonText: {
+    color: 'black',
+    fontSize: 18,
+    fontWeight: 'bold'
+  },
+  securityInfo: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 20,
+    marginBottom: 20
+  },
+  securityText: {
+    color: 'black',
+    marginLeft: 5,
+    fontSize: 12
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.6)'
+  },
+  modalContent: {
+    backgroundColor: '#222',
+    padding: 20,
+    borderRadius: 12,
+    width: '80%',
+    alignItems: 'center'
+  },
+  modalText: {
+    color: 'white',
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 15
+  },
+  boldText: {
+    fontWeight: 'bold'
+  },
+  modalButton: {
+    backgroundColor: '#7ddd7d',
+    paddingVertical: 10,
+    paddingHorizontal: 25,
+    borderRadius: 8
+  },
+  modalButtonText: {
+    color: 'black',
+    fontWeight: 'bold'
+  }
+});
 
 export default Curency;

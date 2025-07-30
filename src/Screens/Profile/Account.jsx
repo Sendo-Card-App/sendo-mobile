@@ -11,7 +11,8 @@ import {
   StatusBar,
 } from "react-native";
 import { AntDesign, EvilIcons, Ionicons } from "@expo/vector-icons";
-import * as ImagePicker from "expo-image-picker";
+import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system';
 import Avatar from "../../images/Avatar.png";
 import AddSecondPhoneModal from '../../components/AddSecondPhoneModal'; 
 import KeyboardAvoidinWrapper from "../../components/KeyboardAvoidinWrapper";
@@ -123,138 +124,143 @@ const [
     
 
   const handleSave = async () => {
-    const {
-      firstname,
-      lastname,
-      phone,
-      email,
-      profession,
-      region,
-      city,
-      district,
-      picture,
-    } = formData;
-  
-    if (!firstname || !lastname || !phone || !email || !profession || !region || !city || !district) {
+  try {
+    // Validate required fields
+    const requiredFields = ['firstname', 'lastname', 'phone', 'email'];
+    const missingFields = requiredFields.filter(field => !formData[field]);
+    
+    if (missingFields.length > 0) {
       Toast.show({
         type: "error",
-        text1: "Error",
-        text2: "All fields are required",
+        text1: "Missing information",
+        text2: `Please fill in: ${missingFields.join(', ')}`,
       });
       return;
     }
-  
-    try {
-      let payloadToSend = null;
-  
-      if (picture) {
-        const formDataToSend = new FormData();
-        formDataToSend.append("firstname", firstname);
-        formDataToSend.append("lastname", lastname);
-        formDataToSend.append("phone", phone);
-        formDataToSend.append("email", email);
-        formDataToSend.append("profession", profession);
-        formDataToSend.append("region", region);
-        formDataToSend.append("city", city);
-        formDataToSend.append("district", district);
-        formDataToSend.append("picture", {
-          uri: picture.uri,
-          name: picture.name,
-          type: picture.type,
-        });
-  
-        payloadToSend = formDataToSend;
-      } else {
-        payloadToSend = {
-          firstname,
-          lastname,
-          phone,
-          email,
-          profession,
-          region,
-          city,
-          district,
-          picture,
-        };
+
+    // Prepare form data
+    const formDataToSend = new FormData();
+    
+    // Add text fields
+    Object.entries(formData).forEach(([key, value]) => {
+      if (key !== 'picture' && value) {
+        formDataToSend.append(key, value);
       }
-      console.log('user profile', userProfile)
-      await handleSendNotification();
-      await updateProfile({
-        userId: userProfile.data.id,
-        formData: payloadToSend,
-      }).unwrap();
-  
-      Toast.show({
-        type: "success",
-        text1: "Success",
-        text2: "Profile updated successfully",
-      });
-  
-      setIsEditing(false);
-      refetch();
-    } catch (err) {
-      console.error("Profile update error:", err);
-      Toast.show({
-        type: "error",
-        text1: "Error",
-        text2: err?.data?.message || "Failed to update profile",
+    });
+
+    // Add image if changed
+    if (formData.picture && formData.picture.uri) {
+      formDataToSend.append('picture', {
+        uri: formData.picture.uri,
+        name: formData.picture.name,
+        type: formData.picture.type,
       });
     }
-  };
+
+    // Send update request
+    const response = await updateProfile({
+      userId: userProfile.data.id,
+      formData: formDataToSend,
+    }).unwrap();
+
+    // Show success
+    Toast.show({
+      type: "success",
+      text1: "Profile updated",
+      text2: "Your changes have been saved",
+    });
+
+    // Send notification
+    await handleSendNotification();
+
+    // Refresh data and exit edit mode
+    await refetch();
+    setIsEditing(false);
+
+  } catch (error) {
+    console.error("Update error:", error);
+    Toast.show({
+      type: "error",
+      text1: "Update failed",
+      text2: error?.data?.message || "Please try again",
+    });
+  }
+};
   
 
   const pickImage = async () => {
-    try {
-      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      const cameraPermissionResult = await ImagePicker.requestCameraPermissionsAsync();
+  try {
+    // Request permissions
+    const [libraryPermission, cameraPermission] = await Promise.all([
+      ImagePicker.requestMediaLibraryPermissionsAsync(),
+      ImagePicker.requestCameraPermissionsAsync()
+    ]);
 
-      if (permissionResult.status !== "granted" || cameraPermissionResult.status !== "granted") {
-        Toast.show({
-          type: "error",
-          text1: "Permission denied",
-          text2: "Please grant camera and media library permissions.",
-        });
-        return;
-      }
-
-      const pickerResult = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        quality: 1,
-        base64: false,
-      });
-
-      if (pickerResult.cancelled) return;
-
-      const { uri } = pickerResult.assets?.[0] || pickerResult;
-
-      const fileInfo = await fetch(uri);
-      const blob = await fileInfo.blob();
-      if (blob.size > MAX_FILE_SIZE) {
-        Toast.show({
-          type: "error",
-          text1: "File too large",
-          text2: "Image must be less than 5MB.",
-        });
-        return;
-      }
-
-      setFormData((prev) => ({
-        ...prev,
-        picture: {
-          uri,
-          name: "profile.jpg",
-          type: "image/jpeg",
-        },
-      }));
-    } catch (err) {
-      console.error("Image Picker Error:", err);
+    if (!libraryPermission.granted || !cameraPermission.granted) {
       Toast.show({
         type: "error",
-        text1: "Error",
-        text2: "Failed to pick image",
+        text1: "Permission required",
+        text2: "Please enable camera and gallery access in settings",
       });
+      return;
     }
-  };
+
+    // Launch image picker (using compatible mediaTypes syntax)
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images, // Use the correct property
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+
+    if (result.canceled) return;
+
+    const selectedImage = result.assets[0];
+    
+    // Check file size using FileSystem
+    const fileInfo = await FileSystem.getInfoAsync(selectedImage.uri, { size: true });
+    if (fileInfo.size > MAX_FILE_SIZE) {
+      Toast.show({
+        type: "error",
+        text1: "File too large",
+        text2: "Please select an image smaller than 5MB",
+      });
+      return;
+    }
+
+    // Generate unique filename
+    const filename = selectedImage.uri.split('/').pop();
+    const fileExtension = filename?.split('.').pop() || 'jpg'; // Fallback extension
+    const uniqueFilename = `${Date.now()}.${fileExtension}`;
+
+    // Prepare image data for upload
+    const imageData = {
+      uri: selectedImage.uri,
+      name: uniqueFilename,
+      type: `image/${fileExtension}`,
+    };
+
+    // Update form data with new image
+    setFormData(prev => ({
+      ...prev,
+      picture: imageData
+    }));
+
+    Toast.show({
+      type: "success",
+      text1: "Image selected",
+      text2: "Don't forget to save your changes",
+    });
+
+  } catch (error) {
+    console.error("Image picker error:", error);
+    Toast.show({
+      type: "error",
+      text1: "Error",
+      text2: "Failed to select image",
+    });
+  }
+};
 
   const handleFieldChange = (field, value) => {
     if (field === "phone" && value !== originalData.phone) {
@@ -446,12 +452,12 @@ const handleVerifySecondPhoneOtp = async ({ phone, code }) => {
           <View className="items-center mb-8">
             <Image
                 source={
-                  formData.picture 
-                    ? { uri: formData.picture.uri } 
-                    : userProfile?.data?.picture 
-                      ? { uri: userProfile.data.picture } 
-                      : Avatar
-                }
+                    formData.picture?.uri 
+                      ? { uri: formData.picture.uri }
+                      : userProfile?.data?.picture
+                        ? { uri: userProfile.data.picture }
+                        : require('../../images/Avatar.png')
+                  }
                 className="w-32 h-32 rounded-full border-4 border-[#7ddd7d]"
               />
             {isEditing && (
