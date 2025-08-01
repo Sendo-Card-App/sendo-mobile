@@ -24,7 +24,8 @@ module.exports = {
       bundleIdentifier: "com.sfe.sendo",
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
-         NSNotificationsUsageDescription: "This app uses notifications to inform you about updates."
+        NSNotificationsUsageDescription: "This app uses notifications to inform you about updates.",
+        NSPhotoLibraryUsageDescription: "L’app SENDO demande l’accès à votre bibliothèque photo pour que vous puissiez sélectionner une photo de profil ou joindre un document d’identité lors de l’inscription"
       }
     },
     android: {
@@ -39,7 +40,7 @@ module.exports = {
         "android.permission.READ_CONTACTS",
         "android.permission.WRITE_CONTACTS"
       ],
-      package: "com.sfe.sendo2025"
+      package: "com.sfe.sendo"
     },
     web: {
       favicon: "./assets/favicon.png"

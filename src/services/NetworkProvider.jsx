@@ -106,8 +106,8 @@ const NetworkProvider = ({ children }) => {
           ]}>
             <Image
               source={isError 
-                ? require('../Images/no-wifi.png') 
-                : require('../Images/wifi.png')}
+                ? require('../images/no-wifi.png') 
+                : require('../images/wifi.png')}
               style={[styles.icon, { width: 24, height: 24, tintColor: 'white' }]}
             />
 
