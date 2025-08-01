@@ -6,7 +6,7 @@ import { useNavigation } from "@react-navigation/native";
 
 import { StyleSheet, View, Text, TouchableOpacity,Platform,Dimensions  } from "react-native";
 import { Provider } from "react-redux";
-import { store } from "./src/Store/store";
+import { store } from "./src/store/store";
 import Toast from "react-native-toast-message";
 import { useTranslation } from 'react-i18next'; 
 import './i18n';

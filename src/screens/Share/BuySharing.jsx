@@ -25,7 +25,7 @@ export default function Historique({ navigation }) {
   const { data: sharedExpensesList, isLoading: expensesLoading } = useGetSharedListQuery(
     userId ?? skipToken
   );
-  console.log(sharedExpensesList);
+  //console.log(sharedExpensesList);
 
   const sharedExpenses = sharedExpensesList?.data || [];
  //console.log("Full response:", JSON.stringify(sharedExpenses, null, 2));
