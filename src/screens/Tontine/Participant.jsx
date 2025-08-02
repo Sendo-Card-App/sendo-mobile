@@ -19,42 +19,38 @@ import TopLogo from "../../images/TopLogo.png";
 import { StatusBar } from "expo-status-bar";
 import Toast from "react-native-toast-message";
 import { useTranslation } from "react-i18next";
+import { useAddTontineMembersMutation } from "../../services/Tontine/tontineApi";
 
-const Destinators = () => {
+const Participant = () => {
   const navigation = useNavigation();
   const route = useRoute();
+  const { tontineId } = route.params;
+ // console.log(tontineId)
   const { t } = useTranslation();
-  const [includeSelf, setIncludeSelf] = useState(true);
+
   const [selectedFriends, setSelectedFriends] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { data: userProfile } = useGetUserProfileQuery();
   const userId = userProfile?.data?.id;
-  const userWalletId = userProfile?.data?.wallet?.matricule;
-  const userFullName = `${userProfile?.data?.firstname || ""} ${userProfile?.data?.lastname || ""}`.trim();
 
   const {
     data: contactsData,
     isLoading: isLoadingContacts,
   } = useGetSynchronizedContactsQuery(userId, { skip: !userId });
- // console.log("🔍 Full response:", JSON.stringify(contactsData, null, 2));
-
+  //console.log("Contacts Data:", contactsData);
   const synchronizedContacts = contactsData?.data ?? [];
 
-const filteredContacts = useMemo(() => {
-  if (!synchronizedContacts) return [];
+  const [addMembers] = useAddTontineMembersMutation();
 
-  return synchronizedContacts.filter((friend) => {
-    const friendName = friend?.name?.toLowerCase() || '';
-    const contactUserId = friend?.ownerUser?.id;
-
-    return contactUserId !== userId && friendName.includes(searchQuery.toLowerCase());
-  });
-}, [searchQuery, synchronizedContacts, userId]);
-
-
-
+  const filteredContacts = useMemo(() => {
+    return synchronizedContacts.filter((friend) => {
+      const friendName = friend?.name?.toLowerCase() || "";
+      const contactUserId = friend?.ownerUser?.id;
+      return contactUserId !== userId && friendName.includes(searchQuery.toLowerCase());
+    });
+  }, [searchQuery, synchronizedContacts, userId]);
 
   const toggleFriend = (id) => {
     setSelectedFriends((prev) =>
@@ -62,47 +58,49 @@ const filteredContacts = useMemo(() => {
     );
   };
 
-  const handleNext = () => {
-   const totalParticipants = selectedFriends.length + (includeSelf ? 1 : 0);
-    if (totalParticipants < 2) {
+ const handleNext = async () => {
+    if (selectedFriends.length === 0) {
       Toast.show({
         type: "error",
-        text1: "Aucun destinataire sélectionné",
-        text2: "Veuillez sélectionner au moins deux participants.",
+        text1: "Erreur",
+        text2: "Veuillez sélectionner au moins un participant.",
       });
       return;
     }
 
-
     setIsSubmitting(true);
 
     try {
-    const participants = selectedFriends.map((friendId) => {
-      const friend = synchronizedContacts.find((f) => f.id === friendId);
-      const firstName = friend?.ownerUser?.firstname || "";
-      const lastName = friend?.ownerUser?.lastname || "";
-      return {
-        id: friend.id,
-        matriculeWallet: friend?.ownerUser?.wallet?.matricule,
-        name: `${firstName} ${lastName}`.trim(),
-        amount: 0,
-      };
-    });
+      // Extraire les IDs valides
+      const selectedUserIds = selectedFriends
+        .map((friendId) => {
+          const friend = synchronizedContacts.find((f) => f.id === friendId);
+          return friend?.ownerUser?.id;
+        })
+        .filter(id => id !== undefined);
 
-    
-      navigation.navigate("DistributionMethod", {
-        ...route.params,
-        includeSelf,
-        participants,
-        userWalletId,
-        userFullName,
+      const addMemberPromises = selectedUserIds.map(userId => 
+        addMembers({
+          tontineId: tontineId,
+          payload: { userId } 
+        }).unwrap()
+      );
+
+      await Promise.all(addMemberPromises);
+     
+      Toast.show({
+        type: "success",
+        text1: "Succès",
+        text2: `Participants ajoutés à la tontine.`,
       });
+
+      navigation.navigate("TontineList");
     } catch (error) {
-      console.error("Error selecting participants:", error);
+      console.log("Erreur:", error);
       Toast.show({
         type: "error",
         text1: "Erreur",
-        text2: "Une erreur s'est produite lors de la sélection.",
+        text2: error.data?.message || "Impossible d'ajouter certains participants.",
       });
     } finally {
       setIsSubmitting(false);
@@ -180,20 +178,7 @@ const filteredContacts = useMemo(() => {
           <Ionicons name="menu-outline" size={24} color="white" />
         </TouchableOpacity>
       </View>
-       <View className="border border-dashed border-gray-300 " />
-      <View className="flex-row items-center justify-center px-4 my-4 space-x-2">
-        <Text className="w-6 h-6 text-white text-center rounded-full bg-[#2B2F38] leading-6">
-          {t("destinators.step1")}
-        </Text>
-        <View className="flex-1 h-[1px] bg-gray-400" />
-        <Text className="w-6 h-6 text-white text-center rounded-full bg-[#7ddd7d] leading-6">
-          {t("destinators.step2")}
-        </Text>
-        <View className="flex-1 h-[1px] bg-gray-400" />
-        <Text className="w-6 h-6 text-white text-center rounded-full bg-[#2B2F38] leading-6">
-          {t("destinators.step3")}
-        </Text>
-      </View>
+      <View className="border border-dashed border-gray-300 " />
 
       <View style={{ flex: 1, paddingHorizontal: 16 }}>
         <Text
@@ -204,32 +189,8 @@ const filteredContacts = useMemo(() => {
             marginVertical: 10,
           }}
         >
-          {t("destinators.title")}
+          {t("destinators.title1")}
         </Text>
-
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginVertical: 10,
-          }}
-        >
-          <Text style={{ color: "white" }}>{t("destinators.includeSelf")}</Text>
-          <TouchableOpacity
-            onPress={() => setIncludeSelf(!includeSelf)}
-            style={{
-              width: 20,
-              height: 20,
-              borderRadius: 4,
-              backgroundColor: includeSelf ? "#7ddd7d" : "#2B2F38",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            {includeSelf && <Ionicons name="checkmark" size={14} color="white" />}
-          </TouchableOpacity>
-        </View>
 
         <View
           style={{
@@ -256,38 +217,38 @@ const filteredContacts = useMemo(() => {
           {t("destinators.friendsLabel")}
         </Text>
 
-      {isLoadingContacts ? (
-        <Loader size="small" color="#7ddd7d" />
-      ) : synchronizedContacts.length === 0 ? (
-        <View style={{ marginTop: 20, alignItems: "center" }}>
-          <Text style={{ color: "#888", textAlign: "center", marginBottom: 10 }}>
-            {t("destinators.noFriends")}
-          </Text>
-          <TouchableOpacity
-            onPress={() => navigation.navigate("AddFavorite")}
-            style={{
-              alignSelf: "center",
-              marginTop: 10,
-              paddingHorizontal: 16,
-              paddingVertical: 8,
-              backgroundColor: "#2B2F38",
-              borderRadius: 8,
-            }}
-          >
-            <Text style={{ color: "#7ddd7d", fontWeight: "bold" }}>
-               {t("selectRecipient.add_manually")}
+        {isLoadingContacts ? (
+          <Loader size="small" color="#7ddd7d" />
+        ) : synchronizedContacts.length === 0 ? (
+          <View style={{ marginTop: 20, alignItems: "center" }}>
+            <Text style={{ color: "#888", textAlign: "center", marginBottom: 10 }}>
+              {t("destinators.noFriends")}
             </Text>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <FlatList
-          data={filteredContacts}
-          keyExtractor={(item) => item.id.toString()}
-          renderItem={renderFriendItem}
-          contentContainerStyle={{ paddingBottom: 20 }}
-          showsVerticalScrollIndicator={false}
-        />
-      )}
+            <TouchableOpacity
+              onPress={() => navigation.navigate("AddFavorite")}
+              style={{
+                alignSelf: "center",
+                marginTop: 10,
+                paddingHorizontal: 16,
+                paddingVertical: 8,
+                backgroundColor: "#2B2F38",
+                borderRadius: 8,
+              }}
+            >
+              <Text style={{ color: "#7ddd7d", fontWeight: "bold" }}>
+                {t("selectRecipient.add_manually")}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <FlatList
+            data={filteredContacts}
+            keyExtractor={(item) => item.id.toString()}
+            renderItem={renderFriendItem}
+            contentContainerStyle={{ paddingBottom: 20 }}
+            showsVerticalScrollIndicator={false}
+          />
+        )}
 
 
         <TouchableOpacity
@@ -315,4 +276,4 @@ const filteredContacts = useMemo(() => {
   );
 };
 
-export default Destinators;
+export default Participant;

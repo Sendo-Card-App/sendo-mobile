@@ -9,12 +9,14 @@ import { getData, removeData, storeData } from "../../services/storage";
 import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
 import { clearAuth } from '../../features/Auth/authSlice';
 import Loader from "../../components/Loader";
+import { Ionicons } from '@expo/vector-icons';
+import Communications from 'react-native-communications';
 import Toast from 'react-native-toast-message';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { useTranslation } from 'react-i18next';
 import { getStoredPushToken } from '../../services/notificationService';
-import { useGetTokenMutation, useCreateTokenMutation } from '../../services/Auth/authAPI';
-import { useSendOtpMutation, useUpdatePasscodeMutation } from '../../services/Auth/authAPI';
+import { useGetTokenMutation, useCreateTokenMutation, useCheckPincodeMutation } from '../../services/Auth/authAPI';
+
 
 const PinCode = ({ navigation, route }) => {
   const { t } = useTranslation();
@@ -26,10 +28,12 @@ const PinCode = ({ navigation, route }) => {
   const [hasStoredPasscode, setHasStoredPasscode] = useState(false);
   const [biometricType, setBiometricType] = useState(null);
   const [authData, setAuthData] = useState(null);
+  const [isBlocked, setIsBlocked] = useState(false);
   
   const dispatch = useDispatch();
   const [createPasscode] = useCreatePasscodeMutation();
   const [createToken] = useCreateTokenMutation();
+  const [checkPincode] = useCheckPincodeMutation();
   
   const {
     passcode: currentPasscode,
@@ -49,12 +53,7 @@ const PinCode = ({ navigation, route }) => {
   const { data: serverTokenData } = useGetTokenMutation(userId, {
     skip: !userId
   });
-  const [showResetModal, setShowResetModal] = useState(false);
-  const [otpCode, setOtpCode] = useState('');
-  const [newPasscode, setNewPasscode] = useState('');
-  const [sendOtp] = useSendOtpMutation();
-  const [updatePasscode] = useUpdatePasscodeMutation();
-
+  const [showContactSupportModal, setShowContactSupportModal] = useState(false);
 
   const isNewUser = useSelector((state) => state.auth.isNewUser);
   const isSetup = route.params?.setup ?? !hasStoredPasscode;
@@ -63,7 +62,7 @@ const PinCode = ({ navigation, route }) => {
   useEffect(() => {
     const intervalId = setInterval(async () => {
       try {
-        const result = await refetch(); // fetch latest user profile
+        const result = await refetch();
         const profile = result?.data?.data;
 
         if (profile?.passcode) {
@@ -72,39 +71,12 @@ const PinCode = ({ navigation, route }) => {
           setPasscodeExists(false);
         }
       } catch (error) {
-        console.error('Failed to refetch user profile:', error);
       }
-    }, 1000);
+    }, 100000);
 
-    // Clear interval on component unmount
     return () => clearInterval(intervalId);
   }, []);
 
-
-  // Check and update token when component mounts or user profile changes
-//  useEffect(() => {
-//   const checkAndUpdateToken = async () => {
-//     if (!userId) return;
-
-//     try {
-//       const localToken = await getStoredPushToken();
-//       const serverToken = serverTokenData?.data?.token;
-
-//       if (localToken && localToken !== serverToken) {
-//         const response = await createToken({ userId, token: localToken }).unwrap();
-//         console.log('✅ Token update response:', response); 
-//       }
-//     } catch (error) {
-//       console.log(' Error:', JSON.stringify(error, null, 2));
-//     }
-//   };
-//   checkAndUpdateToken();
-// }, [userId, serverTokenData]);
-  
-
-
-  // Clear session function
-    
   const showToast = (type, title, message) => {
     Toast.show({
       type: type,
@@ -116,7 +88,7 @@ const PinCode = ({ navigation, route }) => {
     });
   };
 
- useEffect(() => {
+  useEffect(() => {
     const loadInitialData = async () => {
       const data = await getData('@authData');
       setAuthData(data);
@@ -132,7 +104,6 @@ const PinCode = ({ navigation, route }) => {
 
     loadInitialData();
   }, []);
-
 
   // Check for biometric availability
   useEffect(() => {
@@ -164,52 +135,50 @@ const PinCode = ({ navigation, route }) => {
     }
   }, [biometricEnabled, biometricAvailable, isSetup, isLocked]);
 
-  // Handle biometric authentication
- const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
 
-const handleBiometricAuth = async () => {
-  if (isAuthenticating) return;
-  setIsAuthenticating(true);
-  try {
-    const authResult = await LocalAuthentication.authenticateAsync({
-      promptMessage: t('pin.biometricPrompt'),
-      fallbackLabel: Platform.OS === 'ios' ? t('pin.usePinInstead') : undefined,
-      disableDeviceFallback: false,
-    });
+  const handleBiometricAuth = async () => {
+    if (isAuthenticating) return;
+    setIsAuthenticating(true);
+    try {
+      const authResult = await LocalAuthentication.authenticateAsync({
+        promptMessage: t('pin.biometricPrompt'),
+        fallbackLabel: Platform.OS === 'ios' ? t('pin.usePinInstead') : undefined,
+        disableDeviceFallback: false,
+      });
 
-    if (authResult.success) {
-      dispatch(resetAttempts());
+      if (authResult.success) {
+        dispatch(resetAttempts());
+
+        if (route.params?.onSuccess) {
+          try {
+            await route.params.onSuccess('biometric_auth');
+            navigation.goBack();
+          } catch (error) {
+            console.error('Transfer failed after biometric auth:', error);
+            showToast('error', t('errors.title'), error.message || t('errors.default'));
+          }
+        } else {
+          navigation.navigate('Main');
+        }
+      } else if (authResult.error === 'user_cancel') {
+        // Do nothing
+      } else if (authResult.error === 'not_enrolled') {
+        showToast('error', t('errors.title'), t('pin.biometricNotEnrolled'));
+      } else {
+        setError(t('pin.biometricFailed'));
+      }
+    } catch (err) {
+      console.error('Biometric auth error:', err);
+      setError(t('pin.biometricFailed'));
 
       if (route.params?.onSuccess) {
-        try {
-          await route.params.onSuccess('biometric_auth');
-          navigation.goBack();
-        } catch (error) {
-          console.error('Transfer failed after biometric auth:', error);
-          showToast('error', t('errors.title'), error.message || t('errors.default'));
-        }
-      } else {
-        navigation.navigate('Main');
+        showToast('error', t('errors.title'), t('pin.biometricFailed'));
       }
-    } else if (authResult.error === 'user_cancel') {
-      // Do nothing
-    } else if (authResult.error === 'not_enrolled') {
-      showToast('error', t('errors.title'), t('pin.biometricNotEnrolled'));
-    } else {
-      setError(t('pin.biometricFailed'));
+    } finally {
+      setIsAuthenticating(false);
     }
-  } catch (err) {
-    console.error('Biometric auth error:', err);
-    setError(t('pin.biometricFailed'));
-
-    if (route.params?.onSuccess) {
-      showToast('error', t('errors.title'), t('pin.biometricFailed'));
-    }
-  } finally {
-    setIsAuthenticating(false);
-  }
-};
-
+  };
 
   // Handle PIN input
   useEffect(() => {
@@ -219,7 +188,7 @@ const handleBiometricAuth = async () => {
   }, [pin]);
 
   const handlePress = (value) => {
-    if (isLocked) return;
+    if (isLocked || isBlocked) return;
     setError(null);
     
     if (value === 'del') {
@@ -234,78 +203,85 @@ const handleBiometricAuth = async () => {
 const handleComplete = async (enteredPin) => {
   setIsLoading(true);
   try {
-    const storedPasscode = userProfile?.data?.passcode;
-    if (storedPasscode) {
-      if (enteredPin === storedPasscode) {
-        dispatch(resetAttempts());
-
-        if (route.params?.showBalance) {
-          if (route.params?.onSuccess) {
-            await route.params.onSuccess(enteredPin);
-          }
-          navigation.goBack();
-        } else if (route.params?.onSuccess) {
+    // First check if user has a pincode
+    const checkResponse = await checkPincode(enteredPin).unwrap();
+    console.log('Check Pincode Response:', checkResponse);
+    
+    if (checkResponse.status === 200 && checkResponse.data?.pincode === true) {
+      // Pincode is correct
+      dispatch(resetAttempts());
+      
+      if (route.params?.showBalance) {
+        if (route.params?.onSuccess) {
           await route.params.onSuccess(enteredPin);
-          navigation.replace('Main', { screen: 'Success' });
-        } else {
-          navigation.replace('Main');
         }
+        navigation.goBack();
+      } else if (route.params?.onSuccess) {
+        await route.params.onSuccess(enteredPin);
+        navigation.replace('Main', { screen: 'Success' });
       } else {
-        const newAttempts = attempts + 1;
-        dispatch(incrementAttempt());
-
-        if (newAttempts >= 3) {
-          const lockTime = new Date();
-          lockTime.setMinutes(lockTime.getMinutes() + 5);
-          dispatch(lockPasscode(lockTime.toISOString()));
-
-          try {
-            await sendOtp({ phone: userProfile?.data?.phone });
-            showToast('info', t('pin.otpSentTitle'), t('pin.otpSentMessage'));
-            setShowResetModal(true);
-          } catch (err) {
-            showToast('error', t('errors.title'), t('pin.otpSendFailed'));
-          }
-        } else {
-          setError(t('pin.incorrectPin'));
-          setPin('');
-        }
-        return;
+        navigation.replace('Main');
+      }
+    } else if (checkResponse.status === 403 || 
+              (checkResponse.status === 200 && checkResponse.data?.pincode === false)) {
+      // Pincode is incorrect
+      const newAttempts = attempts + 1;
+      dispatch(incrementAttempt());
+      
+      if (newAttempts >= 3) {
+        // Account is blocked after 3 attempts
+        setIsBlocked(true);
+        setShowContactSupportModal(true);
+        
+        // Show appropriate error message based on API response
+        const errorMessage = checkResponse.data?.message === "Compte suspendu ou bloqué" 
+          ? t('pin.accountSuspended') 
+          : t('pin.accountBlocked');
+        
+        setError(errorMessage);
+        
+        const lockTime = new Date();
+        lockTime.setMinutes(lockTime.getMinutes() + 5);
+        dispatch(lockPasscode(lockTime.toISOString()));
+      } else {
+        setError(t('pin.incorrectPin'));
+      }
+      setPin('');
+    } else if (checkResponse.status === 404) {
+      // User doesn't have a pincode yet - create one
+      const createResponse = await createPasscode({ passcode: enteredPin }).unwrap();
+      if (createResponse.status === 200) {
+        await storeData('@passcode', enteredPin);
+        dispatch(setPasscode(enteredPin));
+        dispatch(setIsNewUser(false));
+        navigation.navigate('Main');
+      } else {
+        setError(t('pin.validationError'));
+        setPin('');
       }
     } else {
-      // Setup phase or pin not stored locally
-      if (userProfile?.data?.passcode) {
-        if (enteredPin === userProfile?.data?.passcode) {
-          await storeData('@passcode', enteredPin);
-          dispatch(setPasscode(enteredPin));
-          navigation.navigate('Main');
-        } else {
-          setError(t('pin.incorrectPin'));
-          setPin('');
-        }
-      } else {
-        const result = await createPasscode({ passcode: enteredPin }).unwrap();
-        if (result.status === 200) {
-          await storeData('@passcode', enteredPin);
-          dispatch(setPasscode(enteredPin));
-          dispatch(setIsNewUser(false));
-          navigation.navigate('Main');
-        } else {
-          setError(t('pin.validationError'));
-          setPin('');
-        }
-      }
+      // Unexpected response
+      setError(t('pin.unexpectedError'));
+      setPin('');
     }
   } catch (error) {
     console.log('Error:', error);
-    showToast('error', t('errors.title'), error.data?.message || 'Compte suspendu');
+    
+    // Handle the specific "Compte suspendu ou bloqué" case
+    if (error?.data?.message === "Compte suspendu ou bloqué") {
+      setIsBlocked(true);
+      setShowContactSupportModal(true);
+      setError(t('pin.accountSuspended'));
+    } else {
+      // Default error handling
+      showToast('error', t('errors.title'), error?.data?.message || t('errors.default'));
+    }
+    
     setPin('');
   } finally {
     setIsLoading(false);
   }
 };
-
-
 
   const renderDots = () => (
     <View style={{ flexDirection: 'row', justifyContent: 'center', marginVertical: 20 }}>
@@ -324,36 +300,7 @@ const handleComplete = async (enteredPin) => {
     </View>
   );
 
-    const handleForgotPin = async () => {
-      Alert.alert(
-        t('pin.forgotPin'),
-        t('pin.forgotPinMessage'),
-        [
-          {
-            text: t('common.cancel'),
-            style: 'cancel',
-            onPress: () => console.log('Cancel pressed')
-          },
-          {
-            text: t('pin.sendOtp'),
-            onPress: async () => {
-              try {
-               await sendOtp({ phone: userProfile?.data?.phone });
-                showToast('info', t('pin.otpSentTitle'), t('pin.otpSentMessage'));
-                setShowResetModal(true); // show the modal for user to enter OTP and new passcode
-              } catch (error) {
-                console.log('❌ OTP send error:', JSON.stringify(error, null, 2));
-                showToast('error', t('errors.title'), t('pin.otpSendFailed'));
-              }
-            }
-          },
-        ],
-        { cancelable: false }
-      );
-    };
-
-  // Get appropriate biometric icon
-    const getBiometricIcon = () => {
+  const getBiometricIcon = () => {
     if (biometricType === 'face') {
       return require('../../images/face-id.png');
     } else if (biometricType === 'fingerprint') {
@@ -361,7 +308,6 @@ const handleComplete = async (enteredPin) => {
     }
     return null;
   };
-
 
   const keypad = [
     ['1', '2', '3'],
@@ -397,7 +343,6 @@ const handleComplete = async (enteredPin) => {
               height: 100,
               alignSelf: 'center',
               marginVertical: 30,
-             
             }}
           />
 
@@ -414,12 +359,12 @@ const handleComplete = async (enteredPin) => {
             <Text style={{ color: 'red', marginTop: 10 }}>{error}</Text>
           )}
           
-          {isLocked && (
+          {(isLocked || isBlocked) && (
             <View style={{ alignItems: 'center' }}>
               <Text style={{ color: 'red', marginTop: 10 }}>
-                {t('pin.accountLocked')}
+                {isBlocked ? t('pin.accountBlocked') : t('pin.accountLocked')}
               </Text>
-              {biometricAvailable && (
+              {biometricAvailable && !isBlocked && (
                 <TouchableOpacity
                   onPress={handleBiometricAuth}
                   activeOpacity={0.7}
@@ -435,13 +380,12 @@ const handleComplete = async (enteredPin) => {
                     {t('pin.unlockWithBiometric')}
                   </Text>
                 </TouchableOpacity>
-
               )}
             </View>
           )}
         </View>
 
-        {!isLocked && (
+        {!(isLocked || isBlocked) && (
           <View style={{ alignItems: 'center' }}>
             {keypad.map((row, rowIndex) => (
               <View key={rowIndex} style={{ flexDirection: 'row', marginVertical: 10, marginTop: 5, }}>
@@ -479,134 +423,94 @@ const handleComplete = async (enteredPin) => {
               </View>
             ))}
 
-            <TouchableOpacity onPress={handleForgotPin} disabled={isLoading}>
-              <Text style={{ color: '#999', marginTop: 50, marginBottom:50 }}>
-                {t('pin.forgotPinQuestion')}
+            {/* Add Forgot Pincode button */}
+            <TouchableOpacity 
+              onPress={() => setShowContactSupportModal(true)}
+              style={{
+                marginTop: 20,
+                padding: 10,
+              }}
+            >
+              <Text style={{ 
+                color: '#0D1C6A', 
+                textDecorationLine: 'underline',
+                fontSize: 16,
+              }}>
+                {t('pin.forgotPin')}
               </Text>
             </TouchableOpacity>
           </View>
         )}
       </View>
-     <Modal 
-  isVisible={showResetModal} 
-  backdropOpacity={0.5}
-  style={{ margin: 0, justifyContent: 'flex-start' }} // Align to top
->
-  <SafeAreaView style={{ flex: 1 }}>
-    <ScrollView 
-      contentContainerStyle={{ 
-        padding: 20,
-        paddingTop: 50, // Add extra padding at top
-        backgroundColor: 'white',
-        borderRadius: 10,
-      }}
-      keyboardShouldPersistTaps="handled" // Allows tapping buttons when keyboard is open
-    >
-      <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 20 }}>
-        {t('pin.resetPasscode')}
-      </Text>
-
-      <Text style={{ marginBottom: 5, color: '#555' }}>
-        {t('pin.enterOtp')}
-      </Text>
-      <TextInput
-        placeholder={t('pin.enterOtp')}
-        value={otpCode}
-        onChangeText={setOtpCode}
-        keyboardType="numeric"
-        maxLength={6}
-        style={{
-          borderColor: '#ccc',
-          borderWidth: 1,
-          borderRadius: 8,
-          padding: 10,
-          marginBottom: 15,
+       {/* Floating WhatsApp Button */}
+      <TouchableOpacity 
+        onPress={() => {
+          const phoneNumber = '+1234567890'; // Replace with your support WhatsApp number
+          const message = t('whatsapp.defaultMessage');
+          Communications.text(phoneNumber, message);
         }}
-      />
-
-      <Text style={{ marginBottom: 5, color: '#555' }}>
-        {t('pin.enterNewPin')}
-      </Text>
-      <TextInput
-        placeholder={t('pin.enterNewPin')}
-        value={newPasscode}
-        onChangeText={setNewPasscode}
-        secureTextEntry
-        keyboardType="numeric"
-        maxLength={4}
         style={{
-          borderColor: '#ccc',
-          borderWidth: 1,
-          borderRadius: 8,
-          padding: 10,
-          marginBottom: 25, // Increased margin
-          color: '#000',
-          backgroundColor: '#fff'
+          position: 'absolute',
+          bottom: 30,
+          right: 30,
+          backgroundColor: '#25D366',
+          width: 60,
+          height: 60,
+          borderRadius: 30,
+          justifyContent: 'center',
+          alignItems: 'center',
+          elevation: 5,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.25,
+          shadowRadius: 3.84,
         }}
-      />
+      >
+        <Ionicons name="logo-whatsapp" size={36} color="white" />
+      </TouchableOpacity>
 
-      <View style={{ marginBottom: 20 }}> {/* Added container for buttons */}
-        <TouchableOpacity
-          onPress={async () => {
-            try {
-              if (newPasscode.length !== 4 || otpCode.length !== 6) {
-                showToast('error', t('errors.title'), t('pin.invalidInputs'));
-                return;
-              }
-
-              const res = await updatePasscode({
-                passcode: newPasscode,
-                code: otpCode,
-              }).unwrap();
-              console.log(res)
-              if (res.status === 200) {
-                await storeData('@passcode', newPasscode);
-                dispatch(setPasscode(newPasscode));
-                dispatch(resetAttempts());
-                setShowResetModal(false);
-                setOtpCode('');
-                setNewPasscode('');
-                showToast('success', t('pin.successTitle'), t('pin.resetSuccess'));
-                navigation.navigate('Main');
-              } else {
-                showToast('error', t('errors.title'), t('pin.resetFailed'));
-              }
-            } catch (err) {
-              showToast('error', t('errors.title'), err?.data?.message || t('pin.resetFailed'));
-            }
-          }}
-          style={{
-            backgroundColor: '#7ddd7d',
-            padding: 15, // Increased padding
-            borderRadius: 8,
-            alignItems: 'center',
-            marginBottom: 15, // Added margin between buttons
-          }}
-        >
-          <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 16 }}>
-            {t('pin.confirmReset')}
+      {/* Contact Support Modal */}
+      <Modal 
+        isVisible={showContactSupportModal} 
+        backdropOpacity={0.5}
+        onBackdropPress={() => setShowContactSupportModal(false)}
+      >
+        <View style={{ 
+          backgroundColor: 'white', 
+          padding: 20,
+          borderRadius: 10,
+        }}>
+          <Text style={{ 
+            fontSize: 18, 
+            fontWeight: 'bold', 
+            marginBottom: 20,
+            textAlign: 'center'
+          }}>
+            {t('pin.accountBlockedTitle')}
           </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={() => setShowResetModal(false)}
-          style={{
-            padding: 15,
-            borderRadius: 8,
-            alignItems: 'center',
-            borderWidth: 1,
-            borderColor: '#ccc',
-          }}
-        >
-          <Text style={{ color: 'red', fontWeight: 'bold', fontSize: 16 }}>
-            {t('common.cancel')}
+          
+          <Text style={{ 
+            marginBottom: 20,
+            textAlign: 'center'
+          }}>
+            {t('pin.contactSupportMessage')}
           </Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
-  </SafeAreaView>
-</Modal>
-
+          
+          <TouchableOpacity
+            onPress={() => setShowContactSupportModal(false)}
+            style={{
+              backgroundColor: '#7ddd7d',
+              padding: 15,
+              borderRadius: 8,
+              alignItems: 'center',
+            }}
+          >
+            <Text style={{ color: 'white', fontWeight: 'bold' }}>
+              {t('common.ok')}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };

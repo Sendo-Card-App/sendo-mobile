@@ -199,19 +199,18 @@ export const authApi = createApi({
       providesTags: [TAG_TYPES.PROFILE],
       // ... logging
     }),
-    
-    updateProfile: builder.mutation({
-      query: ({ userId, formData }) => {
-        const isFormData = typeof formData.append === "function";
-        return {
-          url: `${AUTH_ENDPOINTS.USER_PROFILE}/${userId}`,
-          method: "PUT",
-          body: formData,
-          //...(isFormData && { formData: true }),
-        };
-      },
+   updateProfile: builder.mutation({
+      query: ({ userId, ...profileData }) => ({
+        url: `${AUTH_ENDPOINTS.USER_PROFILE}/${userId}`,
+        method: "PUT",
+        body: profileData,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }),
       invalidatesTags: [TAG_TYPES.PROFILE],
     }),
+
      
     verifyPasscode: builder.mutation({
       query: (passcode) => ({
@@ -254,7 +253,26 @@ export const authApi = createApi({
         query: (id) => `/users/${id}`,
       }),
 
-    
+   checkPincode: builder.mutation({
+      query: (pincode) => ({
+        url: `/users/check-pincode/${pincode}`,
+        method: 'GET',
+      }),
+    }),
+
+   sendProfilePicture: builder.mutation({
+      query: (formData) => ({
+        url: '/users/send-picture',
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }),
+    }),
+
+
+
 
     // Logout
     logout: builder.mutation({
@@ -275,6 +293,7 @@ export { AUTH_ENDPOINTS, TAG_TYPES };
 export const { 
   useRegisterMutation,
   useVerifyOtpMutation,
+  useCheckPincodeMutation,
   useEmailSendMutation,
   useSendOtpMutation,
   useVerifyPasscodeMutation,
@@ -295,5 +314,6 @@ export const {
   useGetTokenMutation,
   useCreateTokenMutation,
   useUpdateProfileMutation,
+  useSendProfilePictureMutation ,
   useLogoutMutation,
 } = authApi;

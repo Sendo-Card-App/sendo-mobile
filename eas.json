@@ -16,8 +16,8 @@
     },
     "production": {
       "autoIncrement": true,
-      "android": { 
-        "buildType": "app-bundle"  
+      "android": {
+        "buildType": "apk"  
       },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://api.sf-e.ca/api"

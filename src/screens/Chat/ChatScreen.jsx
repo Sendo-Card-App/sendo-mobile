@@ -28,11 +28,11 @@ import Toast from 'react-native-toast-message';
 import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
 import Loader from '../../components/Loader';
 
-/*interface Attachment {
+interface Attachment {
   uri: string;
   name: string;
   type: string;
-}*/
+}
 
 interface Message {
   id: string;
@@ -51,7 +51,7 @@ interface Message {
   };
 }
 
-/*interface Conversation {
+interface Conversation {
   id: string;
   createdAt: string;
   updatedAt: string;
@@ -63,7 +63,7 @@ interface Message {
     firstname: string;
     lastname: string;
   };
-}*/
+}
 
 const ChatScreen = ({ route, navigation }) => {
   const [input, setInput] = useState('');
