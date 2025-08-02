@@ -29,6 +29,7 @@ import {
   useAddSecondPhoneMutation,
   useSendSecondPhoneOtpMutation,
   useVerifySecondPhoneOtpMutation,
+  useSendProfilePictureMutation ,
 } from "../../services/Auth/authAPI";
 import { useNavigation } from "@react-navigation/native";
 import Loader from "../../components/Loader";
@@ -123,12 +124,11 @@ const [
 }, [userProfile]);
     
 
-  const handleSave = async () => {
+const handleSave = async () => {
   try {
-    // Validate required fields
     const requiredFields = ['firstname', 'lastname', 'phone', 'email'];
     const missingFields = requiredFields.filter(field => !formData[field]);
-    
+
     if (missingFields.length > 0) {
       Toast.show({
         type: "error",
@@ -138,42 +138,43 @@ const [
       return;
     }
 
-    // Prepare form data
-    const formDataToSend = new FormData();
-    
-    // Add text fields
-    Object.entries(formData).forEach(([key, value]) => {
-      if (key !== 'picture' && value) {
-        formDataToSend.append(key, value);
-      }
-    });
-
-    // Add image if changed
-    if (formData.picture && formData.picture.uri) {
-      formDataToSend.append('picture', {
-        uri: formData.picture.uri,
-        name: formData.picture.name,
-        type: formData.picture.type,
-      });
-    }
-
-    // Send update request
-    const response = await updateProfile({
+    // Step 1: Send profile fields (text only)
+    const profileResponse = await updateProfile({
       userId: userProfile.data.id,
-      formData: formDataToSend,
+      firstname: formData.firstname,
+      lastname: formData.lastname,
+      phone: formData.phone,
+      email: formData.email,
+      profession: formData.profession || '',
+      region: formData.region || '',
+      city: formData.city || '',
+      district: formData.district || '',
     }).unwrap();
 
-    // Show success
+    // Step 2: If a new picture is selected, send it separately
+    if (
+      formData.picture &&
+      formData.picture.uri &&
+      formData.picture.uri !== originalData.picture?.uri
+    ) {
+      const imageData = new FormData();
+      imageData.append('picture', {
+        uri: formData.picture.uri,
+        name: formData.picture.name || `profile_${Date.now()}.png`,
+        type: formData.picture.type || 'image/png',
+      });
+
+      await sendProfilePicture(imageData).unwrap();
+    }
+
+    // Success Toast
     Toast.show({
       type: "success",
       text1: "Profile updated",
       text2: "Your changes have been saved",
     });
 
-    // Send notification
     await handleSendNotification();
-
-    // Refresh data and exit edit mode
     await refetch();
     setIsEditing(false);
 
@@ -182,12 +183,12 @@ const [
     Toast.show({
       type: "error",
       text1: "Update failed",
-      text2: error?.data?.message || "Please try again",
+      text2: error?.message || error?.data?.message || "Please try again",
     });
   }
 };
-  
 
+  
   const pickImage = async () => {
   try {
     // Request permissions

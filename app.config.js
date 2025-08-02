@@ -21,11 +21,10 @@ module.exports = {
     },
     ios: {
       supportsTablet: true,
-      bundleIdentifier: "com.sfe.sendo",
+      bundleIdentifier: "com.sfe.sendo2025",
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
-        NSNotificationsUsageDescription: "This app uses notifications to inform you about updates.",
-        NSPhotoLibraryUsageDescription: "L’app SENDO demande l’accès à votre bibliothèque photo pour que vous puissiez sélectionner une photo de profil ou joindre un document d’identité lors de l’inscription"
+         NSNotificationsUsageDescription: "This app uses notifications to inform you about updates."
       }
     },
     android: {
@@ -40,7 +39,7 @@ module.exports = {
         "android.permission.READ_CONTACTS",
         "android.permission.WRITE_CONTACTS"
       ],
-      package: "com.sfe.sendo"
+      package: "com.sfe.sendo2025"
     },
     web: {
       favicon: "./assets/favicon.png"
@@ -60,27 +59,12 @@ module.exports = {
         {
           contactsPermission: "Allow $(PRODUCT_NAME) to access your contacts"
         }
-      ],
-      [
-        "expo-build-properties",
-        {
-          ios: {
-            deploymentTarget: "15.1",
-            useFrameworks: "static",
-            modularHeaders: true
-          },
-          android: {
-            compileSdkVersion: 35,
-            targetSdkVersion: 35,
-            buildToolsVersion: "35.0.0"
-          }
-        }
       ]
     ],
     extra: {
       eas: {
         apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL,
-        projectId: "f317890d-1389-4b9e-9ce8-e1ffa7fe866e"
+       "projectId": "f317890d-1389-4b9e-9ce8-e1ffa7fe866e"
       }
     },
     

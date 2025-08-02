@@ -59,7 +59,7 @@ const handleNext = async () => {
   try {
     setLoading(true);
     const response = await createTontine(data).unwrap();
-
+    console.log("Tontine created successfully:", response);
     // Notification logic starts here
     const notificationContent = {
       title: "Tontine Créée",
@@ -112,7 +112,7 @@ const handleNext = async () => {
     navigation.navigate("Participant", { tontineId: response?.data?.id });
     
   } catch (error) {
-    console.log("Creation error:", error);
+    console.log(' Réponse du backend :', JSON.stringify(error, null, 2));
     
     // Error notification
     try {

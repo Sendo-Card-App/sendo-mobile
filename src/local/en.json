@@ -217,6 +217,7 @@
 "email": "randré24cand@gmail.com",
 "phone": "+237 600 00 00 00",
 "bonus": "Bonus of 1.00 CAD free",
+ "matricule": "Account number :",
 "bonus_description": "You will receive 1.00 CAD and your friend will receive 1.00 CAD when they make their first transfer. Minimum sending requirements may apply. Subject to conditions.",
 "bonus_code": "Your code:",
 "invite_friends": "INVITE YOUR FRIENDS",
@@ -713,7 +714,14 @@
     "lockedFor5Minutes": "Your account is locked for 5 minutes due to multiple failed attempts",
     "biometricFailed": "Biometric authentication failed",
      "resetPasscode": "Reset PIN",
+      "accountSuspended": "Your account has been suspended. Please contact support.",
+     "accountBlocked": "Account blocked after too many attempts. Please contact support.",
+      "accountBlockedTitle": "Account Locked",
+    "contactSupportMessage": "For security reasons, your account has been temporarily locked. Please contact our support team to regain access.",
   "enterOtp": "Enter OTP sent to your email",
+  "whatsapp": {
+    "defaultMessage": "Hello, I need help with my account"
+  },
   "enterNewPin": "Enter new 4-digit PIN",
   "confirmReset": "Confirm Reset",
   "otpSentTitle": "OTP Sent",
@@ -818,6 +826,8 @@
     "of": "of",
     "previous": "Previous",
      "system": "System ",
+      "mtn": "MTN Mobile Money ",
+      "orange": "Orange Money ",
     "next": "Next",
     "dateRange": "Date Range",
     "today": "Today",
@@ -838,6 +848,7 @@
       "payment": "Payment ",
       "tontine": "Tontine payment ",
     "mobileMoney": "Mobile Money",
+    "Portefeuille": "Wallet",
     "bankTransfer": "Bank Transfer",
     "success": "Completed",
     "failed": "Failed",
@@ -987,7 +998,7 @@
   "addressScreen": {
     "title": "Reciever information",
     "fields": {
-      "firstname": "Firstname",
+      "fullname": "Full Name",
       "lastname": "Lastname",
       "phone": "Phone",
       "country": "Country",
@@ -996,12 +1007,11 @@
       "description": "Description"
     },
     "placeholders": {
-      "firstname": "Enter your firstname",
-      "lastname": "Enter your lastname",
-      "phone": "Enter your phone",
-      "country": "Enter your country",
-      "email": "Enter your email",
-      "address": "Enter your address",
+      "fullname": "Enter full name",
+      "phone": "Enter  phone",
+      "country": "Enter  country",
+      "email": "Enter  email",
+      "address": "Enter  address",
       "description": "Enter a description (optional)"
     },
     "amount": "Amount (XAF)",
@@ -1588,7 +1598,7 @@
   "other": "Others",
   "deleteCard": "Delete Card",
   "deleteCardFooter": "All your funds will be transferred to your Sendo account if you delete the card.",
-  "cardDeleted": "Card successfully deleted."
+   "cardDeleted": "Card successfully deleted.",
    
  
 
