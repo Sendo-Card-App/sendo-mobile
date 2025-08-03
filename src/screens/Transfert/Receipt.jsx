@@ -21,7 +21,7 @@ const ReceiptScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const transaction = route.params?.transaction;
-  console.log("Transaction details:", transaction);
+  //console.log("Transaction details:", transaction);
   const user = transaction?.destinataire; 
   const [isGenerating, setIsGenerating] = React.useState(false);
   const { t } = useTranslation();
@@ -187,7 +187,7 @@ const ReceiptScreen = () => {
         icon: "time"
       },
       {
-        status: transaction.status === 'COMPLETED' ? "Terminé" : "Échec",
+        status: transaction.status === 'COMPLETED' ? "Terminé" : "En attente",
         description: transaction.status === 'COMPLETED'
           ? "Le transfert a réussi"
           : "Le transfert a échoué",
@@ -232,23 +232,39 @@ const ReceiptScreen = () => {
             ))}
           </View>
 
-         {transaction.method !== 'VIRTUAL_CARD' && transaction.description !== 'National Identification Number request' && (
-            <>
-              <Text className="text-gray-800 font-semibold text-sm mb-2">
-                {transaction.recipient_name || 'Le bénéficiaire'} a reçu votre transfert.
+       {(transaction.method !== 'BANK_TRANSFER' && (
+          transaction.type === 'WALLET_TO_WALLET' ||
+           transaction.type === 'TRANSFER' ||
+          (
+            transaction.method !== 'VIRTUAL_CARD' &&
+            transaction.description !== 'National Identification Number request'
+          )
+        )) && (
+
+          <>
+            <Text className="text-gray-800 font-semibold text-sm mb-2">
+              {(transaction.receiver?.firstname || user?.firstname) || 'Le bénéficiaire'} a reçu votre transfert.
+            </Text>
+            <Text className="text-gray-600 text-sm">
+              Bénéficiaire :{" "}
+              <Text className="font-semibold">
+                {transaction.type === 'WALLET_TO_WALLET'  || transaction.type === 'TRANSFER'
+                  ? `${transaction.receiver?.firstname ?? ''} ${transaction.receiver?.lastname ?? ''}`
+                  : `${user?.firstname ?? ''} ${user?.lastname ?? ''}`}
               </Text>
-              <Text className="text-gray-600 text-sm">
-                Bénéficiaire :{" "}
-                <Text className="font-semibold">{user?.firstname} {user?.lastname}</Text>
-              </Text>
-              <Text className="text-gray-600 text-sm">
-                Méthode de Paiement : {getTypeLabel1(transaction.provider) || 'N/A'}
-              </Text>
-              <Text className="text-gray-600 text-sm mb-2">
-                Numéro : {user?.phone}
-              </Text>
-            </>
-          )}
+            </Text>
+            <Text className="text-gray-600 text-sm">
+              Méthode de Paiement : {getTypeLabel1(transaction.provider) || 'N/A'}
+            </Text>
+            <Text className="text-gray-600 text-sm mb-2">
+              Numéro :{" "}
+              {transaction.type === 'WALLET_TO_WALLET'  || transaction.type === 'TRANSFER'
+                ? transaction.receiver?.phone
+                : user?.phone}
+            </Text>
+          </>
+        )}
+
 
             {transaction.method === 'VIRTUAL_CARD' && transaction.card && (
                 <>
@@ -258,7 +274,13 @@ const ReceiptScreen = () => {
                 </>
               )}
 
-          <Text className="text-gray-600 text-sm">Type de Paiement : {getTypeLabel(transaction.type) || 'N/A'}</Text>
+         <Text className="text-gray-600 text-sm">
+            Type de Paiement :{" "}
+            {transaction.method === 'BANK_TRANSFER'
+              ? 'Dépôt bancaire'
+              : getTypeLabel(transaction.type) || 'N/A'}
+          </Text>
+
           <Text className="text-green-600 font-semibold my-1">Reçu</Text>
           <Text className="text-gray-600 text-sm">Montant du transfert: {transaction.amount} {transaction.currency}</Text>
           <Text className="text-gray-600 text-sm">Frais de transfert: {transaction.sendoFees || 0} XAF</Text>

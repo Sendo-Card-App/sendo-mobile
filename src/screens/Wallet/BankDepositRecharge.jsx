@@ -70,7 +70,7 @@ const handleSubmit = async () => {
     navigation.goBack();
   } catch (error) {
     console.error(error);
-    const message = error?.data?.message || 'Échec de la transaction';
+    const message = error?.data?.message;
     Toast.show({
       type: 'error',
       text1: 'Erreur',
