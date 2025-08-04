@@ -27,6 +27,10 @@ import {
 import Toast from 'react-native-toast-message';
 import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
 import Loader from '../../components/Loader';
+import { getData} from "../../services/storage";
+import { initSocket, getSocket } from '../../utils/socket';
+
+let typingTimeout: NodeJS.Timeout;
 
 interface Attachment {
   uri: string;
@@ -69,7 +73,10 @@ const ChatScreen = ({ route, navigation }) => {
   const [input, setInput] = useState('');
   const [attachments, setAttachments] = useState([]);
   const flatListRef = useRef(null);
+  const [userToken, setUserToken] = useState(null);
   const [sending, setSending] = useState(false);
+   const [messages, setMessages] = useState([]);
+  const [typingStatus, setTypingStatus] = useState(false);
   const [selectedConversationIndex, setSelectedConversationIndex] = useState(0);
   const [showConversationPicker, setShowConversationPicker] = useState(false);
 
@@ -88,18 +95,92 @@ const ChatScreen = ({ route, navigation }) => {
     skip: !selectedConversation
   });
 
-  const messages = [...(messagesResponse?.data || [])].sort(
-    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-  );
+  // const messages = [...(messagesResponse?.data || [])].sort(
+  //   (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+  // );
 
   const [sendMessage] = useSendMessageMutation();
   const [createConversation] = useCreateConversationMutation();
-
   useEffect(() => {
-    if (messages.length > 0 && flatListRef.current) {
-      flatListRef.current.scrollToEnd({ animated: true });
-    }
-  }, [messages]);
+    const fetchToken = async () => {
+      const accessToken = await getData('@authData');
+      //console.log('Fetched accessToken:', accessToken);
+      setUserToken(accessToken);
+    };
+    fetchToken();
+  }, []);
+   // Initialize socket
+  useEffect(() => {
+    if (userToken) initSocket(userToken);
+  }, [userToken]);
+
+  // Join/leave conversation
+  useEffect(() => {
+    const socket = getSocket();
+    if (!socket || !selectedConversation?.id) return;
+
+    socket.emit('join_conversation', { conversationId: selectedConversation.id });
+
+    return () => {
+      socket.emit('leave_conversation', { conversationId: selectedConversation.id });
+    };
+  }, [selectedConversation?.id]);
+
+  // Load initial messages
+ useEffect(() => {
+  if (messagesResponse?.data) {
+    const sorted = [...messagesResponse.data].sort(
+      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    );
+    setMessages(sorted);
+  }
+}, [messagesResponse]);
+
+   // Handle socket events
+  useEffect(() => {
+    const socket = getSocket();
+    if (!socket) return;
+
+    const handleNewMessage = (message) => {
+      if (message.conversationId === selectedConversation?.id) {
+        setMessages(prev => [...prev, message]);
+      }
+    };
+
+    const handleTyping = ({ conversationId }) => {
+      if (conversationId === selectedConversation?.id) {
+        setTypingStatus(true);
+      }
+    };
+
+    const handleStopTyping = ({ conversationId }) => {
+      if (conversationId === selectedConversation?.id) {
+        setTypingStatus(false);
+      }
+    };
+
+    socket.on('new_message', handleNewMessage);
+    socket.on('typing', handleTyping);
+    socket.on('stop_typing', handleStopTyping);
+
+    return () => {
+      socket.off('new_message', handleNewMessage);
+      socket.off('typing', handleTyping);
+      socket.off('stop_typing', handleStopTyping);
+    };
+  }, [selectedConversation?.id]);
+
+  const handleTyping = () => {
+    const socket = getSocket();
+    if (!socket || !selectedConversation?.id) return;
+
+    socket.emit('typing', { conversationId: selectedConversation.id });
+    clearTimeout(typingTimeout);
+
+    typingTimeout = setTimeout(() => {
+      socket.emit('stop_typing', { conversationId: selectedConversation.id });
+    }, 2000);
+  };
 
   const pickDocument = async () => {
     try {
@@ -162,49 +243,34 @@ const ChatScreen = ({ route, navigation }) => {
   const handleSend = async () => {
     if ((input.trim() === '' && attachments.length === 0) || sending) return;
 
-    try {
-      setSending(true);
+    setSending(true);
 
+    try {
       let currentConversationId = selectedConversation?.id;
 
-      // If no open conversations exist or no conversation is selected
       if (!currentConversationId || openConversations.length === 0) {
-        const newConversation = await createConversation().unwrap();
-        currentConversationId = newConversation.data.id;
-        // Refetch conversations to get the new one
+        const newConv = await createConversation().unwrap();
+        currentConversationId = newConv.data.id;
         await refetchConversations();
         setSelectedConversationIndex(0);
-        return; // Return early and let the user send the message again
+        setSending(false);
+        return;
       }
 
-      const formData = new FormData();
-      formData.append('conversationId', currentConversationId);
-      formData.append(
-        'content',
-        input.trim() !== '' ? input : attachments.length > 0 ? '[Attachment]' : ''
-      );
-      formData.append('senderType', 'CUSTOMER');
+      const socket = getSocket();
+      if (!socket) throw new Error("Socket not connected");
 
-      attachments.forEach((file, index) => {
-        formData.append('attachments', {
-          uri: file.uri,
-          name: file.name,
-          type: file.type,
-        }); 
+      socket.emit('send_message', {
+        conversationId: currentConversationId,
+        senderType: 'CUSTOMER',
+        content: input.trim() !== '' ? input : '[Attachment]',
+        attachments,
       });
-
-      await sendMessage(formData).unwrap();
-
 
       setInput('');
       setAttachments([]);
-      refetch();
-
-      setTimeout(() => {
-        flatListRef.current?.scrollToEnd({ animated: true });
-      }, 100);
-    } catch (error) {
-       console.error('Failed to send message:', JSON.stringify(error, null, 2));
+    } catch (err) {
+      console.error('Send error:', err);
       Toast.show({
         type: 'error',
         text1: 'Error',
@@ -382,9 +448,12 @@ const renderAttachmentPreview = () => (
           <Icon name="insert-drive-file" size={24} color="#555" />
         </TouchableOpacity>
         
-        <TextInput
+         <TextInput
           value={input}
-          onChangeText={setInput}
+          onChangeText={text => {
+            setInput(text);
+            handleTyping();
+          }}
           placeholder="Type a message..."
           style={styles.textInput}
           multiline

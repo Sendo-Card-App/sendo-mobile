@@ -112,20 +112,25 @@ const OnboardingCardScreen = () => {
       await refetch();
     } catch (error) {
        console.log("Full response:", JSON.stringify(error, null, 2));
-      const backendMessage = error?.data?.message || t('onboardingCard.toast.error.generic');
-      const details = error?.data?.data?.details?.required;
+        const backendMessage = error?.data?.message || t('onboardingCard.toast.error.generic');
 
-      let fullMessage = backendMessage;
+        const details = error?.data?.data?.details?.required;
+        const errors = error?.data?.data?.errors;
 
-      if (details?.mandatoryTypes) {
-        fullMessage += `\n${t('onboardingCard.toast.error.requiredDocuments')}: ${details.mandatoryTypes.join(', ')}`;
-      }
+        let fullMessage = backendMessage;
 
-      Toast.show({
-        type: 'error',
-        text1: t('onboardingCard.toast.error.title'),
-        text2: fullMessage,
-      });
+        if (details?.mandatoryTypes) {
+          fullMessage += `\n${t('onboardingCard.toast.error.requiredDocuments')}: ${details.mandatoryTypes.join(', ')}`;
+        } else if (errors && errors.length > 0) {
+          fullMessage += `\n${errors.join('\n')}`;
+        }
+
+        Toast.show({
+          type: 'error',
+          text1: t('onboardingCard.toast.error.title'),
+          text2: fullMessage,
+        });
+
     }
   };
 

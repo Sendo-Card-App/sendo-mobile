@@ -47,7 +47,7 @@ export const cardApi = createApi({
   tagTypes: ['Card'],
   endpoints: (builder) => ({
     requestVirtualCard: builder.mutation({
-      query: (documentType) => ({
+      query: ({documentType}) => ({
         url: CARD_ENDPOINTS.SEND_REQUEST,
         method: 'POST',
         body: { documentType },

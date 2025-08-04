@@ -72,7 +72,7 @@ const PinCode = ({ navigation, route }) => {
         }
       } catch (error) {
       }
-    }, 100000);
+    }, 1000);
 
     return () => clearInterval(intervalId);
   }, []);
@@ -89,22 +89,23 @@ const PinCode = ({ navigation, route }) => {
   };
 
   useEffect(() => {
-    const loadInitialData = async () => {
-      const data = await getData('@authData');
-      setAuthData(data);
+  const loadInitialData = async () => {
+    const data = await getData('@authData');
+    setAuthData(data);
 
-      const savedPasscode = userProfile?.data?.passcode;
-      if (savedPasscode) {
-        setHasStoredPasscode(true);
-        dispatch(setPasscode(savedPasscode));
-      } else {
-        setHasStoredPasscode(false);
-      }
-    };
+    // Check both local storage and user profile for passcode
+    const savedPasscode = userProfile?.data?.passcode || await getData('@passcode');
+    if (savedPasscode) {
+      setHasStoredPasscode(true);
+      dispatch(setPasscode(savedPasscode));
+    } else {
+      setHasStoredPasscode(false);
+      dispatch(clearPasscode()); // Ensure state is clear if no passcode exists
+    }
+  };
 
-    loadInitialData();
-  }, []);
-
+  loadInitialData();
+}, [userProfile?.data?.passcode]); 
   // Check for biometric availability
   useEffect(() => {
     const checkBiometrics = async () => {
@@ -186,7 +187,13 @@ const PinCode = ({ navigation, route }) => {
       handleComplete(pin);
     }
   }, [pin]);
-
+   
+    useEffect(() => {
+    return () => {
+      // Clear the pin when component unmounts
+      setPin('');
+    };
+  }, []);
   const handlePress = (value) => {
     if (isLocked || isBlocked) return;
     setError(null);
@@ -203,13 +210,16 @@ const PinCode = ({ navigation, route }) => {
 const handleComplete = async (enteredPin) => {
   setIsLoading(true);
   try {
-    // First check if user has a pincode
     const checkResponse = await checkPincode(enteredPin).unwrap();
     console.log('Check Pincode Response:', checkResponse);
     
     if (checkResponse.status === 200 && checkResponse.data?.pincode === true) {
       // Pincode is correct
       dispatch(resetAttempts());
+      
+      // Store the passcode in Redux and local storage
+      dispatch(setPasscode(enteredPin));
+      await storeData('@passcode', enteredPin);
       
       if (route.params?.showBalance) {
         if (route.params?.onSuccess) {
@@ -229,11 +239,9 @@ const handleComplete = async (enteredPin) => {
       dispatch(incrementAttempt());
       
       if (newAttempts >= 3) {
-        // Account is blocked after 3 attempts
         setIsBlocked(true);
         setShowContactSupportModal(true);
         
-        // Show appropriate error message based on API response
         const errorMessage = checkResponse.data?.message === "Compte suspendu ou bloqué" 
           ? t('pin.accountSuspended') 
           : t('pin.accountBlocked');
@@ -251,6 +259,7 @@ const handleComplete = async (enteredPin) => {
       // User doesn't have a pincode yet - create one
       const createResponse = await createPasscode({ passcode: enteredPin }).unwrap();
       if (createResponse.status === 200) {
+        // Store the new passcode in both Redux and local storage
         await storeData('@passcode', enteredPin);
         dispatch(setPasscode(enteredPin));
         dispatch(setIsNewUser(false));
@@ -260,20 +269,20 @@ const handleComplete = async (enteredPin) => {
         setPin('');
       }
     } else {
-      // Unexpected response
       setError(t('pin.unexpectedError'));
       setPin('');
     }
   } catch (error) {
     console.log('Error:', error);
     
-    // Handle the specific "Compte suspendu ou bloqué" case
     if (error?.data?.message === "Compte suspendu ou bloqué") {
       setIsBlocked(true);
       setShowContactSupportModal(true);
       setError(t('pin.accountSuspended'));
+      // Clear stored passcode if account is suspended
+      await removeData('@passcode');
+      dispatch(clearPasscode());
     } else {
-      // Default error handling
       showToast('error', t('errors.title'), error?.data?.message || t('errors.default'));
     }
     
@@ -388,7 +397,7 @@ const handleComplete = async (enteredPin) => {
         {!(isLocked || isBlocked) && (
           <View style={{ alignItems: 'center' }}>
             {keypad.map((row, rowIndex) => (
-              <View key={rowIndex} style={{ flexDirection: 'row', marginVertical: 10, marginTop: 5, }}>
+              <View key={rowIndex} style={{ flexDirection: 'row', marginVertical: 10, marginTop: 15, }}>
                 {row.map((item, index) => (
                   item ? (
                     <TouchableOpacity
@@ -445,7 +454,7 @@ const handleComplete = async (enteredPin) => {
        {/* Floating WhatsApp Button */}
       <TouchableOpacity 
         onPress={() => {
-          const phoneNumber = '+1234567890'; // Replace with your support WhatsApp number
+          const phoneNumber = '+237650464066'; // Replace with your support WhatsApp number
           const message = t('whatsapp.defaultMessage');
           Communications.text(phoneNumber, message);
         }}

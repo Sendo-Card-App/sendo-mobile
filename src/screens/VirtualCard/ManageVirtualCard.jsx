@@ -56,7 +56,7 @@ const ManageVirtualCard = () => {
   } = useGetVirtualCardDetailsQuery(selectedCardId, {
     skip: !selectedCardId,
   });
-  
+
   const { data: unlockStatus, isLoading: isUnlockStatusLoading } = useGetUnlockStatusQuery(selectedCardId, {
     skip: !selectedCardId,
   });
@@ -525,13 +525,20 @@ const handleFreezeUnfreeze = async () => {
                   <View className="bg-gray-100 rounded-xl p-4">
                     {isDebtsLoading ? (
                       <ActivityIndicator size="small" color="#7ddd7d" />
-                    ) : debtsData?.data ? (
-                      <View className="flex-row justify-between border-b border-gray-200 py-2">
-                        <Text className="text-sm text-gray-600">{t("manageVirtualCard.debtLabel") || "Dette en cours"}</Text>
-                        <Text className="text-sm font-semibold text-red-500">
-                          {debtsData.data.amount?.toLocaleString("fr-FR")} XAF
-                        </Text>
-                      </View>
+                    ) : debtsData?.data?.length > 0 ? (
+                      debtsData.data.map((debt) => (
+                        <View
+                          key={debt.id}
+                          className="flex-row justify-between border-b border-gray-200 py-2"
+                        >
+                          <Text className="text-sm text-gray-600">
+                            {debt.intitule}
+                          </Text>
+                          <Text className="text-sm font-semibold text-red-500">
+                            {debt.amount?.toLocaleString("fr-FR")} XAF
+                          </Text>
+                        </View>
+                      ))
                     ) : (
                       <Text className="text-sm text-gray-500 mt-2">
                         {t("manageVirtualCard.noDebts") || "Aucune dette en cours"}
@@ -539,6 +546,7 @@ const handleFreezeUnfreeze = async () => {
                     )}
                   </View>
                 )}
+
 
             </View>
           </>

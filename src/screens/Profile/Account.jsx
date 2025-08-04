@@ -84,6 +84,7 @@ const [
   const [tempValue, setTempValue] = useState("");
   const [isSecondPhone, setIsSecondPhone] = useState(false);
   const [sendNotification] = useSendNotificationMutation();
+  const [sendProfilePicture] = useSendProfilePictureMutation();
   const handleSendNotification = async () => {
     try {
       const notificationPayload = {
