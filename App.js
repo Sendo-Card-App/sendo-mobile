@@ -153,7 +153,13 @@ const screenWidth = Dimensions.get('window').width;
 function MainTabs() {
   const { t } = useTranslation();
   const navigation = useNavigation();
-  const { data: userProfile, isLoading: isProfileLoading } = useGetUserProfileQuery();
+ const { data: userProfile, isLoading: isProfileLoading, refetch } = useGetUserProfileQuery(
+  undefined, 
+  {
+    pollingInterval: 1000, // rafraîchit toutes les 1000ms = 1s
+  }
+);
+
 
   return (
     <Tab.Navigator
@@ -255,7 +261,7 @@ function MainStack() {
       <Stack.Navigator
         screenOptions={({ navigation }) => ({
           headerShown: true,
-          statusBarTranslucent: false,              // ← obligatoire
+          statusBarTranslucent: true,              // ← obligatoire
           headerStyle: {
             backgroundColor: Colors.primary,
             height: Platform.select({ ios: 60, android: 80 }), 

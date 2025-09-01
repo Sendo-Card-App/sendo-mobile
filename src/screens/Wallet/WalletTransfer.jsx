@@ -55,7 +55,9 @@ const WalletTransfer = ({ navigation }) => {
     isLoading: isBalanceLoading,
     error: balanceError,
     isError: isBalanceError,
-  } = useGetBalanceQuery(userId, { skip: !userId });
+  } = useGetBalanceQuery(userId, { skip: !userId,
+      pollingInterval: 10000, // Refetch every 30 seconds
+   });
 
   const {
     data: recipientData,
@@ -85,10 +87,11 @@ const WalletTransfer = ({ navigation }) => {
 
   const validateAndOpenPinModal = () => {
     const transferAmount = parseFloat(amount);
-    if (!walletId || isNaN(transferAmount) || transferAmount <= 500) {
-      showErrorToast('ACTION_FAILED', 'Veuillez fournir un matricule valide et un montant supérieur à 0.');
+    if (!walletId || isNaN(transferAmount) || transferAmount <= 0) {
+      showErrorToast('ACTION_FAILED', 'Veuillez fournir un montant supérieur à 0.');
       return;
     }
+
 
     if (transferAmount > (balanceData?.data?.balance || 0)) {
       showErrorToast('ACTION_FAILED', 'Votre solde est insuffisant pour effectuer ce transfert.');

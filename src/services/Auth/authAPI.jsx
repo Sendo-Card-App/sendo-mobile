@@ -249,6 +249,18 @@ export const authApi = createApi({
       }),
     }),
 
+      refreshToken: builder.mutation({
+      query: ({ refreshToken, deviceId }) => ({
+        url: '/auth/refresh-token',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'accept': '*/*',
+        },
+        body: { refreshToken, deviceId },
+      }),
+    }),
+
      getUserById: builder.query({
         query: (id) => `/users/${id}`,
       }),
@@ -316,4 +328,5 @@ export const {
   useUpdateProfileMutation,
   useSendProfilePictureMutation ,
   useLogoutMutation,
+  useRefreshTokenMutation,
 } = authApi;

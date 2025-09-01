@@ -125,9 +125,9 @@ const getMethodIcon = () => {
               'N/A'
             }
           </Text>
-          <Text className={`text-sm font-bold ${getStatusColor(transaction.status)}`}>
-            {t(`history1.${transaction.status?.toLowerCase()}`)}
-          </Text>
+         <Text className={`text-sm font-bold ${getStatusColor(transaction.status)}`}>
+          {t(`history1.${transaction.status?.toLowerCase()}`)}
+        </Text>
         </View>
       </View>
     </TouchableOpacity>
@@ -419,9 +419,12 @@ const History = () => {
   const { data, isLoading, isError, refetch } = useGetTransactionHistoryQuery(
     { 
       userId,
-      ...appliedFilters
+      ...appliedFilters,
+        pollingInterval: 10000, // Refetch every 30 seconds
     },
-    { skip: !userId }
+    { skip: !userId,
+        pollingInterval: 10000, // Refetch every 30 seconds
+     }
   );
     //console.log('Transaction History Data:', JSON.stringify(data, null, 2));
 
@@ -437,7 +440,7 @@ const History = () => {
     );
   }
 
-  const applyFilters = () => {
+const applyFilters = () => {
   const params = {
     page: 1,
     limit: 10,
@@ -477,6 +480,14 @@ const History = () => {
   setCurrentPage(1);
   setAppliedFilters(params);
 };
+
+
+  useEffect(() => {
+  if (filters.dateRange && filters.dateRange !== 'custom') {
+    applyFilters();
+  }
+}, [filters.dateRange]);
+
 
   const handleNextPage = () => {
     const newPage = currentPage + 1;
@@ -527,6 +538,7 @@ const History = () => {
   }
 
   const transactions = data?.data?.transactions?.items || [];
+  
   const userData = data?.data?.user || {};
   const pagination = data?.data?.transactions || { page: 1, totalItems: 0, totalPages: 1 };
 

@@ -14,6 +14,7 @@ import {
 import Toast from 'react-native-toast-message';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTranslation } from 'react-i18next';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 import {
   useRequestVirtualCardMutation,
@@ -31,24 +32,63 @@ const OnboardingCardScreen = () => {
     data: cardRequest,
     isLoading: isFetchingStatus,
     refetch,
-  } = useGetVirtualCardStatusQuery();
+  } = useGetVirtualCardStatusQuery(undefined, {
+    pollingInterval: 1000,
+  });
  
   const status = cardRequest?.data?.onboardingSession?.onboardingSessionStatus;
   const [requestDate, setRequestDate] = useState(null);
   const [remainingTime, setRemainingTime] = useState(null);
-  const rotation = useRef(new Animated.Value(0)).current;
+  
+  // Animations
+  const earthRotation = useRef(new Animated.Value(0)).current;
+  const sablierRotation = useRef(new Animated.Value(0)).current;
+  const [isSablierRotating, setIsSablierRotating] = useState(false);
+
   const DEFAULT_DOCUMENT_TYPE = "NATIONALID";
 
+  // Animation pour la Terre
   useEffect(() => {
     Animated.loop(
-      Animated.timing(rotation, {
+      Animated.timing(earthRotation, {
         toValue: 1,
-        duration: 10000, 
+        duration: 10000,
         easing: Easing.linear,
         useNativeDriver: true,
       })
     ).start();
   }, []);
+
+  // Animation pour le sablier
+  const startSablierRotation = () => {
+    setIsSablierRotating(true);
+    Animated.loop(
+      Animated.timing(sablierRotation, {
+        toValue: 1,
+        duration: 2000,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    ).start();
+  };
+
+  const stopSablierRotation = () => {
+    setIsSablierRotating(false);
+    sablierRotation.stopAnimation();
+    sablierRotation.setValue(0);
+  };
+
+  useEffect(() => {
+    if (['PENDING', 'WAITING_FOR_INFORMATION'].includes(status)) {
+      startSablierRotation();
+    } else {
+      stopSablierRotation();
+    }
+
+    return () => {
+      stopSablierRotation();
+    };
+  }, [status]);
 
   useEffect(() => {
     if (status === 'VERIFIED') {
@@ -96,14 +136,14 @@ const OnboardingCardScreen = () => {
     }, [refetch])
   );
 
-  const handleRequestCard = async () => {
+ const handleRequestCard = async () => {
     try {
       const response = await requestCard({ documentType: DEFAULT_DOCUMENT_TYPE }).unwrap();
 
       Toast.show({
         type: 'success',
-        text1: t('onboardingCard.toast.success.title'),
-        text2: t('onboardingCard.toast.success.message'),
+        text1: 'Demande envoyée',
+        text2: 'Votre demande de carte virtuelle a été soumise avec succès.',
       });
 
       const now = new Date().toISOString();
@@ -111,26 +151,25 @@ const OnboardingCardScreen = () => {
       setRequestDate(now);
       await refetch();
     } catch (error) {
-       console.log("Full response:", JSON.stringify(error, null, 2));
-        const backendMessage = error?.data?.message || t('onboardingCard.toast.error.generic');
+      console.log("Full response:", JSON.stringify(error, null, 2));
+      const backendMessage = error?.data?.message || 'Erreur lors de la demande de carte';
 
-        const details = error?.data?.data?.details?.required;
-        const errors = error?.data?.data?.errors;
+      const details = error?.data?.data?.details?.required;
+      const errors = error?.data?.data?.errors;
 
-        let fullMessage = backendMessage;
+      let fullMessage = backendMessage;
 
-        if (details?.mandatoryTypes) {
-          fullMessage += `\n${t('onboardingCard.toast.error.requiredDocuments')}: ${details.mandatoryTypes.join(', ')}`;
-        } else if (errors && errors.length > 0) {
-          fullMessage += `\n${errors.join('\n')}`;
-        }
+      if (details?.mandatoryTypes) {
+        fullMessage += `\nDocuments requis: ${details.mandatoryTypes.join(', ')}`;
+      } else if (errors && errors.length > 0) {
+        fullMessage += `\n${errors.join('\n')}`;
+      }
 
-        Toast.show({
-          type: 'error',
-          text1: t('onboardingCard.toast.error.title'),
-          text2: fullMessage,
-        });
-
+      Toast.show({
+        type: 'error',
+        text1: 'Erreur',
+        text2: fullMessage,
+      });
     }
   };
 
@@ -138,67 +177,82 @@ const OnboardingCardScreen = () => {
     if (['PENDING', 'WAITING_FOR_INFORMATION'].includes(status)) {
       return (
         <View style={styles.pendingContainer}>
-          <View style={styles.statusIllustration}>
-            <Image
-              source={require('../../images/pending.png')}
-              style={styles.pendingImage}
+          {/* Header with status badge */}
+          <View style={styles.headerContainer}>
+            <Text style={styles.headerTitle}>Sendo</Text>
+
+            <Animated.Image
+              source={require('../../images/sablier.png')}
+              style={[
+                styles.pendingImage,
+                {
+                  transform: [{
+                    rotate: sablierRotation.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: ['0deg', '360deg'],
+                    })
+                  }]
+                }
+              ]}
               resizeMode="contain"
             />
-            <View style={[
-              styles.statusBadge,
-              status === 'PENDING' ? styles.statusBadgePending : styles.statusBadgeWaiting
-            ]}>
-              <Text style={styles.statusBadgeText}>
-                {status === 'PENDING' 
-                  ? t('onboardingCard.pending.status.pending') 
-                  : t('onboardingCard.pending.status.waiting')}
-              </Text>
-            </View>
           </View>
           
-          <Text style={styles.pendingTitle}>{t('onboardingCard.pending.title')}</Text>
-          <Text style={styles.pendingSubtitle}>
-            {t('onboardingCard.pending.subtitle')}
+          <Text style={styles.statusSubHeader}>
+            {t('onboardingCard.pending.status.subHeader')}
           </Text>
           
-          <View style={styles.timelineContainer}>
-            <View style={styles.timeline}>
-              <View style={[styles.timelineDot, styles.timelineDotActive]} />
-              <View style={[styles.timelineLine, styles.timelineLineActive]} />
-              <View style={[
-                styles.timelineDot, 
-                status === 'WAITING_FOR_INFORMATION' ? styles.timelineDotActive : styles.timelineDotInactive
-              ]} />
-              <View style={[
-                styles.timelineLine, 
-                status === 'WAITING_FOR_INFORMATION' ? styles.timelineLineActive : styles.timelineLineInactive
-              ]} />
-              <View style={[styles.timelineDot, styles.timelineDotInactive]} />
-            </View>
+          {/* Main content */}
+          <View style={styles.contentContainer}>
+            <Text style={styles.sectionTitle}>
+              {t('onboardingCard.pending.title')}
+            </Text>
             
-            <View style={styles.timelineLabels}>
-              <Text style={styles.timelineLabel}>{t('onboardingCard.pending.timeline.requested')}</Text>
-              <Text style={styles.timelineLabel}>{t('onboardingCard.pending.timeline.verification')}</Text>
-              <Text style={styles.timelineLabel}>{t('onboardingCard.pending.timeline.approved')}</Text>
-            </View>
-          </View>
-          
-          <View style={styles.detailsContainer}>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>{t('onboardingCard.pending.labels.requestDate')}</Text>
-              <Text style={styles.detailValue}>
-                {requestDate ? new Date(requestDate).toLocaleString() : '--'}
-              </Text>
-            </View>
+            <Text style={styles.sectionDescription}>
+              {t('onboardingCard.pending.subtitle')}
+            </Text>
             
-            {remainingTime && (
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>{t('onboardingCard.pending.labels.timeLeft')}</Text>
-                <View style={styles.timerContainer}>
-                  <Text style={styles.timerText}>{remainingTime}</Text>
-                </View>
+            {/* Status timeline */}
+            <View style={styles.statusTimeline}>
+              <View style={styles.timelineItem}>
+                <View style={[styles.timelineDot, styles.timelineDotActive]} />
+                <View style={[styles.timelineLine, styles.timelineLineActive]} />
+                <Text style={styles.timelineText}>
+                  {t('onboardingCard.pending.timeline.requested')}
+                </Text>
               </View>
-            )}
+              
+              <View style={styles.timelineItem}>
+                <View style={[styles.timelineDot, 
+                  status === 'WAITING_FOR_INFORMATION' ? styles.timelineDotActive : styles.timelineDotInactive
+                ]} />
+                <View style={[styles.timelineLine, 
+                  status === 'WAITING_FOR_INFORMATION' ? styles.timelineLineActive : styles.timelineLineInactive
+                ]} />
+                <Text style={styles.timelineText}>
+                  {t('onboardingCard.pending.timeline.verification')}
+                </Text>
+              </View>
+              
+              <View style={styles.timelineItem}>
+                <View style={[styles.timelineDot, styles.timelineDotInactive]} />
+                <Text style={styles.timelineText}>
+                  {t('onboardingCard.pending.timeline.approved')}
+                </Text>
+              </View>
+            </View>
+            
+            {/* Request details */}
+            <View style={styles.detailsContainer}>
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>
+                  {t('onboardingCard.pending.labels.requestDate')}
+                </Text>
+                <Text style={styles.detailValue}>
+                  {requestDate ? new Date(requestDate).toLocaleDateString() : '--'}
+                </Text>
+              </View>
+            </View>
           </View>
         </View>
       );
@@ -229,7 +283,7 @@ const OnboardingCardScreen = () => {
               styles.earthImage,
               {
                 transform: [{
-                  rotate: rotation.interpolate({
+                  rotate: earthRotation.interpolate({
                     inputRange: [0, 1],
                     outputRange: ['0deg', '360deg'],
                   })
@@ -255,6 +309,14 @@ const OnboardingCardScreen = () => {
 
   return (
     <View style={styles.container}>
+      {/* Back Button */}
+      <TouchableOpacity 
+        onPress={() => navigation.navigate("MainTabs")}
+        style={styles.backButton}
+      >
+        <Ionicons name="arrow-back" size={24} color="black" />
+      </TouchableOpacity>
+      
       {renderMainContent()}
 
       <TouchableOpacity
@@ -288,6 +350,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 40,
     justifyContent: 'space-between',
+  },
+  // Back button style
+  backButton: {
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    zIndex: 10,
+    padding: 10,
   },
   imageContainer: {
     marginTop: 50,
@@ -503,6 +573,165 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 16,
   },
+   headerContainer: {
+   
+    alignItems: 'center',
+    width: '100%',
+    marginBottom: 10,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+     textAlign: 'center',
+    color: '#000',
+  },
+  statusSubHeader: {
+    fontSize: 14,
+    color: '#666',
+     backgroundColor: '#7ddd7d',
+    marginBottom: 30,
+     textAlign: 'center',
+    width: '100%',
+     paddingHorizontal: 15,
+    paddingVertical: 5,
+    borderRadius: 20,
+   
+  },
+  contentContainer: {
+    width: '100%',
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#000',
+     textAlign: 'center',
+    marginBottom: 10,
+  },
+  sectionDescription: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 30,
+     textAlign: 'center',
+    lineHeight: 20,
+  },
+  statusTimeline: {
+    marginBottom: 30,
+  },
+  timelineItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  timelineDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginRight: 10,
+  },
+  timelineDotActive: {
+    backgroundColor: '#7ddd7d',
+  },
+  timelineDotInactive: {
+    backgroundColor: '#CCCCCC',
+  },
+  timelineText: {
+    fontSize: 14,
+    color: '#333',
+  },
+  
+  // Update existing styles to match the design
+  pendingContainer: {
+    alignItems: 'flex-start',
+    width: '100%',
+    marginTop: 20,
+    paddingHorizontal: 10,
+  },
+  statusBadge: {
+    backgroundColor: '#FFA500',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+  },
+  statusBadgeText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  detailsContainer: {
+    width: '100%',
+    backgroundColor: '#F8F8F8',
+    borderRadius: 8,
+    padding: 15,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+    alignItems: 'center',
+  },
+  detailLabel: {
+    fontSize: 14,
+    color: '#666',
+  },
+  detailValue: {
+    fontSize: 14,
+    color: '#000',
+    fontWeight: '500',
+  },
+  timerContainer: {
+    backgroundColor: '#E3F2FD',
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  timerText: {
+    color: '#1976D2',
+    fontWeight: '500',
+    fontSize: 12,
+  },
+  statusTimeline: {
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  marginBottom: 30,
+  width: '100%',
+},
+timelineItem: {
+  alignItems: 'center',
+  flex: 1,
+},
+timelineDot: {
+  width: 16,
+  height: 16,
+  borderRadius: 8,
+  marginBottom: 8,
+},
+timelineDotActive: {
+  backgroundColor: '#7ddd7d',
+},
+timelineDotInactive: {
+  backgroundColor: '#CCCCCC',
+},
+timelineLine: {
+  height: 3,
+  width: '100%',
+  position: 'absolute',
+  top: 6, // Half the dot height (16/2 = 8) minus half the line height (3/2 = 1.5) → 8-1.5=6.5 ≈ 6
+  left: '50%',
+},
+timelineLineActive: {
+  backgroundColor: '#7ddd7d',
+},
+timelineLineInactive: {
+  backgroundColor: '#CCCCCC',
+},
+timelineText: {
+  fontSize: 12,
+  color: '#333',
+  textAlign: 'center',
+  marginTop: 5,
+  fontWeight: '500',
+},
 });
 
 export default OnboardingCardScreen;

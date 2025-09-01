@@ -25,13 +25,22 @@ import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
 const BeneficiaryScreen = () => {
   const navigation = useNavigation();
   const { t } = useTranslation();
-  const { 
-    data: configData, 
+  const {
+    data: configData,
     isLoading: isConfigLoading,
     error: configError
-  } = useGetConfigQuery();
+  } = useGetConfigQuery(undefined, {
+    pollingInterval: 1000,
+  });
+
   const [showVerifiedMessage, setShowVerifiedMessage] = useState(false);
-  const { data: userProfile, isLoading: isProfileLoading } = useGetUserProfileQuery();
+  const { 
+    data: userProfile, 
+    isLoading: isProfileLoading 
+  } = useGetUserProfileQuery(undefined, {
+    pollingInterval: 1000,
+  });
+
   
   const getConfigValue = (name) => {
     const configItem = configData?.data?.find(item => item.name === name);

@@ -78,11 +78,11 @@ export const sharedExpenseApi = createApi({
       }),
       providesTags: [TAG_TYPES.SHARED_EXPENSE],
     }),
-    updateSharedExpense: builder.mutation({
-      query: ({ id, ...body }) => ({
+   updateSharedExpense: builder.mutation({
+      query: ({ id, data }) => ({
         url: `/shared-expense/${id}`,
         method: 'PUT',
-        body,
+        body: data,   // ✅ on envoie data directement
       }),
       invalidatesTags: [TAG_TYPES.SHARED_EXPENSE],
     }),

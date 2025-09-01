@@ -38,9 +38,10 @@ export default function TontineListScreen({ navigation }) {
 
   const { data: userProfile, isLoading: profileLoading, refetch: refetchProfile } = useGetUserProfileQuery();
   const userId = userProfile?.data?.id;
-
+   
   const { data, isLoading, isError, refetch: refetchTontines } = useGetTontinesQuery(userId, {
     skip: !userId,
+      pollingInterval: 1000, // Refetch every 30 seconds
   });
 
   const [accessOrRejectTontine] = useAccessOrRejectTontineMutation();
@@ -56,13 +57,15 @@ export default function TontineListScreen({ navigation }) {
 
   const tontines = data?.data?.items || [];
    //console.log("Full response:", JSON.stringify(tontines, null, 2));
-  const myTontines = tontines.filter((t) =>
-    t.membres.some((m) => m.user?.id === userId && m.etat !== "PENDING")
-  );
+    const myTontines = tontines.filter((t) => {
+      const myMembership = t.membres.find((m) => m.user?.id === userId);
+      return myMembership && myMembership.etat !== "PENDING";
+    });
 
-  const invitationTontines = tontines.filter((t) =>
-    t.membres.some((m) => m.user?.id === userId && m.etat === "PENDING")
-  );
+    const invitationTontines = tontines.filter((t) => {
+      const myMembership = t.membres.find((m) => m.user?.id === userId);
+      return myMembership && myMembership.etat === "PENDING";
+    });
 
   const ROLE_LABELS = {
     ADMIN: t("role_ADMIN"),

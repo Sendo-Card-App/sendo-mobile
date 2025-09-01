@@ -74,6 +74,54 @@ export const chatApi = createApi({
       }),
       providesTags: [TAG_TYPES.MESSAGE],
     }),
+
+    // Upload attachments - NEW ENDPOINT
+    uploadAttachments: builder.mutation({
+      query: (attachments) => {
+        const formData = new FormData();
+        
+        // Append each attachment to the form data
+        attachments.forEach((attachment) => {
+          formData.append('attachments', {
+            uri: attachment.uri,
+            name: attachment.name,
+            type: attachment.type,
+          });
+        });
+
+        return {
+          url: CHAT_ENDPOINTS.UPLOAD,
+          method: 'POST',
+          body: formData,
+          // Set appropriate headers for file upload
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        };
+      },
+    }),
+
+    // Upload single attachment - alternative endpoint
+    uploadAttachment: builder.mutation({
+      query: (attachment) => {
+        const formData = new FormData();
+        
+        formData.append('attachments', {
+          uri: attachment.uri,
+          name: attachment.name,
+          type: attachment.type,
+        });
+
+        return {
+          url: CHAT_ENDPOINTS.UPLOAD,
+          method: 'POST',
+          body: formData,
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        };
+      },
+    }),
   }),
 });
 
@@ -83,6 +131,7 @@ export const {
   useGetConversationMessagesQuery,
   useSendMessageMutation,
   useUploadAttachmentMutation,
+  useUploadAttachmentsMutation, // NEW HOOK
   useGetMessageQuery,
   useLazyGetConversationMessagesQuery,
 } = chatApi;

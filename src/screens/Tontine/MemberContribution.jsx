@@ -55,21 +55,28 @@ const MemberContribution = () => {
  
   const { data: balanceData } = useGetBalanceQuery(userId, {
     skip: !userId,
+      pollingInterval: 1000, // Refetch every 30 seconds
   });
   const balance = balanceData?.data.balance || 0;
-  const { data: history, refetch } = useGetTransactionHistoryQuery({ skip: !userId });
+  const { data: history, refetch } = useGetTransactionHistoryQuery({ skip: !userId,
+      pollingInterval: 1000, // Refetch every 30 seconds
+   });
 
   const { data: tours } = useGetToursDistributionQuery({ tontineId });
   const membre = tontine?.membres?.find((m) => m?.user?.id === userId);
   const membreId = membre?.id;
 
-   const { data: validatedCotisations, refetch: refetchCotisations } = useGetValidatedCotisationsQuery({ tontineId, membreId });
+   const { data: validatedCotisations, refetch: refetchCotisations } = useGetValidatedCotisationsQuery({ tontineId, membreId,
+      pollingInterval: 1000, // Refetch every 30 seconds
+    });
     //console.log(validatedCotisations)
    const {
   data: penaltiesResponse,
   refetch: refetchPenalties,
   isLoading: loadingPenalties,
-} = useGetMemberPenaltiesQuery({ tontineId, membreId });
+} = useGetMemberPenaltiesQuery({ tontineId, membreId,
+    pollingInterval: 1000, // Refetch every 30 seconds
+ });
    //console.log(penaltiesResponse)
      const {
          data: configData,

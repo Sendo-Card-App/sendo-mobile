@@ -44,7 +44,9 @@ const AddPenalty = () => {
   const [addPenalty] = useAddPenaltyMutation();
 
   const membreId = member?.id;
-  const { data: validatedCotisations } = useGetValidatedCotisationsQuery({ tontineId, membreId });
+  const { data: validatedCotisations } = useGetValidatedCotisationsQuery({ tontineId, membreId,
+      pollingInterval: 10000, // Refetch every 30 seconds
+   });
   const cotisationId = validatedCotisations?.data?.[0]?.id;
   console.log(cotisationId)
 

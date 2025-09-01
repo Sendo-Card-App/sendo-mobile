@@ -10,6 +10,7 @@ import {
   Modal,
   FlatList,
   TextInput as RNTextInput,
+  ActivityIndicator,
 } from "react-native";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from "@react-navigation/native";
@@ -38,6 +39,7 @@ const Signup = () => {
   const { error, isSignupSuccess } = useSelector((state) => state.auth);
 
   const [countries, setCountries] = useState([]);
+  const [filteredCountries, setFilteredCountries] = useState([]);
   const [selectedCountry, setSelectedCountry] = useState({
     name: 'Cameroon',
     code: '+237',
@@ -49,6 +51,22 @@ const Signup = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [date, setDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
+
+  // Filtrage des pays basé sur la recherche
+useEffect(() => {
+  if (searchQuery.trim() === "") {
+    setFilteredCountries(countries);
+  } else {
+    const filtered = countries.filter(country =>
+      country.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      country.callingCode.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+    setFilteredCountries(filtered);
+  }
+}, [searchQuery, countries]);
+  
 
   const [signupDetails, setSignupDetails] = useState({
     firstName: "",
@@ -280,6 +298,30 @@ const Signup = () => {
         </View>
       ))}
     </View>
+  );
+
+    const renderCountry = ({ item }) => (
+    <TouchableOpacity
+      onPress={() => selectCountry(item)}
+      className="flex-row items-center px-4 py-3 border-b border-gray-100"
+    >
+      {item.flag ? (
+        <Image
+          source={{ uri: item.flag }}
+          style={{ width: 30, height: 20, borderRadius: 3, marginRight: 12 }}
+          resizeMode="contain"
+        />
+      ) : (
+        <View style={{ width: 30, height: 20, marginRight: 12 }} />
+      )}
+      <View className="flex-1">
+        <Text className="text-base font-medium">{item.name}</Text>
+        <Text className="text-sm text-gray-500">{item.callingCode}</Text>
+      </View>
+      {selectedCountry.name === item.name && (
+        <AntDesign name="check" size={20} color="#7ddd7d" />
+      )}
+    </TouchableOpacity>
   );
 
   const renderStepOne = () => (
@@ -722,32 +764,62 @@ const Signup = () => {
         )}
 
         {/* Country Picker Modal */}
-        <Modal visible={isModalVisible} animationType="slide">
+       <Modal visible={isModalVisible} animationType="slide" transparent={false}>
           <SafeAreaView className="flex-1 bg-white">
-            <FlatList
-              data={countries}
-              keyExtractor={(item, index) => index.toString()}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  className="flex-row items-center p-4 border-b border-gray-200"
-                  onPress={() => selectCountry(item)}
-                >
-                  <Image
-                    source={{ uri: item.flag }}
-                    style={{ width: 24, height: 16, marginRight: 10, borderRadius: 2 }}
-                    resizeMode="contain"
-                  />
+            {/* Header avec bouton retour et titre */}
+            <View className="flex-row items-center px-4 py-3 border-b border-gray-200">
+              <TouchableOpacity 
+                onPress={closeModal}
+                className="p-2 mr-2"
+              >
+                <AntDesign name="arrowleft" size={24} color="black" />
+              </TouchableOpacity>
+              <Text className="text-xl font-bold flex-1 text-center">
+                {t("signup.select_country")}
+              </Text>
+              <View style={{ width: 40 }} /> 
+            </View>
 
-                  <Text className="text-lg">{item.name} ({item.callingCode})</Text>
-                </TouchableOpacity>
-              )}
-            />
-            <TouchableOpacity
-              className="absolute bottom-5 left-5 right-5 bg-green-500 py-4 rounded-full"
-              onPress={closeModal}
-            >
-              <Text className="text-white text-center text-lg">{t("common.close")}</Text>
-            </TouchableOpacity>
+            {/* Barre de recherche */}
+            <View className="px-4 py-3 border-b border-gray-200">
+              <View className="flex-row items-center bg-gray-100 rounded-lg px-3 py-2">
+                <AntDesign name="search1" size={20} color="gray" />
+                <TextInput
+                  placeholder={t("signup.search_country")}
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                  className="flex-1 ml-2 text-base"
+                  autoFocus={true}
+                />
+                {searchQuery.length > 0 && (
+                  <TouchableOpacity onPress={() => setSearchQuery("")}>
+                    <AntDesign name="closecircle" size={18} color="gray" />
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+
+            {/* Liste des pays */}
+            {filteredCountries.length === 0 ? (
+              <View className="flex-1 justify-center items-center">
+                {countries.length === 0 ? (
+                  <ActivityIndicator size="large" color="#7ddd7d" />
+                ) : (
+                  <Text className="text-gray-500 text-lg">
+                    {t("signup.no_countries_found")}
+                  </Text>
+                )}
+              </View>
+            ) : (
+              <FlatList
+                data={filteredCountries}
+                keyExtractor={(item, index) => index.toString()}
+                renderItem={renderCountry}
+                contentContainerStyle={{ paddingVertical: 10 }}
+                initialNumToRender={20}
+                windowSize={10}
+              />
+            )}
           </SafeAreaView>
         </Modal>
 

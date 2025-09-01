@@ -29,15 +29,17 @@ import { useTranslation } from "react-i18next";
 const CardSettingsScreen = () => {
   const route = useRoute();
   const navigation = useNavigation();
-  const { cardName, cardId } = route.params;
-  console.log("CardSettingsScreen params:", cardId);
+  const { cardName, cardId, balanceData } = route.params;
+  //console.log("CardSettingsScreen params:", balanceData);
   const { t } = useTranslation();
+    const {
+      data: cardData,
+      refetch: refetchCardDetails,
+      isLoading,
+    } = useGetVirtualCardDetailsQuery(cardId, {
+      pollingInterval: 1000, // reload every 1 second
+    });
 
-  const {
-    data: cardData,
-    refetch: refetchCardDetails,
-    isLoading,
-  } = useGetVirtualCardDetailsQuery(cardId);
 
   const [freezeCard] = useFreezeCardMutation();
   const [unfreezeCard] = useUnfreezeCardMutation();
@@ -92,35 +94,39 @@ const CardSettingsScreen = () => {
 };
 
   const handleDeleteCard = () => {
-    Alert.alert(
-      t("deleteCardTitle"),
-      t("deleteCardConfirm"),
-      [
-        { text: t("cancel"), style: "cancel" },
-        {
-          text: t("delete"),
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await deleteCard(cardId).unwrap();
-              showModal("success", t("cardDeleted"));
-              navigation.goBack();
-            } catch (err) {
-             console.log("Delete card error:", JSON.stringify(err, null, 2));
+  if (!cardId) return showModal("error", t("cardIdMissing"));
 
-              let errorMessage = t("operationError");
-              if (err?.data?.message) {
-                errorMessage = err.data.message;
-              } else if (err?.error) {
-                errorMessage = err.error;
-              }
-              showModal("error", errorMessage);
+  Alert.alert(
+    t("deleteCardTitle"),
+    // Add dynamic balance info here 
+    `${t("deleteCardConfirm")}\n\n${t("amountToReturn", { amount: balanceData || 0 })}`,
+    [
+      { text: t("cancel"), style: "cancel" },
+      {
+        text: t("delete"),
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await deleteCard(cardId).unwrap();
+            showModal("success", t("cardDeleted"));
+            navigation.goBack();
+          } catch (err) {
+            console.log("Delete card error:", JSON.stringify(err, null, 2));
+
+            let errorMessage = t("operationError");
+            if (err?.data?.message) {
+              errorMessage = err.data.message;
+            } else if (err?.error) {
+              errorMessage = err.error;
             }
-          },
+            showModal("error", errorMessage);
+          }
         },
-      ]
-    );
-  };
+      },
+    ]
+  );
+};
+
 
   if (isLoading) {
     return (

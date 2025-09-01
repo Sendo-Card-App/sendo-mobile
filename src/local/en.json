@@ -8,6 +8,11 @@
   "no_invitation": "No pending invitations.",
   "tontine_members_count": "Number of members",
   "tontine_admin": "Admin",
+  "invalid_amount": "Invalid amount",
+  "min_amount_alert_part1": "The minimum transaction amount for Cameroon is ",
+  "min_amount_alert_part2": "Please try again with an amount greater than ",
+  "max_amount_alert_part1": "For transactions between Canada and Cameroon, the maximum allowed amount is ",
+  "max_amount_alert_part2": "Please enter an amount equal to or below this limit.",
    "back": "Back",
   "tontine_frequency": "Frequency",
   "tontine_amount": "Contribution amount",
@@ -103,6 +108,9 @@
      "firstName": "First Name",
     "firstNamePlaceholder": "Enter your first name",
     "lastName": "Last Name",
+    "select_country": "Select a country",
+    "search_country": "Search for a country...",
+    "no_countries_found": "No countries found",
     "lastNamePlaceholder": "Enter your last name",
     "email": "Email",
      "next": "Next",
@@ -182,6 +190,9 @@
          "en": "English",
           "fr": "French",
           "select": "Select your language",
+           "select_country": "Select Country",
+          "search_country": "Search country...",
+          "no_countries_found": "No countries found",
         "forgetPassword": "Forget Password",
         "loginWithPhone": "LOGIN WITH PHONE NUMBER",
         "orSignInWith": "Or Sign in with",
@@ -233,7 +244,7 @@
  "request": "KYC verification",
     "sub": "Submit your KYC documents",
      "sub1": "Ask Sendo to create or download my NUI",
-"request1": "Request for NUI",
+"request1": "Request for NIU",
 "payment": "Payment",
 "settings": "Settings",
  "transactionHistory": "Chronological listing of your transactions",
@@ -366,7 +377,9 @@
 "faq_description": "Frequently asked questions",
 "email": "Email infosendo@sf-e.ca",
 "email_description": "For a faster response",
-"phone": "Call 581 907 2096",
+"phone": "Call ",
+ "socials": "Social Media",
+ "follow_us": "Follow Us",
 "phone_description": "24/7",
 "contact_instructions": "If you can't reach us by phone, please email us at infosendo@sf-e.ca",
 "account_deletion": "If you wish to request deletion of your account information, please email us at infosendo@sf-e.ca"
@@ -482,7 +495,12 @@
     "success": {
       "title": "Success",
       "message": "Your NIU request has been submitted successfully"
-    }
+    },
+    "alreadyHave": {
+  "title": "You already have your NIU",
+  "message": "Your Unique Identification Number (NIU) has already been processed and approved.",
+  "backButton": "Back to home"
+}
 },
 "personalDetail": {
   "title": "Personal Information",
@@ -818,7 +836,7 @@
     "resetFilters": "Reset Filters",
     "noTransactions": "No transactions found",
     "loadingUser": "Loading user information...",
-   "errorLoading": "KYC not verified. Please submit your documents.",
+   "errorLoading": "No transactions found.",
     "transactions": "transactions",
     "todayTransactions": "Today's Transactions",
     "noTransactionsToday": "No transactions today",
@@ -850,15 +868,14 @@
     "mobileMoney": "Mobile Money",
     "Portefeuille": "Wallet",
     "bankTransfer": "Bank Transfer",
-    "success": "Completed",
+    "completed": "Success",
     "failed": "Failed",
-    "pending": "Pending",
-    "blocked": "Blocked",
+    "pending": "Processing",
+    "blocked": "Rejected",
     "unknownRecipient": "Unknown Recipient",
      "status_success": "Success",  
   "status_failed": "Failed",
-  "status_pending": "Pending",
-  "completed": "Completed"
+  "status_pending": "Pending"
   },
   "common3": {
     "close": "Close",
@@ -947,6 +964,7 @@
     "amountPlaceholder": "100",
     "exchangeRate": "Today rate : 1",
     "convertedAmount": "Converted amount",
+    "selectCurrency": "Select a currency",
     "partnerFees": "Partner fees",
     "sendoFees": "Sendo fees (VAT included)",
     "totalAmount": "Total amount to be debited",
@@ -1069,7 +1087,7 @@
    "createShare": {
     "title": "Friend Sharing",
     "new": "Create a new share",
-    "friends": "Share with friends",
+    "friends": "Shares received",
     "history": "History"
   },
    "request": {
@@ -1175,13 +1193,21 @@
   "his": {
     "title": "History",
     "filter": "Filter",
-    "payer": "Pay",
+   "payer": "Pay or Decline",
     "your_part": "Your part",
     "participants": "Participants",
     "loading": "Loading...",
     "no_data": "No shared expenses found.",
     "cancel_reason": "Reason for cancellation",
     "date": "Date",
+    "filter_title": "Filter expenses",
+    "filter_all": "All expenses",
+    "filter_pending": "Pending",
+    "filter_paid": "Paid",
+    "filter_cancelled": "Cancelled",
+    "no_filtered_expenses": "No expenses {{filter}}",
+    "pay_and_refuse": "Pay and Decline",
+    "close": "Close",
     "status": {
       "pending": "Pending",
       "payed": "Payed",
@@ -1289,8 +1315,10 @@
     "createNew": "Create a new request",
     "history": "History",
     "myRequests": "My Requests",
+     "noRequests": "You have no requests at the moment.",
     "filter": "Filter",
     "completed": "Completed",
+      "fully_funded": "Completed",
     "pending": "Pending",
     "paid": "Paid",
     "all": "All",
@@ -1524,7 +1552,8 @@
       "subtitle": "We're reviewing your virtual card request. This may take up to 24 hours.",
       "status": {
         "pending": "In progress",
-        "waiting": "Waiting"
+        "waiting": "Waiting",
+         "subHeader": "Awaiting verification"
       },
       "timeline": {
         "requested": "Requested",
@@ -1581,6 +1610,7 @@
   "operationError": "An error occurred during the operation.",
   "deleteCardTitle": "Delete Card",
   "deleteCardConfirm": "Are you sure you want to delete this card?\nAll your funds will be transferred to your Sendo account.",
+  "amountToReturn": "Amount to be returned: {{amount}} XAF",
   "cancel": "Cancel",
   "delete": "Delete",
   "myCard": "My Card",
@@ -1599,6 +1629,27 @@
   "deleteCard": "Delete Card",
   "deleteCardFooter": "All your funds will be transferred to your Sendo account if you delete the card.",
    "cardDeleted": "Card successfully deleted.",
+   "account2": {
+    "account_settings": "Account Settings",
+    "language_changed_to": "Language changed to",
+    "close": "Close"
+  },
+  "security2": {
+    "security_settings": "Security"
+  },
+  "choose_language_subtitle": "Choose application language",
+  "change_password_subtitle": "Change your password",
+  "privacy_policy": "Privacy Policy",
+  "privacy_policy_subtitle": "View our privacy policy",
+   "transactionStatus": {
+    "COMPLETED": "Success",
+    "FAILED": "Failed",
+    "PENDING": "Processing",
+    "BLOCKED": "Rejected"
+  },
+   "confirm_transfer": "Confirm Transfer",
+  "transfer_confirmation_message": "Are you sure you want to transfer {{amount}} {{currency}} to {{name}}?",
+  "confirm": "Confirm"
    
  
 

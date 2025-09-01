@@ -7,12 +7,14 @@ import {
   ScrollView,
   Modal,
   Image,
-  StyleSheet
+  StyleSheet,
+  Platform,
+  Linking
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useDispatch } from 'react-redux';
-import { AntDesign, Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { AntDesign, Ionicons, MaterialIcons, FontAwesome } from '@expo/vector-icons';
 import * as LocalAuthentication from 'expo-local-authentication';
 import * as Notifications from 'expo-notifications';
 import Loader from '../../components/Loader';
@@ -36,6 +38,7 @@ const Settings = ({ navigation }) => {
     message: ''
   });
   const [loading, setLoading] = useState(false);
+  const [biometricAvailable, setBiometricAvailable] = useState(false);
 
   // Check notification permissions on mount
   useEffect(() => {
@@ -44,27 +47,43 @@ const Settings = ({ navigation }) => {
   }, []);
 
   const checkNotificationPermissions = async () => {
-    const { status } = await Notifications.getPermissionsAsync();
-    setIsNotificationsEnabled(status === 'granted');
+    try {
+      const { status } = await Notifications.getPermissionsAsync();
+      setIsNotificationsEnabled(status === 'granted');
+    } catch (error) {
+      console.error('Error checking notification permissions:', error);
+    }
   };
 
   const checkBiometricsAvailability = async () => {
-    const isAvailable = await LocalAuthentication.hasHardwareAsync();
-    const isEnrolled = await LocalAuthentication.isEnrolledAsync();
-    setIsBiometricsEnabled(isAvailable && isEnrolled);
+    try {
+      const isAvailable = await LocalAuthentication.hasHardwareAsync();
+      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+      
+      setBiometricAvailable(isAvailable && isEnrolled);
+      
+      // Only enable biometrics if available and enrolled
+      if (isAvailable && isEnrolled) {
+        // Check if biometrics is already enabled (you might want to store this in AsyncStorage)
+        // For now, we'll default to false
+        setIsBiometricsEnabled(false);
+      } else {
+        setIsBiometricsEnabled(false);
+      }
+    } catch (error) {
+      console.error('Error checking biometric availability:', error);
+      setBiometricAvailable(false);
+      setIsBiometricsEnabled(false);
+    }
   };
 
   const toggleNotifications = async () => {
     setLoading(true);
     try {
       if (isNotificationsEnabled) {
-        await Notifications.setNotificationHandler({
-          handleNotification: async () => ({
-            shouldShowAlert: false,
-            shouldPlaySound: false,
-            shouldSetBadge: false,
-          }),
-        });
+        // Disable notifications logic here
+        setIsNotificationsEnabled(false);
+        showFeedback('success', t('notifications_disabled'));
       } else {
         const { status } = await Notifications.requestPermissionsAsync();
         if (status !== 'granted') {
@@ -75,6 +94,7 @@ const Settings = ({ navigation }) => {
         showFeedback('success', t('notifications_enabled'));
       }
     } catch (error) {
+      console.error('Error toggling notifications:', error);
       showFeedback('error', t('notification_error'));
     } finally {
       setLoading(false);
@@ -82,29 +102,37 @@ const Settings = ({ navigation }) => {
   };
 
   const toggleBiometrics = async () => {
+    // If trying to enable biometrics but not available
+    if (!isBiometricsEnabled && !biometricAvailable) {
+      showFeedback('error', t('biometric_not_available'));
+      return;
+    }
+
+    // If disabling biometrics
+    if (isBiometricsEnabled) {
+      setIsBiometricsEnabled(false);
+      showFeedback('success', t('biometrics_disabled'));
+      return;
+    }
+
+    // If enabling biometrics - authenticate first
     setLoading(true);
     try {
-      const isHardwareSupported = await LocalAuthentication.hasHardwareAsync();
-      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
-
-      if (!isHardwareSupported || !isEnrolled) {
-        showFeedback('error', t('biometric_not_available'));
-        return;
-      }
-
       const result = await LocalAuthentication.authenticateAsync({
-        promptMessage: t('authenticate_to_toggle_biometrics'),
+        promptMessage: t('authenticate_to_enable_biometrics'),
+        cancelLabel: t('cancel'),
+        disableDeviceFallback: false,
+        fallbackLabel: Platform.OS === 'ios' ? t('use_passcode') : undefined,
       });
 
       if (result.success) {
-        setIsBiometricsEnabled(!isBiometricsEnabled);
-        showFeedback('success', 
-          isBiometricsEnabled 
-            ? t('biometrics_disabled') 
-            : t('biometrics_enabled')
-        );
+        setIsBiometricsEnabled(true);
+        showFeedback('success', t('biometrics_enabled'));
+      } else {
+        showFeedback('error', t('authentication_failed'));
       }
     } catch (error) {
+      console.error('Biometric authentication error:', error);
       showFeedback('error', t('biometric_error'));
     } finally {
       setLoading(false);
@@ -143,59 +171,21 @@ const Settings = ({ navigation }) => {
       style={styles.container}
       contentContainerStyle={styles.contentContainer}
     >
-      <Text style={styles.sectionTitle}>{t('security')}</Text>
-
-      {/* Biometrics */}
-      <View style={styles.settingCard}>
-        <AntDesign name="lock" size={24} color="black" />
-        <View style={styles.settingTextContainer}>
-          <Text style={styles.settingTitle}>{t('biometrics')}</Text>
-          <Text style={styles.settingSubtitle}>{t('unlock_app')}</Text>
-        </View>
-        <Switch
-          trackColor={{ true: "#7ddd7d", false: "#f1f1f1" }}
-          thumbColor={isBiometricsEnabled ? "#ffffff" : "#f8f8f8"}
-          onValueChange={toggleBiometrics}
-          value={isBiometricsEnabled}
-        />
-      </View>
-
-      {/* Notifications */}
-      <View style={styles.settingCard}>
-        <Ionicons name="notifications-outline" size={24} color="black" />
-        <View style={styles.settingTextContainer}>
-          <Text style={styles.settingTitle}>{t('notifications')}</Text>
-          <Text style={styles.settingSubtitle}>{t('ensure_notifications')}</Text>
-        </View>
-        <Switch
-          trackColor={{ true: "#7ddd7d", false: "#f1f1f1" }}
-          thumbColor={isNotificationsEnabled ? "#ffffff" : "#f8f8f8"}
-          onValueChange={toggleNotifications}
-          value={isNotificationsEnabled}
-        />
-      </View>
-
-      {/* Change Password */}
-      <TouchableOpacity
-        style={styles.settingCard}
-        onPress={() => navigation.navigate('ChangePassword')}
-      >
-        <MaterialIcons name="key" size={24} color="black" />
-        <View style={styles.settingTextContainer}>
-          <Text style={styles.settingTitle}>{t('change_password')}</Text>
-        </View>
-        <Ionicons name="chevron-forward" size={20} color="gray" />
-      </TouchableOpacity>
-
-      {/* Language Selector */}
-      <View style={styles.languageContainer}>
-        <TouchableOpacity
-          style={styles.languageButton}
-          onPress={() => setLanguageModalVisible(true)}
-        >
+      {/* Section Paramètres du Compte */}
+      <View style={styles.sectionContainer}>
+        <Text style={styles.sectionTitle}>{t('account2.account_settings')}</Text>
+        
+        {/* Language Selector */}
+        <View style={styles.settingCard}>
           <Icon name="language" size={24} color="black" />
-          <Text style={styles.languageButtonText}>{t('choose_language')}</Text>
-          <View style={styles.languageSelection}>
+          <View style={styles.settingTextContainer}>
+            <Text style={styles.settingTitle}>{t('choose_language')}</Text>
+            <Text style={styles.settingSubtitle}>{t('choose_language_subtitle')}</Text>
+          </View>
+          <TouchableOpacity 
+            style={styles.languageSelection}
+            onPress={() => setLanguageModalVisible(true)}
+          >
             <Image 
               source={FLAGS[selectedLanguage]} 
               style={styles.flagImage} 
@@ -204,7 +194,76 @@ const Settings = ({ navigation }) => {
             <Text style={styles.languageText}>
               {selectedLanguage === 'en' ? 'English' : 'Français'}
             </Text>
+            <Ionicons name="chevron-forward" size={20} color="gray" />
+          </TouchableOpacity>
+        </View>
+
+        {/* Notifications */}
+        <View style={styles.settingCard}>
+          <Ionicons name="notifications-outline" size={24} color="black" />
+          <View style={styles.settingTextContainer}>
+            <Text style={styles.settingTitle}>{t('notifications')}</Text>
+            <Text style={styles.settingSubtitle}>{t('ensure_notifications')}</Text>
           </View>
+          <Switch
+            trackColor={{ true: "#7ddd7d", false: "#f1f1f1" }}
+            thumbColor={isNotificationsEnabled ? "#ffffff" : "#f8f8f8"}
+            onValueChange={toggleNotifications}
+            value={isNotificationsEnabled}
+          />
+        </View>
+      </View>
+
+      {/* Section Sécurité */}
+      <View style={styles.sectionContainer}>
+        <Text style={styles.sectionTitle}>{t('security2.security_settings')}</Text>
+
+        {/* Biometrics */}
+        <View style={styles.settingCard}>
+          <AntDesign name="lock" size={24} color="black" />
+          <View style={styles.settingTextContainer}>
+            <Text style={styles.settingTitle}>{t('biometrics')}</Text>
+            <Text style={styles.settingSubtitle}>
+              {biometricAvailable 
+                ? t('unlock_app') 
+                : t('biometric_not_available_on_device')
+              }
+            </Text>
+          </View>
+          <Switch
+            trackColor={{ true: "#7ddd7d", false: "#f1f1f1" }}
+            thumbColor={isBiometricsEnabled ? "#ffffff" : "#f8f8f8"}
+            onValueChange={toggleBiometrics}
+            value={isBiometricsEnabled}
+            disabled={!biometricAvailable}
+          />
+        </View>
+
+        {/* Change Password */}
+        <TouchableOpacity
+          style={styles.settingCard}
+          onPress={() => navigation.navigate('ChangePassword')}
+        >
+          <MaterialIcons name="key" size={24} color="black" />
+          <View style={styles.settingTextContainer}>
+            <Text style={styles.settingTitle}>{t('change_password')}</Text>
+            <Text style={styles.settingSubtitle}>{t('change_password_subtitle')}</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color="gray" />
+        </TouchableOpacity>
+
+        {/* Privacy Policy */}
+       <TouchableOpacity
+          style={styles.settingCard}
+          onPress={() => Linking.openURL('https://www.sf-e.ca/')}
+        >
+          <FontAwesome name="shield" size={24} color="black" />
+
+          <View style={styles.settingTextContainer}>
+            <Text style={styles.settingTitle}>{t('privacy_policy')}</Text>
+            <Text style={styles.settingSubtitle}>{t('privacy_policy_subtitle')}</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color="gray" />
         </TouchableOpacity>
       </View>
 
@@ -285,11 +344,13 @@ const styles = StyleSheet.create({
   contentContainer: {
     paddingBottom: 30,
   },
+  sectionContainer: {
+    marginBottom: 24,
+  },
   sectionTitle: {
     padding: 20,
-    marginLeft: 5,
-    marginTop: 10,
-    fontSize: 20,
+    paddingBottom: 10,
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#4b5563',
   },
@@ -307,41 +368,23 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   settingTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
   },
   settingSubtitle: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#6b7280',
-    marginTop: 4,
-  },
-  languageContainer: {
-    marginTop: 24,
-    marginHorizontal: 16,
-  },
-  languageButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    backgroundColor: '#f0fdf4',
-    borderRadius: 12,
-  },
-  languageButtonText: {
-    marginLeft: 12,
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1f2937',
+    marginTop: 2,
   },
   languageSelection: {
-    flex: 1,
     flexDirection: 'row',
-    justifyContent: 'flex-end',
     alignItems: 'center',
   },
   languageText: {
     fontSize: 14,
     color: '#6b7280',
     marginLeft: 8,
+    marginRight: 4,
   },
   flagImage: {
     width: 24,

@@ -47,7 +47,12 @@ export const getIconName = (type) => {
 
 
 const NotificationComponent = () => {
-  const { data: userProfile, isLoading: profileLoading } = useGetUserProfileQuery();
+   const { data: userProfile, isLoading, error } = useGetUserProfileQuery(
+      undefined, 
+      {
+        pollingInterval: 1000, 
+      }
+    );
   const userId = userProfile?.data?.id;
 
   const [page, setPage] = useState(1);
@@ -57,7 +62,9 @@ const NotificationComponent = () => {
     data: notificationsResponse,
     isLoading: notificationsLoading,
     refetch,
-  } = useGetNotificationsQuery(userId ? { userId, page, limit } : skipToken);
+  } = useGetNotificationsQuery(userId ? { userId, page, limit,
+      pollingInterval: 1000,
+   } : skipToken);
 
    //console.log('Liste des notification:', JSON.stringify(notificationsResponse, null, 2));
 

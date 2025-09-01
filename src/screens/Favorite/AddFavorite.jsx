@@ -69,7 +69,9 @@ const AddFavorite = () => {
     data: favoritesResponse, 
     isLoading: isLoadingFavorites, 
     refetch: refetchFavorites 
-  } = useGetFavoritesQuery(userId, { skip: !userId });
+  } = useGetFavoritesQuery(userId, { skip: !userId ,
+      pollingInterval: 1000, // Refetch every 1 seconds
+  });
    console.log('Favorites:', JSON.stringify(favoritesResponse, null, 2));
   const { 
     data: synchronizedContacts, 

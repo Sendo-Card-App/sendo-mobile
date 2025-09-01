@@ -44,62 +44,63 @@ const ResetPassword = () => {
     }
   }, [userProfile]);
 
-  const handleSubmit = async () => {
-    if (!otpCode || !newPassword || !confirmPassword) {
-      Toast.show({
-        type: 'error',
-        text1: t('resetPassword.title'),
-        text2: t('resetPassword.toast.requiredFields'),
-      });
-      return;
+const handleSubmit = async () => {
+  if (!otpCode || !newPassword || !confirmPassword) {
+    Toast.show({
+      type: 'error',
+      text1: 'Reset Password',
+      text2: 'All fields are required.',
+    });
+    return;
+  }
+
+  if (newPassword.length < 8) {
+    Toast.show({
+      type: 'error',
+      text1: 'Reset Password',
+      text2: 'Password must be at least 8 characters long.',
+    });
+    return;
+  }
+
+  if (newPassword !== confirmPassword) {
+    Toast.show({
+      type: 'error',
+      text1: 'Reset Password',
+      text2: 'Passwords do not match.',
+    });
+    return;
+  }
+
+  try {
+    await resetPassword({
+      code: otpCode,
+      newPassword,
+    }).unwrap();
+
+    Toast.show({
+      type: 'success',
+      text1: 'Reset Password',
+      text2: 'Password has been reset successfully.',
+    });
+
+    navigation.navigate('SignIn');
+  } catch (error) {
+    console.log('Reset password error:', error);
+    let errorMessage = 'An error occurred while resetting the password.';
+
+    if (error.data?.status === 500) {
+      errorMessage = 'Failed to update the password. Please try again.';
     }
 
-    if (newPassword.length < 8) {
-      Toast.show({
-        type: 'error',
-        text1: t('resetPassword.title'),
-        text2: t('resetPassword.toast.minLength'),
-      });
-      return;
-    }
+    Toast.show({
+      type: 'error',
+      text1: 'Reset Password',
+      text2: errorMessage,
+    });
+  }
+};
 
-    if (newPassword !== confirmPassword) {
-      Toast.show({
-        type: 'error',
-        text1: t('resetPassword.title'),
-        text2: t('resetPassword.toast.mismatch'),
-      });
-      return;
-    }
-
-    try {
-      await resetPassword({
-        code: otpCode,
-        newPassword,
-      }).unwrap();
-
-      Toast.show({
-        type: 'success',
-        text1: t('resetPassword.title'),
-        text2: t('resetPassword.toast.success'),
-      });
-
-      navigation.navigate('SignIn');
-    } catch (error) {
-      console.log('Reset password error:', error);
-      let errorMessage = t('resetPassword.toast.genericError');
-
-      if (error.data?.status === 500) {
-        errorMessage = t('resetPassword.toast.updateError');
-      }
-
-      Toast.show({
-        type: 'error',
-        text1: t('resetPassword.title'),
-        text2: errorMessage,
-      });
-    }
-  };
 
   return (
     <SafeAreaView className="bg-[#181e25] flex-1">
@@ -185,13 +186,14 @@ const ResetPassword = () => {
                   {t('resetPassword.confirmPasswordLabel')}
                 </Text>
                 <View className="relative">
-                  <TextInput
+                 <TextInput
                     placeholder={t('resetPassword.confirmPasswordPlaceholder')}
                     value={confirmPassword}
-                    onChangeText={setConfirmPassword}
+                    onChangeText={(text) => setConfirmPassword(text.trim())} // trim enlève espaces accidentels
                     secureTextEntry={!showConfirmPassword}
                     className="bg-white rounded-3xl py-4 px-5 pr-12"
                   />
+
                   <TouchableOpacity
                     className="absolute right-3 top-4"
                     onPress={() => setShowConfirmPassword(!showConfirmPassword)}

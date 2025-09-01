@@ -10,6 +10,7 @@ module.exports = {
     name: "Sendo",
     slug: "sendo",
     version: "1.0.4",
+    owner: "sfesendo",
     orientation: "portrait",
     icon: "./assets/logo.png", 
     userInterfaceStyle: "light",
@@ -64,7 +65,7 @@ module.exports = {
     extra: {
       eas: {
         apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL,
-       "projectId": "f317890d-1389-4b9e-9ce8-e1ffa7fe866e"
+       "projectId": "08a59933-10e3-45bc-b064-54b97ea7eca9"
       }
     },
     

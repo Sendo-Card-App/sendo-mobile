@@ -63,13 +63,14 @@ const PaymentSimulator = () => {
     const cardData = cardDetails?.data;
    
   const [simulatePayment] = useSimulatePaymentMutation();
-  
   // Get config data
   const { 
     data: configData, 
     isLoading: isConfigLoading,
     error: configError
   } = useGetConfigQuery();
+
+   //console.log("config get:", JSON.stringify(configData, null, 2));
   
   // Extract needed config values
   const getConfigValue = (name) => {
@@ -78,24 +79,27 @@ const PaymentSimulator = () => {
   };
   
 
-  const USD_REAL_TIME_VALUE = getConfigValue('USD_REAL_TIME_VALUE') || 625;
-  const EUR_REAL_TIME_VALUE = getConfigValue('EUR_REAL_TIME_VALUE') || 655;
-  const CAD_REAL_TIME_VALUE = getConfigValue('CAD_REAL_TIME_VALUE') || 480;
-  const PARTNER_VISA_FEES = getConfigValue('PARTNER_VISA_FEES') || 1.79;
-  const SENDO_SERVICE_FEES = getConfigValue('SENDO_SERVICE_FEES') || 2.73;
+  const USD_REAL_TIME_VALUE = getConfigValue('USD_REAL_TIME_VALUE');
+  const EUR_REAL_TIME_VALUE = getConfigValue('EUR_REAL_TIME_VALUE');
+  const CAD_REAL_TIME_VALUE = getConfigValue('CAD_REAL_TIME_VALUE');
+  const YEN_REAL_TIME_VALUE = getConfigValue('YEN_REAL_TIME_VALUE');
+  const PARTNER_VISA_FEES = getConfigValue('PARTNER_VISA_FEES');
+  const SENDO_SERVICE_FEES = getConfigValue('SENDO_SERVICE_FEES') ;
 
   const currencies = [
     { code: 'USD', name: 'US Dollar', rate: USD_REAL_TIME_VALUE },
     { code: 'EUR', name: 'Euro', rate: EUR_REAL_TIME_VALUE },
-    { code: 'CAD', name: 'Canadian Dollar', rate: CAD_REAL_TIME_VALUE }
+    { code: 'CAD', name: 'Canadian Dollar', rate: CAD_REAL_TIME_VALUE },
+    { code: 'JPY', name: 'Japanese Yen', rate: YEN_REAL_TIME_VALUE }
   ];
   
-  // Helper pour obtenir l’emoji drapeau à partir du code pays
+  // Helper pour obtenir l'emoji drapeau à partir du code pays
 const getFlagEmoji = (currencyCode) => {
   const countryCodeMap = {
     USD: 'US',
-    EUR: 'EU',  // Euro n’a pas de drapeau officiel unique, mais on peut utiliser l’UE 🇪🇺
+    EUR: 'EU',  // Euro n'a pas de drapeau officiel unique, mais on peut utiliser l'UE 🇪🇺
     CAD: 'CA',
+    JPY: 'JP'
   };
   const countryCode = countryCodeMap[currencyCode] || 'US';
   // Convertir chaque lettre en Regional Indicator Symbol
@@ -132,29 +136,32 @@ const getFlagEmoji = (currencyCode) => {
   }, [amount, currency]);
 
   const handleSimulatePayment = async () => {
-    if (!amount || isNaN(parseFloat(amount))) {
-      return;
-    }
+  if (!amount || isNaN(parseFloat(amount))) {
+    return;
+  }
 
-    try {
-      setIsCalculating(true);
-      const response = await simulatePayment({
-        amount: parseFloat(amount),
-        currency
-      }).unwrap();
+  try {
+    const payload = {
+      amount: parseFloat(amount),
+      currency,
+    };
 
-      setConversionData(response);
+    setIsCalculating(true);
+    const response = await simulatePayment(payload).unwrap();
 
-    } catch (error) {
-      Toast.show({
-        type: 'error',
-        text1: 'Simulation Failed',
-        text2: error.data?.message || error.message || 'Failed to simulate payment',
-      });
-    } finally {
-      setIsCalculating(false);
-    }
-  };
+    setConversionData(response);
+  } catch (error) {
+    //console.log("Erreur simulation:", JSON.stringify(error, null, 2)); // log error separately
+    Toast.show({
+      type: "error",
+      text1: "Simulation Failed",
+      text2: error.data?.message || error.message || "Failed to simulate payment",
+    });
+  } finally {
+    setIsCalculating(false);
+  }
+};
+
 
  
 
@@ -186,8 +193,7 @@ const getFlagEmoji = (currencyCode) => {
         </Text>
         
         {/* Amount Input */}
-       {/* Amount Input */}
-<View style={styles.amountInputContainer}>
+       <View style={styles.amountInputContainer}>
    <Text style={styles.flagEmoji}>{getFlagEmoji(currency)}</Text>
   <TextInput
     value={amount}
@@ -200,8 +206,6 @@ const getFlagEmoji = (currencyCode) => {
     style={styles.currencySelector}
     onPress={() => setShowCurrencyDropdown(true)}
   >
-    {/* Affiche le drapeau puis le code */}
-   
     <Text style={styles.currencyText}>{currency}</Text>
     <AntDesign name="down" size={16} color="#666" />
   </TouchableOpacity>
@@ -221,24 +225,47 @@ const getFlagEmoji = (currencyCode) => {
         >
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>{t('paymentSimulator.selectCurrency')}</Text>
+              
               <FlatList
                 data={currencies}
                 keyExtractor={(item) => item.code}
                 renderItem={({ item }) => (
                   <TouchableOpacity
-                    style={styles.currencyItem}
+                    style={[
+                      styles.currencyItem,
+                      currency === item.code && styles.selectedCurrencyItem
+                    ]}
                     onPress={() => handleCurrencySelect(item.code)}
                   >
-                    <Text style={[
-                      styles.currencyItemText,
-                      currency === item.code && styles.selectedCurrency
-                    ]}>
-                      {item.code} - {item.name} ({item.rate} FCFA)
-                    </Text>
+                    <View style={styles.currencyItemContent}>
+                      <Text style={styles.flagEmojiSmall}>{getFlagEmoji(item.code)}</Text>
+                      <View style={styles.currencyTextContainer}>
+                        <Text style={[
+                          styles.currencyCodeText,
+                          currency === item.code && styles.selectedCurrencyText
+                        ]}>
+                          {item.code}
+                        </Text>
+                        <Text style={[
+                          styles.currencyNameText,
+                          currency === item.code && styles.selectedCurrencyText
+                        ]}>
+                          {item.name}
+                        </Text>
+                      </View>
+                      <Text style={[
+                        styles.currencyRateText,
+                        currency === item.code && styles.selectedCurrencyText
+                      ]}>
+                        {item.rate} FCFA
+                      </Text>
+                    </View>
                   </TouchableOpacity>
                 )}
                 ItemSeparatorComponent={() => <View style={styles.separator} />}
               />
+              
               <TouchableOpacity
                 style={styles.closeButton}
                 onPress={() => setShowCurrencyDropdown(false)}
@@ -308,20 +335,22 @@ const getFlagEmoji = (currencyCode) => {
           </View>
         </View>
 
-        <TouchableOpacity 
-          style={styles.simulateButton}
-          onPress={() =>
-            navigation.navigate("CardAction", {
-              cardId: cardData?.id,
-              action: "recharge",
-            })
-          }
-          disabled={isCalculating}
-        >
-          <Text style={styles.simulateButtonText}>
-            {t('paymentSimulator.rechargeButton')}
-          </Text>
-        </TouchableOpacity>
+       {cardData?.id && (
+          <TouchableOpacity 
+            style={styles.simulateButton}
+            onPress={() =>
+              navigation.navigate("CardAction", {
+                cardId: cardData.id,
+                action: "recharge",
+              })
+            }
+            disabled={isCalculating}
+          >
+            <Text style={styles.simulateButtonText}>
+              {t('paymentSimulator.rechargeButton')}
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
     </KeyboardAvoidingView>
   );
@@ -384,6 +413,75 @@ const styles = StyleSheet.create({
   disclaimerContent: {
     flexDirection: 'row',
     alignItems: 'flex-start',
+  },
+   modalContent: {
+    backgroundColor: 'white',
+    marginHorizontal: 20,
+    borderRadius: 15,
+    maxHeight: '70%',
+    paddingVertical: 10,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginVertical: 15,
+    color: '#333',
+  },
+  currencyItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+  },
+  selectedCurrencyItem: {
+    backgroundColor: '#f0f8f0',
+  },
+  currencyItemContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  flagEmojiSmall: {
+    fontSize: 24,
+    marginRight: 12,
+  },
+  currencyTextContainer: {
+    flex: 1,
+    marginRight: 10,
+  },
+  currencyCodeText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 2,
+  },
+  currencyNameText: {
+    fontSize: 12,
+    color: '#666',
+  },
+  currencyRateText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#444',
+  },
+  selectedCurrencyText: {
+    color: '#7ddd7d',
+    fontWeight: 'bold',
+  },
+  separator: {
+    height: 1,
+    backgroundColor: '#f0f0f0',
+    marginHorizontal: 20,
+  },
+  closeButton: {
+    padding: 15,
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+    alignItems: 'center',
+  },
+  closeButtonText: {
+    color: '#7ddd7d',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
   helpIcon: {
     marginRight: 8,
