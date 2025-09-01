@@ -29,6 +29,7 @@ import {
   useGetCardDebtsQuery,
   useGetUnlockStatusQuery,
 } from "../../services/Card/cardApi";
+import { useGetUserProfileQuery } from "../../services/Auth/authAPI"; 
 import { SafeAreaView } from "react-native-safe-area-context";
 import { WebView } from 'react-native-webview';
 import * as ScreenCapture from 'expo-screen-capture';
@@ -42,12 +43,16 @@ const ManageVirtualCard = () => {
     isLoading: isCardsLoading,
   } = useGetVirtualCardsQuery();
 
+    const { data: userProfile, isLoading: isProfileLoading, refetch } = useGetUserProfileQuery();
+    //console.log('User Profile:', JSON.stringify(userProfile, null, 2));
+
   const [selectedCardId, setSelectedCardId] = useState(null);
   const [iframeModalVisible, setIframeModalVisible] = useState(false);
   const [iframeUrl, setIframeUrl] = useState('');
   const [isPreventingScreenshot, setIsPreventingScreenshot] = useState(false);
   const [isLoadingIframe, setIsLoadingIframe] = useState(false);
   const [isLoadingFreeze, setIsLoadingFreeze] = useState(false);
+  const [webViewLoading, setWebViewLoading] = useState(true);
 
   const {
     data: cardDetails,
@@ -55,10 +60,12 @@ const ManageVirtualCard = () => {
     refetch: refetchCardDetails,
   } = useGetVirtualCardDetailsQuery(selectedCardId, {
     skip: !selectedCardId,
+      pollingInterval: 1000, // Refetch every 30 seconds
   });
 
   const { data: unlockStatus, isLoading: isUnlockStatusLoading } = useGetUnlockStatusQuery(selectedCardId, {
     skip: !selectedCardId,
+      pollingInterval: 1000, // Refetch every 30 seconds
   });
     //console.log("Unlock Status:", JSON.stringify(unlockStatus, null, 2));
   const {
@@ -67,7 +74,10 @@ const ManageVirtualCard = () => {
     refetch: refetchCardDetailsHide,
   } = useGetVirtualCardDetailsHideQuery(selectedCardId, {
     skip: !selectedCardId,
+      pollingInterval: 1000, // Refetch every 30 seconds
   });
+
+    //console.log("cardDetailsHide:", JSON.stringify(cardDetailsHide, null, 2));
 
   const [freezeCard] = useFreezeCardMutation();
   const [unfreezeCard] = useUnfreezeCardMutation();
@@ -76,6 +86,7 @@ const ManageVirtualCard = () => {
   const [modalType, setModalType] = useState("success");
   const [modalMessage, setModalMessage] = useState("");
   const [showDebts, setShowDebts] = useState(false);
+  const [preActiveModalVisible, setPreActiveModalVisible] = useState(false);
 
 
   const cardData = cardDetails?.data;
@@ -91,6 +102,7 @@ const ManageVirtualCard = () => {
     refetch: refetchTransactions,
   } = useGetCardTransactionsQuery(cardData?.id, {
     skip: !cardData?.id,
+      pollingInterval: 1000,
   });
  //console.log("Full response:", JSON.stringify(cardTransactions, null, 2));
   const {
@@ -99,6 +111,7 @@ const ManageVirtualCard = () => {
   refetch: refetchBalance,
 } = useGetCardBalanceQuery({ idCard: cardData?.id }, {
   skip: !cardData?.id,
+    pollingInterval: 1000,
 });
 
 const {
@@ -107,6 +120,7 @@ const {
   refetch: refetchDebts,
 } = useGetCardDebtsQuery(cardData?.id, {
   skip: !cardData?.id,
+    pollingInterval: 1000,
 });
  //console.log("Debts Data:", JSON.stringify(debtsData, null, 2));
 
@@ -132,6 +146,21 @@ const {
       return () => clearInterval(interval); // Clean up on blur/unfocus
     }, [cardData?.id, refetchDebts, refetchBalance, refetchTransactions, refetchCardDetails, refetchCardDetailsHide])
   );
+
+  //    useEffect(() => {
+  //   const interval = setInterval(() => {
+  //     if (userProfile?.data?.virtualCard) {
+  //       navigation.navigate("ManageVirtualCard");
+  //       clearInterval(interval);
+  //     } else {
+  //       navigation.navigate("OnboardingCard");
+  //       clearInterval(interval);
+  //     }
+  //   }, 1000);
+
+  //   return () => clearInterval(interval);
+  // }, [userProfile, navigation]);
+
 
   useEffect(() => {
     if (cardStatus === "TERMINATED") {
@@ -220,20 +249,32 @@ const handleFreezeUnfreeze = async () => {
 
 
   const handleShowCardDetails = async () => {
-    try {
-      setIsLoadingIframe(true);
-      const response = await refetchCardDetailsHide();
-      
-      if (response.data?.data?.link) {
-        setIframeUrl(response.data.data.link);
-        setIframeModalVisible(true);
-      } else {
-        showModal("error", "Impossible de charger les détails de la carte");
+    // Check if card is ACTIVE
+    if (cardStatus === "ACTIVE") {
+      try {
+        setIsLoadingIframe(true);
+        const response = await refetchCardDetailsHide();
+        
+        if (response.data?.data?.link) {
+          setIframeUrl(response.data.data.link);
+          setIframeModalVisible(true);
+          setWebViewLoading(true); // Reset loading state when opening modal
+        } else {
+          showModal("error", "Impossible de charger les détails de la carte");
+        }
+      } catch (err) {
+        showModal("error", "Une erreur s'est produite");
+      } finally {
+        setIsLoadingIframe(false);
       }
-    } catch (err) {
-      showModal("error", "Une erreur s'est produite");
-    } finally {
-      setIsLoadingIframe(false);
+    } 
+    // Check if card is PRE_ACTIVE
+    else if (cardStatus === "PRE_ACTIVE") {
+      setPreActiveModalVisible(true);
+    }
+    // For other statuses, show appropriate message
+    else {
+      showModal("error", "Les détails de la carte ne sont disponibles que lorsque la carte est active");
     }
   };
 
@@ -279,7 +320,7 @@ const handleFreezeUnfreeze = async () => {
             </Text>
             <Text className="text-xs text-gray-500">{formattedDate}</Text>
            <Text className="text-xs text-gray-500">
-            {item.status === "COMPLETED" ? "Réussi" : item.status === "PENDING" ? "En attente" : "Échoué"}
+            {item.status === "COMPLETED" ? "Succès" : item.status === "PENDING" ? "En cours de traitement" : "Échec"}
           </Text>
 
           </View>
@@ -309,7 +350,15 @@ const handleFreezeUnfreeze = async () => {
     <View className="flex-1 bg-white">
       <SafeAreaView className="bg-[#7ddd7d]  rounded-b-2xl">
         <View className="flex-row items-center justify-between px-4 bg-[#7ddd7d]  border-b border-gray-200 rounded-b-2xl">
-          <TouchableOpacity onPress={() => navigation.navigate("MainTabs")} className="p-1">
+          <TouchableOpacity
+            onPress={() =>
+              navigation.reset({
+                index: 0,
+                routes: [{ name: "MainTabs" }],
+              })
+            }
+            className="p-1"
+          >
             <Ionicons name="arrow-back" size={24} color="#333" />
           </TouchableOpacity>
           <Text className="text-2xl font-bold text-gray-800 text-center flex-1">
@@ -429,7 +478,7 @@ const handleFreezeUnfreeze = async () => {
                 icon="eye-outline" 
                 label={t('manageVirtualCard.viewInfo')}
                 onPress={handleShowCardDetails}
-                disabled={isLoadingIframe}
+                disabled={isLoadingIframe || isDetailsHideLoading}
               />
               <ActionItem 
                 icon="snow-outline" 
@@ -448,6 +497,7 @@ const handleFreezeUnfreeze = async () => {
                   navigation.navigate("CardSettings", {
                     cardName: cardData?.cardName,
                     cardId: cardData?.cardId,
+                    balanceData: balanceData?.data?.balance
                   })
                 }
               />
@@ -504,22 +554,22 @@ const handleFreezeUnfreeze = async () => {
                 </TouchableOpacity>
               </View>
             </View>
-
-            {/*  Debts Dropdown */}
-            <View className="mt-2 px-4">
-              <TouchableOpacity
-                onPress={() => setShowDebts(!showDebts)}
-                className="flex-row items-center justify-between py-3"
-              >
-                <Text className="font-semibold text-gray-700">
-                  {t("manageVirtualCard.showDebts") || "Voir les dettes"}
-                </Text>
-                <Ionicons
-                  name={showDebts ? "chevron-up" : "chevron-down"}
-                  size={20}
-                  color="#333"
-                />
-              </TouchableOpacity>
+           {/*  Debts Dropdown - Only show if there are debts or loading */}
+            {((debtsData?.data?.length > 0) || isDebtsLoading) && (
+              <View className="mt-2 px-4">
+                <TouchableOpacity
+                  onPress={() => setShowDebts(!showDebts)}
+                  className="flex-row items-center justify-between py-3"
+                >
+                  <Text className="font-semibold text-gray-700">
+                    {t("manageVirtualCard.showDebts") || "Voir les dettes"}
+                  </Text>
+                  <Ionicons
+                    name={showDebts ? "chevron-up" : "chevron-down"}
+                    size={20}
+                    color="#333"
+                  />
+                </TouchableOpacity>
 
                 {showDebts && (
                   <View className="bg-gray-100 rounded-xl p-4">
@@ -546,9 +596,8 @@ const handleFreezeUnfreeze = async () => {
                     )}
                   </View>
                 )}
-
-
-            </View>
+              </View>
+            )}
           </>
         ) : (
           <View className="mt-6 bg-red-100 rounded-xl p-4">
@@ -635,6 +684,45 @@ const handleFreezeUnfreeze = async () => {
         </View>
       </Modal>
 
+      {/* Modal for PRE_ACTIVE card */}
+      <Modal
+        transparent
+        visible={preActiveModalVisible}
+        animationType="fade"
+        onRequestClose={() => setPreActiveModalVisible(false)}
+      >
+        <View className="flex-1 justify-center items-center bg-transparent bg-opacity-40">
+          <View className="bg-white p-6 rounded-xl w-4/5">
+            <View className="items-center mb-4">
+              <Ionicons name="information-circle" size={48} color="#f39c12" />
+            </View>
+            <Text className="text-center mb-4">
+              Votre carte est en attente d'activation. Veuillez effectuer une première recharge pour activer votre carte et voir ses détails.
+            </Text>
+            <Pressable
+              className="bg-[#7ddd7d] py-3 rounded-md mb-2"
+              onPress={() => {
+                setPreActiveModalVisible(false);
+                navigation.navigate("CardAction", {
+                  cardId: cardData?.id,
+                  action: "recharge",
+                });
+              }}
+            >
+              <Text className="text-white text-center font-bold">
+                Recharger maintenant
+              </Text>
+            </Pressable>
+            <Pressable
+              className="py-2"
+              onPress={() => setPreActiveModalVisible(false)}
+            >
+              <Text className="text-center text-gray-500">Annuler</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
+
       {/* Iframe Modal for Card Details */}
       <Modal
         transparent={false}
@@ -654,16 +742,24 @@ const handleFreezeUnfreeze = async () => {
           {/* WebView/Iframe container */}
           <View className="flex-1">
             {iframeUrl ? (
-              <WebView 
-                source={{ uri: iframeUrl }}
-                startInLoadingState={true}
-                renderLoading={() => (
-                  <View className="flex-1 justify-center items-center">
+              <>
+                {webViewLoading && (
+                  <View className="flex-1 justify-center items-center absolute top-0 left-0 right-0 bottom-0 z-10 bg-white">
                     <ActivityIndicator size="large" color="#7ddd7d" />
+                    <Text className="mt-2">Chargement des détails...</Text>
                   </View>
                 )}
-                style={{ flex: 1,  opacity: isPreventingScreenshot ? 0 : 1 }}
-              />
+                <WebView 
+                  source={{ uri: iframeUrl }}
+                  onLoadStart={() => setWebViewLoading(true)}
+                  onLoadEnd={() => setWebViewLoading(false)}
+                  onError={() => {
+                    setWebViewLoading(false);
+                    showModal("error", "Erreur de chargement des détails de la carte");
+                  }}
+                  style={{ flex: 1 }}
+                />
+              </>
             ) : (
               <View className="flex-1 justify-center items-center">
                 <ActivityIndicator size="large" color="#7ddd7d" />

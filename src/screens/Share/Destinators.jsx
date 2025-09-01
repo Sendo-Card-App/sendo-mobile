@@ -37,7 +37,9 @@ const Destinators = () => {
   const {
     data: contactsData,
     isLoading: isLoadingContacts,
-  } = useGetSynchronizedContactsQuery(userId, { skip: !userId });
+  } = useGetSynchronizedContactsQuery(userId, { skip: !userId,
+      pollingInterval: 10000, // Refetch every 30 seconds
+   });
  // console.log("🔍 Full response:", JSON.stringify(contactsData, null, 2));
 
   const synchronizedContacts = contactsData?.data ?? [];

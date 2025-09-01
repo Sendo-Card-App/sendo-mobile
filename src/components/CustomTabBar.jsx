@@ -78,7 +78,6 @@ function CustomTabBar({ state, descriptors, navigation }) {
                     size={24} 
                     color="#fff" 
                   />
-                  {isFocused && <View style={styles.activeIndicatorCenter} />}
                 </View>
               </TouchableOpacity>
             </Animated.View>
@@ -139,7 +138,7 @@ function CustomTabBar({ state, descriptors, navigation }) {
               >
                 {label}
               </Text>
-              {isFocused && <View style={styles.activeIndicator} />}
+             
             </View>
           </TouchableOpacity>
         );

@@ -38,11 +38,14 @@ const CreateVirtualCard = () => {
   } = useGetConfigQuery();
 
   // Redirect if virtual card already exists
-  useEffect(() => {
-    if (userProfile?.data?.virtualCard) {
-      navigation.replace("ManageVirtualCard");
-    }
-  }, [userProfile]);
+ // Redirect if virtual card already exists AND is not TERMINATED
+useEffect(() => {
+  const virtualCard = userProfile?.data?.virtualCard;
+  if (virtualCard && virtualCard.status !== "TERMINATED") {
+    navigation.replace("ManageVirtualCard");
+  }
+}, [userProfile]);
+
 
   const getConfigValue = (key) => {
     const item = configData?.data?.find((c) => c.name === key);

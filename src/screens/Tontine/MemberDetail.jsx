@@ -38,7 +38,9 @@ const MemberDetail = () => {
   data: penaltiesResponse = {},
   isLoading: loadingPenalties,
   error,
-} = useGetMemberPenaltiesQuery({ tontineId, membreId });
+} = useGetMemberPenaltiesQuery({ tontineId, membreId,
+    pollingInterval: 1000, // Refetch every 30 seconds
+ });
 
 const penalties = penaltiesResponse.data || [];
 console.log("Penalties response:", penaltiesResponse);
@@ -47,7 +49,9 @@ console.log("Penalties response:", penaltiesResponse);
   const {
     data: allCotisations,
     error: cotisationError,
-  } = useGetValidatedCotisationsQuery({ tontineId,membreId });
+  } = useGetValidatedCotisationsQuery({ tontineId,membreId,
+      pollingInterval: 1000, // Refetch every 30 seconds
+   });
 
 
   const memberCotisations = allCotisations?.data || [];

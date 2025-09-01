@@ -36,9 +36,9 @@ const NiuRequest = () => {
       topOffset: 50,
     });
   };
-
-  const { data: userProfile, isLoading: isProfileLoading, refetch } = useGetUserProfileQuery();
-  //console.log('User Profile:', JSON.stringify(userProfile, null, 2));
+  const { data: userProfile, isLoading: isProfileLoading, refetch } = useGetUserProfileQuery(undefined, {
+    pollingInterval: 1000, // fetch every 1 second
+  });
   const userId = userProfile?.data.id;
   const hasNiuProof = userProfile?.data?.kycDocuments?.some(doc => doc.type === "NIU_PROOF");
 
@@ -49,8 +49,9 @@ const NiuRequest = () => {
     isLoading: isRequestsLoading,
     error: requestsError,
     refetch: refetchRequests,
-  } = useGetUserRequestsQuery(userId, { skip: !userId });
-   //console.log(JSON.stringify(userRequests, null, 2));
+  } = useGetUserRequestsQuery(userId, { skip: !userId ,
+      pollingInterval: 1000,
+  });
 
   const {
     data: configData,
@@ -58,27 +59,32 @@ const NiuRequest = () => {
     error: configError,
     refetch: refetchConfig,
   } = useGetConfigQuery();
+  
 
-  const niuConfig = configData?.data?.find(item => item.id === 12);
-  const feeAmount = niuConfig?.value || 3000;
+  const niuConfig = configData?.data?.find(item => item.name === "NIU_REQUEST_FEES");
+  const feeAmount = Number(niuConfig?.value);
+
 
   useFocusEffect(
     useCallback(() => {
      refetch();
-      refetch();            // profil utilisateur
-      refetchRequests();    // requêtes NIU
-      refetchConfig();      // configuration
+      refetch();
+      refetchRequests();
+      refetchConfig();
     }, [userId])
   );
 
-  useEffect(() => {
-    if (configError) {
-      showToast('error', t('niu.errors.title'), t('niu.errors.configFetchFailed'));
-    }
-    if (requestsError) {
-      showToast('error', t('niu.errors.title'), t('niu.errors.requestsFetchFailed'));
-    }
-  }, [configError, requestsError]);
+useEffect(() => {
+  if (configError) {
+    //console.log('Config fetch error:', JSON.stringify(configError, null, 2));
+  }
+  if (requestsError) {
+    //console.log('Requests fetch error:', JSON.stringify(requestsError, null, 2));
+  }
+}, [configError, requestsError]);
+
+
+
 
   useEffect(() => {
   const interval = setInterval(() => {
@@ -144,7 +150,7 @@ const NiuRequest = () => {
     try {
       const requestData = {
         type: "NIU_REQUEST",
-        description: "National Identification Number request",
+       description: "Demande de NIU",
         userId: userId,
         status: "pending",
       };
@@ -211,6 +217,46 @@ const NiuRequest = () => {
     );
   }
 
+  // Show different UI if user already has NIU proof
+  if (hasNiuProof) {
+    return (
+      <View className="bg-[#181e25] flex-1 pt-0 relative">
+        {/* Header */}
+        <View className="border-b border-dashed border-white flex-row justify-between py-4 mt-1 items-center mx-5 pt-5">
+          <View className="absolute -top-12 left-0 right-0 items-center justify-center">
+            <Image source={TopLogo} className="h-36 w-40" resizeMode="contain" />
+          </View>
+        </View>
+
+        <View className="flex-1 pb-3 bg-white rounded-t-3xl justify-center items-center p-5">
+          <MaterialCommunityIcons 
+            name="check-circle" 
+            size={80} 
+            color="#7ddd7d" 
+            style={{ marginBottom: 20 }}
+          />
+          
+          <Text className="text-2xl font-bold text-center mb-4">
+            {t('niu.alreadyHave.title')}
+          </Text>
+          
+          <Text className="text-lg text-center text-gray-600 mb-8">
+            {t('niu.alreadyHave.message')}
+          </Text>
+          
+          <TouchableOpacity
+            onPress={() => navigation.navigate('MainTabs')}
+            className="bg-[#7ddd7d] rounded-lg py-4 px-8"
+          >
+            <Text className="text-white text-lg font-semibold">
+              {t('niu.alreadyHave.backButton')}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View className="bg-[#181e25] flex-1 pt-0 relative">
       {/* Header */}
@@ -268,18 +314,17 @@ const NiuRequest = () => {
         </View>
 
         {/* Pay Button */}
-      {!completedSteps[1] && !hasNiuProof && (
-        <TouchableOpacity
-          onPress={handlePayPress}
-          className="bg-green-600 mx-5 mb-5 rounded-lg py-4 items-center"
-          disabled={isSubmitting}
-        >
-          <Text className="text-white text-lg font-semibold">
-            {t('niu.request.payButton')}
-          </Text>
-        </TouchableOpacity>
-      )}
-
+          {!completedSteps[1] && (
+            <TouchableOpacity
+              onPress={handlePayPress}
+              className="bg-green-600 mx-5 mb-5 rounded-lg py-4 items-center"
+              disabled={isSubmitting}
+            >
+              <Text className="text-white text-lg font-semibold">
+                {t('niu.request.payButton')}
+              </Text>
+            </TouchableOpacity>
+          )}
       </ScrollView>
 
       {/* Modal */}

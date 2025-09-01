@@ -56,7 +56,9 @@ const HomeScreen = () => {
           userId,
         
         },
-        { skip: !userId }
+        { skip: !userId,
+         pollingInterval: 1000, // Refetch every 30 seconds
+         }
       );
        //console.log('Liste des PUB:', JSON.stringify(history, null, 2));
      const { data: pubs, isLoading: isLoadingPubs, error: pubsError } = useGetPubsQuery();
@@ -69,12 +71,15 @@ const HomeScreen = () => {
       error: balanceError,
       isError: isBalanceError,
       refetch: refetchBalance,
-    } = useGetBalanceQuery(userId, { skip: !userId });
+    } = useGetBalanceQuery(userId, { skip: !userId,
+        pollingInterval: 1000, // Refetch every 30 seconds
+     });
     //console.log(balanceData, 'Balance Data:', JSON.stringify(balanceData, null, 2));
     const isLoading = isProfileLoading || isBalanceLoading;
     const { data: notificationsResponse, isLoadingNotification } = useGetNotificationsQuery({ userId });
       const { data: serverTokenData } = useGetTokenMutation(userId, {
-         skip: !userId
+         skip: !userId,
+           pollingInterval: 1000, // Refetch every 30 seconds
        });
   // Extract notifications array safely
   const notifications = notificationsResponse?.data?.items || [];
@@ -182,26 +187,22 @@ useEffect(() => {
       return () => clearInterval(interval);
     }, [currentIndex, pubs])
    
-    useEffect(() => {
-      if (balanceError) {
-        let errorMessage = 'An unknown error occurred';
-       
-        if (balanceError.status === 403) errorMessage = 'Missing KYC documents';
-        else if (balanceError.status === 404) errorMessage = 'Wallet not found';
-        else if (balanceError.data?.message) errorMessage = balanceError.data.message;
-  
-        Toast.show({
-          type: 'error',
-          text1: 'Error',
-          text2: errorMessage,
-          position: 'top',
-          visibilityTime: 10000,
-          autoHide: true,
-        });
-      }
-    }, [balanceError]);
+   useEffect(() => {
+  if (balanceError) {
+    let errorMessage = 'An unknown error occurred';
     
-    const getStatusColor = (status) => {
+    if (balanceError.status === 403) errorMessage = 'Missing KYC documents';
+    else if (balanceError.status === 404) errorMessage = 'Wallet not found';
+    else if (balanceError.data?.message) errorMessage = balanceError.data.message;
+
+    // Log internally, not shown to the user
+    //console.log('Balance fetch error:', JSON.stringify(balanceError, null, 2));
+    //console.log('Resolved message:', errorMessage);
+  }
+}, [balanceError]);
+
+    
+   const getStatusColor = (status) => {
       switch (status?.toUpperCase()) {
         case 'COMPLETED': return 'text-green-600';
         case 'FAILED': return 'text-red-600';
@@ -291,79 +292,89 @@ const getMethodIcon = (transaction) => {
        <View className="border border-dashed border-black mt-1 mb-5 " />
       {/* Balance Card with TopLogo background */}
       <View className="relative bg-[#70ae70] rounded-xl p-2 mb-1 overflow-hidden">
-          <Image
-            source={TopLogo}
-            resizeMode="contain"
-            className="absolute top-0 left-0 right-0 bottom-0 h-full w-full opacity-10"
-          />
-          <View className="z-10">
-            <View className="flex-row justify-between items-center mb-2">
-              <Text className="text-black text-xl">{t("home.greeting")}</Text>
-              <TouchableOpacity 
-                onPress={() => {
-                  if (showBalance) {
-                    setShowBalance(false);
-                  } else {
-                    navigation.navigate('Auth', { 
-                      screen: 'PinCode',
-                      params: {
-                        onSuccess: () => {
-                          setShowBalance(true);
-                          return Promise.resolve();
-                        },
-                        showBalance: true
-                      }
-                    });
-                  }
-                }}
-              >
-                <Ionicons
-                  name={showBalance ? "eye-outline" : "eye-off-outline"}
-                  size={isSmallScreen ? scale(24) : scale(28)}
-                  color="black"
-                />
-              </TouchableOpacity>
-            </View>
+  <Image
+    source={TopLogo}
+    resizeMode="contain"
+    className="absolute top-0 left-0 right-0 bottom-0 h-full w-full opacity-10"
+  />
 
-            <Text className="text-black text-2xl font-bold"> {userProfile?.data?.firstname} {userProfile?.data?.lastname}</Text>
+  <View className="z-10">
+    {/* Ligne avec Bonjour + icône œil */}
+    <View className="flex-row justify-between items-center mb-1">
+      <Text className="text-black text-lg">{t("home.greeting")}</Text>
+      <TouchableOpacity
+        onPress={() => {
+          if (showBalance) {
+            setShowBalance(false);
+          } else {
+            navigation.navigate("Auth", {
+              screen: "PinCode",
+              params: {
+                onSuccess: () => {
+                  setShowBalance(true);
+                  return Promise.resolve();
+                },
+                showBalance: true,
+              },
+            });
+          }
+        }}
+      >
+        <Ionicons
+          name={showBalance ? "eye-outline" : "eye-off-outline"}
+          size={isSmallScreen ? scale(22) : scale(24)}
+          color="black"
+        />
+      </TouchableOpacity>
+    </View>
 
-            <View className="flex-row justify-between items-center my-2">
-              <Text className="text-black text-xl">{t("home.balance")}</Text>
-             <Text className="text-black text-4xl font-bold">
-                {isBalanceLoading ? (
-                  <Loader size="small" color="black" />
-                ) : showBalance ? (
-                  `${(balanceData?.data?.balance ?? 0).toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })} ${balanceData?.data?.currency ?? ''}`
-                ) : (
-                  '****'
-                )}
-              </Text>
-            </View>
+    {/* Nom aligné sous Bonjour */}
+    <Text className="text-black text-2xl font-bold mb-2">
+      {userProfile?.data?.firstname} {userProfile?.data?.lastname}
+    </Text>
 
-            <View className="flex-row mt-4 gap-4">
-              <TouchableOpacity
-                onPress={() => navigation.navigate('SelectMethod')}
-                className="bg-white px-3 py-2 rounded-full flex-row items-center flex-1 justify-center"
-              >
-                <Ionicons name="send-outline" size={20} color="black" />
-                <Text className="text-black font-bold text-xs ml-2">{t("home.transfer")}</Text>
-              </TouchableOpacity>
+    {/* Bloc Solde */}
+    <View className="flex-row justify-between items-center my-2">
+      <Text className="text-black text-base">{t("home.balance")}</Text>
+      <Text className="text-black text-xl font-bold">
+        {isBalanceLoading ? (
+          <Loader size="small" color="black" />
+        ) : showBalance ? (
+          `${(balanceData?.data?.balance ?? 0).toLocaleString(undefined, {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })} ${balanceData?.data?.currency ?? ""}`
+        ) : (
+          "****"
+        )}
+      </Text>
+    </View>
 
-              <TouchableOpacity
-                onPress={() => navigation.navigate('MethodType')}
-                className="bg-white px-3 py-2 rounded-full flex-row items-center flex-1 justify-center"
-              >
-                <Ionicons name="refresh-outline" size={20} color="black" />
-                <Text className="text-black font-bold text-xs ml-2">{t("home.recharge")}</Text>
-              </TouchableOpacity>
-            </View>
+    {/* Boutons actions */}
+    <View className="flex-row mt-3 gap-4">
+      <TouchableOpacity
+        onPress={() => navigation.navigate("SelectMethod")}
+        className="bg-white px-3 py-2 rounded-full flex-row items-center flex-1 justify-center"
+      >
+        <Ionicons name="send-outline" size={18} color="black" />
+        <Text className="text-black font-bold text-xs ml-2">
+          {t("home.transfer")}
+        </Text>
+      </TouchableOpacity>
 
+      <TouchableOpacity
+        onPress={() => navigation.navigate("MethodType")}
+        className="bg-white px-3 py-2 rounded-full flex-row items-center flex-1 justify-center"
+      >
+        <Ionicons name="refresh-outline" size={18} color="black" />
+        <Text className="text-black font-bold text-xs ml-2">
+          {t("home.recharge")}
+        </Text>
+      </TouchableOpacity>
+    </View>
+  </View>
+</View>
 
-          </View>
-        </View>
 
 
       {/* Action buttons */}
@@ -515,7 +526,9 @@ const getMethodIcon = (transaction) => {
                         {item.amount?.toLocaleString()} {item.currency}
                       </Text>
                     </View>
-                    <Text className={`text-xs font-semibold ${statusColor}`}>{item.status}</Text>
+                   <Text className={`text-xs font-semibold ${statusColor}`}>
+                      {t(`transactionStatus.${item.status?.toUpperCase()}`)}
+                    </Text>
                   </TouchableOpacity>
                 );
               })}

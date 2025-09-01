@@ -11,7 +11,7 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
-  Linking ,
+  Linking,
   Modal
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
@@ -22,7 +22,8 @@ import {
   useSendMessageMutation, 
   useGetConversationMessagesQuery, 
   useCreateConversationMutation,
-  useGetConversationsQuery 
+  useGetConversationsQuery,
+  useUploadAttachmentsMutation 
 } from '../../services/Chat/ChatApi';
 import Toast from 'react-native-toast-message';
 import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
@@ -41,7 +42,7 @@ interface Attachment {
 interface Message {
   id: string;
   content: string;
-  senderType: 'CUSTOMER' | 'ADMIN';
+  senderType: 'CUSTOMER';
   userId: number;
   conversationId: string;
   read: boolean;
@@ -75,85 +76,101 @@ const ChatScreen = ({ route, navigation }) => {
   const flatListRef = useRef(null);
   const [userToken, setUserToken] = useState(null);
   const [sending, setSending] = useState(false);
-   const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState([]);
   const [typingStatus, setTypingStatus] = useState(false);
   const [selectedConversationIndex, setSelectedConversationIndex] = useState(0);
   const [showConversationPicker, setShowConversationPicker] = useState(false);
+  const [uploadAttachments] = useUploadAttachmentsMutation();
 
-  const { data: userProfile } = useGetUserProfileQuery();
+ const { data: userProfile, isLoading: isProfileLoading } = useGetUserProfileQuery(undefined, {
+     pollingInterval: 1000,
+   });
   const userId = userProfile?.data?.id;
   
   const { data: conversationsResponse, isLoading: isLoadingConversations, refetch: refetchConversations } = useGetConversationsQuery(userId, {
-    skip: !userId
+    skip: !userId,
+     pollingInterval: 1000,
   });
   
   const conversations = conversationsResponse?.data || [];
+ 
   const openConversations = conversations.filter(conv => conv.status === 'OPEN');
   const selectedConversation = openConversations[selectedConversationIndex];
   
-  const { data: messagesResponse, isLoading: isLoadingMessages, refetch } = useGetConversationMessagesQuery(selectedConversation?.id, {
-    skip: !selectedConversation
+  const { data: messagesResponse, isLoading: isLoadingMessages, refetchMessages  } = useGetConversationMessagesQuery(selectedConversation?.id, {
+    skip: !selectedConversation,
+     pollingInterval: 1000,
   });
-
-  // const messages = [...(messagesResponse?.data || [])].sort(
-  //   (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-  // );
 
   const [sendMessage] = useSendMessageMutation();
   const [createConversation] = useCreateConversationMutation();
+
   useEffect(() => {
     const fetchToken = async () => {
       const accessToken = await getData('@authData');
-      //console.log('Fetched accessToken:', accessToken);
       setUserToken(accessToken);
     };
     fetchToken();
   }, []);
-   // Initialize socket
+
   useEffect(() => {
-    if (userToken) initSocket(userToken);
+    if (userToken) {
+      const token = userToken.accessToken;
+      const s = initSocket(token);
+
+      s.io.on("open", () => {
+        console.log("📡 Socket connection opened, auth:", s.io.opts.auth);
+      });
+    }
   }, [userToken]);
 
   // Join/leave conversation
-  useEffect(() => {
-    const socket = getSocket();
-    if (!socket || !selectedConversation?.id) return;
+useEffect(() => {
+  const socket = getSocket();
+  if (!socket || !selectedConversation?.id) return;
 
-    socket.emit('join_conversation', { conversationId: selectedConversation.id });
+  socket.emit('join_conversation', { conversationId: selectedConversation.id });
+  const interval = setInterval(() => {
+    refetchMessages?.(); 
+  }, 1000);
 
-    return () => {
-      socket.emit('leave_conversation', { conversationId: selectedConversation.id });
-    };
-  }, [selectedConversation?.id]);
+  return () => {
+    socket.emit('leave_conversation', { conversationId: selectedConversation.id });
+    clearInterval(interval); // cleanup
+  };
+}, [selectedConversation?.id]);
 
   // Load initial messages
- useEffect(() => {
-  if (messagesResponse?.data) {
-    const sorted = [...messagesResponse.data].sort(
-      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-    );
-    setMessages(sorted);
-  }
-}, [messagesResponse]);
+  useEffect(() => {
+    if (messagesResponse?.data) {
+      const sorted = [...messagesResponse.data].sort(
+        (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      );
+      setMessages(sorted);
+    }
+  }, [messagesResponse]);
 
-   // Handle socket events
+  // Handle socket events
   useEffect(() => {
     const socket = getSocket();
     if (!socket) return;
 
-    const handleNewMessage = (message) => {
+    const handleNewMessage = (message: Message) => {
       if (message.conversationId === selectedConversation?.id) {
-        setMessages(prev => [...prev, message]);
+        setMessages(prev => [
+          ...prev.filter(msg => !msg.id.startsWith('temp-')),
+          message
+        ]);
       }
     };
 
-    const handleTyping = ({ conversationId }) => {
+    const handleTyping = ({ conversationId }: { conversationId: string }) => {
       if (conversationId === selectedConversation?.id) {
         setTypingStatus(true);
       }
     };
 
-    const handleStopTyping = ({ conversationId }) => {
+    const handleStopTyping = ({ conversationId }: { conversationId: string }) => {
       if (conversationId === selectedConversation?.id) {
         setTypingStatus(false);
       }
@@ -182,6 +199,37 @@ const ChatScreen = ({ route, navigation }) => {
     }, 2000);
   };
 
+  // Upload attachment to server
+  const handleUploadAttachments = async (attachments: Attachment[]): Promise<string[]> => {
+    try {
+      const formData = new FormData();
+      
+      attachments.forEach((attachment, index) => {
+        formData.append('files', {
+          uri: attachment.uri,
+          name: attachment.name,
+          type: attachment.type,
+        });
+      });
+
+      const response = await uploadAttachments(formData).unwrap();
+      
+      if (response.data && Array.isArray(response.data)) {
+        return response.data;
+      } else if (response.files && Array.isArray(response.files)) {
+        return response.files;
+      } else if (response.urls && Array.isArray(response.urls)) {
+        return response.urls;
+      } else {
+        console.error('Unexpected response format:', response);
+        throw new Error('Invalid response format from upload endpoint');
+      }
+    } catch (error) {
+      console.error("Upload error:", error);
+      throw new Error('Failed to upload attachments');
+    }
+  };
+
   const pickDocument = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
@@ -205,36 +253,36 @@ const ChatScreen = ({ route, navigation }) => {
     }
   };
 
- const pickImage = async () => {
-  try {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      quality: 1,
-    });
+  const pickImage = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        quality: 1,
+      });
 
-    if (!result.canceled && result.assets[0]) {
-      const compressed = await ImageManipulator.manipulateAsync(
-        result.assets[0].uri,
-        [],
-        { compress: 0.5, format: ImageManipulator.SaveFormat.JPEG }
-      );
+      if (!result.canceled && result.assets[0]) {
+        const compressed = await ImageManipulator.manipulateAsync(
+          result.assets[0].uri,
+          [],
+          { compress: 0.5, format: ImageManipulator.SaveFormat.JPEG }
+        );
 
-      setAttachments(prev => [...prev, {
-        uri: compressed.uri,
-        name: `image_${Date.now()}.jpg`,
-        type: 'image/jpeg'
-      }]);
+        setAttachments(prev => [...prev, {
+          uri: compressed.uri,
+          name: `image_${Date.now()}.jpg`,
+          type: 'image/jpeg'
+        }]);
+      }
+    } catch (err) {
+      console.log('Image picker error:', err);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Failed to pick image',
+      });
     }
-  } catch (err) {
-    console.log('Image picker error:', err);
-    Toast.show({
-      type: 'error',
-      text1: 'Error',
-      text2: 'Failed to pick image',
-    });
-  }
-};
+  };
 
   const removeAttachment = (index: number) => {
     setAttachments(prev => prev.filter((_, i) => i !== index));
@@ -247,30 +295,71 @@ const ChatScreen = ({ route, navigation }) => {
 
     try {
       let currentConversationId = selectedConversation?.id;
+      const tempMessageId = `temp-${Date.now()}`;
+      
+      // Create temporary message for immediate UI feedback
+      const tempMessage: Message = {
+        id: tempMessageId,
+        content: input.trim() !== '' ? input : '[Attachment]',
+        senderType: 'CUSTOMER',
+        userId: userId,
+        conversationId: currentConversationId || 'temp',
+        read: false,
+        attachments: attachments.map(a => a.uri), 
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        user: userProfile?.data
+      };
 
+      // Add temporary message immediately
+      setMessages(prev => [...prev, tempMessage]);
+
+      // Upload attachments first
+      let uploadedAttachmentUrls: string[] = [];
+      
+      if (attachments.length > 0) {
+        uploadedAttachmentUrls = await handleUploadAttachments(attachments);
+      }
+
+      // Create conversation if needed
       if (!currentConversationId || openConversations.length === 0) {
         const newConv = await createConversation().unwrap();
         currentConversationId = newConv.data.id;
         await refetchConversations();
         setSelectedConversationIndex(0);
-        setSending(false);
-        return;
       }
 
-      const socket = getSocket();
-      if (!socket) throw new Error("Socket not connected");
+     const socket = getSocket();
+        if (!socket) throw new Error("Socket not connected");
+        const interval = setInterval(() => {
+          //console.log(" Reload triggered");
+        }, 1000);
+        socket.on("disconnect", () => {
+          clearInterval(interval);
+        });
 
-      socket.emit('send_message', {
-        conversationId: currentConversationId,
-        senderType: 'CUSTOMER',
-        content: input.trim() !== '' ? input : '[Attachment]',
-        attachments,
-      });
+      // Send message through socket
+      socket.emit(
+        'send_message',
+        {
+          conversationId: currentConversationId,
+          senderType: 'CUSTOMER',
+          content: input.trim() !== '' ? input : '[Attachment]',
+          attachments: uploadedAttachmentUrls,
+        },
+        (response) => {
+          console.log("Server ack response:", response);
+        }
+      );
 
       setInput('');
       setAttachments([]);
+      
     } catch (err) {
-      console.error('Send error:', err);
+      console.error("Send error:", err);
+      // Remove temporary message on error
+      setMessages(prev => prev.filter(msg => !msg.id.startsWith('temp-')));
+      
       Toast.show({
         type: 'error',
         text1: 'Error',
@@ -281,81 +370,144 @@ const ChatScreen = ({ route, navigation }) => {
     }
   };
 
-  const renderMessage = ({ item }: { item: Message }) => (
-    <View style={[
-      styles.messageContainer,
-      item.senderType === 'ADMIN' ? styles.receivedMessage : styles.sentMessage
-    ]}>
-      {item.senderType === 'ADMIN' && (
-        <Text style={styles.senderName}>
-          {item.user?.firstname || 'Admin'}
-        </Text>
-      )}
-      <Text style={[
+  // Helper function to get full URLs
+  const getFullUrl = (url: string): string => {
+    if (!url) return '';
+    
+    // If it's already a full URL or data URI, return as is
+    if (url.startsWith('http') || url.startsWith('data:')) {
+      return url;
+    }
+    
+    // If it's a relative path, prepend your API base URL
+    const baseUrl = 'https://api.sf-e.ca';
+    return `${baseUrl}${url.startsWith('/') ? url : '/' + url}`;
+  };
+
+  const renderMessage = ({ item }: { item: Message }) => {
+    // Check if this is a temporary message
+    const isTempMessage = item.id.startsWith('temp-');
+    
+    return (
+      <View
+  style={[
+    styles.messageContainer,
+    item.senderType === 'CUSTOMER' ? styles.sentMessage : styles.receivedMessage,
+    isTempMessage && styles.tempMessage,
+  ]}
+>
+  {/* Show sender name only for ADMIN messages */}
+  {item.senderType === 'ADMIN' && (
+    <Text style={styles.senderName}>
+      {item.user?.firstname || 'Admin'}
+    </Text>
+  )}
+
+  {/* Text content */}
+  {item.content !== '[Attachment]' && (
+    <Text
+      style={[
         styles.messageText,
-        item.senderType === 'ADMIN' ? styles.receivedText : styles.sentText
-      ]}>
-        {item.content}
-      </Text>
-      
-      {item.attachments?.map((attachment, index) => (
-        <View key={index} style={styles.attachmentContainer}>
-          {attachment.includes('/Images/') ? (
-            <Image 
-              source={{ uri: attachment }} 
+        item.senderType === 'CUSTOMER' ? styles.sentText : styles.receivedText,
+      ]}
+    >
+      {item.content}
+    </Text>
+  )}
+
+  {/* Attachments */}
+  {item.attachments?.map((attachment, index) => {
+    const isImage =
+      /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(attachment) ||
+      attachment.startsWith('data:image') ||
+      attachment.includes('/images/') ||
+      attachment.includes('/Images/');
+
+    const isPdf = /\.pdf$/i.test(attachment) || attachment.includes('/pdf/');
+
+    return (
+      <View key={index} style={styles.attachmentContainer}>
+          {isImage ? (
+            <Image
+              source={{
+                uri: isTempMessage ? attachment : getFullUrl(attachment),
+              }}
               style={styles.imageAttachment}
               resizeMode="contain"
             />
-          ) : (
-            <View style={styles.fileAttachment}>
-              <Icon name="insert-drive-file" size={24} color="#555" />
+          ) : isPdf ? (
+            <TouchableOpacity
+              style={styles.pdfAttachment}
+              onPress={() => Linking.openURL(getFullUrl(attachment))}
+            >
+              <Icon name="picture-as-pdf" size={32} color="#e74c3c" />
+              <Text style={styles.pdfText}>PDF Document</Text>
               <Text style={styles.fileName} numberOfLines={1}>
                 {attachment.split('/').pop()}
               </Text>
-            </View>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              style={styles.fileAttachment}
+              onPress={() => Linking.openURL(getFullUrl(attachment))}
+            >
+              <Icon name="insert-drive-file" size={32} color="#555" />
+              <Text style={styles.fileName} numberOfLines={1}>
+                {attachment.split('/').pop()}
+              </Text>
+            </TouchableOpacity>
           )}
         </View>
-      ))}
-      
-      <Text style={[
+      );
+    })}
+
+    {/* Time */}
+    <Text
+      style={[
         styles.messageTime,
-        item.senderType === 'ADMIN' ? styles.receivedTime : styles.sentTime
-      ]}>
-        {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-      </Text>
+        item.senderType === 'CUSTOMER' ? styles.sentTime : styles.receivedTime,
+      ]}
+    >
+      {isTempMessage
+        ? 'Sending...'
+        : new Date(item.createdAt).toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit',
+          })}
+    </Text>
+  </View>
+
+    );
+  };
+
+  const renderAttachmentPreview = () => (
+    <View style={styles.attachmentsPreview}>
+      {attachments.map((attachment, index) => (
+        <View key={index} style={styles.attachmentPreview}>
+          <TouchableOpacity onPress={() => Linking.openURL(attachment.uri)} style={{ flex: 1 }}>
+            {attachment.type.includes('image') ? (
+              <Image
+                source={{ uri: attachment.uri }}
+                style={styles.previewImage}
+                resizeMode="cover"
+              />
+            ) : (
+              <View style={styles.fileAttachment}>
+                <Icon name="insert-drive-file" size={24} color="#555" />
+                <Text style={styles.previewText} numberOfLines={1}>
+                  {attachment.name}
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={() => removeAttachment(index)} style={styles.closeIcon}>
+            <Icon name="close" size={18} color="#fff" />
+          </TouchableOpacity>
+        </View>
+      ))}
     </View>
   );
-
-const renderAttachmentPreview = () => (
-  <View style={styles.attachmentsPreview}>
-    {attachments.map((attachment, index) => (
-      <View key={index} style={styles.attachmentPreview}>
-        <TouchableOpacity onPress={() => Linking.openURL(attachment.uri)} style={{ flex: 1 }}>
-          {attachment.type.includes('image') ? (
-            <Image
-              source={{ uri: attachment.uri }}
-              style={styles.previewImage}
-              resizeMode="cover"
-            />
-          ) : (
-            <View style={styles.fileAttachment}>
-              <Icon name="insert-drive-file" size={24} color="#555" />
-              <Text style={styles.previewText} numberOfLines={1}>
-                {attachment.name}
-              </Text>
-            </View>
-          )}
-        </TouchableOpacity>
-
-        <TouchableOpacity onPress={() => removeAttachment(index)} style={styles.closeIcon}>
-          <Icon name="close" size={18} color="#fff" />
-        </TouchableOpacity>
-      </View>
-    ))}
-  </View>
-);
-
-
 
   if (isLoadingConversations || isLoadingMessages) {
     return (
@@ -371,61 +523,6 @@ const renderAttachmentPreview = () => (
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
     >
-      {/* Conversation Selector */}
-      {/* <TouchableOpacity 
-        style={styles.conversationSelector}
-        onPress={() => setShowConversationPicker(true)}
-      >
-        <Text style={styles.conversationSelectorText}>
-          {selectedConversation 
-            ? `Conversation ${openConversations.findIndex(c => c.id === selectedConversation.id) + 1} (${new Date(selectedConversation.createdAt).toLocaleDateString()})`
-            : openConversations.length === 0 
-              ? 'No open conversations - new one will be created'
-              : 'Select a conversation'}
-        </Text>
-        <Icon name="arrow-drop-down" size={24} color="#555" />
-      </TouchableOpacity> */}
-
-      {/* Conversation Picker Modal */}
-      {/* <Modal
-        visible={showConversationPicker}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setShowConversationPicker(false)}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Select Conversation</Text>
-             <FlatList
-                data={openConversations}
-                keyExtractor={item => item.id}
-                renderItem={({ item, index }) => (
-                  <TouchableOpacity
-                    style={styles.conversationItem}
-                    onPress={() => {
-                      setSelectedConversationIndex(index);
-                      setShowConversationPicker(false);
-                    }}
-                  >
-                    <Text style={styles.conversationItemText}>
-                      Conversation {index + 1} ({new Date(item.createdAt).toLocaleDateString()})
-                    </Text>
-                    {index === selectedConversationIndex && (
-                      <Icon name="check" size={20} color="#7ddd7d" />
-                    )}
-                  </TouchableOpacity>
-                )}
-              />
-            <TouchableOpacity
-              style={styles.closeButton}
-              onPress={() => setShowConversationPicker(false)}
-            >
-              <Text style={styles.closeButtonText}>Close</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal> */}
-
       <FlatList
         ref={flatListRef}
         data={messages}
@@ -439,6 +536,12 @@ const renderAttachmentPreview = () => (
 
       {attachments.length > 0 && renderAttachmentPreview()}
 
+      {typingStatus && (
+        <View style={styles.typingIndicator}>
+          <Text style={styles.typingText}>Admin is typing...</Text>
+        </View>
+      )}
+
       <View style={styles.inputContainer}>
         <TouchableOpacity onPress={pickImage} style={styles.attachmentButton}>
           <Icon name="image" size={24} color="#555" />
@@ -448,7 +551,7 @@ const renderAttachmentPreview = () => (
           <Icon name="insert-drive-file" size={24} color="#555" />
         </TouchableOpacity>
         
-         <TextInput
+        <TextInput
           value={input}
           onChangeText={text => {
             setInput(text);
@@ -488,107 +591,48 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-attachmentsPreview: {
-  flexDirection: 'row',
-  flexWrap: 'wrap',
-  paddingHorizontal: 10,
-  marginBottom: 8,
-  gap: 10,
-},
-
-attachmentPreview: {
-  position: 'relative',
-  width: 100,
-  height: 100,
-  borderRadius: 8,
-  overflow: 'hidden',
-  backgroundColor: '#e9ecef',
-  justifyContent: 'center',
-  alignItems: 'center',
-},
-
-previewImage: {
-  width: '100%',
-  height: '100%',
-  borderRadius: 8,
-},
-
-fileAttachment: {
-  flexDirection: 'row',
-  alignItems: 'center',
-  justifyContent: 'center',
-  padding: 8,
-},
-
-previewText: {
-  fontSize: 12,
-  textAlign: 'center',
-  marginTop: 4,
-  color: '#333',
-},
-
-closeIcon: {
-  position: 'absolute',
-  top: 4,
-  right: 4,
-  backgroundColor: '#00000088',
-  borderRadius: 10,
-  padding: 2,
-  zIndex: 1,
-},
-  conversationSelector: {
+  attachmentsPreview: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    flexWrap: 'wrap',
+    paddingHorizontal: 10,
+    marginBottom: 8,
+    gap: 10,
   },
-  conversationSelectorText: {
-    fontSize: 16,
+  attachmentPreview: {
+    position: 'relative',
+    width: 100,
+    height: 100,
+    borderRadius: 8,
+    overflow: 'hidden',
+    backgroundColor: '#e9ecef',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  previewImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 8,
+  },
+  fileAttachment: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 8,
+  },
+  previewText: {
+    fontSize: 12,
+    textAlign: 'center',
+    marginTop: 4,
     color: '#333',
   },
-  modalContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  modalContent: {
-    backgroundColor: '#fff',
-    marginHorizontal: 20,
+  closeIcon: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    backgroundColor: '#00000088',
     borderRadius: 10,
-    maxHeight: '70%',
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-    textAlign: 'center',
-  },
-  conversationItem: {
-    padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  conversationItemText: {
-    fontSize: 16,
-  },
-  closeButton: {
-    padding: 15,
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
-    alignItems: 'center',
-  },
-  closeButtonText: {
-    color: '#7ddd7d',
-    fontSize: 16,
-    fontWeight: 'bold',
+    padding: 2,
+    zIndex: 1,
   },
   messagesList: {
     padding: 10,
@@ -609,6 +653,9 @@ closeIcon: {
     alignSelf: 'flex-start',
     backgroundColor: '#e9ecef',
     borderBottomLeftRadius: 4,
+  },
+  tempMessage: {
+    opacity: 0.7,
   },
   messageText: {
     fontSize: 16,
@@ -639,48 +686,29 @@ closeIcon: {
     marginTop: 8,
   },
   imageAttachment: {
-    width: 200,
-    height: 200,
+    width: 250,
+    height: 250,
     borderRadius: 8,
+    marginVertical: 5,
   },
-  fileAttachment: {
-    flexDirection: 'row',
+  pdfAttachment: {
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    padding: 8,
+    padding: 10,
+    backgroundColor: '#f8f9fa',
     borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#dee2e6',
+  },
+  pdfText: {
+    marginTop: 5,
+    color: '#e74c3c',
+    fontWeight: 'bold',
   },
   fileName: {
-    color: '#fff',
-    marginLeft: 8,
-    flexShrink: 1,
-  },
-  attachmentsPreview: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginBottom: 8,
-    paddingHorizontal: 10,
-  },
-  attachmentPreview: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#e9ecef',
-    borderRadius: 15,
-    padding: 8,
-    marginRight: 8,
-    marginBottom: 8,
-    maxWidth: '45%',
-  },
-  previewImage: {
-    width: 30,
-    height: 30,
-    borderRadius: 4,
-    marginRight: 8,
-  },
-  previewText: {
-    flex: 1,
+    marginTop: 5,
     fontSize: 12,
-    marginRight: 8,
+    color: '#6c757d',
+    textAlign: 'center',
   },
   inputContainer: {
     flexDirection: 'row',
@@ -715,6 +743,14 @@ closeIcon: {
   },
   disabledButton: {
     backgroundColor: '#cccccc',
+  },
+  typingIndicator: {
+    padding: 10,
+    alignItems: 'center',
+  },
+  typingText: {
+    color: '#666',
+    fontStyle: 'italic',
   },
 });
 

@@ -7,6 +7,11 @@
   "no_tontine": "Aucune tontine disponible.",
   "no_transfers_found": "Aucune transaction disponible.",
    "back": "Retour",
+    "invalid_amount": "Montant invalide",
+  "min_amount_alert_part1": "Le montant minimum d'une transaction pour le Cameroun est de ",
+  "min_amount_alert_part2": "Veuillez ressayer avec un montant supérieur à ",
+  "max_amount_alert_part1": "Pour les transactions entre le Canada et le Cameroun, le montant maximum autorisé est de ",
+  "max_amount_alert_part2": "Merci de saisir un montant inférieur ou égal à cette limite.",
   "no_invitation": "Aucune invitation en attente.",
   "tontine_members_count": "Nombre de membres",
   "tontine_admin": "Admin",
@@ -104,6 +109,9 @@
        "firstName": "Prénom",
        "dateOfBirthPlaceholder": "Sélectionnez votre date de naissance",
        "DOB": "Date de naissance",
+        "select_country": "Sélectionner un pays",
+    "search_country": "Rechercher un pays...",
+    "no_countries_found": "Aucun pays trouvé",
   "PD": "Informations personnelles",
   "pob": "Lieu de naissance",
   "dateOfBirth": "Sélectionnez votre date de naissance",
@@ -181,6 +189,9 @@
         "forgetPassword": "Mot de passe oublié",
          "en": "Anglais",
           "fr": "Français",
+           "select_country": "Sélectionner un pays",
+            "search_country": "Rechercher un pays...",
+            "no_countries_found": "Aucun pays trouvé",
           "select": "Choisir une langue",
         "loginWithPhone": "CONNEXION AVEC NUMÉRO DE TÉLÉPHONE",
         "orSignInWith": "Ou connectez-vous avec",
@@ -357,7 +368,9 @@
     "faq_description": "Questions fréquentes",
     "email": "E-mail infosendo@sf-e.ca",
     "email_description": "Pour une réponse plus rapide",
-    "phone": "Appel 581 907 2096",
+    "phone": "Appel",
+     "socials": "Réseaux sociaux",
+    "follow_us": "Suivez-nous",
     "phone_description": "24/24 et 7 jours sur 7",
     "contact_instructions": "Si vous ne pouvez pas nous contacter par téléphone, veuillez nous envoyer un email à infosendo@sf-e.ca",
     "account_deletion": "Si vous souhaitez demander la suppression des informations relatives à votre compte, veuillez nous envoyer un email à infosendo@sf-e.ca"
@@ -470,6 +483,11 @@
     "success": {
       "title": "Succès",
       "message": "Votre demande de NIU a été soumise avec succès"
+    },
+     "alreadyHave": {
+      "title": "Vous avez déjà votre NIU",
+      "message": "Votre numéro d'identification unique (NIU) a déjà été traité et approuvé.",
+      "backButton": "Retour à l'accueil"
     }
   },
  "personalDetail": {
@@ -806,7 +824,7 @@
      "todayTransactions": "Transactions d'aujourd'hui",
     "noTransactionsToday": "Aucune transaction aujourd'hui",
     "loadingUser": "Chargement des historique de transaction......",
-    "errorLoading": "KYC non vérifié. Veuillez soumettre vos documents.",
+    "errorLoading": "Aucune transaction.",
     "transactions": "transactions",
     "page": "Page",
     "of": "sur",
@@ -837,15 +855,14 @@
     "mobileMoney": "Mobile Money",
     "Portefeuille": "Portefeuille",
     "bankTransfer": "Virement Bancaire",
-    "success": "Terminé",
+    "completed": "Succès",
     "failed": "Échec",
-    "pending": "En Attente",
-    "blocked": "Bloqué",
+    "pending": "En cours de traitement",
+    "blocked": "Refusé",
     "unknownRecipient": "Destinataire Inconnu",
     "status_success": "Réussi",  
   "status_failed": "Échoué",
-  "status_pending": "En attente",
-  "completed": "Terminé"
+  "status_pending": "En attente"
     
   },
   "common3": {
@@ -935,6 +952,7 @@
     "amountPlaceholder": "100",
     "exchangeRate": "Taux du jour : 1 ",
     "convertedAmount": "Montant converti",
+     "selectCurrency": "Sélectionner une devise",
     "partnerFees": "Frais du partenaire ",
     "sendoFees": "Frais de Sendo (TTC)",
     "totalAmount": "Montant total débité",
@@ -1057,7 +1075,7 @@
   "createShare": {
     "title": "Partage entre Amis",
     "new": "Créer un nouveau partage",
-    "friends": "Partage entre amis",
+   "friends": "Partages reçus",
     "history": "Historique"
   },
    "request": {
@@ -1164,13 +1182,21 @@
    "his": {
     "title": "Historique",
     "filter": "Filtre",
-    "payer": "Payer",
+    "payer": "Payer ou refuser",
     "your_part": "Votre part",
     "participants": "Participants",
     "loading": "Chargement...",
     "cancel_reason": "Raison de l'annulation",
     "no_data": "Aucune dépense partagée trouvée.",
     "date": "Date",
+     "filter_title": "Filtrer les dépenses",
+    "filter_all": "Toutes les dépenses",
+    "filter_pending": "En attente",
+    "filter_paid": "Payées",
+    "filter_cancelled": "Annulées",
+    "no_filtered_expenses": "Aucune dépense {{filter}}",
+    "pay_and_refuse": "Payer et Refuser",
+    "close": "Fermer",
       "status": {
       "pending": "En attente",
       "payed": "Payer",
@@ -1279,10 +1305,12 @@
     "history": "Historique",
     "myRequests": "Mes Demandes",
     "filter": "Filtrer",
+     "noRequests": "Vous n'avez aucune demande pour le moment.",
   "all": "Tous",
   "paid": "Payé",
   "pending": "En attente",
   "completed": "Terminé",
+  "fully_funded": "Terminé",
   "requester": "Demandeur"
   },
   "createTontine": {
@@ -1521,7 +1549,8 @@
       "subtitle": "Nous examinons votre demande de carte virtuelle. Cela peut prendre jusqu'à 24 heures.",
       "status": {
         "pending": "En cours",
-        "waiting": "En attente"
+        "waiting": "En attente",
+         "subHeader": "En attente de vérification"
       },
       "timeline": {
         "requested": "Demandé",
@@ -1577,6 +1606,7 @@
   "operationError": "Erreur lors de l'opération.",
   "deleteCardTitle": "Supprimer la carte",
   "deleteCardConfirm": "Êtes-vous sûr de vouloir supprimer cette carte ?\nNéanmoins, tous vos fonds seront transférés sur votre compte Sendo.",
+  "amountToReturn": "Montant à retourner : {{amount}} XAF",
   "cancel": "Annuler",
   "delete": "Supprimer",
   "myCard": "Ma Carte",
@@ -1594,7 +1624,28 @@
   "other": "Autres",
   "deleteCard": "Supprimer la carte",
   "cardDeleted": "Carte supprimée avec succès.",
-  "deleteCardFooter": "Tous vos fonds seront transférés sur votre compte Sendo si vous supprimez la carte."
+  "deleteCardFooter": "Tous vos fonds seront transférés sur votre compte Sendo si vous supprimez la carte.",
+  "account2": {
+    "account_settings": "Paramètres du Compte",
+    "language_changed_to": "Langue changée en",
+    "close": "Fermer"
+  },
+  "security2": {
+    "security_settings": "Sécurité"
+  },
+  "choose_language_subtitle": "Choisir la langue de l'application",
+  "change_password_subtitle": "Modifier votre mot de passe",
+  "privacy_policy": "Politique de confidentialité",
+  "privacy_policy_subtitle": "Consulter notre politique de confidentialité",
+  "transactionStatus": {
+    "COMPLETED": "Succès",
+    "FAILED": "Échec",
+    "PENDING": "En cours de traitement",
+    "BLOCKED": "Refusé"
+  },
+   "confirm_transfer": "Confirmer le transfert",
+  "transfer_confirmation_message": "Êtes-vous sûr de vouloir transférer {{amount}} {{currency}} à {{name}} ?",
+  "confirm": "Confirmer"
 
     
     

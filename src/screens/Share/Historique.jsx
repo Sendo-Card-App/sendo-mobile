@@ -41,7 +41,9 @@ const HistoryScreen = () => {
     data: sharedData,
     isLoading,
     isError,
-  } = useGetSharedExpensesQuery({ userId, page: 1, limit: 100 });
+  } = useGetSharedExpensesQuery({ userId, page: 1, limit: 100,
+      pollingInterval: 1000, // Refetch every 30 seconds
+   });
 
   const transactions = sharedData?.data || [];
 

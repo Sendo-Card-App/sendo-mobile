@@ -39,7 +39,9 @@ const WalletRecharge = () => {
   const { data: userProfile, isLoading: isProfileLoading } = useGetUserProfileQuery();
    const userId = userProfile?.data?.id;
     
-      const { data: balanceData } = useGetBalanceQuery(userId, { skip: !userId });
+      const { data: balanceData } = useGetBalanceQuery(userId, { skip: !userId,
+          pollingInterval: 10000, // Refetch every 30 seconds
+       });
       const balance = balanceData?.data?.balance ?? 0;
   const [rechargeWallet, { isLoading: isRecharging }] = useRechargeWalletMutation();
   const [sendNotification] = useSendNotificationMutation();
@@ -91,15 +93,6 @@ const handleRecharge = async () => {
       type: "error",
       text1: "Erreur",
       text2: "Veuillez entrer un montant valide supérieur à 500 XAF.",
-    });
-    return;
-  }
-
-  if (parseFloat(amount) > balance) {
-    Toast.show({
-      type: "error",
-      text1: "Montant trop élevé",
-      text2: "Le montant dépasse votre solde disponible.",
     });
     return;
   }

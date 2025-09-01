@@ -53,12 +53,13 @@ const BeneficiarySelection = ({ route }) => {
 
   const { data: userProfile } = useGetUserProfileQuery();
   const userId = userProfile?.data.id;
-
+ 
   const {
     data: favoritesResponse,
     isLoading: isLoadingFavorites,
     isError: isFavoritesError
   } = useGetFavoritesQuery(userId, { skip: !userId });
+  
   console.log('Favorites Response:', favoritesResponse);
    const favorites = Array.isArray(favoritesResponse) ? favoritesResponse : [];
 

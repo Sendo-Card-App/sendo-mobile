@@ -46,7 +46,13 @@ const Account = () => {
   const navigation = useNavigation();
     const { t } = useTranslation();
 
-  const { data: userProfile, isLoading, error, refetch } = useGetUserProfileQuery();
+  const { data: userProfile, isLoading, error, refetch } = useGetUserProfileQuery(
+    undefined, // first argument is usually the query parameter; use `undefined` if none
+    {
+      pollingInterval: 1000, // Refetch every 1 second
+    }
+  );
+
  
   const [updateProfile, { isLoading: isUpdating }] = useUpdateProfileMutation();
   const [
@@ -85,19 +91,7 @@ const [
   const [isSecondPhone, setIsSecondPhone] = useState(false);
   const [sendNotification] = useSendNotificationMutation();
   const [sendProfilePicture] = useSendProfilePictureMutation();
-  const handleSendNotification = async () => {
-    try {
-      const notificationPayload = {
-        token: await registerForPushNotificationsAsync(),
-        title: 'Informations de compte modifiées',
-        body: 'Les informations de votre compte ont été modifiées avec succès.',
-        type: TypesNotification.SUCCESS_MODIFY_ACCOUNT_INFORMATIONS
-      };
-      await sendNotification(notificationPayload).unwrap();
-    } catch (err) {
-      console.error('Erreur lors de l’envoi:', err);
-    }
-  };
+
   useFocusEffect(
     useCallback(() => {
       refetch(); // force une requête au backend
@@ -126,68 +120,62 @@ const [
     
 
 const handleSave = async () => {
-  try {
-    const requiredFields = ['firstname', 'lastname', 'phone', 'email'];
-    const missingFields = requiredFields.filter(field => !formData[field]);
+    try {
+      const requiredFields = ['firstname', 'lastname', 'phone', 'email'];
+      const missingFields = requiredFields.filter(field => !formData[field]);
 
-    if (missingFields.length > 0) {
+      if (missingFields.length > 0) {
+        Toast.show({
+          type: "error",
+          text1: "Missing information",
+          text2: `Please fill in: ${missingFields.join(', ')}`,
+        });
+        return;
+      }
+
+      // Step 1: Send profile fields
+      await updateProfile({
+        userId: userProfile.data.id,
+        firstname: formData.firstname,
+        lastname: formData.lastname,
+        phone: formData.phone,
+        email: formData.email,
+        profession: formData.profession || '',
+        region: formData.region || '',
+        city: formData.city || '',
+        district: formData.district || '',
+      }).unwrap();
+
+      // Step 2: If a new picture is selected
+      if (formData.picture && formData.picture.uri && formData.picture.uri !== originalData.picture?.uri) {
+        const imageData = new FormData();
+        imageData.append('picture', {
+          uri: formData.picture.uri,
+          name: formData.picture.name || `profile_${Date.now()}.png`,
+          type: formData.picture.type || 'image/png',
+        });
+
+        await sendProfilePicture(imageData).unwrap();
+      }
+
+      Toast.show({
+        type: "success",
+        text1: "Profile updated",
+        text2: "Your changes have been saved",
+      });
+
+      await refetch();
+      setIsEditing(false);
+
+    } catch (error) {
+      console.error("Update error:", error);
       Toast.show({
         type: "error",
-        text1: "Missing information",
-        text2: `Please fill in: ${missingFields.join(', ')}`,
+        text1: "Update failed",
+        text2: error?.message || error?.data?.message || "Please try again",
       });
-      return;
     }
-
-    // Step 1: Send profile fields (text only)
-    const profileResponse = await updateProfile({
-      userId: userProfile.data.id,
-      firstname: formData.firstname,
-      lastname: formData.lastname,
-      phone: formData.phone,
-      email: formData.email,
-      profession: formData.profession || '',
-      region: formData.region || '',
-      city: formData.city || '',
-      district: formData.district || '',
-    }).unwrap();
-
-    // Step 2: If a new picture is selected, send it separately
-    if (
-      formData.picture &&
-      formData.picture.uri &&
-      formData.picture.uri !== originalData.picture?.uri
-    ) {
-      const imageData = new FormData();
-      imageData.append('picture', {
-        uri: formData.picture.uri,
-        name: formData.picture.name || `profile_${Date.now()}.png`,
-        type: formData.picture.type || 'image/png',
-      });
-
-      await sendProfilePicture(imageData).unwrap();
-    }
-
-    // Success Toast
-    Toast.show({
-      type: "success",
-      text1: "Profile updated",
-      text2: "Your changes have been saved",
-    });
-
-    await handleSendNotification();
-    await refetch();
-    setIsEditing(false);
-
-  } catch (error) {
-    console.error("Update error:", error);
-    Toast.show({
-      type: "error",
-      text1: "Update failed",
-      text2: error?.message || error?.data?.message || "Please try again",
-    });
-  }
-};
+  };
 
   
   const pickImage = async () => {

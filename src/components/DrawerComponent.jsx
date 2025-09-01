@@ -49,7 +49,12 @@ const DrawerComponent = ({ navigation }) => {
     isLoading: isProfileFetching,
     isLoading: isProfileLoading,
     refetch: refetchProfile,
-  } = useGetUserProfileQuery();
+  } = useGetUserProfileQuery(
+     undefined, 
+  {
+    pollingInterval: 1000, // Refetch every 1 second
+  }
+);
   //console.log("userProfile", userProfile);
   const [logout, { isLoading: isLoggingOut }] = useLogoutMutation();
   const isLoading = isProfileLoading || isProfileFetching;
@@ -280,9 +285,9 @@ Utilise mon code lors de ton inscription !`;
         <View className="flex-row items-center justify-between">
           {/* 👤 Avatar */}
           <View className="flex-row items-center">
-            {userProfile?.data?.kycDocuments?.find(doc => doc.type === "SELFIE") ? (
+           {userProfile?.data?.picture ? (
               <Image
-                source={{ uri: userProfile.data.kycDocuments.find(doc => doc.type === "SELFIE").url }}
+                source={{ uri: userProfile.data.picture }}
                 style={{ width: 50, height: 50, borderRadius: 25, marginRight: 10 }}
               />
             ) : (
@@ -300,6 +305,7 @@ Utilise mon code lors de ton inscription !`;
                 <Ionicons name="person-circle-outline" size={30} color="#9CA3AF" />
               </View>
             )}
+
 
             <Text className="text-lg font-semibold text-gray-800">
               {userProfile?.data?.firstname} {userProfile?.data?.lastname}
@@ -485,23 +491,23 @@ Utilise mon code lors de ton inscription !`;
                 <Feather
                   name="users"
                   size={Platform.OS === "ios" ? 28 : 22}
-                  color="gray" onPress={() => navigation2.navigate("Settings")}
+                  color="gray"
                 />
                 <View>
                   <Text className="font-bold text-gray-500">{t("drawer.tontine")}</Text>
                   <Text className="text-sm text-gray-500">{t('drawer.h2')}</Text>
                 </View>
               </TouchableOpacity>
-          <TouchableOpacity
+          {/* <TouchableOpacity
             className="flex-row gap-2 my-2 mb-5"
-           
+            onPress={() => navigation2.navigate("SettingsTab")}
           >
             <AntDesign name="setting" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
             <View>
               <Text className="font-bold text-gray-500">{t('drawer.settings')}</Text>
               <Text className="text-sm text-gray-500">{t('drawer.security')}</Text>
             </View>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
 
           <TouchableOpacity
             className="flex-row gap-2 my-2 mb-5"

@@ -58,14 +58,18 @@ const Cotisations = () => {
     isLoading,
     isError,
     refetch: refetchCotisations,
-  } = useGetCotisationsQuery({ tontineId, memberId }, { skip: !memberId });
+  } = useGetCotisationsQuery({ tontineId, memberId }, { skip: !memberId,
+      pollingInterval: 1000, // Refetch every 30 seconds
+   });
 
   const {
     data: cotisation,
     isLoading: isLoadingValidated,
     isError: isErrorValidated,
     refetch: refetchValidated,
-  } = useGetValidatedCotisationsQuery({ tontineId, memberId }, { skip: !memberId });
+  } = useGetValidatedCotisationsQuery({ tontineId, memberId }, { skip: !memberId,
+      pollingInterval: 1000, // Refetch every 30 seconds
+   });
   // console.log("Erreur cotisation:", JSON.stringify(cotisation, null, 2));
   const initialOrdreList = tontine?.membres?.map((membre, i) => ({
     key: membre.id.toString(),

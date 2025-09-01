@@ -40,14 +40,18 @@ const DemandDetailScreen = () => {
   const { data: userProfile } = useGetUserProfileQuery();
   const userId = userProfile?.data?.id;
 
-  const { data: balanceData, isLoading: isBalanceLoading } = useGetBalanceQuery(userId, { skip: !userId });
+  const { data: balanceData, isLoading: isBalanceLoading } = useGetBalanceQuery(userId, { skip: !userId,
+      pollingInterval: 10000, // Refetch every 30 seconds
+   });
   const balance = balanceData?.data?.balance || 0;
 
   const [cancelSharedExpense, { isLoading: isCancelLoading }] = useCancelSharedExpenseMutation();
   const [paySharedExpense, { isLoading: isPaying }] = usePaySharedExpenseMutation();
 
   const initiatorId = sharedExpense.userId;
-  const { data: initiatorData, isLoading: isInitiatorLoading } = useGetUserByIdQuery(initiatorId, { skip: !initiatorId });
+  const { data: initiatorData, isLoading: isInitiatorLoading } = useGetUserByIdQuery(initiatorId, { skip: !initiatorId,
+      pollingInterval: 10000, // Refetch every 30 seconds
+   });
   const initiatorName = `${initiatorData?.data?.firstname ?? "N/A"} ${initiatorData?.data?.lastname ?? ""}`;
 
   const amount = item.part ?? sharedExpense.initiatorPart ?? "N/A";
@@ -59,40 +63,47 @@ const DemandDetailScreen = () => {
     Toast.show({ type, text1: message, position: "top", visibilityTime: 3000, autoHide: true });
   };
 
-  const handlePay = async () => {
-    if (balance < sharedExpense.totalAmount) {
-      showToast(t("demandDetail.insufficientBalance") || "Insufficient balance", "error");
-      return;
-    }
+ const handlePay = async () => {
+  if (balance < sharedExpense.totalAmount) {
+    showToast("Insufficient balance", "error");
+    return;
+  }
 
-    try {
-      await paySharedExpense({ expenseId: sharedExpense.id }).unwrap();
-      navigation.navigate("SuccessSharing", {
-        transactionDetails: t("demandDetail.paymentSuccess") || "Payment completed successfully",
-      });
-    } catch (error) {
-       console.log('Response:', JSON.stringify(error, null, 2));
-      const msg = error?.data?.data?.errors?.[0] || error?.data?.message || t("demandDetail.paymentError") || "An error occurred while processing the payment";
-      showToast(msg, "error");
-    }
-  };
+  try {
+    await paySharedExpense({ expenseId: sharedExpense.id }).unwrap();
+    navigation.navigate("SuccessSharing", {
+      transactionDetails: "Payment completed successfully",
+    });
+  } catch (error) {
+    console.log("Response:", JSON.stringify(error, null, 2));
+    const msg =
+      error?.data?.data?.errors?.[0] ||
+      error?.data?.message ||
+      "An error occurred while processing the payment";
+    showToast(msg, "error");
+  }
+};
 
-  const handleDecline = async () => {
-    if (!cancelReason.trim()) {
-      showToast(t("demandDetail.enterDeclineReason") || "Veuillez entrer une raison pour le refus.", "error");
-      return;
-    }
+const handleDecline = async () => {
+  if (!cancelReason.trim()) {
+    showToast("Please enter a reason for the decline.", "error");
+    return;
+  }
 
-    try {
-      await cancelSharedExpense({ id: sharedExpense.id, cancelReason }).unwrap();
-      showToast(t("demandDetail.declineSuccess") || "Demande refusée avec succès.", "success");
-      setModalVisible(false);
-      navigation.goBack();
-    } catch (error) {
-      const msg = error?.data?.data?.errors?.[0] || error?.data?.message || t("demandDetail.errorOccurred") || "Une erreur est survenue.";
-      showToast(msg, "error");
-    }
-  };
+  try {
+    await cancelSharedExpense({ id: sharedExpense.id, cancelReason }).unwrap();
+    showToast("Request declined successfully.", "success");
+    setModalVisible(false);
+    navigation.goBack();
+  } catch (error) {
+    const msg =
+      error?.data?.data?.errors?.[0] ||
+      error?.data?.message ||
+      "An error occurred.";
+    showToast(msg, "error");
+  }
+};
+
 
   return (
     <View style={{ flex: 1, backgroundColor: "#0e1316" }}>
