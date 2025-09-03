@@ -1,6 +1,8 @@
 import "./global.css";
 import { ThemeProvider } from './src/constants/ThemeContext';
 import React, { useEffect, useState } from "react";
+import { useFocusEffect } from "@react-navigation/native";
+import { useCallback } from "react";
 import { Colors } from './src/constants/colors'; // Adjust the path as needed
 import { useNavigation, useIsFocused  } from "@react-navigation/native";
 
@@ -214,7 +216,14 @@ function MainTabs() {
 }
 function ManageVirtualCardWrapper() {
   const { t } = useTranslation();
-  const { data: userProfile, isLoading: isProfileLoading } = useGetUserProfileQuery();
+  const { data: userProfile, isLoading: isProfileLoading, refetch } = useGetUserProfileQuery();
+
+  useFocusEffect(
+    useCallback(() => {
+      refetch(); // refresh data when screen is focused
+    }, [])
+  );
+
   const navigation = useNavigation();
 
   useEffect(() => {

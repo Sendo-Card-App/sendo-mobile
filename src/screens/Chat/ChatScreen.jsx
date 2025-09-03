@@ -226,7 +226,7 @@ useEffect(() => {
 
     typingTimeout = setTimeout(() => {
       socket.emit('stop_typing', { conversationId: selectedConversation.id });
-    }, 2000);
+    }, 1000);
   };
 
   // Upload attachment to server
@@ -372,6 +372,7 @@ useEffect(() => {
      socket.emit('send_message', {
       conversationId: currentConversationId,
       senderType: 'CUSTOMER',
+       userId: userId, 
       content: input.trim() !== '' ? input : '[Attachment]',
       attachments: uploadedAttachmentUrls,
     });
@@ -411,7 +412,8 @@ useEffect(() => {
 
   const renderMessage = ({ item }: { item: Message }) => {
   const isTempMessage = item.id.startsWith('temp-');
-  const isCurrentUser = item.senderType === 'CUSTOMER' && item.userId === userId;
+ const isCurrentUser = item.senderType === 'CUSTOMER' && item.userId === userId;
+
   
   return (
     <View

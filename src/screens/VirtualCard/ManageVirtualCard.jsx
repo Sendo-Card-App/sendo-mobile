@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useCallback } from "react";
 import { useFocusEffect } from '@react-navigation/native';
 import {
   View,
@@ -38,6 +39,7 @@ const ManageVirtualCard = () => {
   const { t } = useTranslation();
   const { width } = Dimensions.get("screen");
   const navigation = useNavigation();
+  const [checking, setChecking] = useState(false);
   const {
     data: cards,
     isLoading: isCardsLoading,
@@ -149,6 +151,35 @@ const {
       return () => clearInterval(interval); // Clean up on blur/unfocus
     }, [cardData?.id, refetchDebts, refetchBalance, refetchTransactions, refetchCardDetails, refetchCardDetailsHide])
   );
+
+
+  useFocusEffect(
+    useCallback(() => {
+      setChecking(true); // show loader before checking
+
+      if (!isProfileLoading) {
+        const virtualCard = userProfile?.data?.virtualCard;
+        const isCardMissingOrEmpty =
+          !virtualCard || (typeof virtualCard === "object" && Object.keys(virtualCard).length === 0);
+        const status = virtualCard?.status;
+
+        if (isCardMissingOrEmpty || (status !== "ACTIVE" && status !== "PRE_ACTIVE")) {
+          navigation.navigate("OnboardingCard");
+        }
+      }
+
+      setChecking(false); // hide loader after check
+    }, [userProfile, isProfileLoading, navigation])
+  );
+
+  if (checking || isProfileLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" color="#7ddd7d" />
+      </View>
+    );
+  }
+
 
   useEffect(() => {
     if (cardStatus === "TERMINATED") {

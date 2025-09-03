@@ -14,7 +14,7 @@ import {
 import { Modal, Pressable } from 'react-native';
 import { Ionicons, AntDesign } from "@expo/vector-icons";
 import Loader from "../../components/Loader";
-import { useNavigation, useFocusEffect } from "@react-navigation/native";
+import { useNavigation, useFocusEffect, useNavigationState } from "@react-navigation/native";
 import { useGetBalanceQuery } from "../../services/WalletApi/walletApi";
 import { useGetUserProfileQuery,  useGetTokenMutation, useCreateTokenMutation  } from "../../services/Auth/authAPI";
 import { useGetTransactionHistoryQuery } from "../../services/WalletApi/walletApi";
@@ -161,19 +161,30 @@ useEffect(() => {
     checkTerms();
   }, []);
      
-       useEffect(() => {
-      const backAction = () => {
-        BackHandler.exitApp();
-        return true;
-      };
+      useEffect(() => {
+        const backAction = () => {
+          // Get current route index from Tab.Navigator
+          const state = navigation.getState();
+          const currentTabIndex = state?.routes?.[0]?.state?.index;
 
-      const backHandler = BackHandler.addEventListener(
-        "hardwareBackPress",
-        backAction
-      );
+          if (currentTabIndex !== 0) {
+            // Not on HomeTab → navigate back to HomeTab
+            navigation.navigate("HomeTab");
+            return true; // prevent default exit
+          }
 
-      return () => backHandler.remove(); 
-    }, []);
+          // Already on HomeTab → exit app
+          BackHandler.exitApp();
+          return true;
+        };
+
+        const backHandler = BackHandler.addEventListener(
+          "hardwareBackPress",
+          backAction
+        );
+
+        return () => backHandler.remove();
+      }, [navigation]);
       
     useEffect(() => {
       if (!pubs?.items) return;
@@ -255,7 +266,12 @@ const getMethodIcon = (transaction) => {
 
   return (
     <View className="flex-1 bg-[#F2F2F2] pt-10 px-4">
-       <StatusBar backgroundColor="#F2F2F2" barStyle="light-content" />
+       <StatusBar 
+         backgroundColor="transparent"  // ✅ Android background color
+          barStyle="dark-content"    // ✅ text/icon color (light or dark)
+          translucent={false}         // ✅ if you don’t want it overlapping content
+        />
+
       {/* Top header */}
       <View className="flex-row justify-between items-center mb-1">
         <Image
