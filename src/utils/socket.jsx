@@ -26,15 +26,15 @@ export const initSocket = (token: string): Socket => {
 
     socket.on('connect', () => {
        console.log("✅ Socket connected:", socket.id);
-       console.log("📡 Auth sent:", socket.io.opts.auth);
+       console.log(" Auth sent:", socket.io.opts.auth);
     });
 
     socket.on('connect_error', (error) => {
-      console.error('❌ Socket connection error:', error.message, error);
+      console.error('Socket connection error:', error.message, error);
     });
 
     socket.on('disconnect', (reason) => {
-      console.warn('⚠️ Socket disconnected:', reason);
+      console.warn(' Socket disconnected:', reason);
     });
   }
   return socket;

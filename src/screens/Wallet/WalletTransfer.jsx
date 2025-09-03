@@ -12,11 +12,6 @@ import {
   ScrollView,
 } from 'react-native';
 import {
-  sendPushNotification,
-  sendPushTokenToBackend,
-  registerForPushNotificationsAsync,
-} from '../../services/notificationService';
-import {
   useGetBalanceQuery,
   useTransferFundsMutation,
   useGetWalletDetailsQuery,
@@ -27,11 +22,11 @@ import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { showErrorToast } from '../../utils/errorHandler';
 import Loader from '../../components/Loader';
-import PinVerificationModal from '../../components/PinVerificationModal'; // ✅ PIN modal
+import PinVerificationModal from '../../components/PinVerificationModal'; // PIN modal
 
 const WalletTransfer = ({ navigation }) => {
   const { t } = useTranslation();
-  const [amount, setAmount] = useState('0.0');
+  const [amount, setAmount] = useState('');
   const [walletId, setWalletId] = useState('');
   const [description, setDescription] = useState('');
   const [userWalletId, setUserWalletId] = useState('');
@@ -55,9 +50,10 @@ const WalletTransfer = ({ navigation }) => {
     isLoading: isBalanceLoading,
     error: balanceError,
     isError: isBalanceError,
-  } = useGetBalanceQuery(userId, { skip: !userId,
-      pollingInterval: 10000, // Refetch every 30 seconds
-   });
+  } = useGetBalanceQuery(userId, {
+    skip: !userId,
+    pollingInterval: 10000,
+  });
 
   const {
     data: recipientData,
@@ -78,9 +74,7 @@ const WalletTransfer = ({ navigation }) => {
 
   useEffect(() => {
     const walletId = userProfile?.data?.wallet?.matricule || userProfile?.data?.walletId;
-    if (walletId) {
-      setUserWalletId(walletId);
-    }
+    if (walletId) setUserWalletId(walletId);
   }, [userProfile]);
 
   const [transferFunds, { isLoading: isTransferring }] = useTransferFundsMutation();
@@ -91,7 +85,6 @@ const WalletTransfer = ({ navigation }) => {
       showErrorToast('ACTION_FAILED', 'Veuillez fournir un montant supérieur à 0.');
       return;
     }
-
 
     if (transferAmount > (balanceData?.data?.balance || 0)) {
       showErrorToast('ACTION_FAILED', 'Votre solde est insuffisant pour effectuer ce transfert.');
@@ -108,63 +101,76 @@ const WalletTransfer = ({ navigation }) => {
   };
 
   const handlePinVerified = async () => {
-  if (!pendingTransferData) return;
+    if (!pendingTransferData) return;
 
-  const { fromWallet, toWallet, amount: transferAmount, description } = pendingTransferData;
+    const { fromWallet, toWallet, amount: transferAmount, description } = pendingTransferData;
 
-  try {
-    await transferFunds({
-      fromWallet,
-      toWallet,
-      amount: transferAmount,
-      transfer_description: description,
-    }).unwrap();
+    try {
+      await transferFunds({
+        fromWallet,
+        toWallet,
+        amount: transferAmount,
+        transfer_description: description,
+      }).unwrap();
 
-    setShowPinModal(false);
-    setPendingTransferData(null);
+      setShowPinModal(false);
+      setPendingTransferData(null);
 
-    navigation.navigate('Success', {
-      message: 'Transfer completed successfully!',
-      nextScreen: 'MainTabs',
-    });
-  } catch (error) {
-    console.log('Response:', JSON.stringify(error, null, 2));
-    const status = error?.status;
+      navigation.navigate('Success', {
+        message: 'Transfert effectué avec succès !',
+        nextScreen: 'MainTabs',
+      });
+    } catch (error) {
+      const status = error?.status;
+      if (status === 503) showErrorToast('SERVICE_UNAVAILABLE');
+      else if (status === 500) showErrorToast('ACTION_FAILED', 'Erreur serveur lors du transfert');
+      else if (status === 400) showErrorToast('ACTION_FAILED', 'Veuillez remplir tous les champs.');
+      else if (status === 403) showErrorToast('KYC Erreur', 'Veuillez soumettre vos KYC.');
+      else if (status === 404) showErrorToast('ACTION_FAILED', 'Portefeuille introuvable');
+      else showErrorToast('ACTION_FAILED', error?.data?.message || 'Une erreur est survenue.');
 
-    if (status === 503) showErrorToast('SERVICE_UNAVAILABLE');
-    else if (status === 500) showErrorToast('ACTION_FAILED', 'Erreur serveur lors du transfert');
-    else if (status === 400) showErrorToast('ACTION_FAILED', 'Veuillez remplir tous les champs.');
-    else if (status === 404) showErrorToast('ACTION_FAILED', 'Portefeuille introuvable');
-    else showErrorToast('ACTION_FAILED', error?.data?.message || 'Une erreur est survenue.');
-
-    setShowPinModal(false);
-    setPendingTransferData(null);
-  }
-};
-
+      setShowPinModal(false);
+      setPendingTransferData(null);
+    }
+  };
 
   const isLoading = isProfileLoading || isBalanceLoading;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff', paddingTop: StatusBar.currentHeight }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
+      <StatusBar backgroundColor="#7ddd7d" barStyle="light-content" />
+
+      {/* Header with back button */}
+      <View style={{
+        backgroundColor: '#7ddd7d',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 20,
+        paddingBottom: 15,
+        paddingHorizontal: 15,
+      }}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 40 }}>
+          <Ionicons name="arrow-back" size={24} color="#fff" />
+        </TouchableOpacity>
+
+        <Text style={{
+          color: '#fff',
+          fontSize: 20,
+          fontWeight: 'bold',
+          textAlign: 'center',
+          flex: 1,
+        }}>
+          {t('screens.walletTransfer')}
+        </Text>
+
+        {/* Placeholder to balance layout */}
+        <View style={{ width: 40 }} />
+      </View>
+
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={{ paddingHorizontal: '5%', paddingBottom: 50 }}>
-          <TouchableOpacity
-            onPress={() => navigation.navigate('MainTabs')}
-            style={{
-              position: 'absolute',
-              top: StatusBar.currentHeight + 600,
-              right: 20,
-              zIndex: 999,
-              backgroundColor: 'rgba(235, 248, 255, 0.9)',
-              padding: 10,
-              borderRadius: 20,
-              elevation: 3,
-            }}
-          >
-            <Ionicons name="home" size={44} color="#7ddd7d" />
-          </TouchableOpacity>
-
+          {/* Available Balance */}
           <View style={{ backgroundColor: '#F1F1F1', borderRadius: 10, padding: 15, marginVertical: 20 }}>
             <Text style={{ fontSize: 16, color: '#666' }}>{t('wallet_transfer.available_balance')}</Text>
             {isLoading ? (
@@ -185,6 +191,7 @@ const WalletTransfer = ({ navigation }) => {
             )}
           </View>
 
+          {/* Recipient */}
           <Text style={{ fontSize: 16, color: '#666', marginBottom: 5 }}>
             {t('wallet_transfer.recipient_id')}
           </Text>
@@ -202,6 +209,7 @@ const WalletTransfer = ({ navigation }) => {
             value={walletId}
             onChangeText={setWalletId}
           />
+
           {walletId ? (
             <>
               <Text style={{ fontSize: 16, color: '#666', marginBottom: 5 }}>
@@ -220,7 +228,7 @@ const WalletTransfer = ({ navigation }) => {
                   }}
                   value={
                     isRecipientLoading
-                      ? t('wallet_transfer.loading_recipient') // Define this in i18n or replace with "Chargement..."
+                      ? t('wallet_transfer.loading_recipient')
                       : recipientName || t('wallet_transfer.recipient_info')
                   }
                   editable={false}
@@ -236,7 +244,7 @@ const WalletTransfer = ({ navigation }) => {
             </>
           ) : null}
 
-
+          {/* Amount */}
           <Text style={{ fontSize: 16, color: '#666', marginBottom: 5 }}>
             {t('wallet_transfer.amount')}
           </Text>
@@ -256,27 +264,30 @@ const WalletTransfer = ({ navigation }) => {
             onChangeText={setAmount}
           />
 
-          <Text style={{ fontSize: 16, color: '#666', marginBottom: 5 }}>
-            {t('wallet_transfer.description')}
-          </Text>
-          <TextInput
-            style={{
-              borderWidth: 1,
-              borderColor: '#E0E0E0',
-              borderRadius: 10,
-              padding: 15,
-              fontSize: 16,
-              marginBottom: 20,
-              height: 100,
-              textAlignVertical: 'top',
-              backgroundColor: '#fff',
-            }}
-            multiline
-            placeholder={t('wallet_transfer.description_placeholder')}
-            value={description}
-            onChangeText={setDescription}
-          />
+          {/* Description */}
+        <Text style={{ fontSize: 16, color: '#666', marginBottom: 5 }}>
+          {t('wallet_transfer.description')}
+        </Text>
+        <TextInput
+          style={{
+            borderWidth: 1,
+            borderColor: '#E0E0E0',
+            borderRadius: 10,
+            padding: 15,
+            fontSize: 16,
+            marginBottom: 20,
+            height: 100,
+            textAlignVertical: 'top',
+            backgroundColor: '#fff',
+          }}
+          multiline
+          placeholder={t('wallet_transfer.description_placeholder')}
+          value={description}
+          maxLength={255} // limit to 255 characters
+          onChangeText={text => setDescription(text.slice(0, 255))} // ensure truncation
+        />
 
+          {/* Transfer Button */}
           <TouchableOpacity
             onPress={validateAndOpenPinModal}
             disabled={isTransferring || isLoading || !userWalletId}
@@ -300,7 +311,7 @@ const WalletTransfer = ({ navigation }) => {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {/*  PIN Modal */}
+      {/* PIN Verification Modal */}
       <PinVerificationModal
         visible={showPinModal}
         onClose={() => {

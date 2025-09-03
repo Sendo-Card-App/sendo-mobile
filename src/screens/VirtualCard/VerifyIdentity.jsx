@@ -12,9 +12,15 @@ import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
 const VerifyIdentity = ({ navigation }) => {
   const { t } = useTranslation();
   const [loadingDocuments, setLoadingDocuments] = useState(false);
-  const { data: userProfile, isLoading: isProfileLoading, refetch } = useGetUserProfileQuery();
+   const { data: userProfile, isProfileLoading, refetch } = useGetUserProfileQuery(
+      undefined,
+      {
+        pollingInterval: 1000, // Refetch every 1 second
+      }
+    );
+    //console.log('User Profile:', JSON.stringify(userProfile, null, 2));
 
-  useFocusEffect(
+useFocusEffect(
   useCallback(() => {
     let isActive = true;
 
@@ -27,15 +33,8 @@ const VerifyIdentity = ({ navigation }) => {
         const documents = profile?.kycDocuments || [];
 
         if (documents.length > 0) {
-          const hasRejected = documents.some(doc => doc.status === "REJECTED");
-          const hasPending = documents.some(doc => doc.status === "PENDING");
-          const allApproved = documents.every(doc => doc.status === "APPROVED");
-
-          if (hasRejected || hasPending || !allApproved) {
-            // Go to validation screen if some docs are rejected or still pending
-            navigation.navigate("KYCValidation", { documents });
-            return;
-          }
+          navigation.navigate("KYCValidation", { documents });
+          return;
         }
       } catch (error) {
         console.warn("Failed to refetch KYC data", error);
@@ -51,6 +50,7 @@ const VerifyIdentity = ({ navigation }) => {
     };
   }, [refetch, navigation])
 );
+
 
 
   const handleNextPress = () => {

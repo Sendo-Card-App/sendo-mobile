@@ -432,72 +432,66 @@ const handleDistribute = async () => {
                 {t("cotisations.noContributions")}
               </Text>
             ) : (
-              <ScrollView className="mt-4">
-                {cotisation.data.map((item, idx) => (
-                  <View
-                    key={idx}
-                    className="flex-row items-center justify-between bg-white rounded-xl px-4 py-3 mb-2 shadow-sm"
-                  >
-                    <View className="flex-1">
-                      <Text className="text-black font-medium">
-                        {item.membre?.user?.firstname} {item.membre?.user?.lastname}
-                      </Text>
-                      <Text className="text-gray-500 text-xs mt-1">
-                        {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : "—"}
-                      </Text>
-                    </View>
+            <ScrollView className="mt-4">
+              {cotisation.data.map((item, idx) => {
+                const currentTour = item.tourDistributionId;
+                const nextTour = cotisation.data[idx + 1]?.tourDistributionId;
 
-                    {item.statutPaiement === "VALIDATED" ? (
-                      <Text className="text-green-600 font-semibold text-sm">
-                        {item.montant} xaf
-                      </Text>
-                    ) : (
-                     <View className="flex-row items-center justify-between">
-                        <Text className="text-orange-500 font-medium text-sm mr-2">
-                          {item.statutPaiement}
+                return (
+                  <React.Fragment key={item.id}>
+                    <View className="flex-row items-center justify-between bg-white rounded-xl px-4 py-3 mb-2 shadow-sm">
+                      <View className="flex-1">
+                        <Text className="text-black font-medium">
+                          {item.membre?.user?.firstname} {item.membre?.user?.lastname}
                         </Text>
-                        <TouchableOpacity
-                          className={`bg-green-400 rounded-full px-3 py-1 flex-row items-center justify-center ${isLoading ? "opacity-50" : ""}`}
-                          disabled={isLoading}
-                          onPress={() => {
-                            setIsLoadingRelance(true);
-                            relanceCotisation(item.id)
-                              .unwrap()
-                              .then(() => {
-                                Toast.show({
-                                  type: "success",
-                                  text1: "Success",
-                                  text2: "Reminder sent successfully",
-                                });
-                              })
-                              .catch((error) => {
-                                Toast.show({
-                                  type: "error",
-                                  text1: "Error",
-                                  text2: error?.data?.message || "Failed to send reminder",
-                                });
-                              })
-                              .finally(() => setIsLoadingRelance(false));
-                          }}
-                        >
-                          {isLoadingRelance ? ( 
-                            <Loader size="small" color="#fff" /> 
-                          ) : (
-                            <Text className="text-white text-xs font-semibold">{t("actions.remind")}</Text>
-                          )}
-                        </TouchableOpacity>
+                        <Text className="text-gray-500 text-xs mt-1">
+                          {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : "—"}
+                        </Text>
                       </View>
 
+                      {item.statutPaiement === "VALIDATED" ? (
+                        <Text className="text-green-600 font-semibold text-sm">
+                          {item.montant} xaf
+                        </Text>
+                      ) : (
+                        <View className="flex-row items-center justify-between">
+                          <Text className="text-orange-500 font-medium text-sm mr-2">
+                            {item.statutPaiement}
+                          </Text>
+                          <TouchableOpacity
+                            className={`bg-green-400 rounded-full px-3 py-1 flex-row items-center justify-center ${isLoading ? "opacity-50" : ""}`}
+                            disabled={isLoading}
+                            onPress={() => handleRelance(item.id)}
+                          >
+                            {isLoadingRelance ? (
+                              <Loader size="small" color="#fff" />
+                            ) : (
+                              <Text className="text-white text-xs font-semibold">{t("actions.remind")}</Text>
+                            )}
+                          </TouchableOpacity>
+                        </View>
+                      )}
+                    </View>
+
+                    {/* Divider après chaque tour différent */}
+                    {currentTour !== nextTour && (
+                      <View className="h-[1px] bg-gray-300 mx-4 my-1" />
                     )}
-                  </View>
-                ))}
-              </ScrollView>
+                  </React.Fragment>
+                );
+              })}
+            </ScrollView>
+
+
             )}
           </>
         )}
 
-        {activeTab === "rotationOrder" && (
-          <>
+       {activeTab === "rotationOrder" && (
+          <ScrollView
+            contentContainerStyle={{ paddingBottom: 24 }}
+            showsVerticalScrollIndicator={false}
+          >
             <Text className="text-black mt-2 mb-2 text-sm">
               {Array.isArray(tontine?.toursDeDistribution) &&
               tontine.toursDeDistribution.length > 0
@@ -509,6 +503,7 @@ const handleDistribute = async () => {
               data={ordreList}
               onDragEnd={({ data }) => setOrdreList(data)}
               keyExtractor={(item) => item.key}
+              scrollEnabled={false} // ✅ prevent conflict with ScrollView
               renderItem={({ item, drag, isActive }) => (
                 <ScaleDecorator>
                   <TouchableOpacity
@@ -520,7 +515,9 @@ const handleDistribute = async () => {
                   >
                     <View className="flex-row items-center space-x-3">
                       <Ionicons name="reorder-three" size={24} color="#888" />
-                      <Text className="text-black font-semibold text-base">{item.label}</Text>
+                      <Text className="text-black font-semibold text-base">
+                        {item.label}
+                      </Text>
                     </View>
                     <View className="bg-gray-200 rounded-full px-4 py-1">
                       <Text className="text-black font-bold text-sm">{item.order}</Text>
@@ -546,8 +543,9 @@ const handleDistribute = async () => {
                   )}
                 </TouchableOpacity>
               )}
-          </>
+          </ScrollView>
         )}
+
 
         {activeTab === "history" && (
           <>

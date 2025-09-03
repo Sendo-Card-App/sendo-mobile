@@ -9,17 +9,17 @@ import {
   Image,
   StyleSheet,
   Platform,
-  Linking
+  Linking,
+  StatusBar,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { useDispatch } from 'react-redux';
 import { AntDesign, Ionicons, MaterialIcons, FontAwesome } from '@expo/vector-icons';
 import * as LocalAuthentication from 'expo-local-authentication';
 import * as Notifications from 'expo-notifications';
 import Loader from '../../components/Loader';
 
-// Flag images (you'll need to add these to your assets)
+// Flag images
 const FLAGS = {
   en: require('../../images/usa.png'),
   fr: require('../../images/fr.png'),
@@ -27,20 +27,14 @@ const FLAGS = {
 
 const Settings = ({ navigation }) => {
   const { t, i18n } = useTranslation();
-  const dispatch = useDispatch();
   const [isBiometricsEnabled, setIsBiometricsEnabled] = useState(false);
   const [isNotificationsEnabled, setIsNotificationsEnabled] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState(i18n.language);
   const [languageModalVisible, setLanguageModalVisible] = useState(false);
-  const [feedbackModal, setFeedbackModal] = useState({
-    visible: false,
-    type: '', // 'success' or 'error'
-    message: ''
-  });
+  const [feedbackModal, setFeedbackModal] = useState({ visible: false, type: '', message: '' });
   const [loading, setLoading] = useState(false);
   const [biometricAvailable, setBiometricAvailable] = useState(false);
 
-  // Check notification permissions on mount
   useEffect(() => {
     checkNotificationPermissions();
     checkBiometricsAvailability();
@@ -51,7 +45,7 @@ const Settings = ({ navigation }) => {
       const { status } = await Notifications.getPermissionsAsync();
       setIsNotificationsEnabled(status === 'granted');
     } catch (error) {
-      console.error('Error checking notification permissions:', error);
+      console.error(error);
     }
   };
 
@@ -59,19 +53,10 @@ const Settings = ({ navigation }) => {
     try {
       const isAvailable = await LocalAuthentication.hasHardwareAsync();
       const isEnrolled = await LocalAuthentication.isEnrolledAsync();
-      
       setBiometricAvailable(isAvailable && isEnrolled);
-      
-      // Only enable biometrics if available and enrolled
-      if (isAvailable && isEnrolled) {
-        // Check if biometrics is already enabled (you might want to store this in AsyncStorage)
-        // For now, we'll default to false
-        setIsBiometricsEnabled(false);
-      } else {
-        setIsBiometricsEnabled(false);
-      }
+      setIsBiometricsEnabled(false);
     } catch (error) {
-      console.error('Error checking biometric availability:', error);
+      console.error(error);
       setBiometricAvailable(false);
       setIsBiometricsEnabled(false);
     }
@@ -81,7 +66,6 @@ const Settings = ({ navigation }) => {
     setLoading(true);
     try {
       if (isNotificationsEnabled) {
-        // Disable notifications logic here
         setIsNotificationsEnabled(false);
         showFeedback('success', t('notifications_disabled'));
       } else {
@@ -94,7 +78,7 @@ const Settings = ({ navigation }) => {
         showFeedback('success', t('notifications_enabled'));
       }
     } catch (error) {
-      console.error('Error toggling notifications:', error);
+      console.error(error);
       showFeedback('error', t('notification_error'));
     } finally {
       setLoading(false);
@@ -102,20 +86,15 @@ const Settings = ({ navigation }) => {
   };
 
   const toggleBiometrics = async () => {
-    // If trying to enable biometrics but not available
     if (!isBiometricsEnabled && !biometricAvailable) {
       showFeedback('error', t('biometric_not_available'));
       return;
     }
-
-    // If disabling biometrics
     if (isBiometricsEnabled) {
       setIsBiometricsEnabled(false);
       showFeedback('success', t('biometrics_disabled'));
       return;
     }
-
-    // If enabling biometrics - authenticate first
     setLoading(true);
     try {
       const result = await LocalAuthentication.authenticateAsync({
@@ -124,7 +103,6 @@ const Settings = ({ navigation }) => {
         disableDeviceFallback: false,
         fallbackLabel: Platform.OS === 'ios' ? t('use_passcode') : undefined,
       });
-
       if (result.success) {
         setIsBiometricsEnabled(true);
         showFeedback('success', t('biometrics_enabled'));
@@ -132,7 +110,7 @@ const Settings = ({ navigation }) => {
         showFeedback('error', t('authentication_failed'));
       }
     } catch (error) {
-      console.error('Biometric authentication error:', error);
+      console.error(error);
       showFeedback('error', t('biometric_error'));
     } finally {
       setLoading(false);
@@ -147,17 +125,10 @@ const Settings = ({ navigation }) => {
   };
 
   const showFeedback = (type, message) => {
-    setFeedbackModal({
-      visible: true,
-      type,
-      message
-    });
-    setTimeout(() => {
-      setFeedbackModal(prev => ({ ...prev, visible: false }));
-    }, 3000);
+    setFeedbackModal({ visible: true, type, message });
+    setTimeout(() => setFeedbackModal(prev => ({ ...prev, visible: false })), 3000);
   };
 
-  // Hide bottom tab bar
   useEffect(() => {
     const parent = navigation.getParent();
     parent?.setOptions({ tabBarStyle: { display: 'none' } });
@@ -167,6 +138,19 @@ const Settings = ({ navigation }) => {
   if (loading) return <Loader />;
 
   return (
+    <View style={{ flex: 1, backgroundColor: '#fff' }}>
+      <StatusBar backgroundColor="#7ddd7d" barStyle="light-content" />
+
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 40 }}>
+          <Ionicons name="arrow-back" size={24} color="#fff" />
+        </TouchableOpacity>
+
+        <Text style={styles.headerTitle}>{t('screens.setting')}</Text>
+
+        <View style={{ width: 40 }} />
+      </View>
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.contentContainer}
@@ -333,6 +317,8 @@ const Settings = ({ navigation }) => {
         </View>
       </Modal>
     </ScrollView>
+        </View>
+
   );
 };
 
@@ -340,6 +326,25 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: 'white',
+  },
+    header: {
+    backgroundColor: '#7ddd7d',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 40,
+    paddingBottom: 15,
+    paddingHorizontal: 15,
+  },
+  headerTitle: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    flex: 1,
+  },
+  contentContainer: {
+    paddingBottom: 30,
   },
   contentContainer: {
     paddingBottom: 30,

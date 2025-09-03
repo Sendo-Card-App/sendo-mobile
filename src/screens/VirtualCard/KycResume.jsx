@@ -212,16 +212,15 @@ const handleSubmit = async () => {
     }
 
   } catch (error) {
-    console.error('KYC submission error:', JSON.stringify(error ?? {}, null, 2));
-   Toast.show({
+    //console.error('KYC submission error:', JSON.stringify(error ?? {}, null, 2));
+    Toast.show({
       type: 'error',
-      text1: 'Erreur réseau ou serveur',
-      text2: 
-        error?.data?.data?.errors?.[0] ||  // detailed KYC message
-        error?.data?.message ||             // fallback to general message
-        'Une erreur est survenue',          // fallback generic message
+      text1: 'Oups, une erreur est survenue',
+      text2:
+        error?.data?.data?.errors?.[0] ||       // detailed KYC message
+        error?.data?.message ||                 // fallback to general message
+        "Vérifiez votre connexion internet et réessayez.", // clear helpful message
     });
-
   } finally {
     dispatch(setSubmissionStatus('idle'));
   }

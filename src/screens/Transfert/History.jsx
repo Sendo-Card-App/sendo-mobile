@@ -6,10 +6,12 @@ import {
   TouchableOpacity, 
   ActivityIndicator, 
   Platform,
+  StatusBar,
   ScrollView,
   Modal,
   Dimensions
 } from "react-native";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import React, { useState, useEffect, useCallback } from "react";
 import { useFocusEffect } from '@react-navigation/native';
 import OrangeMoney from "../../images/om.png";
@@ -430,13 +432,24 @@ const History = () => {
 
     if (!userId) {
     return (
-     <FlatList
+      <View className="flex-1 bg-white" style={{ paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 40 }}>
+        {/* Header with back button */}
+        <View className="flex-row items-center justify-between p-4">
+          <TouchableOpacity onPress={() => navigation.goBack()} className="p-2">
+            <Ionicons name="arrow-back" size={24} color="black" />
+          </TouchableOpacity>
+          <Text className="text-xl font-bold">{t('screens.history')}</Text>
+          <View style={{ width: 40 }} />
+        </View>
+        
+        <FlatList
           data={[1, 2, 3, 4, 5]}
           keyExtractor={(item) => item.toString()}
           renderItem={() => <TransactionSkeleton />}
-          contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 20 }}
+          contentContainerStyle={{ paddingHorizontal: 16 }}
           showsVerticalScrollIndicator={false}
         />
+      </View>
     );
   }
 
@@ -512,27 +525,41 @@ const applyFilters = () => {
   );
  if (isLoading && currentPage === 1) {
   return (
-    <FlatList
+     <View className="flex-1 bg-white" style={{ paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 40 }}>
+        {/* Header with back button */}
+        <View className="flex-row items-center justify-between p-4">
+          <TouchableOpacity onPress={() => navigation.goBack()} className="p-2">
+            <Ionicons name="arrow-back" size={24} color="black" />
+          </TouchableOpacity>
+          <Text className="text-xl font-bold">{t('screens.history')}</Text>
+          <View style={{ width: 40 }} />
+        </View>
+        
+        <FlatList
           data={[1, 2, 3, 4, 5]}
           keyExtractor={(item) => item.toString()}
           renderItem={() => <TransactionSkeleton />}
-          contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 20 }}
+          contentContainerStyle={{ paddingHorizontal: 16 }}
           showsVerticalScrollIndicator={false}
         />
+      </View>
   );
 }
 
   if (isError) {
    
     return (
-      <View className="flex-1 justify-center items-center">
+      <View className="flex-1 justify-center items-center bg-white" style={{ paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 40 }}>
+        {/* Header with back button */}
+        <View className="flex-row items-center justify-between p-4 absolute top-0 w-full">
+          <TouchableOpacity onPress={() => navigation.goBack()} className="p-2">
+            <Ionicons name="arrow-back" size={24} color="black" />
+          </TouchableOpacity>
+          <Text className="text-xl font-bold">{t('screens.history')}</Text>
+          <View style={{ width: 40 }} />
+        </View>
+        
         <Text className="text-red-500">{t('history1.errorLoading')}</Text>
-        {/* <TouchableOpacity 
-          className="mt-4 px-4 py-2 bg-green-500 rounded"
-          onPress={refetch}
-        >
-          <Text className="text-white">{t('common3.retry')}</Text>
-        </TouchableOpacity> */}
       </View>
     );
   }
@@ -548,17 +575,27 @@ const applyFilters = () => {
 
   return (
     <View className="flex-1 bg-white">
-      <View className={`flex-row justify-between items-center ${Platform.OS === 'ios' ? 'mt-10' : 'mt-4'} p-4`}>
-        <Text className="text-xl font-bold">
-          {isShowingToday ? t('history1.todayTransactions') : t('history1.title')}
+    <View
+      className="bg-white px-5 flex-row items-center justify-between"
+      style={{ paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 40 }}
+    >
+      {/* Title */}
+      <Text className="text-xl font-bold text-gray-800">
+        {isShowingToday ? t('history1.todayTransactions') : t('history1.title')}
+      </Text>
+
+      {/* Filter Button */}
+      <TouchableOpacity
+        className="flex-row items-center px-4 py-2 border rounded-full border-[#7ddd7d] bg-white shadow-sm"
+        onPress={() => setShowFilterModal(true)}
+      >
+        <Text className="text-[#7ddd7d] font-medium mr-2">
+          {t('history1.filter')}
         </Text>
-        <TouchableOpacity 
-          className="px-3 py-1 border border-green rounded-full"
-          onPress={() => setShowFilterModal(true)}
-        >
-          <Text className="text-green-500">{t('history1.filter')}</Text>
-        </TouchableOpacity>
-      </View>
+        <MaterialIcons name="filter-list" size={18} color="#7ddd7d" />
+      </TouchableOpacity>
+    </View>
+
 
       <SkeletonLoader
         isLoading={isLoading}

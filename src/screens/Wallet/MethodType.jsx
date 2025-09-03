@@ -10,6 +10,7 @@ import {
   Modal,
   Pressable,
   ScrollView,
+  Platform,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
@@ -22,39 +23,57 @@ const MethodType = ({ navigation }) => {
   const [showServiceModal, setShowServiceModal] = useState(false);
 
   const bankDetails = {
-    beneficiary: "Services Financiers Étudiants SAS",
-    bankName: "UBA CAMEROUN S.A.",
-    bankCode: "10033",
-    branchCode: "06870",
-    accountNumber: "000237000456001",
-    ribKey: "26",
-    swiftBic: "UNAFCMCX",
-    iban: "CM21 10033 06870 000237000456001 26",
-   
+    beneficiary: "SERVICES FINANCIERS ETUDIANTS CAMEROUN S.A.S",
+    bankName: "ECOBANK CAMEROUN S.A.",
+    bankCode: "10029",
+    branchCode: "00001",
+    accountNumber: "30180056507",
+    ribKey: "47",
+    swiftBic: "ECOCCMCX",
+    iban: "CM21 10029 00001 30180056507 47",
+    reference: "30180056507", // Optional internal reference
   };
 
-  return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff', paddingTop: StatusBar.currentHeight || 20 }}>
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 30 }}>
-        {/* Header */}
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-          <TouchableOpacity onPress={() => navigation.goBack()} />
-          <TouchableOpacity style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            marginTop: 10,
-            marginBottom: 10,
-            backgroundColor: '#F1F1F1',
-            paddingHorizontal: 10,
-            paddingVertical: 5,
-            borderRadius: 20,
-          }}>
-            <Text style={{ fontSize: 12, color: '#0D1C6A' }}>{t('method.withdrawal_limit')}</Text>
-          </TouchableOpacity>
-        </View>
 
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#7ddd7d' }}>
+      {/* StatusBar */}
+      <StatusBar
+        backgroundColor="#7ddd7d"
+        barStyle="light-content"
+      />
+
+      {/* Header */}
+      <View
+        style={{
+          backgroundColor: '#7ddd7d',
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          paddingHorizontal: 16,
+          paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+          paddingBottom: 12,
+        }}
+      >
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <AntDesign name="arrowleft" size={24} color="white" />
+        </TouchableOpacity>
+
+        <Text style={{ color: 'white', fontSize: 18, fontWeight: 'bold' }}>
+          {t('screens.selectMethod')}
+        </Text>
+
+        <TouchableOpacity onPress={() => navigation.openDrawer()}>
+          <AntDesign name="menu-fold" size={24} color="white" />
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView
+        style={{ flex: 1, backgroundColor: '#fff' }}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 30 }}
+      >
         {/* Mobile Transfer Section */}
-        <Text style={{ fontSize: 16, fontWeight: '500', marginBottom: 10 }}>
+        <Text style={{ fontSize: 16, fontWeight: '500', marginVertical: 10 }}>
           {t('method.send_to_mobile')}
         </Text>
 
@@ -67,7 +86,8 @@ const MethodType = ({ navigation }) => {
             borderRadius: 10,
             padding: 15,
             marginBottom: 20,
-          }}>
+          }}
+        >
           <AntDesign name="mobile1" size={50} color="#999" style={{ marginRight: 5 }} />
           <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#0D1C6A', marginLeft: 10, flex: 1 }}>
             {t('method.transfer_to_mobile')}
@@ -88,18 +108,14 @@ const MethodType = ({ navigation }) => {
             backgroundColor: '#F1F1F1',
             borderRadius: 10,
             padding: 15,
-          }}>
+          }}
+        >
           <AntDesign name="bank" size={50} color="#999" style={{ marginRight: 5 }} />
           <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#0D1C6A', marginLeft: 10, flex: 1 }}>
             {t('method.sendo_transfer')}
           </Text>
           <Text style={{ fontSize: 12, color: '#999' }}>{t('method.no_fee')}</Text>
-          <AntDesign
-            name={showBankDetails ? "up" : "down"}
-            size={16}
-            color="#666"
-            style={{ marginLeft: 10 }}
-          />
+          <AntDesign name={showBankDetails ? "up" : "down"} size={16} color="#666" style={{ marginLeft: 10 }} />
         </TouchableOpacity>
 
         {showBankDetails && (
@@ -112,9 +128,7 @@ const MethodType = ({ navigation }) => {
             borderColor: '#EEE'
           }}>
             <TouchableOpacity
-              onPress={() => navigation.navigate("BankDepositRecharge", {
-                methodType: "BANK_TRANSFER"
-              })}
+              onPress={() => navigation.navigate("BankDepositRecharge", { methodType: "BANK_TRANSFER" })}
               style={{
                 backgroundColor: '#7ddd7d',
                 borderRadius: 8,
@@ -137,14 +151,7 @@ const MethodType = ({ navigation }) => {
               { label: t('method.rib_key'), value: bankDetails.ribKey },
               { label: t('method.bic_swift'), value: bankDetails.swiftBic },
             ].map((item, index) => (
-              <View
-                key={index}
-                style={{
-                  flexDirection: 'row',
-                  justifyContent: 'space-between',
-                  marginBottom: 10
-                }}
-              >
+              <View key={index} style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 }}>
                 <Text style={{ fontSize: 14, color: '#666', fontWeight: '500' }}>{item.label}:</Text>
                 <Text style={{ fontSize: 14, color: '#333', fontWeight: 'bold', maxWidth: 180, textAlign: 'right' }}>
                   {item.value}
@@ -152,12 +159,8 @@ const MethodType = ({ navigation }) => {
               </View>
             ))}
 
-            {/* Horizontally scrollable IBAN */}
-            <View style={{
-              flexDirection: 'row',
-              marginBottom: 10,
-              alignItems: 'center'
-            }}>
+            {/* IBAN scroll */}
+            <View style={{ flexDirection: 'row', marginBottom: 10, alignItems: 'center' }}>
               <Text style={{ fontSize: 14, color: '#666', fontWeight: '500', width: 120 }}>
                 {t('method.full_iban')}:
               </Text>
@@ -167,20 +170,10 @@ const MethodType = ({ navigation }) => {
                 </Text>
               </ScrollView>
             </View>
-
-            <View style={{
-              marginTop: 10,
-              padding: 10,
-              backgroundColor: '#FFF6E5',
-              borderLeftWidth: 4,
-              borderLeftColor: '#FFA500'
-            }}>
-
-            </View>
           </View>
         )}
 
-        {/* Service Selection Modal */}
+        {/* Service Modal */}
         <Modal
           transparent
           animationType="fade"
@@ -209,7 +202,6 @@ const MethodType = ({ navigation }) => {
                 {t('method.select_service')}
               </Text>
 
-              {/* Services Grid */}
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%' }}>
                 {/* Orange Money */}
                 <TouchableOpacity
@@ -257,7 +249,6 @@ const MethodType = ({ navigation }) => {
             </View>
           </Pressable>
         </Modal>
-
       </ScrollView>
     </SafeAreaView>
   );

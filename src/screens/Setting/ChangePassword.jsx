@@ -7,6 +7,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  StatusBar,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import {
@@ -22,7 +23,7 @@ import Toast from 'react-native-toast-message';
 import Loader from '../../components/Loader';
 import { Ionicons } from '@expo/vector-icons';
 
-const ChangePassword = () => {
+const ChangePassword = ({ navigation }) => {
   const { t } = useTranslation();
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -107,20 +108,12 @@ const ChangePassword = () => {
 
   const handleSubmit = () => {
     if (!oldPassword || !newPassword || !confirmPassword) {
-      Toast.show({
-        type: 'error',
-        text1: t('Field required'),
-        text2: t('All fields are required'),
-      });
+      Toast.show({ type: 'error', text1: t('Field required'), text2: t('All fields are required') });
       return;
     }
 
     if (oldPassword === newPassword) {
-      Toast.show({
-        type: 'error',
-        text1: t('Password same as old'),
-        text2: t('The new password must be different from the old one.'),
-      });
+      Toast.show({ type: 'error', text1: t('Password same as old'), text2: t('The new password must be different from the old one.') });
       return;
     }
 
@@ -129,19 +122,13 @@ const ChangePassword = () => {
       Toast.show({
         type: 'error',
         text1: t('Weak password'),
-        text2: t(
-          'Password must be at least 8 characters, include one uppercase letter, one number, and one special character.'
-        ),
+        text2: t('Password must be at least 8 characters, include one uppercase letter, one number, and one special character.'),
       });
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      Toast.show({
-        type: 'error',
-        text1: t('Password mismatch'),
-        text2: t('The passwords do not match.'),
-      });
+      Toast.show({ type: 'error', text1: t('Password mismatch'), text2: t('The passwords do not match.') });
       return;
     }
 
@@ -153,20 +140,37 @@ const ChangePassword = () => {
       style={{ flex: 1, backgroundColor: '#fff' }}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
+      
     >
+       <StatusBar backgroundColor="#7ddd7d" barStyle="light-content" />
+      {/* Header */}
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          backgroundColor: '#7ddd7d',
+          paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 40,
+          paddingBottom: 15,
+          paddingHorizontal: 15,
+        }}
+      >
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 40 }}>
+          <Ionicons name="arrow-back" size={24} color="#fff" />
+        </TouchableOpacity>
+
+        <Text style={{ color: '#fff', fontSize: 20, fontWeight: 'bold', flex: 1, textAlign: 'center' }}>
+          {t('screens.changePassword')}
+        </Text>
+
+        <View style={{ width: 40 }} />
+      </View>
+
       <ScrollView
         contentContainerStyle={{ padding: 20, flexGrow: 1, justifyContent: 'center' }}
         keyboardShouldPersistTaps="handled"
       >
-        <Text
-          style={{
-            fontSize: 24,
-            fontWeight: 'bold',
-            textAlign: 'center',
-            marginBottom: 30,
-            color: '#333',
-          }}
-        >
+        <Text style={{ fontSize: 24, fontWeight: 'bold', textAlign: 'center', marginBottom: 30, color: '#333' }}>
           {t('change_password')}
         </Text>
 
@@ -187,15 +191,8 @@ const ChangePassword = () => {
               backgroundColor: '#f9f9f9',
             }}
           />
-          <TouchableOpacity
-            onPress={() => setShowOldPassword(v => !v)}
-            style={{ position: 'absolute', right: 15, top: 15 }}
-          >
-            <Ionicons
-              name={showOldPassword ? 'eye-off' : 'eye'}
-              size={20}
-              color="#666"
-            />
+          <TouchableOpacity onPress={() => setShowOldPassword(v => !v)} style={{ position: 'absolute', right: 15, top: 15 }}>
+            <Ionicons name={showOldPassword ? 'eye-off' : 'eye'} size={20} color="#666" />
           </TouchableOpacity>
         </View>
 
@@ -216,41 +213,18 @@ const ChangePassword = () => {
               backgroundColor: '#f9f9f9',
             }}
           />
-          <TouchableOpacity
-            onPress={() => setShowNewPassword(v => !v)}
-            style={{ position: 'absolute', right: 15, top: 15 }}
-          >
-            <Ionicons
-              name={showNewPassword ? 'eye-off' : 'eye'}
-              size={20}
-              color="#666"
-            />
+          <TouchableOpacity onPress={() => setShowNewPassword(v => !v)} style={{ position: 'absolute', right: 15, top: 15 }}>
+            <Ionicons name={showNewPassword ? 'eye-off' : 'eye'} size={20} color="#666" />
           </TouchableOpacity>
         </View>
 
         {/* Password Strength */}
         {newPassword.length > 0 && (
           <View style={{ marginBottom: 20 }}>
-            <View
-              style={{
-                height: 8,
-                width: '100%',
-                backgroundColor: '#eee',
-                borderRadius: 10,
-                overflow: 'hidden',
-              }}
-            >
-              <View
-                style={{
-                  height: '100%',
-                  width: passwordStrength.width,
-                  backgroundColor: passwordStrength.color,
-                }}
-              />
+            <View style={{ height: 8, width: '100%', backgroundColor: '#eee', borderRadius: 10, overflow: 'hidden' }}>
+              <View style={{ height: '100%', width: passwordStrength.width, backgroundColor: passwordStrength.color }} />
             </View>
-            <Text style={{ marginTop: 5, color: passwordStrength.color }}>
-              {passwordStrength.label}
-            </Text>
+            <Text style={{ marginTop: 5, color: passwordStrength.color }}>{passwordStrength.label}</Text>
           </View>
         )}
 
@@ -271,15 +245,8 @@ const ChangePassword = () => {
               backgroundColor: '#f9f9f9',
             }}
           />
-          <TouchableOpacity
-            onPress={() => setShowConfirmPassword(v => !v)}
-            style={{ position: 'absolute', right: 15, top: 15 }}
-          >
-            <Ionicons
-              name={showConfirmPassword ? 'eye-off' : 'eye'}
-              size={20}
-              color="#666"
-            />
+          <TouchableOpacity onPress={() => setShowConfirmPassword(v => !v)} style={{ position: 'absolute', right: 15, top: 15 }}>
+            <Ionicons name={showConfirmPassword ? 'eye-off' : 'eye'} size={20} color="#666" />
           </TouchableOpacity>
         </View>
 
@@ -300,13 +267,7 @@ const ChangePassword = () => {
             shadowRadius: 3,
           }}
         >
-          {isLoading ? (
-            <Loader color="#fff" />
-          ) : (
-            <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 18 }}>
-              {t('submit')}
-            </Text>
-          )}
+          {isLoading ? <Loader color="#fff" /> : <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 18 }}>{t('submit')}</Text>}
         </TouchableOpacity>
 
         <Toast />

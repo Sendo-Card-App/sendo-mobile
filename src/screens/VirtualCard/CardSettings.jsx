@@ -247,7 +247,7 @@ const CardSettingsScreen = () => {
         </View>
       </Modal>
 
-      <StatusBar style="dark" />
+        <StatusBar backgroundColor="#7ddd7d" style="light" />
     </View>
   );
 };

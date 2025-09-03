@@ -6,13 +6,15 @@ import {
   Image,
   Linking,
   FlatList,
+  StatusBar,
   ScrollView,
   BackHandler,
-   Dimensions, Platform,StatusBar
+   Dimensions, Platform
 } from "react-native";
+import { Modal, Pressable } from 'react-native';
 import { Ionicons, AntDesign } from "@expo/vector-icons";
 import Loader from "../../components/Loader";
-import { useNavigation, useFocusEffect } from "@react-navigation/native";
+import { useNavigation, useFocusEffect, useNavigationState } from "@react-navigation/native";
 import { useGetBalanceQuery } from "../../services/WalletApi/walletApi";
 import { useGetUserProfileQuery,  useGetTokenMutation, useCreateTokenMutation  } from "../../services/Auth/authAPI";
 import { useGetTransactionHistoryQuery } from "../../services/WalletApi/walletApi";
@@ -41,6 +43,7 @@ const HomeScreen = () => {
     const flatListRef = useRef(null);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [createToken] = useCreateTokenMutation();
+     const [showKycModal, setShowKycModal] = useState(false);
 
     // Fetch user profile and enable refetch
     const {
@@ -158,19 +161,30 @@ useEffect(() => {
     checkTerms();
   }, []);
      
-    //    useEffect(() => {
-    //   const backAction = () => {
-    //     BackHandler.exitApp();
-    //     return true;
-    //   };
+      useEffect(() => {
+        const backAction = () => {
+          // Get current route index from Tab.Navigator
+          const state = navigation.getState();
+          const currentTabIndex = state?.routes?.[0]?.state?.index;
 
-    //   const backHandler = BackHandler.addEventListener(
-    //     "hardwareBackPress",
-    //     backAction
-    //   );
+          if (currentTabIndex !== 0) {
+            // Not on HomeTab → navigate back to HomeTab
+            navigation.navigate("HomeTab");
+            return true; // prevent default exit
+          }
 
-    //   return () => backHandler.remove(); 
-    // }, []);
+          // Already on HomeTab → exit app
+          BackHandler.exitApp();
+          return true;
+        };
+
+        const backHandler = BackHandler.addEventListener(
+          "hardwareBackPress",
+          backAction
+        );
+
+        return () => backHandler.remove();
+      }, [navigation]);
       
     useEffect(() => {
       if (!pubs?.items) return;
@@ -188,18 +202,11 @@ useEffect(() => {
     }, [currentIndex, pubs])
    
    useEffect(() => {
-  if (balanceError) {
-    let errorMessage = 'An unknown error occurred';
-    
-    if (balanceError.status === 403) errorMessage = 'Missing KYC documents';
-    else if (balanceError.status === 404) errorMessage = 'Wallet not found';
-    else if (balanceError.data?.message) errorMessage = balanceError.data.message;
-
-    // Log internally, not shown to the user
-    //console.log('Balance fetch error:', JSON.stringify(balanceError, null, 2));
-    //console.log('Resolved message:', errorMessage);
-  }
-}, [balanceError]);
+    if (balanceError?.status === 403) {
+      // Show modal only once
+      setShowKycModal(true);
+    }
+  }, [balanceError]);
 
     
    const getStatusColor = (status) => {
@@ -259,6 +266,12 @@ const getMethodIcon = (transaction) => {
 
   return (
     <View className="flex-1 bg-[#F2F2F2] pt-10 px-4">
+       <StatusBar 
+         backgroundColor="transparent"  // ✅ Android background color
+          barStyle="dark-content"    // ✅ text/icon color (light or dark)
+          translucent={false}         // ✅ if you don’t want it overlapping content
+        />
+
       {/* Top header */}
       <View className="flex-row justify-between items-center mb-1">
         <Image
@@ -292,88 +305,88 @@ const getMethodIcon = (transaction) => {
        <View className="border border-dashed border-black mt-1 mb-5 " />
       {/* Balance Card with TopLogo background */}
       <View className="relative bg-[#70ae70] rounded-xl p-2 mb-1 overflow-hidden">
-  <Image
-    source={TopLogo}
-    resizeMode="contain"
-    className="absolute top-0 left-0 right-0 bottom-0 h-full w-full opacity-10"
-  />
-
-  <View className="z-10">
-    {/* Ligne avec Bonjour + icône œil */}
-    <View className="flex-row justify-between items-center mb-1">
-      <Text className="text-black text-lg">{t("home.greeting")}</Text>
-      <TouchableOpacity
-        onPress={() => {
-          if (showBalance) {
-            setShowBalance(false);
-          } else {
-            navigation.navigate("Auth", {
-              screen: "PinCode",
-              params: {
-                onSuccess: () => {
-                  setShowBalance(true);
-                  return Promise.resolve();
-                },
-                showBalance: true,
-              },
-            });
-          }
-        }}
-      >
-        <Ionicons
-          name={showBalance ? "eye-outline" : "eye-off-outline"}
-          size={isSmallScreen ? scale(22) : scale(24)}
-          color="black"
+        <Image
+          source={TopLogo}
+          resizeMode="contain"
+          className="absolute top-0 left-0 right-0 bottom-0 h-full w-full opacity-10"
         />
-      </TouchableOpacity>
-    </View>
 
-    {/* Nom aligné sous Bonjour */}
-    <Text className="text-black text-2xl font-bold mb-2">
-      {userProfile?.data?.firstname} {userProfile?.data?.lastname}
-    </Text>
+        <View className="z-10">
+          {/* Ligne avec Bonjour + icône œil */}
+          <View className="flex-row justify-between items-center mb-1">
+            <Text className="text-black text-lg">{t("home.greeting")}</Text>
+            <TouchableOpacity
+              onPress={() => {
+                if (showBalance) {
+                  setShowBalance(false);
+                } else {
+                  navigation.navigate("Auth", {
+                    screen: "PinCode",
+                    params: {
+                      onSuccess: () => {
+                        setShowBalance(true);
+                        return Promise.resolve();
+                      },
+                      showBalance: true,
+                    },
+                  });
+                }
+              }}
+            >
+              <Ionicons
+                name={showBalance ? "eye-outline" : "eye-off-outline"}
+                size={isSmallScreen ? scale(22) : scale(24)}
+                color="black"
+              />
+            </TouchableOpacity>
+          </View>
 
-    {/* Bloc Solde */}
-    <View className="flex-row justify-between items-center my-2">
-      <Text className="text-black text-base">{t("home.balance")}</Text>
-      <Text className="text-black text-xl font-bold">
-        {isBalanceLoading ? (
-          <Loader size="small" color="black" />
-        ) : showBalance ? (
-          `${(balanceData?.data?.balance ?? 0).toLocaleString(undefined, {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-          })} ${balanceData?.data?.currency ?? ""}`
-        ) : (
-          "****"
-        )}
-      </Text>
-    </View>
+          {/* Nom aligné sous Bonjour */}
+          <Text className="text-black text-2xl font-bold mb-2">
+            {userProfile?.data?.firstname} {userProfile?.data?.lastname}
+          </Text>
 
-    {/* Boutons actions */}
-    <View className="flex-row mt-3 gap-4">
-      <TouchableOpacity
-        onPress={() => navigation.navigate("SelectMethod")}
-        className="bg-white px-3 py-2 rounded-full flex-row items-center flex-1 justify-center"
-      >
-        <Ionicons name="send-outline" size={18} color="black" />
-        <Text className="text-black font-bold text-xs ml-2">
-          {t("home.transfer")}
-        </Text>
-      </TouchableOpacity>
+          {/* Bloc Solde */}
+          <View className="flex-row justify-between items-center my-2">
+            <Text className="text-black text-base">{t("home.balance")}</Text>
+            <Text className="text-black text-xl font-bold">
+              {isBalanceLoading ? (
+                <Loader size="small" color="black" />
+              ) : showBalance ? (
+                `${(balanceData?.data?.balance ?? 0).toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })} ${balanceData?.data?.currency ?? ""}`
+              ) : (
+                "****"
+              )}
+            </Text>
+          </View>
 
-      <TouchableOpacity
-        onPress={() => navigation.navigate("MethodType")}
-        className="bg-white px-3 py-2 rounded-full flex-row items-center flex-1 justify-center"
-      >
-        <Ionicons name="refresh-outline" size={18} color="black" />
-        <Text className="text-black font-bold text-xs ml-2">
-          {t("home.recharge")}
-        </Text>
-      </TouchableOpacity>
-    </View>
-  </View>
-</View>
+          {/* Boutons actions */}
+          <View className="flex-row mt-3 gap-4">
+            <TouchableOpacity
+              onPress={() => navigation.navigate("SelectMethod")}
+              className="bg-white px-3 py-2 rounded-full flex-row items-center flex-1 justify-center"
+            >
+              <Ionicons name="send-outline" size={18} color="black" />
+              <Text className="text-black font-bold text-xs ml-2">
+                {t("home.transfer")}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => navigation.navigate("MethodType")}
+              className="bg-white px-3 py-2 rounded-full flex-row items-center flex-1 justify-center"
+            >
+              <Ionicons name="refresh-outline" size={18} color="black" />
+              <Text className="text-black font-bold text-xs ml-2">
+                {t("home.recharge")}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
 
 
 
@@ -394,7 +407,7 @@ const getMethodIcon = (transaction) => {
         {/* Action buttons row */}
         <View className="flex-row justify-between">
           {[
-            { label: t("home.virtualCard"), icon: "card-outline", route: "Payment" },
+            { label: t("home.virtualCard"), icon: "card-outline", route: "OnboardingCard" },
             { label: t("home.friendsShare"), icon: "people-outline", route: "WelcomeShare" },
             { label: t("home.fundRequest"), icon: "cash-outline", route: "WelcomeDemand" },
             { label: t("home.etontine"), icon: "layers-outline" },
@@ -534,6 +547,56 @@ const getMethodIcon = (transaction) => {
               })}
             </ScrollView>
           )}
+
+         <Modal
+            animationType="fade"
+            transparent
+            visible={showKycModal}
+            onRequestClose={() => setShowKycModal(false)}
+          >
+            <View
+              style={{
+                flex: 1,
+                justifyContent: 'center',
+                alignItems: 'center',
+                backgroundColor: 'rgba(0,0,0,0.5)',
+              }}
+            >
+              <View
+                style={{
+                  width: '80%',
+                  backgroundColor: 'white',
+                  borderRadius: 10,
+                  padding: 20,
+                  alignItems: 'center',
+                }}
+              >
+                <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 15 }}>
+                  {/* Title */}
+                  {t('kycModal.title')}  {/* English: "KYC Required" / French: "KYC Requis" */}
+                </Text>
+                <Text style={{ fontSize: 16, textAlign: 'center', marginBottom: 20 }}>
+                  {/* Message */}
+                  {t('kycModal.message')}  
+                  {/* English: "Missing KYC documents. Please submit your KYC to start using the app." */}
+                  {/* French: "Documents KYC manquants. Veuillez soumettre vos KYC pour commencer à utiliser l'application." */}
+                </Text>
+                <Pressable
+                  style={{
+                    backgroundColor: '#7ddd7d',
+                    paddingVertical: 10,
+                    paddingHorizontal: 20,
+                    borderRadius: 10,
+                  }}
+                  onPress={() => setShowKycModal(false)}
+                >
+                  <Text style={{ color: '#fff', fontWeight: 'bold' }}>
+                    {t('kycModal.okButton')} {/* English: "OK" / French: "OK" */}
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
+          </Modal>
 
 
     </View>

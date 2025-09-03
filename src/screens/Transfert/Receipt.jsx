@@ -5,7 +5,8 @@ import {
   TouchableOpacity,
   ScrollView,
   SafeAreaView,
-  Alert
+  Alert,
+  StatusBar
 } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
 import { Asset } from 'expo-asset';
@@ -366,6 +367,32 @@ const generateReceiptHTML = (transaction, user, getTypeLabel, logoBase64) => {
 
   return (
     <SafeAreaView className="flex-1 bg-white">
+       <StatusBar backgroundColor="#7ddd7d" barStyle="light-content" />
+      
+       <View
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        paddingVertical: 16,
+        paddingTop: 50,
+        paddingHorizontal: 12,
+        backgroundColor: "#7ddd7d",
+      }}
+    >
+      {/* Back button */}
+      <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 40, alignItems: "flex-start" }}>
+        <AntDesign name="arrowleft" size={24} color="white" />
+      </TouchableOpacity>
+
+      {/* Centered Title */}
+      <Text style={{ flex: 1, textAlign: "center", fontSize: 18, fontWeight: "bold", color: "white" }}>
+        {t('screens.receipt')}
+      </Text>
+
+      {/* Placeholder for symmetry */}
+      <View style={{ width: 40 }} />
+    </View>
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
         <View className="items-center my-4 px-4">
           <Text className="text-lg font-semibold text-gray-700">

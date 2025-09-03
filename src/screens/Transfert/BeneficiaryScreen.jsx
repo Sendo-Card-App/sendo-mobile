@@ -100,11 +100,11 @@ const BeneficiaryScreen = () => {
         <Text style={styles.subtitle}>{t('chooseCountry')}</Text>
 
         {/* Search Input */}
-        <TextInput
+        {/* <TextInput
           style={styles.searchInput}
           placeholder={t('searchPlaceholder')}
           placeholderTextColor="#aaa"
-        />
+        /> */}
 
         {/* Country List */}
         <ScrollView style={styles.countryList}>

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useCallback } from "react";
 import { useFocusEffect } from '@react-navigation/native';
 import {
   View,
@@ -38,6 +39,7 @@ const ManageVirtualCard = () => {
   const { t } = useTranslation();
   const { width } = Dimensions.get("screen");
   const navigation = useNavigation();
+  const [checking, setChecking] = useState(false);
   const {
     data: cards,
     isLoading: isCardsLoading,
@@ -87,6 +89,9 @@ const ManageVirtualCard = () => {
   const [modalMessage, setModalMessage] = useState("");
   const [showDebts, setShowDebts] = useState(false);
   const [preActiveModalVisible, setPreActiveModalVisible] = useState(false);
+  const [isProcessingFreeze, setIsProcessingFreeze] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [isProcessingSetting, setIsProcessingSetting] = useState(false);
 
 
   const cardData = cardDetails?.data;
@@ -147,19 +152,33 @@ const {
     }, [cardData?.id, refetchDebts, refetchBalance, refetchTransactions, refetchCardDetails, refetchCardDetailsHide])
   );
 
-  //    useEffect(() => {
-  //   const interval = setInterval(() => {
-  //     if (userProfile?.data?.virtualCard) {
-  //       navigation.navigate("ManageVirtualCard");
-  //       clearInterval(interval);
-  //     } else {
-  //       navigation.navigate("OnboardingCard");
-  //       clearInterval(interval);
-  //     }
-  //   }, 1000);
 
-  //   return () => clearInterval(interval);
-  // }, [userProfile, navigation]);
+  useFocusEffect(
+    useCallback(() => {
+      setChecking(true); // show loader before checking
+
+      if (!isProfileLoading) {
+        const virtualCard = userProfile?.data?.virtualCard;
+        const isCardMissingOrEmpty =
+          !virtualCard || (typeof virtualCard === "object" && Object.keys(virtualCard).length === 0);
+        const status = virtualCard?.status;
+
+        if (isCardMissingOrEmpty || (status !== "ACTIVE" && status !== "PRE_ACTIVE")) {
+          navigation.navigate("OnboardingCard");
+        }
+      }
+
+      setChecking(false); // hide loader after check
+    }, [userProfile, isProfileLoading, navigation])
+  );
+
+  if (checking || isProfileLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" color="#7ddd7d" />
+      </View>
+    );
+  }
 
 
   useEffect(() => {
@@ -179,6 +198,22 @@ const {
       );
     }
   }, [cardStatus]);
+
+  const debouncedHandleFreezeUnfreeze = async () => {
+    if (isProcessingFreeze) return;
+    
+    setIsProcessingFreeze(true);
+    await handleFreezeUnfreeze();
+    setTimeout(() => setIsProcessingFreeze(false), 1000); // Prevent rapid clicks
+  };
+
+  const debouncedHandleShowCardDetails = async () => {
+    if (isProcessing) return;
+    
+    setIsProcessing(true);
+    await handleShowCardDetails();
+    setTimeout(() => setIsProcessing(false), 1000);
+  };
 
   
   // Prevent screenshots when modal is visible
@@ -279,17 +314,23 @@ const handleFreezeUnfreeze = async () => {
   };
 
   const ActionItem = ({ icon, label, onPress, disabled = false }) => (
-    <TouchableOpacity onPress={onPress} className="items-center flex-1" disabled={disabled}>
-      <View className="bg-gray-200 p-3 rounded-full">
-        {disabled ? (
-          <ActivityIndicator size="small" color="#333" />
-        ) : (
-          <Ionicons name={icon} size={24} color="#333" />
-        )}
-      </View>
-      <Text className="text-xs mt-2 text-center">{label}</Text>
-    </TouchableOpacity>
-  );
+  <TouchableOpacity 
+    onPress={disabled ? null : onPress} 
+    className="items-center flex-1" 
+    disabled={disabled}
+  >
+    <View className={`p-3 rounded-full ${disabled ? 'bg-gray-100' : 'bg-gray-200'}`}>
+      {disabled ? (
+        <ActivityIndicator size="small" color="#333" />
+      ) : (
+        <Ionicons name={icon} size={24} color="#333" />
+      )}
+    </View>
+    <Text className={`text-xs mt-2 text-center ${disabled ? 'text-gray-400' : 'text-black'}`}>
+      {label}
+    </Text>
+  </TouchableOpacity>
+);
 
   const TransactionItem = ({ item }) => {
     const isCashIn = item.type === "DEPOSIT";
@@ -319,9 +360,22 @@ const handleFreezeUnfreeze = async () => {
               {isCashIn ? "Rechargement carte" : "Paiement avec carte"}
             </Text>
             <Text className="text-xs text-gray-500">{formattedDate}</Text>
-           <Text className="text-xs text-gray-500">
-            {item.status === "COMPLETED" ? "Succès" : item.status === "PENDING" ? "En cours de traitement" : "Échec"}
+         <Text
+            className={`text-xs ${
+              item.status === "COMPLETED"
+                ? "text-green-600"
+                : item.status === "PENDING"
+                ? "text-gray-500"
+                : "text-red-600"
+            }`}
+          >
+            {item.status === "COMPLETED"
+              ? "Succès"
+              : item.status === "PENDING"
+              ? "En cours de traitement"
+              : "Échec"}
           </Text>
+
 
           </View>
         </View>
@@ -349,6 +403,7 @@ const handleFreezeUnfreeze = async () => {
   return (
     <View className="flex-1 bg-white">
       <SafeAreaView className="bg-[#7ddd7d]  rounded-b-2xl">
+         <StatusBar backgroundColor="#7ddd7d" barStyle="light-content" />
         <View className="flex-row items-center justify-between px-4 bg-[#7ddd7d]  border-b border-gray-200 rounded-b-2xl">
           <TouchableOpacity
             onPress={() =>
@@ -383,19 +438,32 @@ const handleFreezeUnfreeze = async () => {
           <View className="flex-1 justify-between px-5 py-4">
            <View className="mt-2">
             <Text className="text-white text-sm mb-1">{t('manageVirtualCard.currentBalance')}</Text>
-              <TouchableOpacity
-                onPress={() => setShowBalance(!showBalance)}
-                className="px-3 py-1 rounded-full self-start flex-row items-center space-x-2"
-              >
-                <Feather
-                  name={showBalance ? "eye-off" : "eye"}
-                  size={20}
-                  color="#fff"
-                />
-                <Text className="text-[#0f1a38] font-semibold">
-                  {showBalance}
-                </Text>
-              </TouchableOpacity>
+             <TouchableOpacity
+              onPress={() => {
+                if (showBalance) {
+                  setShowBalance(false);
+                } else {
+                  navigation.navigate("Auth", {
+                    screen: "PinCode",
+                    params: {
+                      onSuccess: () => {
+                        setShowBalance(true);  // ✅ Reveal balance after successful pin
+                        return Promise.resolve();
+                      },
+                      showBalance: true,
+                    },
+                  });
+                }
+              }}
+              className="px-3 py-1 rounded-full self-start flex-row items-center space-x-2"
+            >
+              <Feather
+                name={showBalance ? "eye-off" : "eye"}
+                size={20}
+                color="#fff"
+              />
+            </TouchableOpacity>
+
             </View>
 
             <View className="mt-3">
@@ -477,8 +545,8 @@ const handleFreezeUnfreeze = async () => {
               <ActionItem 
                 icon="eye-outline" 
                 label={t('manageVirtualCard.viewInfo')}
-                onPress={handleShowCardDetails}
-                disabled={isLoadingIframe || isDetailsHideLoading}
+                onPress={debouncedHandleShowCardDetails}
+                disabled={isProcessing || isLoadingIframe || isDetailsHideLoading}
               />
               <ActionItem 
                 icon="snow-outline" 
@@ -487,19 +555,22 @@ const handleFreezeUnfreeze = async () => {
                     ? t('manageVirtualCard.unfreeze')
                     : t('manageVirtualCard.freeze')
                 }
-                onPress={handleFreezeUnfreeze}
-                disabled={isLoadingFreeze}
+                onPress={debouncedHandleFreezeUnfreeze}
+                disabled={isProcessingFreeze || isLoadingFreeze}
               />
               <ActionItem
                 icon="settings"
                 label={t('manageVirtualCard.settings')}
-                onPress={() =>
-                  navigation.navigate("CardSettings", {
-                    cardName: cardData?.cardName,
-                    cardId: cardData?.cardId,
-                    balanceData: balanceData?.data?.balance
-                  })
-                }
+                onPress={() => {
+                  if (!isProcessingSetting) {
+                    navigation.navigate("CardSettings", {
+                      cardName: cardData?.cardName,
+                      cardId: cardData?.cardId,
+                      balanceData: balanceData?.data?.balance
+                    });
+                  }
+                }}
+                disabled={isProcessingSetting}
               />
             </View>
           </View>
