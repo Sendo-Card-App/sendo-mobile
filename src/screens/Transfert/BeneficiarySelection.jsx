@@ -60,10 +60,10 @@ const BeneficiarySelection = ({ route }) => {
     isError: isFavoritesError
   } = useGetFavoritesQuery(userId, { skip: !userId });
   
-  console.log('Favorites Response:', favoritesResponse);
+  //console.log('Favorites Response:', favoritesResponse);
    const favorites = Array.isArray(favoritesResponse) ? favoritesResponse : [];
 
-    console.log('Favorites:', favorites);
+    //console.log('Favorites:', favorites);
   const {
     data: transfersResponse,
     isLoading: isLoadingTransfers,

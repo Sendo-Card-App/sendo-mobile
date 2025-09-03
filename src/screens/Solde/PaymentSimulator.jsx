@@ -9,7 +9,8 @@ import {
   TouchableOpacity,
   Modal,
   FlatList,
-  Dimensions
+  Dimensions,
+  StatusBar
 } from 'react-native';
 import { AntDesign } from "@expo/vector-icons";
 import Toast from 'react-native-toast-message';
@@ -22,16 +23,14 @@ import {
   useGetVirtualCardsQuery,
   useGetVirtualCardDetailsQuery,
 } from "../../services/Card/cardApi";
+
 const { width } = Dimensions.get('window');
 
 const PaymentSimulator = () => {
   const { t } = useTranslation();
   const navigation = useNavigation();
-   const {
-      data: cards,
-      isLoading: isCardsLoading,
-    } = useGetVirtualCardsQuery();
-  
+
+  const { data: cards } = useGetVirtualCardsQuery();
   const [selectedCardId, setSelectedCardId] = useState(null);
   const [amount, setAmount] = useState('100');
   const [currency, setCurrency] = useState('USD');
@@ -51,66 +50,52 @@ const PaymentSimulator = () => {
   });
   const [showCurrencyDropdown, setShowCurrencyDropdown] = useState(false);
   const [isCalculating, setIsCalculating] = useState(false);
-  
-    const {
-      data: cardDetails,
-      isLoading: isDetailsLoading,
-      refetch: refetchCardDetails,
-    } = useGetVirtualCardDetailsQuery(selectedCardId, {
-      skip: !selectedCardId,
-    });
 
-    const cardData = cardDetails?.data;
-   
+  const { data: cardDetails } = useGetVirtualCardDetailsQuery(selectedCardId, {
+    skip: !selectedCardId,
+  });
+  const cardData = cardDetails?.data;
+
   const [simulatePayment] = useSimulatePaymentMutation();
-  // Get config data
   const { 
     data: configData, 
     isLoading: isConfigLoading,
     error: configError
   } = useGetConfigQuery();
 
-   //console.log("config get:", JSON.stringify(configData, null, 2));
-  
-  // Extract needed config values
   const getConfigValue = (name) => {
     const configItem = configData?.data?.find(item => item.name === name);
     return configItem ? configItem.value : null;
   };
-  
 
-  const USD_REAL_TIME_VALUE = getConfigValue('USD_REAL_TIME_VALUE');
-  const EUR_REAL_TIME_VALUE = getConfigValue('EUR_REAL_TIME_VALUE');
-  const CAD_REAL_TIME_VALUE = getConfigValue('CAD_REAL_TIME_VALUE');
-  const YEN_REAL_TIME_VALUE = getConfigValue('YEN_REAL_TIME_VALUE');
+  const USD_SENDO_VALUE = getConfigValue('USD_SENDO_VALUE');
+  const EUR_SENDO_VALUE = getConfigValue('EUR_SENDO_VALUE');
+  const CAD_SENDO_VALUE = getConfigValue('CAD_SENDO_VALUE');
+  const YEN_SENDO_VALUE = getConfigValue('YEN_SENDO_VALUE');
   const PARTNER_VISA_FEES = getConfigValue('PARTNER_VISA_FEES');
-  const SENDO_SERVICE_FEES = getConfigValue('SENDO_SERVICE_FEES') ;
+  const SENDO_SERVICE_FEES = getConfigValue('SENDO_SERVICE_FEES');
 
   const currencies = [
-    { code: 'USD', name: 'US Dollar', rate: USD_REAL_TIME_VALUE },
-    { code: 'EUR', name: 'Euro', rate: EUR_REAL_TIME_VALUE },
-    { code: 'CAD', name: 'Canadian Dollar', rate: CAD_REAL_TIME_VALUE },
-    { code: 'JPY', name: 'Japanese Yen', rate: YEN_REAL_TIME_VALUE }
+    { code: 'USD', name: 'US Dollar', rate: USD_SENDO_VALUE },
+    { code: 'EUR', name: 'Euro', rate: EUR_SENDO_VALUE },
+    { code: 'CAD', name: 'Canadian Dollar', rate: CAD_SENDO_VALUE },
+    { code: 'JPY', name: 'Japanese Yen', rate: YEN_SENDO_VALUE }
   ];
-  
-  // Helper pour obtenir l'emoji drapeau à partir du code pays
-const getFlagEmoji = (currencyCode) => {
-  const countryCodeMap = {
-    USD: 'US',
-    EUR: 'EU',  // Euro n'a pas de drapeau officiel unique, mais on peut utiliser l'UE 🇪🇺
-    CAD: 'CA',
-    JPY: 'JP'
+
+  const getFlagEmoji = (currencyCode) => {
+    const countryCodeMap = {
+      USD: 'US',
+      EUR: 'EU',
+      CAD: 'CA',
+      JPY: 'JP'
+    };
+    const countryCode = countryCodeMap[currencyCode] || 'US';
+    return countryCode
+      .toUpperCase()
+      .split('')
+      .map(char => String.fromCodePoint(0x1F1E6 - 65 + char.charCodeAt(0)))
+      .join('');
   };
-  const countryCode = countryCodeMap[currencyCode] || 'US';
-  // Convertir chaque lettre en Regional Indicator Symbol
-  return countryCode
-    .toUpperCase()
-    .split('')
-    .map(char =>  
-      String.fromCodePoint(0x1F1E6 - 65 + char.charCodeAt(0))
-    )
-    .join('');
-};
 
   const currentCurrency = currencies.find(c => c.code === currency) || currencies[0];
 
@@ -119,58 +104,45 @@ const getFlagEmoji = (currencyCode) => {
     setShowCurrencyDropdown(false);
   };
 
-   useEffect(() => {
-      if (cards?.data?.length > 0) {
-        setSelectedCardId(cards.data[0].cardId);
-      }
-    }, [cards]);
+  useEffect(() => {
+    if (cards?.data?.length > 0) {
+      setSelectedCardId(cards.data[0].cardId);
+    }
+  }, [cards]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       if (amount && !isNaN(parseFloat(amount))) {
         handleSimulatePayment();
       }
-    }); 
-
+    });
     return () => clearTimeout(timer);
   }, [amount, currency]);
 
   const handleSimulatePayment = async () => {
-  if (!amount || isNaN(parseFloat(amount))) {
-    return;
-  }
-
-  try {
-    const payload = {
-      amount: parseFloat(amount),
-      currency,
-    };
-
-    setIsCalculating(true);
-    const response = await simulatePayment(payload).unwrap();
-
-    setConversionData(response);
-  } catch (error) {
-    //console.log("Erreur simulation:", JSON.stringify(error, null, 2)); // log error separately
-    Toast.show({
-      type: "error",
-      text1: "Simulation Failed",
-      text2: error.data?.message || error.message || "Failed to simulate payment",
-    });
-  } finally {
-    setIsCalculating(false);
-  }
-};
-
-
- 
+    if (!amount || isNaN(parseFloat(amount))) return;
+    try {
+      const payload = { amount: parseFloat(amount), currency };
+      setIsCalculating(true);
+      const response = await simulatePayment(payload).unwrap();
+      setConversionData(response);
+    } catch (error) {
+      Toast.show({
+        type: "error",
+        text1: "Simulation Failed",
+        text2: error.data?.message || error.message || "Failed to simulate payment",
+      });
+    } finally {
+      setIsCalculating(false);
+    }
+  };
 
   if (isConfigLoading) {
     return (
-    <View className="flex-1 justify-center items-center">
-      <Loader size="large" />
-    </View>
-  );
+      <View className="flex-1 justify-center items-center">
+        <Loader size="large" />
+      </View>
+    );
   }
 
   if (configError) {
@@ -187,6 +159,19 @@ const getFlagEmoji = (currencyCode) => {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
     >
+       <StatusBar backgroundColor="#7ddd7d" barStyle="light-content" />
+      {/* HEADER */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 40 }}>
+          <AntDesign name="arrowleft" size={24} color="#fff" />
+        </TouchableOpacity>
+
+        <Text style={styles.headerTitle}>
+          {t('screens.paymentSimulator')}
+        </Text>
+
+        <View style={{ width: 40 }} /> 
+      </View>
       <View style={styles.content}>
         <Text style={styles.instructionText}>
           {t('paymentSimulator.title')}
@@ -357,9 +342,31 @@ const getFlagEmoji = (currencyCode) => {
 };
 
 const styles = StyleSheet.create({
-  container: {
+   container: { flex: 1, backgroundColor: '#fff' },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#7ddd7d',
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 40,
+    paddingBottom: 15,
+    paddingHorizontal: 15,
+  },
+  headerTitle: {
+    color: '#fff',
+    fontSize: 19,
+    fontWeight: 'bold',
     flex: 1,
-    backgroundColor: '#fff',
+    textAlign: 'center',
+  },
+  content: { padding: 20 },
+  instructionText: {
+    fontSize: 15,
+    color: 'black',
+    textAlign:'center',
+    fontWeight: 'bold',
+    marginBottom: 30,
+    marginTop:12,
   },
   simulateButton: {
     backgroundColor: '#7ddd7d',

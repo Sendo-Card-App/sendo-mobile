@@ -103,20 +103,20 @@ useEffect(() => {
         const result = await refreshTokenMutation({ refreshToken, deviceId }).unwrap();
         console.log("🔄 Refresh response:", result);
 
-        if (result?.accessToken && result?.deviceId) {
+       if (result?.data?.accessToken) {
           const newAuthData = {
             ...data,
-            accessToken: result.accessToken,
-            deviceId: result.deviceId,
+            accessToken: result.data.accessToken,
+            deviceId: deviceId, 
           };
 
           await storeData('@authData', newAuthData);
           setAuthData(newAuthData);
         } else {
-          console.warn("⚠️ Failed to refresh token:", result);
-        }
+          console.warn("Failed to refresh token:", result);
+}
       } catch (err) {
-       // console.log('refresh token  error:', JSON.stringify(err, null, 2));
+        console.log('refresh token  error:', JSON.stringify(err, null, 2));
       }
     }
 

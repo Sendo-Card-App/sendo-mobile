@@ -195,6 +195,7 @@ const KYCValidation = () => {
           publicId: encodedPublicId,
           formData
         }).unwrap();
+        console.log(response)
 
         if (response) {
           Alert.alert("Success", "Document uploaded successfully");

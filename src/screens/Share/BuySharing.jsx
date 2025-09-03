@@ -34,7 +34,7 @@ export default function Historique({ navigation }) {
   );
 
   const sharedExpenses = sharedExpensesList?.data || [];
-
+   //console.log("List sharedExpenses:", JSON.stringify(sharedExpenses, null, 2));
   // Filter expenses based on selected filter
   const filteredExpenses = sharedExpenses.filter((item) => {
     const status = item.sharedExpense.status;

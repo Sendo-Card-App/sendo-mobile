@@ -1,10 +1,41 @@
-import React, { View, Text, ScrollView } from "react-native";
+import React from "react";
+import { View, Text, ScrollView, TouchableOpacity, StatusBar } from "react-native";
+import { AntDesign } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 
-const AboutUs = () => {
+const AboutUs = ({ navigation }) => {
+  const { t } = useTranslation();
+
   return (
-    <View className="flex-1">
+    <View className="flex-1 bg-white">
+      {/* ✅ StatusBar */}
+      <StatusBar backgroundColor="#7ddd7d" barStyle="light-content" />
+
+      {/* ✅ Header */}
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          paddingHorizontal: 20,
+            paddingTop: 50,
+          paddingVertical: 15,
+          backgroundColor: "#7ddd7d",
+        }}
+      >
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <AntDesign name="arrowleft" size={24} color="white" />
+        </TouchableOpacity>
+        <Text style={{ fontSize: 18, fontWeight: "bold", color: "white" }}>
+          {t("screens.aboutUs")}
+        </Text>
+        {/* Empty placeholder for alignment */}
+        <View style={{ width: 24 }} />
+      </View>
+
+      {/* ✅ Page Content */}
       <ScrollView>
-        {/*  */}
+        {/* À propos */}
         <View className="px-4">
           <Text className="font-extrabold p-4 text-gray-600 mt-2">
             À propos de Sendo
@@ -19,7 +50,7 @@ const AboutUs = () => {
           </Text>
         </View>
 
-        {/*  */}
+        {/* Mentions légales */}
         <View className="px-4">
           <Text className="font-extrabold p-4 text-gray-600 mt-2">
             Mentions légales
@@ -35,7 +66,7 @@ const AboutUs = () => {
           </Text>
         </View>
 
-        {/*  */}
+        {/* Adresse */}
         <View className="mt-3 px-4">
           <Text className="text-gray-400 text-sm ml-4 mt-3">
             Siège social : 2001 Boulevard Robert-Bourassa, Montréal, Québec,
@@ -46,7 +77,7 @@ const AboutUs = () => {
           </Text>
         </View>
 
-        {/*  */}
+        {/* Légal */}
         <View className="mt-3 px-4">
           <Text className="text-gray-400 text-sm ml-4 mt-3">
             Toutes les transactions effectuées sur notre plateforme sont régies
@@ -58,7 +89,7 @@ const AboutUs = () => {
           </Text>
         </View>
 
-        {/*  */}
+        {/* Conditions d’utilisation */}
         <View className="px-4">
           <Text className="font-extrabold p-4 text-gray-600 mt-2">
             Conditions d’utilisation
@@ -68,26 +99,27 @@ const AboutUs = () => {
           </Text>
           <Text className="text-gray-400 text-sm ml-4 -mt-3">
             En utilisant l’application Sendo, vous acceptez les{"\n"}
-            termes etconditions présentés ici. Vous vous engagez à fournir des
+            termes et conditions présentés ici. Vous vous engagez à fournir des
             informations exactes lors de l’inscription et à protéger vos
             identiﬁants de connexion.
           </Text>
         </View>
 
-        {/*  */}
+        {/* 2 - Transactions */}
         <View className="px-4">
           <Text className="font-extrabold p-4 text-gray-600 mt-3">
             2 - Transactions :
           </Text>
           <Text className="text-gray-400 text-sm ml-4 -mt-3">
             - Les transferts effectués via Sendo sont soumis à des limites
-            déﬁnies en fonction de votre proﬁl et de la réglementation locale. -
-            Les frais de transfert et les taux de change sont transparents et
+            déﬁnies en fonction de votre proﬁl et de la réglementation locale.{" "}
+            {"\n"}
+            - Les frais de transfert et les taux de change sont transparents et
             aﬃchés avant chaque transaction.
           </Text>
         </View>
 
-        {/*  */}
+        {/* 3 - Sécurité */}
         <View className="px-4">
           <Text className="font-extrabold p-4 text-gray-600 mt-3">
             3 - Sécurité :
@@ -100,7 +132,7 @@ const AboutUs = () => {
           </Text>
         </View>
 
-        {/*  */}
+        {/* 4 - Confidentialité */}
         <View className="px-4">
           <Text className="font-extrabold p-4 text-gray-600 mt-3">
             4 - Conﬁdentialité :
@@ -112,7 +144,7 @@ const AboutUs = () => {
           </Text>
         </View>
 
-        {/*  */}
+        {/* 5 - Support client */}
         <View className="px-4">
           <Text className="font-extrabold p-4 text-gray-600 mt-3">
             5 - Support client :
@@ -124,10 +156,10 @@ const AboutUs = () => {
           </Text>
         </View>
 
-        {/*  */}
+        {/* 6 - Responsabilités */}
         <View className="px-4">
           <Text className="font-extrabold p-4 text-gray-600 mt-3">
-            6- Responsabilités :
+            6 - Responsabilités :
           </Text>
           <Text className="text-gray-400 text-sm ml-4 -mt-3">
             Sendo n’est pas responsable des retards ou des échecs de transfert
@@ -136,7 +168,7 @@ const AboutUs = () => {
           </Text>
         </View>
 
-        {/*  */}
+        {/* Merci */}
         <View className="px-4">
           <Text className="text-gray-400 text-sm ml-4 mt-6">
             Merci de choisir Sendo! {"\n"}
@@ -144,7 +176,7 @@ const AboutUs = () => {
             conforme à vos attentes.
           </Text>
         </View>
-        {/*  */}
+
         <View className="py-4" />
       </ScrollView>
     </View>

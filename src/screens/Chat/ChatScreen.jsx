@@ -1,5 +1,6 @@
 // src/Screens/ChatScreen.tsx
 import React, { useState, useRef, useEffect } from 'react';
+import { Keyboard } from 'react-native';
 import {
   View,
   TextInput,
@@ -11,9 +12,12 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  StatusBar,
+  SafeAreaView,
   Linking,
   Modal
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
@@ -72,6 +76,7 @@ interface Conversation {
 
 const ChatScreen = ({ route, navigation }) => {
   const [input, setInput] = useState('');
+   const { t } = useTranslation();
   const [attachments, setAttachments] = useState([]);
   const flatListRef = useRef(null);
   const [userToken, setUserToken] = useState(null);
@@ -81,6 +86,8 @@ const ChatScreen = ({ route, navigation }) => {
   const [selectedConversationIndex, setSelectedConversationIndex] = useState(0);
   const [showConversationPicker, setShowConversationPicker] = useState(false);
   const [uploadAttachments] = useUploadAttachmentsMutation();
+  const [keyboardOffset, setKeyboardOffset] = useState(0);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
 
  const { data: userProfile, isLoading: isProfileLoading } = useGetUserProfileQuery(undefined, {
      pollingInterval: 1000,
@@ -119,10 +126,33 @@ const ChatScreen = ({ route, navigation }) => {
       const s = initSocket(token);
 
       s.io.on("open", () => {
-        console.log("📡 Socket connection opened, auth:", s.io.opts.auth);
+        console.log(" Socket connection opened, auth:", s.io.opts.auth);
       });
     }
   }, [userToken]);
+
+    useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      'keyboardDidShow',
+      (e) => {
+        setIsKeyboardVisible(true);
+        setKeyboardOffset(e.endCoordinates.height);
+      }
+    );
+    
+    const keyboardDidHideListener = Keyboard.addListener(
+      'keyboardDidHide',
+      () => {
+        setIsKeyboardVisible(false);
+        setKeyboardOffset(0);
+      }
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
 
   // Join/leave conversation
 useEffect(() => {
@@ -339,18 +369,13 @@ useEffect(() => {
         });
 
       // Send message through socket
-      socket.emit(
-        'send_message',
-        {
-          conversationId: currentConversationId,
-          senderType: 'CUSTOMER',
-          content: input.trim() !== '' ? input : '[Attachment]',
-          attachments: uploadedAttachmentUrls,
-        },
-        (response) => {
-          console.log("Server ack response:", response);
-        }
-      );
+     socket.emit('send_message', {
+      conversationId: currentConversationId,
+      senderType: 'CUSTOMER',
+      content: input.trim() !== '' ? input : '[Attachment]',
+      attachments: uploadedAttachmentUrls,
+    });
+
 
       setInput('');
       setAttachments([]);
@@ -385,35 +410,35 @@ useEffect(() => {
   };
 
   const renderMessage = ({ item }: { item: Message }) => {
-    // Check if this is a temporary message
-    const isTempMessage = item.id.startsWith('temp-');
-    
-    return (
-      <View
-  style={[
-    styles.messageContainer,
-    item.senderType === 'CUSTOMER' ? styles.sentMessage : styles.receivedMessage,
-    isTempMessage && styles.tempMessage,
-  ]}
->
-  {/* Show sender name only for ADMIN messages */}
-  {item.senderType === 'ADMIN' && (
-    <Text style={styles.senderName}>
-      {item.user?.firstname || 'Admin'}
-    </Text>
-  )}
-
-  {/* Text content */}
-  {item.content !== '[Attachment]' && (
-    <Text
+  const isTempMessage = item.id.startsWith('temp-');
+  const isCurrentUser = item.senderType === 'CUSTOMER' && item.userId === userId;
+  
+  return (
+    <View
       style={[
-        styles.messageText,
-        item.senderType === 'CUSTOMER' ? styles.sentText : styles.receivedText,
+        styles.messageContainer,
+        isCurrentUser ? styles.sentMessage : styles.receivedMessage,
+        isTempMessage && styles.tempMessage,
       ]}
     >
-      {item.content}
-    </Text>
-  )}
+      {/* Afficher le nom de l'expéditeur seulement pour les messages ADMIN */}
+      {!isCurrentUser && item.senderType === 'ADMIN' && (
+        <Text style={styles.senderName}>
+          {item.user?.firstname || 'Admin'}
+        </Text>
+      )}
+
+      {/* Contenu texte */}
+      {item.content !== '[Attachment]' && (
+        <Text
+          style={[
+            styles.messageText,
+            isCurrentUser ? styles.sentText : styles.receivedText,
+          ]}
+        >
+          {item.content}
+        </Text>
+      )}
 
   {/* Attachments */}
   {item.attachments?.map((attachment, index) => {
@@ -461,20 +486,20 @@ useEffect(() => {
       );
     })}
 
-    {/* Time */}
-    <Text
-      style={[
-        styles.messageTime,
-        item.senderType === 'CUSTOMER' ? styles.sentTime : styles.receivedTime,
-      ]}
-    >
-      {isTempMessage
-        ? 'Sending...'
-        : new Date(item.createdAt).toLocaleTimeString([], {
-            hour: '2-digit',
-            minute: '2-digit',
-          })}
-    </Text>
+    {/* Heure */}
+      <Text
+        style={[
+          styles.messageTime,
+          isCurrentUser ? styles.sentTime : styles.receivedTime,
+        ]}
+      >
+        {isTempMessage
+          ? 'Envoi...'
+          : new Date(item.createdAt).toLocaleTimeString([], {
+              hour: '2-digit',
+              minute: '2-digit',
+            })}
+      </Text>
   </View>
 
     );
@@ -518,66 +543,113 @@ useEffect(() => {
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+   <SafeAreaView style={{ flex: 1, backgroundColor: '#f8f9fa' }}>
+     <StatusBar backgroundColor="#7ddd7d" barStyle="light-content" />
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingVertical: 16,
+        paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 40,
+        paddingHorizontal: 12,
+        backgroundColor: '#7ddd7d',
+      }}
     >
-      <FlatList
-        ref={flatListRef}
-        data={messages}
-        keyExtractor={item => item.id}
-        renderItem={renderMessage}
-        contentContainerStyle={styles.messagesList}
-        onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
-        onLayout={() => flatListRef.current?.scrollToEnd({ animated: true })}
-        showsVerticalScrollIndicator={false}
+      {/* Back button */}
+      <TouchableOpacity
+        onPress={() => navigation.goBack()}
+        style={{ width: 40, alignItems: 'flex-start' }}
+      >
+        <Icon name="arrow-back" size={24} color="white" />
+      </TouchableOpacity>
+
+      {/* Centered Title */}
+      <Text
+        style={{
+          flex: 1,
+          textAlign: 'center',
+          fontSize: 18,
+          fontWeight: 'bold',
+          color: 'white',
+        }}
+      >
+        {t('screens.chat')}
+      </Text>
+
+      {/* Placeholder to keep title centered */}
+      <View style={{ width: 40 }} />
+    </View>
+
+    <FlatList
+      ref={flatListRef}
+      data={messages}
+      keyExtractor={item => item.id}
+      renderItem={renderMessage}
+      contentContainerStyle={[
+        styles.messagesList,
+        { paddingBottom: keyboardOffset > 0 ? keyboardOffset + 70 : 70 },
+      ]}
+      onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+      onLayout={() => flatListRef.current?.scrollToEnd({ animated: true })}
+      showsVerticalScrollIndicator={false}
+      automaticallyAdjustContentInsets={true}
+      keyboardDismissMode="on-drag"
+      keyboardShouldPersistTaps="handled"
+    />
+
+    {attachments.length > 0 && renderAttachmentPreview()}
+
+    {typingStatus && (
+      <View style={styles.typingIndicator}>
+        <Text style={styles.typingText}>Admin is typing...</Text>
+      </View>
+    )}
+
+    <View
+      style={[
+        styles.inputContainer,
+        { marginBottom: keyboardOffset > 0 ? keyboardOffset : 0 },
+      ]}
+    >
+      <TouchableOpacity onPress={pickImage} style={styles.attachmentButton}>
+        <Icon name="image" size={24} color="#555" />
+      </TouchableOpacity>
+
+      <TouchableOpacity onPress={pickDocument} style={styles.attachmentButton}>
+        <Icon name="insert-drive-file" size={24} color="#555" />
+      </TouchableOpacity>
+
+      <TextInput
+        value={input}
+        onChangeText={text => {
+          setInput(text);
+          handleTyping();
+        }}
+        placeholder="Type a message..."
+        style={styles.textInput}
+        multiline
+        onFocus={() => {
+          setTimeout(() => {
+            flatListRef.current?.scrollToEnd({ animated: true });
+          }, 100);
+        }}
       />
 
-      {attachments.length > 0 && renderAttachmentPreview()}
-
-      {typingStatus && (
-        <View style={styles.typingIndicator}>
-          <Text style={styles.typingText}>Admin is typing...</Text>
-        </View>
-      )}
-
-      <View style={styles.inputContainer}>
-        <TouchableOpacity onPress={pickImage} style={styles.attachmentButton}>
-          <Icon name="image" size={24} color="#555" />
-        </TouchableOpacity>
-        
-        <TouchableOpacity onPress={pickDocument} style={styles.attachmentButton}>
-          <Icon name="insert-drive-file" size={24} color="#555" />
-        </TouchableOpacity>
-        
-        <TextInput
-          value={input}
-          onChangeText={text => {
-            setInput(text);
-            handleTyping();
-          }}
-          placeholder="Type a message..."
-          style={styles.textInput}
-          multiline
-        />
-        
-        <TouchableOpacity 
-          onPress={handleSend}
-          disabled={(input.trim() === '' && attachments.length === 0) || sending}
-          style={[
-            styles.sendButton,
-            (input.trim() === '' && attachments.length === 0) || sending ? styles.disabledButton : null
-          ]}
-        >
-          {sending ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <Icon name="send" size={24} color="#fff" />
-          )}
-        </TouchableOpacity>
-      </View>
-    </KeyboardAvoidingView>
+      <TouchableOpacity
+        onPress={handleSend}
+        disabled={(input.trim() === '' && attachments.length === 0) || sending}
+        style={[
+          styles.sendButton,
+          (input.trim() === '' && attachments.length === 0) || sending
+            ? styles.disabledButton
+            : null,
+        ]}
+      >
+        {sending ? <ActivityIndicator size="small" color="#fff" /> : <Icon name="send" size={24} color="#fff" />}
+      </TouchableOpacity>
+    </View>
+  </SafeAreaView>
   );
 };
 
@@ -644,14 +716,14 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     marginBottom: 8,
   },
-  sentMessage: {
+ sentMessage: {
     alignSelf: 'flex-end',
-    backgroundColor: '#7ddd7d',
+    backgroundColor: '#7ddd7d', // Vert pour l'utilisateur actuel
     borderBottomRightRadius: 4,
   },
   receivedMessage: {
     alignSelf: 'flex-start',
-    backgroundColor: '#e9ecef',
+    backgroundColor: '#e9ecef', // Gris pour les autres
     borderBottomLeftRadius: 4,
   },
   tempMessage: {
@@ -666,10 +738,10 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   sentText: {
-    color: '#fff',
+    color: '#fff', 
   },
   receivedText: {
-    color: '#212529',
+   color: '#212529',
   },
   messageTime: {
     fontSize: 12,
@@ -710,7 +782,7 @@ const styles = StyleSheet.create({
     color: '#6c757d',
     textAlign: 'center',
   },
-  inputContainer: {
+ inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#fff',
@@ -718,6 +790,11 @@ const styles = StyleSheet.create({
     borderTopColor: '#eee',
     paddingVertical: 8,
     paddingHorizontal: 12,
+    // Ajoutez une transition pour un mouvement fluide
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
   },
   attachmentButton: {
     padding: 8,

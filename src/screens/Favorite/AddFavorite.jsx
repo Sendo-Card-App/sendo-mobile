@@ -7,7 +7,9 @@ import {
   TextInput, 
   Alert, 
   Dimensions,
-  ScrollView
+  ScrollView,
+  Platform,
+  StatusBar,
 } from 'react-native';
 import * as Contacts from 'expo-contacts';
 import * as Linking from 'expo-linking';
@@ -60,7 +62,6 @@ const AddFavorite = () => {
   const navigation = useNavigation();
   const { data: userProfile } = useGetUserProfileQuery();
   const userId = userProfile?.data.id;
-   console.log(userId)
   // API hooks
   const [synchronizeContacts] = useSynchronizeContactsMutation();
   const [addFavorite, { isLoading: isAddingFavorite }] = useAddFavoriteMutation();
@@ -72,7 +73,7 @@ const AddFavorite = () => {
   } = useGetFavoritesQuery(userId, { skip: !userId ,
       pollingInterval: 1000, // Refetch every 1 seconds
   });
-   console.log('Favorites:', JSON.stringify(favoritesResponse, null, 2));
+   //console.log('Favorites:', JSON.stringify(favoritesResponse, null, 2));
   const { 
     data: synchronizedContacts, 
     isLoading: isLoadingContacts,
@@ -427,6 +428,35 @@ const AddFavorite = () => {
 
   return (
     <View className="flex-1 bg-white">
+       <StatusBar backgroundColor="#7ddd7d" barStyle="light-content" />
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          backgroundColor: '#7ddd7d',
+          paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 40,
+          paddingBottom: 15,
+          paddingHorizontal: 15,
+        }}
+      >
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 40 }}>
+          <MaterialCommunityIcons name="arrow-left" size={24} color="#fff" />
+        </TouchableOpacity>
+
+        <Text style={{ 
+            color: '#fff', 
+            fontSize: 20, 
+            fontWeight: 'bold', 
+            flex: 1, 
+            textAlign: 'center' 
+        }}>
+          {t('screens.addFavorite')}
+        </Text>
+
+        <View style={{ width: 40 }} />
+      </View>
+
       {/* Tab navigation */}
       <View className="flex-row border-b border-gray-200">
         <TouchableOpacity 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TouchableOpacity, FlatList, Dimensions } from "react-native";
+import { View, Text, TouchableOpacity, FlatList, Dimensions, StatusBar } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
@@ -89,6 +89,7 @@ const ServiceScreen = () => {
 
   return (
     <View className="flex-1 bg-white">
+       <StatusBar backgroundColor="#7ddd7d" barStyle="light-content" />
       {/* Header */}
       <View
         style={{

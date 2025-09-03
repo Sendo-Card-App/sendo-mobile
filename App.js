@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { Colors } from './src/constants/colors'; // Adjust the path as needed
 import { useNavigation, useIsFocused  } from "@react-navigation/native";
 
-import { StyleSheet, View, Text, TouchableOpacity,Platform,Dimensions,ActivityIndicator  } from "react-native";
+import { StyleSheet, View, Text, TouchableOpacity,Platform,Dimensions,ActivityIndicator, StatusBar   } from "react-native";
 import { Provider } from "react-redux";
 import { store } from "./src/store/store";
 import Toast from "react-native-toast-message";
@@ -264,7 +264,8 @@ function MainStack() {
           statusBarTranslucent: true,              // ← obligatoire
           headerStyle: {
             backgroundColor: Colors.primary,
-            height: Platform.select({ ios: 60, android: 80 }), 
+            height: Platform.OS === "ios" ? 60 : 80,
+            paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
             elevation: 0,
             shadowOpacity: 0,
           },
@@ -288,24 +289,24 @@ function MainStack() {
       <Stack.Screen 
         name="Account" 
         component={Account} 
-        options={{ headerTitle: t('screens.account') }} 
+       options={{ headerShown: false }}
       />
       <Stack.Screen 
         name="NiuRequest" 
         component={NiuRequest} 
-        options={{ headerTitle: t('screens.niuRequest') }} 
+         options={{ headerShown: false }}
       />
       <Stack.Screen name="BeneficiaryScreen" component={BeneficiaryScreen} options={{ headerShown: false }} />
       <Stack.Screen name="BeneficiarySelection" component={BeneficiarySelection} options={{ headerShown: false }} />
       <Stack.Screen 
         name="AboutUs" 
         component={AboutUs} 
-        options={{ headerTitle: t('screens.aboutUs') }} 
+        options={{ headerShown: false }} 
       />
       <Stack.Screen 
         name="ChangePassword" 
         component={ChangePassword} 
-        options={{ headerTitle: t('screens.changePassword') }} 
+        options={{ headerShown: false }}
       />
       <Stack.Screen name="BeneficiaryDetails" component={BeneficiaryDetails} options={{ headerShown: false }} />
       <Stack.Screen name="PaymentMethod" component={PaymentMethod} options={{ headerShown: false }} />
@@ -320,14 +321,14 @@ function MainStack() {
       <Stack.Screen 
         name="SelectMethod" 
         component={SelectMethod} 
-        options={{ headerTitle: t('screens.selectMethod') }} 
+       options={{ headerShown: false }}
       />
-      <Stack.Screen name="BankDepositRecharge" component={BankDepositRecharge} options={{ headerTitle: t('screens.bankDeposit') }}/>
-      <Stack.Screen name="PaymentSimulator" component={PaymentSimulator} options={{ headerTitle: t('screens.paymentSimulator') }} />
-      <Stack.Screen name="MethodType" component={MethodType} options={{ headerTitle: t('screens.selectMethod') }} />
-      <Stack.Screen name="WalletTransfer" component={WalletTransfer} options={{ headerTitle: t('screens.walletTransfer') }} />
-      <Stack.Screen name="AddContact" component={AddContact} options={{ headerTitle: t('screens.addContact') }} />
-      <Stack.Screen name="AddFavorite" component={AddFavorite} options={{ headerTitle: t('screens.addFavorite') }} />
+      <Stack.Screen name="BankDepositRecharge" component={BankDepositRecharge} options={{ headerShown: false }} />
+      <Stack.Screen name="PaymentSimulator" component={PaymentSimulator}options={{ headerShown: false }} />
+      <Stack.Screen name="MethodType" component={MethodType} options={{ headerShown: false }} />
+      <Stack.Screen name="WalletTransfer" component={WalletTransfer} options={{ headerShown: false }} />
+      <Stack.Screen name="AddContact" component={AddContact} options={{ headerShown: false }} />
+      <Stack.Screen name="AddFavorite" component={AddFavorite} options={{ headerShown: false }}/>
       <Stack.Screen name="WalletRecharge" component={WalletRecharge} options={{ headerShown: false }} />
       <Stack.Screen name="WalletWithdrawal" component={WalletWithdrawal} options={{ headerShown: false }} />
       <Stack.Screen name="WalletConfirm" component={WalletConfirm} options={{ headerShown: false }} />
@@ -337,14 +338,14 @@ function MainStack() {
       <Stack.Screen name="Confirme" component={Confirme} options={{ headerShown: false }} />
       <Stack.Screen name="TransactionHistory" component={TransactionHistory} options={{ headerShown: false }} />
       <Stack.Screen name="Success" component={Success} options={{ headerShown: false }} />
-      <Stack.Screen name="Support" component={Support} options={{ headerTitle: t('screens.support') }}/>
-      <Stack.Screen name="ChatScreen" component={ChatScreen} options={{ headerTitle: t('screens.chat') }} />
-      <Stack.Screen name="Settings" component={Settings} options={{ headerTitle: t('screens.setting') }}/>
+      <Stack.Screen name="Support" component={Support}  options={{ headerShown: false }}/>
+      <Stack.Screen name="ChatScreen" component={ChatScreen} options={{ headerShown: false }}/>
+      <Stack.Screen name="Settings" component={Settings} options={{ headerShown: false }}/>
       <Stack.Screen name="Payment" component={Payment} options={{ headerTitle: t('screens.payment') }} />
-      <Stack.Screen name="History" component={History} options={{ headerTitle: t('screens.history') }} />
-      <Stack.Screen name="Receipt" component={Receipt} options={{ headerTitle: t('screens.receipt') }}/>
-      <Stack.Screen name="NotificationComponent" component={NotificationComponent} options={{ headerTitle: t('screens.notification') }} />
-      <Stack.Screen name="CreateVirtualCard" component={CreateVirtualCard}options={{ headerTitle: t('screens.createCard') }} />
+      <Stack.Screen name="History" component={History} options={{ headerShown: false }} />
+      <Stack.Screen name="Receipt" component={Receipt} options={{ headerShown: false }} />
+      <Stack.Screen name="NotificationComponent" component={NotificationComponent} options={{ headerShown: false }} />
+      <Stack.Screen name="CreateVirtualCard" component={CreateVirtualCard}  options={{ headerShown: false }} />
       <Stack.Screen name="VerifyIdentity" component={VerifyIdentity} options={{ headerShown: false }} />
       <Stack.Screen name="ManageVirtualCard" component={ManageVirtualCard} options={{ headerShown: false }} />
       <Stack.Screen name="TransactionDetails" component={TransactionDetails} options={{ headerShown: false }} />

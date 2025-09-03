@@ -42,105 +42,64 @@ const ConfirmationScreen = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const requestInProgress = useRef(false);
 
-  const handleConfirm = async () => {
-    // Prevent multiple clicks
-    if (isProcessing || requestInProgress.current) {
-      return;
-    }
-    
-    setIsProcessing(true);
-    requestInProgress.current = true;
+const handleConfirm = async () => {
+  // Prevent multiple clicks
+  if (isProcessing || requestInProgress.current) {
+    return;
+  }
 
-    try {
-      const payload = {
-        totalAmount: route.params.totalAmount,
-        description: reason,
-        limitDate: route.params.limitDate,
-        includeMyself: route.params.includeSelf,
-        methodCalculatingShare: route.params.methodCalculatingShare,
-        participants: route.params.participants.map((p) => ({
-          matriculeWallet: p.matriculeWallet,
-          ...(route.params.methodCalculatingShare === "manual" && {
-            amount: p.amount,
-          }),
-        })),
-      };
+  setIsProcessing(true);
+  requestInProgress.current = true;
 
-      const response = await createSharedExpense(payload).unwrap();
+  try {
+    const payload = {
+      totalAmount: route.params.totalAmount,
+      description: reason,
+      limitDate: route.params.limitDate,
+      includeMyself: route.params.includeSelf,
+      methodCalculatingShare: route.params.methodCalculatingShare,
+      participants: route.params.participants.map((p) => ({
+        matriculeWallet: p.matriculeWallet,
+        ...(route.params.methodCalculatingShare === "manual" && {
+          amount: p.amount,
+        }),
+      })),
+    };
 
-      const notificationContent = {
-        title: "Dépense Partagée Créée",
-        body: `Une nouvelle dépense de ${route.params.totalAmount} FCFA a été créée.`,
-        type: "SHARED_EXPENSE_CREATED",
-      };
+    //console.log("Sending payload:", JSON.stringify(payload, null, 2));
 
-      try {
-        let pushToken = await getStoredPushToken();
-        if (!pushToken) {
-          pushToken = await registerForPushNotificationsAsync();
-        }
+    const response = await createSharedExpense(payload).unwrap();
 
-        if (pushToken) {
-          await sendPushTokenToBackend(
-            pushToken,
-            notificationContent.title,
-            notificationContent.body,
-            notificationContent.type,
-            {
-              amount: route.params.totalAmount,
-              description: reason,
-              limitDate: route.params.limitDate,
-              timestamp: new Date().toISOString(),
-            }
-          );
-        }
-      } catch (notificationError) {
-        console.log("Notification error:", notificationError);
-        // Still try to send a basic notification
-        await sendPushNotification(
-          notificationContent.title,
-          notificationContent.body,
-          {
-            data: {
-              type: notificationContent.type,
-              amount: route.params.totalAmount,
-              description: reason,
-            },
-          }
-        );
-      }
+    // console.log(
+    //   "Response from createSharedExpense:",
+    //   JSON.stringify(response, null, 2)
+    // );
 
-      // Only navigate away after everything is completed
-      navigation.navigate("SuccessSharing", {
-        transactionDetails: "La dépense partagée a été créée avec succès.",
-      });
+    //  Navigate directly to success screen
+    navigation.navigate("SuccessSharing", {
+      transactionDetails: "La dépense partagée a été créée avec succès.",
+    });
+  } catch (error) {
+    // console.log(
+    //   " Error during shared expense creation:",
+    //   JSON.stringify(error, null, 2)
+    // );
 
-    } catch (error) {
-      const isECONNRESET =
-        error?.data?.errors?.some((e) =>
-          typeof e === "string" && e.includes("ECONNRESET")
-        );
+    Toast.show({
+      type: "error",
+      text1: "Erreur",
+      text2:
+        error?.data?.message ||
+        "Échec de la création de la dépense partagée",
+    });
+  } finally {
+    setIsProcessing(false);
+    requestInProgress.current = false;
+  }
+};
 
-      if (isECONNRESET) {
-        navigation.navigate("SuccessSharing", {
-          transactionDetails: "La dépense partagée a été créée avec succès.",
-        });
-        return;
-      }
 
-      console.log("Error during shared expense creation:", error);
-      Toast.show({
-        type: "error",
-        text1: "Erreur",
-        text2:
-          error?.data?.message ||
-          "Échec de la création de la dépense partagée",
-      });
-    } finally {
-      setIsProcessing(false);
-      requestInProgress.current = false;
-    }
-  };
+
 
   return (
     <View className="bg-[#181e25] flex-1 pt-0 relative">
@@ -260,20 +219,20 @@ const ConfirmationScreen = () => {
             ))}
           </View>
 
-          <TouchableOpacity
-            onPress={handleConfirm}
-            disabled={isProcessing}
-            className="bg-[#A7F39B] py-4 rounded-xl items-center mt-2"
-            style={{ opacity: isProcessing ? 0.7 : 1 }}
-          >
-            {isProcessing ? (
-              <Loader color="green" />
-            ) : (
-              <Text className="text-black text-lg font-bold">
-                {t("confirmation.confirmButton")}
-              </Text>
-            )}
-          </TouchableOpacity>
+        <TouchableOpacity
+          onPress={handleConfirm}
+          disabled={isProcessing}
+          className="bg-[#A7F39B] py-4 rounded-xl items-center mt-2"
+        >
+          {isProcessing ? (
+            <Loader color="green" />
+          ) : (
+            <Text className="text-black text-lg font-bold">
+              {t("confirmation.confirmButton")}
+            </Text>
+          )}
+        </TouchableOpacity>
+
         </View>
       </ScrollView>
     </View>

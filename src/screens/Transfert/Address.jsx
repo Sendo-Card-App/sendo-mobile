@@ -55,7 +55,6 @@ const Address = () => {
     phone: contact.phone || user?.phone || "",
     country: countryName,
     address: user?.address || "",
-    email: user?.email || "",
     description: "",
   });
 
@@ -64,7 +63,7 @@ const Address = () => {
   };
 
   const handleNext = () => {
-    const requiredFields = ["fullname", "phone", "email", "address"];
+    const requiredFields = ["fullname", "phone", "address"];
     const emptyFields = requiredFields.filter(
       (field) => !formData[field]?.trim()
     );

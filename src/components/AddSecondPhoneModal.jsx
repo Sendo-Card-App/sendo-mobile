@@ -91,7 +91,7 @@ const AddSecondPhoneModal = ({
     const fullPhoneNumber = `${selectedCountry.code}${phone}`;
     setLocalLoading(true);
     try {
-      await onSendOtp({ phone: fullPhoneNumber });
+      await onSendOtp(fullPhoneNumber);
       setOtpSent(true);
     } catch (err) {
       console.error(err);

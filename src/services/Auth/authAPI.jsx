@@ -283,8 +283,9 @@ export const authApi = createApi({
       }),
     }),
 
-
-
+      getProfilePicture: builder.query({
+        query: (userId) => `/users/${userId}/picture`,
+      }),
 
     // Logout
     logout: builder.mutation({
@@ -320,6 +321,7 @@ export const {
   useResetPasswordMutation,
   useUpdatePasswordMutation,
   useGetMyProfileQuery,
+  useGetProfilePictureQuery,
   useUpdatePasscodeMutation ,
   useGetUserByIdQuery,
   useGetUserProfileQuery,

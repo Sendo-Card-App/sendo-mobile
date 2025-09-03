@@ -6,6 +6,7 @@ import {
   Image,
   TouchableOpacity,
   ScrollView,
+  StatusBar
 } from "react-native";
 import { Ionicons, Feather } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
@@ -19,6 +20,7 @@ const CreateShare = ({ navigation }) => {
 
   return (
     <View style={{ flex: 1, backgroundColor: "#fff" }}>
+      <StatusBar backgroundColor="#7ddd7d" barStyle="light-content" />
       {/* Header */}
       <View
         style={{

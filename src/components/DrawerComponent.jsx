@@ -22,7 +22,7 @@ import PinVerificationModal from './PinVerificationModal'; // Import your modal 
 import { useSelector, useDispatch } from 'react-redux';
 import { incrementAttempt, resetAttempts, lockPasscode } from '../features/Auth/passcodeSlice';
 import { useTranslation } from "react-i18next";
-import { useGetUserProfileQuery, useLogoutMutation } from "../services/Auth/authAPI";
+import { useGetUserProfileQuery, useLogoutMutation, useGetProfilePictureQuery } from "../services/Auth/authAPI";
 import Loader from "./Loader";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Share } from 'react-native';
@@ -45,17 +45,24 @@ const DrawerComponent = ({ navigation }) => {
   const isLocked = lockedUntil && new Date(lockedUntil) > new Date()
 
   const {
-    data: userProfile,
-    isLoading: isProfileFetching,
-    isLoading: isProfileLoading,
-    refetch: refetchProfile,
-  } = useGetUserProfileQuery(
-     undefined, 
-  {
-    pollingInterval: 1000, // Refetch every 1 second
-  }
-);
-  //console.log("userProfile", userProfile);
+      data: userProfile,
+      isLoading: isProfileFetching,
+      isLoading: isProfileLoading,
+      refetch: refetchProfile,
+    } = useGetUserProfileQuery(
+      undefined, 
+    {
+      pollingInterval: 1000, // Refetch every 1 second
+    }
+  );
+
+  const userId = userProfile?.data?.id;
+  
+    const { data: profilePicture, isLoading: isPictureLoading } = useGetProfilePictureQuery(
+      userId, // pass userId here
+      { pollingInterval: 1000 }
+    );
+  
   const [logout, { isLoading: isLoggingOut }] = useLogoutMutation();
   const isLoading = isProfileLoading || isProfileFetching;
    
@@ -284,36 +291,41 @@ Utilise mon code lors de ton inscription !`;
       <View className="mt-4 bg-white px-4 py-3 rounded-xl shadow-sm border border-gray-100">
         <View className="flex-row items-center justify-between">
           {/* 👤 Avatar */}
-          <View className="flex-row items-center">
-           {userProfile?.data?.picture ? (
-              <Image
-                source={{ uri: userProfile.data.picture }}
-                style={{ width: 50, height: 50, borderRadius: 25, marginRight: 10 }}
+         <View className="flex-row items-center">
+          {profilePicture?.data?.link ? (
+            <Image
+              source={{ uri: `${profilePicture.data.link}?t=${userProfile?.data?.updatedAt}` }}
+              style={{ width: 50, height: 50, borderRadius: 25, marginRight: 10 }}
+            />
+          ) : (
+            <View
+              style={{
+                width: 50,
+                height: 50,
+                borderRadius: 25,
+                marginRight: 10,
+                backgroundColor: '#E5E7EB',
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}
+            >
+              <Ionicons name="person-circle-outline" size={30} color="#9CA3AF" />
+            </View>
+          )}
+
+          <Text className="text-lg font-semibold text-gray-800">
+            {userProfile?.data?.firstname} {userProfile?.data?.lastname}
+            {userProfile?.data?.kycDocuments?.some(doc => doc.status === "APPROVED") && (
+              <Ionicons
+                name="checkmark-circle"
+                size={18}
+                color="#10B981"
+                style={{ marginLeft: 6 }}
               />
-            ) : (
-              <View
-                style={{
-                  width: 50,
-                  height: 50,
-                  borderRadius: 25,
-                  marginRight: 10,
-                  backgroundColor: '#E5E7EB',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                }}
-              >
-                <Ionicons name="person-circle-outline" size={30} color="#9CA3AF" />
-              </View>
             )}
+          </Text>
+        </View>
 
-
-            <Text className="text-lg font-semibold text-gray-800">
-              {userProfile?.data?.firstname} {userProfile?.data?.lastname}
-              {userProfile?.data?.kycDocuments?.some(doc => doc.status === "APPROVED") && (
-                <Ionicons name="checkmark-circle" size={18} color="#10B981" style={{ marginLeft: 6 }} />
-              )}
-            </Text>
-          </View>
         </View>
 
         <View className="mt-2">
