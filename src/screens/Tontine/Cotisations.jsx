@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -36,7 +36,8 @@ const Cotisations = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { tontineId, tontine } = route.params;
- //console.log(tontine)
+  //console.log(tontine)
+  
   const [activeTab, setActiveTab] = useState("contributions");
   const [loading, setLoading] = useState(false);
   const [isLoadingRelance, setIsLoadingRelance] = useState(false);
@@ -44,8 +45,14 @@ const Cotisations = () => {
   const [showDistributeModal, setShowDistributeModal] = useState(false);
   const [showMissingContributorsModal, setShowMissingContributorsModal] = useState(false);
   const [missingContributors, setMissingContributors] = useState("");
+  const STATUS_OPTIONS = [
+  { key: "ACTIVE", en: "Active", fr: "Actif" },
+  { key: "SUSPENDED", en: "Suspended", fr: "Suspendu" },
+  { key: "CLOSED", en: "Closed", fr: "Fermé" },
+];
 
-
+// Example: current language
+  const currentLang = "fr"; // or "en"
   const memberId = tontine?.membres?.[0]?.id;
 
   const [setTontineOrder] = useSetTontineOrderMutation();
@@ -59,7 +66,7 @@ const Cotisations = () => {
     isError,
     refetch: refetchCotisations,
   } = useGetCotisationsQuery({ tontineId, memberId }, { skip: !memberId,
-      pollingInterval: 1000, // Refetch every 30 seconds
+      pollingInterval: 1000,
    });
 
   const {
@@ -68,9 +75,9 @@ const Cotisations = () => {
     isError: isErrorValidated,
     refetch: refetchValidated,
   } = useGetValidatedCotisationsQuery({ tontineId, memberId }, { skip: !memberId,
-      pollingInterval: 1000, // Refetch every 30 seconds
+      pollingInterval: 1000,
    });
-  // console.log("Erreur cotisation:", JSON.stringify(cotisation, null, 2));
+
   const initialOrdreList = tontine?.membres?.map((membre, i) => ({
     key: membre.id.toString(),
     label: `${membre.user.firstname} ${membre.user.lastname}`,
@@ -79,29 +86,82 @@ const Cotisations = () => {
 
   const [ordreList, setOrdreList] = useState(initialOrdreList);
   
-   const {
+  const {
       data: configData,
       isLoading: isConfigLoading,
       error: configError
     } = useGetConfigQuery();
   
-    const getConfigValue = (name) => {
-      const configItem = configData?.data?.find(item => item.name === name);
-      return configItem ? configItem.value : null;
-    };
-     
-    const TONTINE_FEES_DISTRIBUTION = parseFloat(getConfigValue('TONTINE_FEES_DISTRIBUTION'));
-     //console.log('Distribution fee percentage:', TONTINE_FEES_DISTRIBUTION);
-
-  const calculateDistributionAmount = () => {
-    const currentBalance = parseFloat(tontine?.compteSequestre?.soldeActuel) || 0;
-    const feesAmount = (currentBalance * TONTINE_FEES_DISTRIBUTION) / 100;
-    const netAmount = currentBalance - feesAmount;
-    
-    return netAmount;
+  const getConfigValue = (name) => {
+    const configItem = configData?.data?.find(item => item.name === name);
+    return configItem ? configItem.value : null;
   };
+     
+  const TONTINE_FEES_DISTRIBUTION = parseFloat(getConfigValue('TONTINE_FEES_DISTRIBUTION'));
 
-  const distributionAmount = calculateDistributionAmount();
+  // Calculate contributions per tourDistributionId
+  const contributionsByTour = useMemo(() => {
+    if (!cotisation?.data) return {};
+    
+    const tours = {};
+    cotisation.data.forEach(contribution => {
+      const tourId = contribution.tourDistributionId;
+      if (!tours[tourId]) {
+        tours[tourId] = {
+          total: 0,
+          validated: 0,
+          pending: 0,
+          contributions: []
+        };
+      }
+      
+      tours[tourId].total += parseFloat(contribution.montant || 0);
+      
+      if (contribution.statutPaiement === "VALIDATED") {
+        tours[tourId].validated += parseFloat(contribution.montant || 0);
+      } else {
+        tours[tourId].pending += parseFloat(contribution.montant || 0);
+      }
+      
+      tours[tourId].contributions.push(contribution);
+    });
+    
+    return tours;
+  }, [cotisation]);
+
+  // Inside your component
+    const tourIds = [...new Set(cotisation?.data?.map(item => item.tourDistributionId))] || [];
+    const tourIdMap = tourIds.reduce((acc, id, index) => {
+      acc[id] = index + 1; // map 15 -> 1, 16 -> 2, etc.
+      return acc;
+    }, {});
+
+
+// Calculate distribution amount based on total contributions for a tour
+const calculateDistributionAmount = (tourId) => {
+  if (!cotisation?.data) return 0;
+
+  // Filter contributions for the selected tour
+  const contributionsForTour = cotisation.data.filter(
+    (c) => c.tourDistributionId === tourId && c.statutPaiement === "VALIDATED"
+  );
+
+  // Sum the contribution amounts
+  const totalAmount = contributionsForTour.reduce(
+    (sum, c) => sum + parseFloat(c.montant),
+    0
+  );
+
+  // Apply fees
+  const feesAmount = (totalAmount * TONTINE_FEES_DISTRIBUTION) / 100;
+  const netAmount = totalAmount - feesAmount;
+
+  return netAmount;
+};
+
+// Example: calculate for the first tour in the cotisation data
+const nextTourId = cotisation?.data?.[0]?.tourDistributionId;
+const distributionAmount = nextTourId ? calculateDistributionAmount(nextTourId) : 0;
 
   useFocusEffect(
     useCallback(() => {
@@ -147,88 +207,79 @@ const Cotisations = () => {
     }
   };
 
-const handleDistribute = async () => {
- 
-  try {
-    setLoadingDistribute(true);
-    const response = await distributeMutation({ tontineId }).unwrap();
-    console.log(response)
-    // Show success toast immediately
-    Toast.show({
-      type: "success",
-      text1: "Distribution réussie",
-      text2: `La distribution de ${response.data.montantDistribue.toLocaleString()} FCFA a été effectuée avec succès`,
-      position: "top",
-    });
+  const handleDistribute = async () => {
+    try {
+      setLoadingDistribute(true);
+      const response = await distributeMutation({ tontineId }).unwrap();
+      
+      Toast.show({
+        type: "success",
+        text1: "Distribution réussie",
+        text2: `La distribution de ${response.data.montantDistribue.toLocaleString()} FCFA a été effectuée avec succès`,
+        position: "top",
+      });
 
-    // Try to send notification (but don't block navigation if it fails)
-    const notificationContent = {
-      title: "Distribution Successful",
-      body: `Distribution of ${response.data.montantDistribue.toLocaleString()} FCFA completed successfully`,
-      type: "DISTRIBUTION_SUCCESS",
-    };
+      const notificationContent = {
+        title: "Distribution Successful",
+        body: `Distribution of ${response.data.montantDistribue.toLocaleString()} FCFA completed successfully`,
+        type: "DISTRIBUTION_SUCCESS",
+      };
 
-    const sendNotification = async () => {
-      try {
-        let pushToken = await getStoredPushToken();
-        if (!pushToken) {
-          pushToken = await registerForPushNotificationsAsync();
-        }
+      const sendNotification = async () => {
+        try {
+          let pushToken = await getStoredPushToken();
+          if (!pushToken) {
+            pushToken = await registerForPushNotificationsAsync();
+          }
 
-        if (pushToken) {
-          await sendPushTokenToBackend(
-            pushToken,
-            notificationContent.title,
-            notificationContent.body,
-            notificationContent.type,
-            {
+          if (pushToken) {
+            await sendPushTokenToBackend(
+              pushToken,
+              notificationContent.title,
+              notificationContent.body,
+              notificationContent.type,
+              {
+                tontineId,
+                montantDistribue: response.data.montantDistribue,
+                dateDistribution: response.data.dateDistribution,
+                timestamp: new Date().toISOString(),
+              }
+            );
+          }
+        } catch (notificationError) {
+          await sendPushNotification(notificationContent.title, notificationContent.body, {
+            data: {
+              type: notificationContent.type,
               tontineId,
               montantDistribue: response.data.montantDistribue,
               dateDistribution: response.data.dateDistribution,
-              timestamp: new Date().toISOString(),
-            }
-          );
+            },
+          });
         }
-      } catch (notificationError) {
-        await sendPushNotification(notificationContent.title, notificationContent.body, {
-          data: {
-            type: notificationContent.type,
-            tontineId,
-            montantDistribue: response.data.montantDistribue,
-            dateDistribution: response.data.dateDistribution,
-          },
-        });
-      }
-    };
+      };
 
-    // Don't await this - we want to navigate immediately
-    sendNotification().catch(console.error);
+      sendNotification().catch(console.error);
 
-    // Navigate to success screen
-    navigation.navigate("SuccessSharing", {
-      transactionDetails: "La distribution a été versée avec succès.",
-      amount: response.data.montantDistribue,
-    });
+      navigation.navigate("SuccessSharing", {
+        transactionDetails: "La distribution a été versée avec succès.",
+        amount: response.data.montantDistribue,
+      });
 
-  } catch (error) {
-  
-        const mainMessage = error?.data?.message || "Une erreur est survenue.";
-        const detailMessage =
-          error?.data?.data?.errors?.[0] || error?.error || "Veuillez réessayer.";
-  
-        Toast.show({
-          type: "error",
-          text1: mainMessage,
-          text2: detailMessage,
-          position: "top",
-        });
-  } finally {
-    setLoadingDistribute(false);
-  }
-};
+    } catch (error) {
+      const mainMessage = error?.data?.message || "Une erreur est survenue.";
+      const detailMessage =
+        error?.data?.data?.errors?.[0] || error?.error || "Veuillez réessayer.";
 
-
-
+      Toast.show({
+        type: "error",
+        text1: mainMessage,
+        text2: detailMessage,
+        position: "top",
+      });
+    } finally {
+      setLoadingDistribute(false);
+    }
+  };
 
   return (
     <View className="flex-1 bg-[#0E1111] pt-12">
@@ -277,26 +328,36 @@ const handleDistribute = async () => {
             <Text className="text-black font-semibold">{tontine.montant}</Text>
           </View>
 
+     <View className="flex-row mt-2 justify-between">
+        {STATUS_OPTIONS.map((status) => (
           <TouchableOpacity
-            disabled={tontine.etat === "SUSPENDED"}
-            className={`py-2 px-4 rounded-full items-center mt-2 ${
-              tontine.etat === "SUSPENDED" ? "bg-gray-400" : "bg-yellow-500"
+            key={status.key}
+            disabled={tontine.etat === status.key || loading}
+            className={`py-2 px-4 rounded-full items-center ${
+              tontine.etat === status.key ? "bg-gray-400" : "bg-yellow-500"
             }`}
             onPress={async () => {
-              if (tontine.etat === "SUSPENDED") return;
+              if (tontine.etat === status.key) return;
               try {
                 setLoading(true);
-                await changeTontineStatus({ tontineId, status: "SUSPENDED" }).unwrap();
+                await changeTontineStatus({ tontineId, status: status.key }).unwrap();
                 Toast.show({
                   type: "success",
-                  text1: "Succès",
-                  text2: `Le statut est passé à SUSPENDED`,
+                  text1: currentLang === "fr" ? "Succès" : "Success",
+                  text2:
+                    currentLang === "fr"
+                      ? `Le statut est passé à ${status.fr}`
+                      : `Status changed to ${status.en}`,
                 });
               } catch (error) {
                 Toast.show({
                   type: "error",
-                  text1: "Erreur",
-                  text2: error?.data?.message || "Échec du changement de statut",
+                  text1: currentLang === "fr" ? "Erreur" : "Error",
+                  text2:
+                    error?.data?.message ||
+                    (currentLang === "fr"
+                      ? "Échec du changement de statut"
+                      : "Failed to change status"),
                 });
               } finally {
                 setLoading(false);
@@ -304,9 +365,12 @@ const handleDistribute = async () => {
             }}
           >
             <Text className="text-black font-bold">
-              {t("cotisations.changeStatus")} ({tontine.etat})
+              {currentLang === "fr" ? status.fr : status.en}
             </Text>
           </TouchableOpacity>
+        ))}
+      </View>
+
 
           {tontine.etat !== "CLOSED" && (
             <TouchableOpacity
@@ -327,77 +391,75 @@ const handleDistribute = async () => {
             </TouchableOpacity>
           )}
 
-          
-             {showDistributeModal && (
-    <Modal
-      transparent
-      animationType="fade"
-      visible={showDistributeModal}
-      onRequestClose={() => setShowDistributeModal(false)}
-    >
-      <View className="flex-1 justify-center items-center bg-black/60 px-6">
-        <View className="bg-white rounded-2xl p-6 w-full">
-          <Text className="text-black text-large font-bold mb-4 text-center">
-            {t("cotisations.confirmDistribution")}
-          </Text>
-          
-          {/* Payment breakdown */}
-          <View className="mb-4">
-            <View className="flex-row justify-between mb-1">
-              <Text className="text-gray-700">{t("cotisations.totalBalance")}:</Text>
-              <Text className="text-gray-700">
-                {parseFloat(tontine?.compteSequestre?.soldeActuel).toLocaleString()} xaf
-              </Text>
-            </View>
-            <View className="flex-row justify-between mb-1">
-              <Text className="text-gray-700">
-                {t("cotisations.fees")} ({TONTINE_FEES_DISTRIBUTION}%):
-              </Text>
-              <Text className="text-gray-700">
-                {((parseFloat(tontine?.compteSequestre?.soldeActuel) * TONTINE_FEES_DISTRIBUTION) / 100).toLocaleString()} xaf
-              </Text>
-            </View>
-            <View className="border-t border-gray-300 my-2" />
-            <View className="flex-row justify-between">
-              <Text className="text-gray-800 font-semibold">{t("cotisations.netAmount")}:</Text>
-              <Text className="text-gray-800 font-semibold">
-                {distributionAmount.toLocaleString()} xaf
-              </Text>
-            </View>
-          </View>
-
-          <View className="flex-row justify-between mt-4 space-x-2">
-            <TouchableOpacity
-              onPress={() => setShowDistributeModal(false)}
-              className="flex-1 bg-gray-200 px-4 py-3 rounded-lg items-center"
+          {showDistributeModal && (
+            <Modal
+              transparent
+              animationType="fade"
+              visible={showDistributeModal}
+              onRequestClose={() => setShowDistributeModal(false)}
             >
-              <Text className="text-gray-800 font-medium">
-                {t("common.cancel")}
-              </Text>
-            </TouchableOpacity>
+              <View className="flex-1 justify-center items-center bg-black/60 px-6">
+                <View className="bg-white rounded-2xl p-6 w-full">
+                  <Text className="text-black text-large font-bold mb-4 text-center">
+                    {t("cotisations.confirmDistribution")}
+                  </Text>
+                  
+                  {/* Payment breakdown */}
+                  <View className="mb-4">
+                    <View className="flex-row justify-between mb-1">
+                      <Text className="text-gray-700">{t("cotisations.totalBalance")}:</Text>
+                      <Text className="text-gray-700">
+                        {parseFloat(tontine?.compteSequestre?.soldeActuel).toLocaleString()} xaf
+                      </Text>
+                    </View>
+                    <View className="flex-row justify-between mb-1">
+                      <Text className="text-gray-700">
+                        {t("cotisations.fees")} ({TONTINE_FEES_DISTRIBUTION}%):
+                      </Text>
+                      <Text className="text-gray-700">
+                        {((parseFloat(tontine?.compteSequestre?.soldeActuel) * TONTINE_FEES_DISTRIBUTION) / 100).toLocaleString()} xaf
+                      </Text>
+                    </View>
+                    <View className="border-t border-gray-300 my-2" />
+                    <View className="flex-row justify-between">
+                      <Text className="text-gray-800 font-semibold">{t("cotisations.netAmount")}:</Text>
+                      <Text className="text-gray-800 font-semibold">
+                        {distributionAmount.toLocaleString()} xaf
+                      </Text>
+                    </View>
+                  </View>
 
-            <TouchableOpacity
-              onPress={async () => {
-                setShowDistributeModal(false);
-                await handleDistribute();
-              }}
-              disabled={loadingDistribute}
-              className="flex-1 bg-green-500 px-4 py-3 rounded-lg items-center"
-            >
-              {loadingDistribute ? (
-                <Loader size="small" color="#fff" />
-              ) : (
-                <Text className="text-white font-bold">
-                  {t("cotisations.confirm")}
-                </Text>
-              )}
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-    </Modal>
-  )}
+                  <View className="flex-row justify-between mt-4 space-x-2">
+                    <TouchableOpacity
+                      onPress={() => setShowDistributeModal(false)}
+                      className="flex-1 bg-gray-200 px-4 py-3 rounded-lg items-center"
+                    >
+                      <Text className="text-gray-800 font-medium">
+                        {t("common.cancel")}
+                      </Text>
+                    </TouchableOpacity>
 
+                    <TouchableOpacity
+                      onPress={async () => {
+                        setShowDistributeModal(false);
+                        await handleDistribute();
+                      }}
+                      disabled={loadingDistribute}
+                      className="flex-1 bg-green-500 px-4 py-3 rounded-lg items-center"
+                    >
+                      {loadingDistribute ? (
+                        <Loader size="small" color="#fff" />
+                      ) : (
+                        <Text className="text-white font-bold">
+                          {t("cotisations.confirm")}
+                        </Text>
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+            </Modal>
+          )}
         </View>
       </View>
 
@@ -432,62 +494,88 @@ const handleDistribute = async () => {
                 {t("cotisations.noContributions")}
               </Text>
             ) : (
-            <ScrollView className="mt-4">
-              {cotisation.data.map((item, idx) => {
-                const currentTour = item.tourDistributionId;
-                const nextTour = cotisation.data[idx + 1]?.tourDistributionId;
-
-                return (
-                  <React.Fragment key={item.id}>
-                    <View className="flex-row items-center justify-between bg-white rounded-xl px-4 py-3 mb-2 shadow-sm">
-                      <View className="flex-1">
-                        <Text className="text-black font-medium">
-                          {item.membre?.user?.firstname} {item.membre?.user?.lastname}
+              <ScrollView className="mt-4">
+                {tourIds.map((tourId, idx) => {
+                  const tourData = contributionsByTour[tourId];
+                  const nextTourId = tourIds[idx + 1];
+                  
+                  return (
+                    <View key={tourId}>
+                      {/* Tour Header */}
+                      <View className="bg-gray-100 p-3 rounded-lg mb-2">
+                        <Text className="text-black font-bold">
+                          {t("cotisations.tour")} {tourIdMap[tourId]}
                         </Text>
-                        <Text className="text-gray-500 text-xs mt-1">
-                          {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : "—"}
-                        </Text>
+                        <View className="flex-row justify-between mt-1">
+                          <Text className="text-gray-600 text-sm">
+                            {t("cotisations.total")}: {tourData.total.toLocaleString()} xaf
+                          </Text>
+                          <Text className="text-green-600 text-sm">
+                            {t("cotisations.validated")}: {tourData.validated.toLocaleString()} xaf
+                          </Text>
+                          {tourData.pending > 0 && (
+                            <Text className="text-orange-500 text-sm">
+                              {t("cotisations.pending")}: {tourData.pending.toLocaleString()} xaf
+                            </Text>
+                          )}
+                        </View>
                       </View>
 
-                      {item.statutPaiement === "VALIDATED" ? (
-                        <Text className="text-green-600 font-semibold text-sm">
-                          {item.montant} xaf
-                        </Text>
-                      ) : (
-                        <View className="flex-row items-center justify-between">
-                          <Text className="text-orange-500 font-medium text-sm mr-2">
-                            {item.statutPaiement}
-                          </Text>
-                          <TouchableOpacity
-                            className={`bg-green-400 rounded-full px-3 py-1 flex-row items-center justify-center ${isLoading ? "opacity-50" : ""}`}
-                            disabled={isLoading}
-                            onPress={() => handleRelance(item.id)}
-                          >
-                            {isLoadingRelance ? (
-                              <Loader size="small" color="#fff" />
-                            ) : (
-                              <Text className="text-white text-xs font-semibold">{t("actions.remind")}</Text>
-                            )}
-                          </TouchableOpacity>
+                      {/* Contributions in this tour */}
+                      {tourData.contributions.map((item) => (
+                        <View 
+                          key={item.id} 
+                          className="flex-row items-center justify-between bg-white rounded-xl px-4 py-3 mb-2 shadow-sm"
+                        >
+                          <View className="flex-1">
+                            <Text className="text-black font-medium">
+                              {item.membre?.user?.firstname} {item.membre?.user?.lastname}
+                            </Text>
+                            <Text className="text-gray-500 text-xs mt-1">
+                              {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : "—"}
+                            </Text>
+                          </View>
+
+                          {item.statutPaiement === "VALIDATED" ? (
+                            <Text className="text-green-600 font-semibold text-sm">
+                              {item.montant} xaf
+                            </Text>
+                          ) : (
+                            <View className="flex-row items-center justify-between">
+                              <Text className="text-orange-500 font-medium text-sm mr-2">
+                                {item.statutPaiement}
+                              </Text>
+                              <TouchableOpacity
+                                className={`bg-green-400 rounded-full px-3 py-1 flex-row items-center justify-center ${isLoading ? "opacity-50" : ""}`}
+                                disabled={isLoading}
+                                onPress={() => handleRelance(item.id)}
+                              >
+                                {isLoadingRelance ? (
+                                  <Loader size="small" color="#fff" />
+                                ) : (
+                                  <Text className="text-white text-xs font-semibold">{t("actions.remind")}</Text>
+                                )}
+                              </TouchableOpacity>
+                            </View>
+                          )}
                         </View>
+                      ))}
+                      
+                      {/* Divider after each tour */}
+                      {nextTourId && (
+                        <View className="h-[1px] bg-gray-300 mx-4 my-3" />
                       )}
                     </View>
+                  );
+                })}
 
-                    {/* Divider après chaque tour différent */}
-                    {currentTour !== nextTour && (
-                      <View className="h-[1px] bg-gray-300 mx-4 my-1" />
-                    )}
-                  </React.Fragment>
-                );
-              })}
-            </ScrollView>
-
-
+              </ScrollView>
             )}
           </>
         )}
 
-       {activeTab === "rotationOrder" && (
+        {/* Rest of the component remains the same */}
+        {activeTab === "rotationOrder" && (
           <ScrollView
             contentContainerStyle={{ paddingBottom: 24 }}
             showsVerticalScrollIndicator={false}
@@ -503,7 +591,7 @@ const handleDistribute = async () => {
               data={ordreList}
               onDragEnd={({ data }) => setOrdreList(data)}
               keyExtractor={(item) => item.key}
-              scrollEnabled={false} // ✅ prevent conflict with ScrollView
+              scrollEnabled={false}
               renderItem={({ item, drag, isActive }) => (
                 <ScaleDecorator>
                   <TouchableOpacity
@@ -546,8 +634,7 @@ const handleDistribute = async () => {
           </ScrollView>
         )}
 
-
-        {activeTab === "history" && (
+       {activeTab === "history" && (
           <>
             {isLoadingValidated ? (
               <Text className="text-center text-gray-500 mt-4">{t("loading")}</Text>
@@ -577,9 +664,14 @@ const handleDistribute = async () => {
                         </Text>
                       </View>
 
-                      <Text className="text-green-600 font-semibold text-sm">
-                        {item.montant} xaf
-                      </Text>
+                      <View className="items-end">
+                        <Text className="text-green-600 font-semibold text-sm">
+                          {item.montant} xaf
+                        </Text>
+                        <Text className="text-green-600 text-xs mt-1">
+                          Payé
+                        </Text>
+                      </View>
                     </View>
                   ))}
               </ScrollView>
@@ -588,35 +680,35 @@ const handleDistribute = async () => {
         )}
 
       </View>
+      
       {showMissingContributorsModal && (
-  <Modal
-    transparent
-    animationType="fade"
-    visible={showMissingContributorsModal}
-    onRequestClose={() => setShowMissingContributorsModal(false)}
-  >
-    <View className="flex-1 justify-center items-center bg-black/60 px-6">
-      <View className="bg-white rounded-2xl p-6 w-full">
-        <Text className="text-black text-lg font-bold mb-4 text-center">
-          Distribution impossible
-        </Text>
-        <Text className="text-gray-700 text-sm text-center mb-6">
-          Ces membres n'ont pas encore cotisé :
-        </Text>
-        <View className="bg-gray-100 p-3 rounded-lg mb-4">
-          <Text className="text-black text-sm text-center">{missingContributors}</Text>
-        </View>
-        <TouchableOpacity
-          onPress={() => setShowMissingContributorsModal(false)}
-          className="bg-green-500 py-3 rounded-lg items-center"
+        <Modal
+          transparent
+          animationType="fade"
+          visible={showMissingContributorsModal}
+          onRequestClose={() => setShowMissingContributorsModal(false)}
         >
-          <Text className="text-white font-bold">OK</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  </Modal>
-)}
-
+          <View className="flex-1 justify-center items-center bg-black/60 px-6">
+            <View className="bg-white rounded-2xl p-6 w-full">
+              <Text className="text-black text-lg font-bold mb-4 text-center">
+                Distribution impossible
+              </Text>
+              <Text className="text-gray-700 text-sm text-center mb-6">
+                Ces membres n'ont pas encore cotisé :
+              </Text>
+              <View className="bg-gray-100 p-3 rounded-lg mb-4">
+                <Text className="text-black text-sm text-center">{missingContributors}</Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setShowMissingContributorsModal(false)}
+                className="bg-green-500 py-3 rounded-lg items-center"
+              >
+                <Text className="text-white font-bold">OK</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+      )}
     </View>
   );
 };

@@ -116,12 +116,9 @@ export const sharedExpenseApi = createApi({
     }),
     
     cancelSharedExpense: builder.mutation({
-      query: ({ id, cancelReason }) => ({
-        url: `/shared-expense/${id}/cancel`,
+      query: ({ participantId}) => ({
+        url: `/shared-expense/${participantId}/refuse-payment`,
         method: 'PATCH',
-        body: {
-          cancelReason,
-        },
       }),
       invalidatesTags: [TAG_TYPES.SHARED_EXPENSE],
     }),

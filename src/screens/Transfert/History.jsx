@@ -62,7 +62,7 @@ const getMethodIcon = () => {
 
   switch (method) {
     case 'MOBILE_MONEY':
-      if (provider === 'Orange') {
+      if (provider === 'ORANGE_MONEY' || provider?.toLowerCase() === 'orange') {
         return require('../../images/om.png');
       } else if (provider === 'MTN') {
         return require('../../images/mtn.png');
@@ -72,19 +72,20 @@ const getMethodIcon = () => {
         return require('../../images/transaction.png');
       }
 
+
     case 'WALLET':
       if (provider === 'CMORANGEOM') {
         return require('../../images/om.png');
       } else if (provider === 'MTNMOMO') {
         return require('../../images/mtn.png');
       } else {
-        return require('../../images/transaction.png');
+        return require('../../images/wallet.jpeg');
       }
 
     case 'VIRTUAL_CARD':
        return require('../../images/virtual.png');
     case 'BANK_TRANSFER':
-      return require('../../images/uba.png');
+      return require('../../images/ecobank.jpeg');
 
     default:
       return require('../../images/tontine.jpeg'); // fallback if method is null or unknown

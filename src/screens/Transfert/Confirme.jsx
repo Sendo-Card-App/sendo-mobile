@@ -57,9 +57,9 @@ const ConfirmeTheTransfer = () => {
     });
   
      const getConfigValue = (name) => {
-    const configItem = configData?.data?.find(item => item.name === name);
-      return configItem ? configItem.value : null;
-    };
+      const configItem = configData?.data?.find(item => item.name === name);
+        return configItem ? configItem.value : null;
+      };
   
   const route = useRoute();
   const {
