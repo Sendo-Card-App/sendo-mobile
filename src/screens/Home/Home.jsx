@@ -235,7 +235,7 @@ const getTypeLabel = (type, t) => {
 const getMethodIcon = (transaction) => {
   switch (transaction.method?.toUpperCase()) {
     case 'MOBILE_MONEY':
-      if (transaction.provider === 'Orange') {
+      if (transaction.provider === 'ORANGE_MONEY' || transaction.provider?.toLowerCase() === 'orange') {
         return require('../../images/om.png');
       } else if (transaction.provider === 'MTN') {
         return require('../../images/mtn.png');
@@ -245,19 +245,20 @@ const getMethodIcon = (transaction) => {
         return require('../../images/transaction.png');
       }
 
+
     case 'WALLET':
       if (transaction.provider === 'CMORANGEOM') {
         return require('../../images/om.png');
       } else if (transaction.provider === 'MTNMOMO') {
         return require('../../images/mtn.png');
       } else {
-        return require('../../images/transaction.png');
+        return require('../../images/wallet.jpeg');
       }
 
     case 'VIRTUAL_CARD':
        return require('../../images/virtual.png');
     case 'BANK_TRANSFER':
-      return require('../../images/uba.png');
+      return require('../../images/ecobank.jpeg');
     default:
       return require('../../images/tontine.jpeg');
   }

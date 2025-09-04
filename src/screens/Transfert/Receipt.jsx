@@ -17,16 +17,36 @@ import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import Loader from "../../components/Loader";
 import { useTranslation } from 'react-i18next';
+import { useGetConfigQuery } from '../../services/Config/configApi';
 
 const ReceiptScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const transaction = route.params?.transaction;
-  console.log(transaction)
-  const user = transaction?.destinataire; 
+  //console.log(transaction)
+  const user = transaction?.receiver; 
   console.log(user)
   const [isGenerating, setIsGenerating] = React.useState(false);
   const { t } = useTranslation();
+     const {
+         data: configData,
+         isLoading: isConfigLoading,
+         error: configError
+       } = useGetConfigQuery(undefined, {
+         pollingInterval: 1000,
+       });
+
+    const getConfigValue = (name) => {
+      const configItem = configData?.data?.find(item => item.name === name);
+        return configItem ? configItem.value : null;
+      };
+
+      const getExchangeRate = () => {
+  // You might want to fetch this from your config or API
+      const exchangeRate = getConfigValue('TRANSFER_FEES'); // Default fallback
+          return parseFloat(exchangeRate);
+        };
+      
 
   if (!transaction) {
     return (
@@ -333,35 +353,48 @@ const generateReceiptHTML = (transaction, user, getTypeLabel, logoBase64) => {
   `;
 };
 
-  const getStatusSteps = () => {
-    const formatDate = (date) => date ? moment(date).format('DD/MM/YYYY HH:mm') : 'N/A';
+const getStatusSteps = () => {
+  const formatDate = (date) => date ? moment(date).format('DD/MM/YYYY HH:mm') : 'N/A';
 
+  if (transaction.status === 'COMPLETED') {
     return [
       {
-        status: "Transmis",
-        description: "Transfert initié avec succès",
+        status: "Terminé",
+        description: "Le transfert a réussi",
         completed: true,
-        time: formatDate(transaction.createdAt),
-        icon: "checkmark-circle"
-      },
-      {
-        status: "En traitement",
-        description: "Vérification en cours",
-        completed: transaction.status !== 'PENDING' && transaction.status !== 'FAILED',
-        time: transaction.processedAt ? formatDate(transaction.processedAt) : 'En attente',
-        icon: "time"
-      },
-      {
-        status: transaction.status === 'COMPLETED' ? "Terminé" : "En attente",
-        description: transaction.status === 'COMPLETED'
-          ? "Le transfert a réussi"
-          : "Le transfert a échoué",
-        completed: transaction.status === 'COMPLETED',
-        time: transaction.updatedAt ? formatDate(transaction.updatedAt) : 'N/A',
-        icon: transaction.status === 'COMPLETED' ? "checkmark-done" : "close-circle"
+        time: transaction.updatedAt ? formatDate(transaction.updatedAt) : formatDate(transaction.createdAt),
+        icon: "checkmark-done"
       }
     ];
-  };
+  }
+
+  return [
+    {
+      status: "Transmis",
+      description: "Transfert initié avec succès",
+      completed: true,
+      time: formatDate(transaction.createdAt),
+      icon: "checkmark-circle"
+    },
+    {
+      status: "En traitement",
+      description: "Vérification en cours",
+      completed: transaction.status !== 'PENDING' && transaction.status !== 'FAILED',
+      time: transaction.processedAt ? formatDate(transaction.processedAt) : 'En attente',
+      icon: "time"
+    },
+    {
+      status: transaction.status === 'COMPLETED' ? "Terminé" : "En attente",
+      description: transaction.status === 'COMPLETED'
+        ? "Le transfert a réussi"
+        : "Le transfert a échoué",
+      completed: transaction.status === 'COMPLETED',
+      time: transaction.updatedAt ? formatDate(transaction.updatedAt) : 'N/A',
+      icon: transaction.status === 'COMPLETED' ? "checkmark-done" : "close-circle"
+    }
+  ];
+};
+
 
   const displayType = getTransactionDisplayType(transaction);
 
@@ -409,20 +442,21 @@ const generateReceiptHTML = (transaction, user, getTypeLabel, logoBase64) => {
 
           <View className="mb-4">
             {getStatusSteps().map((step, index) => (
-              <View key={index} className="flex-row items-start mb-2">
-                <AntDesign 
-                  name="checkcircle" 
-                  size={20} 
-                  color={step.completed ? "#7ddd7d" : "#d1d5db"} 
-                />
-                <View className="ml-2">
-                  <Text className="text-gray-800 font-semibold">{step.status}</Text>
-                  {step.time && (
-                    <Text className="text-xs text-gray-600">{step.time}</Text>
-                  )}
-                </View>
+            <View key={index} className="flex-row items-center mb-2">
+              <AntDesign 
+                name="checkcircle" 
+                size={20} 
+                color={step.completed ? "#7ddd7d" : "#d1d5db"} 
+              />
+              <View className="ml-3 flex-1">
+                <Text className="text-gray-800 font-semibold">{step.status}</Text>
+                {step.time && (
+                  <Text className="text-xs text-gray-600">{step.time}</Text>
+                )}
               </View>
-            ))}
+            </View>
+          ))}
+
           </View>
 
           {displayType === 'VIRTUAL_CARD_RECHARGE' ? (
@@ -499,7 +533,7 @@ const generateReceiptHTML = (transaction, user, getTypeLabel, logoBase64) => {
                   </Text>
                 )}
               <Text className="text-gray-600 text-sm">
-                  Bénéficiaire :{" "}
+                Bénéficiaire :{" "}
                 <Text className="font-semibold">
                   {transaction.type === 'WALLET_TO_WALLET' ||
                   transaction.type === 'TRANSFER' ||
@@ -508,29 +542,38 @@ const generateReceiptHTML = (transaction, user, getTypeLabel, logoBase64) => {
                     ? `${transaction.receiver?.firstname ?? ''} ${transaction.receiver?.lastname ?? ''}`
                     : `${user?.firstname ?? ''} ${user?.lastname ?? ''}`}
                 </Text>
+              </Text>
 
+              <Text className="text-gray-600 text-sm">
+                Méthode de Paiement : {getTypeLabel1(transaction.provider, transaction.type, transaction.method) || 'N/A'}
+              </Text>
 
-                </Text>
-                <Text className="text-gray-600 text-sm">
-                  Méthode de Paiement : {getTypeLabel1(transaction.provider, transaction.type, transaction.method) || 'N/A'}
-                </Text>
-                {displayType !== 'NIU_PAYMENT' && (
-                  <Text className="text-gray-600 text-sm mb-2">
-                    Numéro :{" "}
-                  {transaction.type === 'WALLET_TO_WALLET' || transaction.type === 'TRANSFER' ||
-                  transaction.type === 'FUND_REQUEST_PAYMENT' ||
-                  transaction.type === 'SHARED_PAYMENT'
-                      ? transaction.receiver?.phone
-                      : user?.phone}
-                  </Text>
-                )}
+                  {displayType !== 'NIU_PAYMENT' && (
+                    <Text className="text-gray-600 text-sm mb-2">
+                      {transaction.type === 'WALLET_TO_WALLET' ? 'Numéro de compte:' : 'Numéro:'}{" "}
+                      {transaction.type === 'WALLET_TO_WALLET'
+                        ? transaction.wallet?.matricule
+                        : transaction.type === 'TRANSFER' ||
+                          transaction.type === 'FUND_REQUEST_PAYMENT' ||
+                          transaction.type === 'SHARED_PAYMENT'
+                        ? transaction.receiver?.phone
+                        : user?.phone}
+                    </Text>
+                  )}
+
               </>
             )
           )}
 
           <Text className="text-green-600 font-semibold my-1">Reçu</Text>
           <Text className="text-gray-600 text-sm">Montant du transfert: {transaction.amount} {transaction.currency}</Text>
-          <Text className="text-gray-600 text-sm">Frais de transfert: {transaction.sendoFees || 0} XAF</Text>
+          <Text className="text-gray-600 text-sm">
+            Frais de transfert: {
+              transaction.type === 'TRANSFER' 
+                ? (transaction.sendoFees * getExchangeRate()).toFixed(2) + ' XAF'
+                : (transaction.sendoFees || 0) + ' XAF'
+            }
+          </Text>
           <Text className="text-gray-600 text-sm mb-2">Total: {transaction.totalAmount} {transaction.currency}</Text>
 
           <Text className="text-green-600 font-semibold mt-2">Détails du transfert</Text>

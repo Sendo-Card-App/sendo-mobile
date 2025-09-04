@@ -28,13 +28,11 @@ export default function Historique({ navigation }) {
 
   const { data: sharedExpensesList, isLoading: expensesLoading } = useGetSharedListQuery(
     userId ?? skipToken,
-    {
-      pollingInterval: 1000,
-    }
+    { pollingInterval: 1000 }
   );
 
   const sharedExpenses = sharedExpensesList?.data || [];
-   //console.log("List sharedExpenses:", JSON.stringify(sharedExpenses, null, 2));
+
   // Filter expenses based on selected filter
   const filteredExpenses = sharedExpenses.filter((item) => {
     const status = item.sharedExpense.status;
@@ -46,19 +44,19 @@ export default function Historique({ navigation }) {
       case "paid":
         return paymentStatus === "PAYED";
       case "cancelled":
-        return status === "CANCELLED";
+        return status === "CANCELLED" || paymentStatus === "CANCELLED";
       default:
         return true; // Show all
     }
   });
 
-  const getStatusColor = (status) => {
-    switch (status) {
+  const getStatusColor = (paymentStatus) => {
+    switch (paymentStatus) {
       case "PENDING":
         return "#FFA500";
-      case "PAID":
-      case "COMPLETED":
+      case "PAYED":
         return "#4CAF50";
+      case "REFUSED":
       case "CANCELLED":
         return "#F44336";
       default:
@@ -66,13 +64,11 @@ export default function Historique({ navigation }) {
     }
   };
 
-  // Format amount with thousands separators
   const formatAmount = (amount, currency) => {
     const formattedAmount = Number(amount).toLocaleString("fr-FR");
     return `${formattedAmount} ${currency}`;
   };
 
-  // Truncate long text with ellipsis
   const truncateText = (text, maxLength = 30) => {
     if (text && text.length > maxLength) {
       return text.substring(0, maxLength) + "...";
@@ -80,7 +76,6 @@ export default function Historique({ navigation }) {
     return text;
   };
 
-  // Get filter button text based on active filter
   const getFilterButtonText = () => {
     switch (activeFilter) {
       case "pending":
@@ -141,78 +136,27 @@ export default function Historique({ navigation }) {
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>{t("his.filter_title")}</Text>
             
-            <Pressable
-              style={[
-                styles.filterOption,
-                activeFilter === "all" && styles.filterOptionActive
-              ]}
-              onPress={() => {
-                setActiveFilter("all");
-                setFilterModalVisible(false);
-              }}
-            >
-              <Text style={[
-                styles.filterOptionText,
-                activeFilter === "all" && styles.filterOptionTextActive
-              ]}>
-                {t("his.filter_all")}
-              </Text>
-            </Pressable>
-            
-            <Pressable
-              style={[
-                styles.filterOption,
-                activeFilter === "pending" && styles.filterOptionActive
-              ]}
-              onPress={() => {
-                setActiveFilter("pending");
-                setFilterModalVisible(false);
-              }}
-            >
-              <Text style={[
-                styles.filterOptionText,
-                activeFilter === "pending" && styles.filterOptionTextActive
-              ]}>
-                {t("his.filter_pending")}
-              </Text>
-            </Pressable>
-            
-            <Pressable
-              style={[
-                styles.filterOption,
-                activeFilter === "paid" && styles.filterOptionActive
-              ]}
-              onPress={() => {
-                setActiveFilter("paid");
-                setFilterModalVisible(false);
-              }}
-            >
-              <Text style={[
-                styles.filterOptionText,
-                activeFilter === "paid" && styles.filterOptionTextActive
-              ]}>
-                {t("his.filter_paid")}
-              </Text>
-            </Pressable>
-            
-            <Pressable
-              style={[
-                styles.filterOption,
-                activeFilter === "cancelled" && styles.filterOptionActive
-              ]}
-              onPress={() => {
-                setActiveFilter("cancelled");
-                setFilterModalVisible(false);
-              }}
-            >
-              <Text style={[
-                styles.filterOptionText,
-                activeFilter === "cancelled" && styles.filterOptionTextActive
-              ]}>
-                {t("his.filter_cancelled")}
-              </Text>
-            </Pressable>
-            
+            {["all", "pending", "paid", "cancelled"].map((filterKey) => (
+              <Pressable
+                key={filterKey}
+                style={[
+                  styles.filterOption,
+                  activeFilter === filterKey && styles.filterOptionActive
+                ]}
+                onPress={() => {
+                  setActiveFilter(filterKey);
+                  setFilterModalVisible(false);
+                }}
+              >
+                <Text style={[
+                  styles.filterOptionText,
+                  activeFilter === filterKey && styles.filterOptionTextActive
+                ]}>
+                  {t(`his.filter_${filterKey}`)}
+                </Text>
+              </Pressable>
+            ))}
+
             <Pressable
               style={styles.modalCloseButton}
               onPress={() => setFilterModalVisible(false)}
@@ -250,9 +194,19 @@ export default function Historique({ navigation }) {
               const status = expense.status;
               const paymentStatus = item.paymentStatus;
               const isPayable = status === "PENDING" && paymentStatus === "PENDING";
+              const isCancelled = paymentStatus === "CANCELLED" || status === "CANCELLED";
 
               return (
-                <View key={item.id} style={styles.card}>
+                <TouchableOpacity
+                  key={item.id}
+                  activeOpacity={isCancelled || !isPayable ? 1 : 0.7}
+                  onPress={() => {
+                    if (!isCancelled && isPayable) {
+                      navigation.navigate("DemandDetailScreen", { item });
+                    }
+                  }}
+                  style={[styles.card, isCancelled && { opacity: 0.6 }]}
+                >
                   {/* Description and Amount */}
                   <View style={styles.rowSpaceBetween}>
                     <Text style={styles.descriptionText}>
@@ -277,37 +231,32 @@ export default function Historique({ navigation }) {
                     <Text style={styles.dateText}>
                       {new Date(expense.createdAt).toLocaleDateString()}
                     </Text>
-                    <View style={[styles.statusBadge, { backgroundColor: getStatusColor(status) }]}>
+                    <View style={[styles.statusBadge, { backgroundColor: getStatusColor(paymentStatus) }]}>
                       <Text style={styles.statusText}>
-                        {paymentStatus === "PAYED" ? t("his.status.paid") : t(`his.status.${status.toLowerCase()}`)}
+                        {t(`his.status.${paymentStatus.toLowerCase()}`)}
                       </Text>
                     </View>
                   </View>
 
-                  {/* Cancel Reason - Only the reason in red */}
-                  {status === "CANCELLED" && expense.cancelReason?.trim() !== "" && (
+                  {/* Cancel Reason */}
+                  {isCancelled && expense.cancelReason?.trim() && (
                     <View style={{ marginTop: 8 }}>
-                      {/* <Text style={styles.cancelReasonLabel}>
-                        {t("his.cancel_reason")}:
-                      </Text> */}
                       <Text style={styles.cancelReasonText}>
                         {truncateText(expense.cancelReason, 40)}
                       </Text>
                     </View>
                   )}
 
-                  {/* Pay Button - Only show for payable expenses */}
-                  {isPayable && (
+                  {/* Pay Button - Only for pending */}
+                  {isPayable && !isCancelled && (
                     <TouchableOpacity
                       onPress={() => navigation.navigate("DemandDetailScreen", { item })}
                       style={styles.payButton}
                     >
-                      <Text style={styles.payButtonText}>
-                        {t("his.payer")}
-                      </Text>
+                      <Text style={styles.payButtonText}>{t("his.payer")}</Text>
                     </TouchableOpacity>
                   )}
-                </View>
+                </TouchableOpacity>
               );
             })
           )}
@@ -358,22 +307,9 @@ const styles = StyleSheet.create({
   },
   filterText: { marginRight: 5, color: "#444", fontSize: 14 },
   filterTextActive: { color: "#7ddd7d", fontWeight: "600" },
-  scrollViewContent: { 
-    paddingHorizontal: 20, 
-    paddingBottom: 20,
-    paddingTop: 10,
-  },
-  emptyState: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 40,
-  },
-  noExpensesText: { 
-    textAlign: "center", 
-    marginTop: 15, 
-    color: "#777",
-    fontSize: 16,
-  },
+  scrollViewContent: { paddingHorizontal: 20, paddingBottom: 20, paddingTop: 10 },
+  emptyState: { alignItems: "center", justifyContent: "center", paddingVertical: 40 },
+  noExpensesText: { textAlign: "center", marginTop: 15, color: "#777", fontSize: 16 },
   card: {
     backgroundColor: "#fff",
     borderRadius: 12,
@@ -385,129 +321,27 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  rowSpaceBetween: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 8,
-    alignItems: "flex-start",
-  },
-  rowSpaceBetweenCenter: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: 5,
-  },
-  descriptionText: { 
-    fontWeight: "600", 
-    fontSize: 15, 
-    flex: 1,
-    marginRight: 10,
-    color: "#333",
-  },
-  amountContainer: {
-    backgroundColor: "#7ddd7d",
-    borderRadius: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
-  amountText: { 
-    fontWeight: "bold", 
-    fontSize: 14,
-    color: "#000",
-  },
-  partContainer: {
-    marginBottom: 8,
-  },
-  partText: {
-    fontSize: 13,
-    color: "#666",
-  },
+  rowSpaceBetween: { flexDirection: "row", justifyContent: "space-between", marginBottom: 8, alignItems: "flex-start" },
+  rowSpaceBetweenCenter: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 5 },
+  descriptionText: { fontWeight: "600", fontSize: 15, flex: 1, marginRight: 10, color: "#333" },
+  amountContainer: { backgroundColor: "#7ddd7d", borderRadius: 6, paddingHorizontal: 10, paddingVertical: 4 },
+  amountText: { fontWeight: "bold", fontSize: 14, color: "#000" },
+  partContainer: { marginBottom: 8 },
+  partText: { fontSize: 13, color: "#666" },
   dateText: { color: "#999", fontSize: 12 },
-  statusBadge: {
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
+  statusBadge: { borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4 },
   statusText: { color: "#fff", fontSize: 11, fontWeight: "500" },
-  cancelReasonLabel: {
-    fontSize: 12,
-    color: "#666",
-    marginBottom: 2,
-  },
-  cancelReasonText: { 
-    fontSize: 13, 
-    color: "#F44336",
-    fontWeight: "500",
-  },
-  payButton: {
-    backgroundColor: "#7ddd7d",
-    paddingVertical: 12,
-    borderRadius: 30,
-    alignItems: "center",
-    marginTop: 12,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 1 },
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  payButtonText: { 
-    color: "#000", 
-    fontWeight: "bold",
-    fontSize: 14,
-  },
+  cancelReasonText: { fontSize: 13, color: "#F44336", fontWeight: "500" },
+  payButton: { backgroundColor: "#7ddd7d", paddingVertical: 12, borderRadius: 30, alignItems: "center", marginTop: 12 },
+  payButtonText: { color: "#000", fontWeight: "bold", fontSize: 14 },
   // Modal styles
-  modalContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-  },
-  modalContent: {
-    backgroundColor: "white",
-    borderRadius: 20,
-    padding: 20,
-    width: "80%",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 15,
-    textAlign: "center",
-  },
-  filterOption: {
-    padding: 15,
-    borderRadius: 10,
-    marginVertical: 5,
-  },
-  filterOptionActive: {
-    backgroundColor: "#e8f5e8",
-  },
-  filterOptionText: {
-    fontSize: 16,
-    color: "#333",
-  },
-  filterOptionTextActive: {
-    color: "#7ddd7d",
-    fontWeight: "600",
-  },
-  modalCloseButton: {
-    backgroundColor: "#7ddd7d",
-    padding: 12,
-    borderRadius: 10,
-    marginTop: 10,
-    alignItems: "center",
-  },
-  modalCloseButtonText: {
-    color: "#000",
-    fontWeight: "bold",
-  },
+  modalContainer: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "rgba(0, 0, 0, 0.5)" },
+  modalContent: { backgroundColor: "white", borderRadius: 20, padding: 20, width: "80%", shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 4, elevation: 5 },
+  modalTitle: { fontSize: 18, fontWeight: "bold", marginBottom: 15, textAlign: "center" },
+  filterOption: { padding: 15, borderRadius: 10, marginVertical: 5 },
+  filterOptionActive: { backgroundColor: "#e8f5e8" },
+  filterOptionText: { fontSize: 16, color: "#333" },
+  filterOptionTextActive: { color: "#7ddd7d", fontWeight: "600" },
+  modalCloseButton: { backgroundColor: "#7ddd7d", padding: 12, borderRadius: 10, marginTop: 10, alignItems: "center" },
+  modalCloseButtonText: { color: "#000", fontWeight: "bold" },
 });

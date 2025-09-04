@@ -32,13 +32,13 @@ const DemandDetailScreen = () => {
   const { t } = useTranslation();
   const route = useRoute();
   const { item } = route.params;
+  //console.log(item)
   const sharedExpense = item.sharedExpense ?? item;
-  console.log(sharedExpense)
-  const [modalVisible, setModalVisible] = useState(false);
-  const [cancelReason, setCancelReason] = useState("");
+  // console.log(sharedExpense)
 
   const { data: userProfile } = useGetUserProfileQuery();
   const userId = userProfile?.data?.id;
+  //console.log(userId)
 
   const { data: balanceData, isLoading: isBalanceLoading } = useGetBalanceQuery(userId, { skip: !userId,
       pollingInterval: 10000, // Refetch every 30 seconds
@@ -84,25 +84,20 @@ const DemandDetailScreen = () => {
   }
 };
 
-const handleDecline = async () => {
-  if (!cancelReason.trim()) {
-    showToast("Please enter a reason for the decline.", "error");
-    return;
-  }
+  const handleDecline = async () => {
+    try {
+      await cancelSharedExpense({ participantId: item.id }).unwrap();
+      showToast("Request declined successfully.", "success");
+      navigation.goBack();
+    } catch (error) {
+      const msg =
+        error?.data?.data?.errors?.[0] ||
+        error?.data?.message ||
+        "An error occurred.";
+      showToast(msg, "error");
+    }
+  };
 
-  try {
-    await cancelSharedExpense({ id: sharedExpense.id, cancelReason }).unwrap();
-    showToast("Request declined successfully.", "success");
-    setModalVisible(false);
-    navigation.goBack();
-  } catch (error) {
-    const msg =
-      error?.data?.data?.errors?.[0] ||
-      error?.data?.message ||
-      "An error occurred.";
-    showToast(msg, "error");
-  }
-};
 
 
   return (
@@ -153,31 +148,25 @@ const handleDecline = async () => {
             </TouchableOpacity>
           )}
 
-          <TouchableOpacity style={{ backgroundColor: "#ff4d4d", borderRadius: 25, paddingVertical: 12, alignItems: "center", flexDirection: "row", justifyContent: "center" }} onPress={() => setModalVisible(true)}>
-            <Text style={{ fontWeight: "bold", color: "#fff", marginRight: 6 }}>{t("demandDetail.decline")}</Text>
+          <TouchableOpacity
+            style={{
+              backgroundColor: "#ff4d4d",
+              borderRadius: 25,
+              paddingVertical: 12,
+              alignItems: "center",
+              flexDirection: "row",
+              justifyContent: "center"
+            }}
+            onPress={handleDecline}
+          >
+            <Text style={{ fontWeight: "bold", color: "#fff", marginRight: 6 }}>
+              {t("demandDetail.decline")}
+            </Text>
             <Ionicons name="trash" size={20} color="#fff" />
           </TouchableOpacity>
+
         </View>
       </ScrollView>
-
-      <Modal visible={modalVisible} transparent animationType="slide">
-        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
-          <View style={{ flex: 1, backgroundColor: "#000000aa", justifyContent: "center", alignItems: "center" }}>
-            <View style={{ width: "85%", backgroundColor: "#fff", borderRadius: 20, padding: 20, elevation: 5 }}>
-              <Text style={{ fontSize: 16, fontWeight: "bold", marginBottom: 10 }}>{t("demandDetail.declineReasonTitle")}</Text>
-              <TextInput placeholder={t("demandDetail.declinePlaceholder")} value={cancelReason} onChangeText={setCancelReason} multiline style={{ borderWidth: 1, borderColor: "#ccc", borderRadius: 10, padding: 10, height: 100, textAlignVertical: "top" }} />
-              <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 20 }}>
-                <TouchableOpacity style={{ padding: 10, backgroundColor: "#ccc", borderRadius: 10 }} onPress={() => setModalVisible(false)}>
-                  <Text>{t("demandDetail.cancel")}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={{ padding: 10, backgroundColor: "#ff4d4d", borderRadius: 10, flexDirection: "row", alignItems: "center", justifyContent: "center", minWidth: 100 }} onPress={handleDecline} disabled={isCancelLoading}>
-                  {isCancelLoading ? <Loader color="green" size="small" /> : <Text style={{ color: "#fff" }}>{t("demandDetail.confirm")}</Text>}
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
     </View>
   );
 };
