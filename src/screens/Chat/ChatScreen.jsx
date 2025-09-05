@@ -46,7 +46,7 @@ interface Attachment {
 interface Message {
   id: string;
   content: string;
-  senderType: 'CUSTOMER';
+  senderType: 'CUSTOMER' | 'ADMIN';
   userId: number;
   conversationId: string;
   read: boolean;
@@ -76,7 +76,7 @@ interface Conversation {
 
 const ChatScreen = ({ route, navigation }) => {
   const [input, setInput] = useState('');
-   const { t } = useTranslation();
+  const { t } = useTranslation();
   const [attachments, setAttachments] = useState([]);
   const flatListRef = useRef(null);
   const [userToken, setUserToken] = useState(null);
@@ -89,14 +89,14 @@ const ChatScreen = ({ route, navigation }) => {
   const [keyboardOffset, setKeyboardOffset] = useState(0);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
 
- const { data: userProfile, isLoading: isProfileLoading } = useGetUserProfileQuery(undefined, {
-     pollingInterval: 1000,
-   });
+  const { data: userProfile, isLoading: isProfileLoading } = useGetUserProfileQuery(undefined, {
+    pollingInterval: 1000,
+  });
   const userId = userProfile?.data?.id;
   
   const { data: conversationsResponse, isLoading: isLoadingConversations, refetch: refetchConversations } = useGetConversationsQuery(userId, {
     skip: !userId,
-     pollingInterval: 1000,
+    pollingInterval: 1000,
   });
   
   const conversations = conversationsResponse?.data || [];
@@ -104,9 +104,9 @@ const ChatScreen = ({ route, navigation }) => {
   const openConversations = conversations.filter(conv => conv.status === 'OPEN');
   const selectedConversation = openConversations[selectedConversationIndex];
   
-  const { data: messagesResponse, isLoading: isLoadingMessages, refetchMessages  } = useGetConversationMessagesQuery(selectedConversation?.id, {
+  const { data: messagesResponse, isLoading: isLoadingMessages, refetch: refetchMessages  } = useGetConversationMessagesQuery(selectedConversation?.id, {
     skip: !selectedConversation,
-     pollingInterval: 1000,
+    pollingInterval: 1000,
   });
 
   const [sendMessage] = useSendMessageMutation();
@@ -131,7 +131,7 @@ const ChatScreen = ({ route, navigation }) => {
     }
   }, [userToken]);
 
-    useEffect(() => {
+  useEffect(() => {
     const keyboardDidShowListener = Keyboard.addListener(
       'keyboardDidShow',
       (e) => {
@@ -155,20 +155,20 @@ const ChatScreen = ({ route, navigation }) => {
   }, []);
 
   // Join/leave conversation
-useEffect(() => {
-  const socket = getSocket();
-  if (!socket || !selectedConversation?.id) return;
+  useEffect(() => {
+    const socket = getSocket();
+    if (!socket || !selectedConversation?.id) return;
 
-  socket.emit('join_conversation', { conversationId: selectedConversation.id });
-  const interval = setInterval(() => {
-    refetchMessages?.(); 
-  }, 1000);
+    socket.emit('join_conversation', { conversationId: selectedConversation.id });
+    const interval = setInterval(() => {
+      refetchMessages?.(); 
+    }, 1000);
 
-  return () => {
-    socket.emit('leave_conversation', { conversationId: selectedConversation.id });
-    clearInterval(interval); // cleanup
-  };
-}, [selectedConversation?.id]);
+    return () => {
+      socket.emit('leave_conversation', { conversationId: selectedConversation.id });
+      clearInterval(interval); // cleanup
+    };
+  }, [selectedConversation?.id]);
 
   // Load initial messages
   useEffect(() => {
@@ -359,24 +359,23 @@ useEffect(() => {
         setSelectedConversationIndex(0);
       }
 
-     const socket = getSocket();
-        if (!socket) throw new Error("Socket not connected");
-        const interval = setInterval(() => {
-          //console.log(" Reload triggered");
-        }, 1000);
-        socket.on("disconnect", () => {
-          clearInterval(interval);
-        });
+      const socket = getSocket();
+      if (!socket) throw new Error("Socket not connected");
+      const interval = setInterval(() => {
+        //console.log(" Reload triggered");
+      }, 1000);
+      socket.on("disconnect", () => {
+        clearInterval(interval);
+      });
 
       // Send message through socket
-     socket.emit('send_message', {
-      conversationId: currentConversationId,
-      senderType: 'CUSTOMER',
-       userId: userId, 
-      content: input.trim() !== '' ? input : '[Attachment]',
-      attachments: uploadedAttachmentUrls,
-    });
-
+      socket.emit('send_message', {
+        conversationId: currentConversationId,
+        senderType: 'CUSTOMER',
+        userId: userId, 
+        content: input.trim() !== '' ? input : '[Attachment]',
+        attachments: uploadedAttachmentUrls,
+      });
 
       setInput('');
       setAttachments([]);
@@ -410,100 +409,124 @@ useEffect(() => {
     return `${baseUrl}${url.startsWith('/') ? url : '/' + url}`;
   };
 
+  // Format date to show date if not today, otherwise show time
+  const formatMessageDate = (dateString: string) => {
+    const messageDate = new Date(dateString);
+    const today = new Date();
+    
+    // Check if message is from today
+    if (
+      messageDate.getDate() === today.getDate() &&
+      messageDate.getMonth() === today.getMonth() &&
+      messageDate.getFullYear() === today.getFullYear()
+    ) {
+      return messageDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+    
+    // Check if message is from yesterday
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    if (
+      messageDate.getDate() === yesterday.getDate() &&
+      messageDate.getMonth() === yesterday.getMonth() &&
+      messageDate.getFullYear() === yesterday.getFullYear()
+    ) {
+      return `Yesterday ${messageDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    }
+    
+    // Otherwise show full date and time
+    return `${messageDate.toLocaleDateString()} ${messageDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+  };
+
   const renderMessage = ({ item }: { item: Message }) => {
-  const isTempMessage = item.id.startsWith('temp-');
- const isCurrentUser = item.senderType === 'CUSTOMER' && item.userId === userId;
-
-  
-  return (
-    <View
-      style={[
-        styles.messageContainer,
-        isCurrentUser ? styles.sentMessage : styles.receivedMessage,
-        isTempMessage && styles.tempMessage,
-      ]}
-    >
-      {/* Afficher le nom de l'expéditeur seulement pour les messages ADMIN */}
-      {!isCurrentUser && item.senderType === 'ADMIN' && (
-        <Text style={styles.senderName}>
-          {item.user?.firstname || 'Admin'}
-        </Text>
-      )}
-
-      {/* Contenu texte */}
-      {item.content !== '[Attachment]' && (
-        <Text
-          style={[
-            styles.messageText,
-            isCurrentUser ? styles.sentText : styles.receivedText,
-          ]}
-        >
-          {item.content}
-        </Text>
-      )}
-
-  {/* Attachments */}
-  {item.attachments?.map((attachment, index) => {
-    const isImage =
-      /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(attachment) ||
-      attachment.startsWith('data:image') ||
-      attachment.includes('/images/') ||
-      attachment.includes('/Images/');
-
-    const isPdf = /\.pdf$/i.test(attachment) || attachment.includes('/pdf/');
-
+    const isTempMessage = item.id.startsWith('temp-');
+    const isCurrentUser = item.senderType === 'CUSTOMER' && item.userId === userId;
+    
     return (
-      <View key={index} style={styles.attachmentContainer}>
-          {isImage ? (
-            <Image
-              source={{
-                uri: isTempMessage ? attachment : getFullUrl(attachment),
-              }}
-              style={styles.imageAttachment}
-              resizeMode="contain"
-            />
-          ) : isPdf ? (
-            <TouchableOpacity
-              style={styles.pdfAttachment}
-              onPress={() => Linking.openURL(getFullUrl(attachment))}
-            >
-              <Icon name="picture-as-pdf" size={32} color="#e74c3c" />
-              <Text style={styles.pdfText}>PDF Document</Text>
-              <Text style={styles.fileName} numberOfLines={1}>
-                {attachment.split('/').pop()}
-              </Text>
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity
-              style={styles.fileAttachment}
-              onPress={() => Linking.openURL(getFullUrl(attachment))}
-            >
-              <Icon name="insert-drive-file" size={32} color="#555" />
-              <Text style={styles.fileName} numberOfLines={1}>
-                {attachment.split('/').pop()}
-              </Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      );
-    })}
-
-    {/* Heure */}
-      <Text
+      <View
         style={[
-          styles.messageTime,
-          isCurrentUser ? styles.sentTime : styles.receivedTime,
+          styles.messageContainer,
+          isCurrentUser ? styles.sentMessage : styles.receivedMessage,
+          isTempMessage && styles.tempMessage,
         ]}
       >
-        {isTempMessage
-          ? 'Envoi...'
-          : new Date(item.createdAt).toLocaleTimeString([], {
-              hour: '2-digit',
-              minute: '2-digit',
-            })}
-      </Text>
-  </View>
+        {/* Afficher le nom de l'expéditeur seulement pour les messages ADMIN */}
+        {!isCurrentUser && item.senderType === 'ADMIN' && (
+          <Text style={styles.senderName}>
+            {item.user?.firstname || 'Admin'}
+          </Text>
+        )}
 
+        {/* Contenu texte */}
+        {item.content !== '[Attachment]' && (
+          <Text
+            style={[
+              styles.messageText,
+              isCurrentUser ? styles.sentText : styles.receivedText,
+            ]}
+          >
+            {item.content}
+          </Text>
+        )}
+
+        {/* Attachments */}
+        {item.attachments?.map((attachment, index) => {
+          const isImage =
+            /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(attachment) ||
+            attachment.startsWith('data:image') ||
+            attachment.includes('/images/') ||
+            attachment.includes('/Images/');
+
+          const isPdf = /\.pdf$/i.test(attachment) || attachment.includes('/pdf/');
+
+          return (
+            <View key={index} style={styles.attachmentContainer}>
+              {isImage ? (
+                <Image
+                  source={{
+                    uri: isTempMessage ? attachment : getFullUrl(attachment),
+                  }}
+                  style={styles.imageAttachment}
+                  resizeMode="contain"
+                />
+              ) : isPdf ? (
+                <TouchableOpacity
+                  style={styles.pdfAttachment}
+                  onPress={() => Linking.openURL(getFullUrl(attachment))}
+                >
+                  <Icon name="picture-as-pdf" size={32} color="#e74c3c" />
+                  <Text style={styles.pdfText}>PDF Document</Text>
+                  <Text style={styles.fileName} numberOfLines={1}>
+                    {attachment.split('/').pop()}
+                  </Text>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  style={styles.fileAttachment}
+                  onPress={() => Linking.openURL(getFullUrl(attachment))}
+                >
+                  <Icon name="insert-drive-file" size={32} color="#555" />
+                  <Text style={styles.fileName} numberOfLines={1}>
+                    {attachment.split('/').pop()}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          );
+        })}
+
+        {/* Date and time */}
+        <Text
+          style={[
+            styles.messageTime,
+            isCurrentUser ? styles.sentTime : styles.receivedTime,
+          ]}
+        >
+          {isTempMessage
+            ? 'Envoi...'
+            : formatMessageDate(item.createdAt)}
+        </Text>
+      </View>
     );
   };
 
@@ -545,113 +568,113 @@ useEffect(() => {
   }
 
   return (
-   <SafeAreaView style={{ flex: 1, backgroundColor: '#f8f9fa' }}>
-     <StatusBar backgroundColor="#7ddd7d" barStyle="light-content" />
-    <View
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingVertical: 16,
-        paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 40,
-        paddingHorizontal: 12,
-        backgroundColor: '#7ddd7d',
-      }}
-    >
-      {/* Back button */}
-      <TouchableOpacity
-        onPress={() => navigation.goBack()}
-        style={{ width: 40, alignItems: 'flex-start' }}
-      >
-        <Icon name="arrow-back" size={24} color="white" />
-      </TouchableOpacity>
-
-      {/* Centered Title */}
-      <Text
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#f8f9fa' }}>
+      <StatusBar backgroundColor="#7ddd7d" barStyle="light-content" />
+      <View
         style={{
-          flex: 1,
-          textAlign: 'center',
-          fontSize: 18,
-          fontWeight: 'bold',
-          color: 'white',
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          paddingVertical: 16,
+          paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 40,
+          paddingHorizontal: 12,
+          backgroundColor: '#7ddd7d',
         }}
       >
-        {t('screens.chat')}
-      </Text>
+        {/* Back button */}
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={{ width: 40, alignItems: 'flex-start' }}
+        >
+          <Icon name="arrow-back" size={24} color="white" />
+        </TouchableOpacity>
 
-      {/* Placeholder to keep title centered */}
-      <View style={{ width: 40 }} />
-    </View>
+        {/* Centered Title */}
+        <Text
+          style={{
+            flex: 1,
+            textAlign: 'center',
+            fontSize: 18,
+            fontWeight: 'bold',
+            color: 'white',
+          }}
+        >
+          {t('screens.chat')}
+        </Text>
 
-    <FlatList
-      ref={flatListRef}
-      data={messages}
-      keyExtractor={item => item.id}
-      renderItem={renderMessage}
-      contentContainerStyle={[
-        styles.messagesList,
-        { paddingBottom: keyboardOffset > 0 ? keyboardOffset + 70 : 70 },
-      ]}
-      onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
-      onLayout={() => flatListRef.current?.scrollToEnd({ animated: true })}
-      showsVerticalScrollIndicator={false}
-      automaticallyAdjustContentInsets={true}
-      keyboardDismissMode="on-drag"
-      keyboardShouldPersistTaps="handled"
-    />
-
-    {attachments.length > 0 && renderAttachmentPreview()}
-
-    {typingStatus && (
-      <View style={styles.typingIndicator}>
-        <Text style={styles.typingText}>Admin is typing...</Text>
+        {/* Placeholder to keep title centered */}
+        <View style={{ width: 40 }} />
       </View>
-    )}
 
-    <View
-      style={[
-        styles.inputContainer,
-        { marginBottom: keyboardOffset > 0 ? keyboardOffset : 0 },
-      ]}
-    >
-      <TouchableOpacity onPress={pickImage} style={styles.attachmentButton}>
-        <Icon name="image" size={24} color="#555" />
-      </TouchableOpacity>
-
-      <TouchableOpacity onPress={pickDocument} style={styles.attachmentButton}>
-        <Icon name="insert-drive-file" size={24} color="#555" />
-      </TouchableOpacity>
-
-      <TextInput
-        value={input}
-        onChangeText={text => {
-          setInput(text);
-          handleTyping();
-        }}
-        placeholder="Type a message..."
-        style={styles.textInput}
-        multiline
-        onFocus={() => {
-          setTimeout(() => {
-            flatListRef.current?.scrollToEnd({ animated: true });
-          }, 100);
-        }}
+      <FlatList
+        ref={flatListRef}
+        data={messages}
+        keyExtractor={item => item.id}
+        renderItem={renderMessage}
+        contentContainerStyle={[
+          styles.messagesList,
+          { paddingBottom: keyboardOffset > 0 ? keyboardOffset + 70 : 70 },
+        ]}
+        onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+        onLayout={() => flatListRef.current?.scrollToEnd({ animated: true })}
+        showsVerticalScrollIndicator={false}
+        automaticallyAdjustContentInsets={true}
+        keyboardDismissMode="on-drag"
+        keyboardShouldPersistTaps="handled"
       />
 
-      <TouchableOpacity
-        onPress={handleSend}
-        disabled={(input.trim() === '' && attachments.length === 0) || sending}
+      {attachments.length > 0 && renderAttachmentPreview()}
+
+      {typingStatus && (
+        <View style={styles.typingIndicator}>
+          <Text style={styles.typingText}>Admin is typing...</Text>
+        </View>
+      )}
+
+      <View
         style={[
-          styles.sendButton,
-          (input.trim() === '' && attachments.length === 0) || sending
-            ? styles.disabledButton
-            : null,
+          styles.inputContainer,
+          { marginBottom: keyboardOffset > 0 ? keyboardOffset : 0 },
         ]}
       >
-        {sending ? <ActivityIndicator size="small" color="#fff" /> : <Icon name="send" size={24} color="#fff" />}
-      </TouchableOpacity>
-    </View>
-  </SafeAreaView>
+        <TouchableOpacity onPress={pickImage} style={styles.attachmentButton}>
+          <Icon name="image" size={24} color="#555" />
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={pickDocument} style={styles.attachmentButton}>
+          <Icon name="insert-drive-file" size={24} color="#555" />
+        </TouchableOpacity>
+
+        <TextInput
+          value={input}
+          onChangeText={text => {
+            setInput(text);
+            handleTyping();
+          }}
+          placeholder="Type a message..."
+          style={styles.textInput}
+          multiline
+          onFocus={() => {
+            setTimeout(() => {
+              flatListRef.current?.scrollToEnd({ animated: true });
+            }, 100);
+          }}
+        />
+
+        <TouchableOpacity
+          onPress={handleSend}
+          disabled={(input.trim() === '' && attachments.length === 0) || sending}
+          style={[
+            styles.sendButton,
+            (input.trim() === '' && attachments.length === 0) || sending
+              ? styles.disabledButton
+              : null,
+          ]}
+        >
+          {sending ? <ActivityIndicator size="small" color="#fff" /> : <Icon name="send" size={24} color="#fff" />}
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
   );
 };
 
@@ -717,15 +740,17 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 18,
     marginBottom: 8,
+    // Ensure proper alignment
+    alignSelf: 'flex-start',
   },
- sentMessage: {
+  sentMessage: {
     alignSelf: 'flex-end',
-    backgroundColor: '#7ddd7d', // Vert pour l'utilisateur actuel
+    backgroundColor: '#7ddd7d',
     borderBottomRightRadius: 4,
   },
   receivedMessage: {
     alignSelf: 'flex-start',
-    backgroundColor: '#e9ecef', // Gris pour les autres
+    backgroundColor: '#e9ecef',
     borderBottomLeftRadius: 4,
   },
   tempMessage: {
@@ -743,7 +768,7 @@ const styles = StyleSheet.create({
     color: '#fff', 
   },
   receivedText: {
-   color: '#212529',
+    color: '#212529',
   },
   messageTime: {
     fontSize: 12,
@@ -784,7 +809,7 @@ const styles = StyleSheet.create({
     color: '#6c757d',
     textAlign: 'center',
   },
- inputContainer: {
+  inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#fff',
@@ -792,7 +817,6 @@ const styles = StyleSheet.create({
     borderTopColor: '#eee',
     paddingVertical: 8,
     paddingHorizontal: 12,
-    // Ajoutez une transition pour un mouvement fluide
     position: 'absolute',
     bottom: 0,
     left: 0,

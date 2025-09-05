@@ -131,7 +131,7 @@ const Address = () => {
           />
         </View>
 
-        {["phone",  "address", "description"].map((field) => (
+        {["phone",  "address"].map((field) => (
           <View key={field} style={styles.inputWrapper}>
             <Text style={styles.label}>
               {t(`addressScreen.fields.${field}`)}

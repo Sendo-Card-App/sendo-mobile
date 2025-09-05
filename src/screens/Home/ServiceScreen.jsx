@@ -13,7 +13,9 @@ const ServiceScreen = () => {
 
   const numColumns = 2;
   const spacing = 20;
-  const itemSize = (screenWidth - spacing * (numColumns + 1)) / numColumns;
+   const itemSize = (screenWidth - spacing * (numColumns + 2)) / numColumns;
+    // pour 2 colonnes => (screenWidth - 4 * spacing) / 2
+
 
   useEffect(() => {
     const onChange = ({ window }) => {

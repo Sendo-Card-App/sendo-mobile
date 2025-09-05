@@ -6,6 +6,7 @@ import {
   ScrollView,
   SafeAreaView,
   Alert,
+  Platform,
   StatusBar
 } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
@@ -408,7 +409,7 @@ const getStatusSteps = () => {
         alignItems: "center",
         justifyContent: "space-between",
         paddingVertical: 16,
-        paddingTop: 50,
+         paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
         paddingHorizontal: 12,
         backgroundColor: "#7ddd7d",
       }}
@@ -568,12 +569,13 @@ const getStatusSteps = () => {
           <Text className="text-green-600 font-semibold my-1">Reçu</Text>
           <Text className="text-gray-600 text-sm">Montant du transfert: {transaction.amount} {transaction.currency}</Text>
           <Text className="text-gray-600 text-sm">
-            Frais de transfert: {
-              transaction.type === 'TRANSFER' 
-                ? (transaction.sendoFees * getExchangeRate()).toFixed(2) + ' XAF'
-                : (transaction.sendoFees || 0) + ' XAF'
-            }
-          </Text>
+              Frais de transfert: {
+                transaction.type === 'TRANSFER' 
+                  ? (transaction.sendoFees * getExchangeRate()).toFixed(2) + ' ' + transaction.currency
+                  : (transaction.sendoFees || 0) + ' ' + transaction.currency
+              }
+            </Text>
+
           <Text className="text-gray-600 text-sm mb-2">Total: {transaction.totalAmount} {transaction.currency}</Text>
 
           <Text className="text-green-600 font-semibold mt-2">Détails du transfert</Text>

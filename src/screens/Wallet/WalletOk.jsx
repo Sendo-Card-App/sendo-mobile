@@ -36,7 +36,7 @@ const WalletOk = ({ navigation, route }) => {
         <View className="items-center mb-8 px-4">
           <Text className="text-center text-gray-500 text-sm leading-6 mb-2">
             {status === "SUCCESS"
-              ? "Recharge réussie! Votre portefeuille a été crédité."
+              ? "votre retrait a été effectué avec succès."
               : status === "PENDING"
               ? "Votre demande est en cours de traitement. Veuillez patienter."
               : "Échec de la transaction. Veuillez réessayer plus tard."}

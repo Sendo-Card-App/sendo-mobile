@@ -299,20 +299,18 @@ return (
       </TouchableOpacity>
 
     
-         <Text
-            style={[
-              styles.headerTitle,
-              {
-                color: '#fff',
-                fontSize: 19,
-                fontWeight: 'bold',
-                flex: 1,
-                textAlign: 'center',
-              },
-            ]}
-          >
-            {t('screens.niuRequest')}
-          </Text>
+        <Text
+          style={{
+            color: '#fff',
+            fontSize: 19,
+            fontWeight: 'bold',
+            flex: 1,
+            textAlign: 'center',
+          }}
+        >
+          {t('screens.niuRequest')}
+        </Text>
+
 
     </View>
 

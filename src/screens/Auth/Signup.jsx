@@ -45,7 +45,7 @@ const Signup = () => {
     code: '+237',
     flag: 'https://flagcdn.com/w40/cm.png'
   });
-  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isCountryModalVisible, setIsCountryModalVisible] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showReferralCode, setShowReferralCode] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
@@ -55,17 +55,17 @@ const Signup = () => {
 
 
   // Filtrage des pays basé sur la recherche
-useEffect(() => {
-  if (searchQuery.trim() === "") {
-    setFilteredCountries(countries);
-  } else {
-    const filtered = countries.filter(country =>
-      country.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      country.callingCode.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-    setFilteredCountries(filtered);
-  }
-}, [searchQuery, countries]);
+  useEffect(() => {
+    if (searchQuery.trim() === "") {
+      setFilteredCountries(countries);
+    } else {
+      const filtered = countries.filter(country =>
+        country.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        country.callingCode.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      setFilteredCountries(filtered);
+    }
+  }, [searchQuery, countries]);
   
 
   const [signupDetails, setSignupDetails] = useState({
@@ -77,7 +77,8 @@ useEffect(() => {
     address: "",
     referralCode: "",
     dateOfBirth: "",
-    placeOfBirth: ""
+    placeOfBirth: "",
+    country: "Cameroon" // Default country
   });
 
   const [validationErrors, setValidationErrors] = useState({
@@ -89,7 +90,8 @@ useEffect(() => {
     address: "",
     referralCode: "",
     dateOfBirth: "",
-    placeOfBirth: ""
+    placeOfBirth: "",
+    country: ""
   });
 
   const isValidPhone = (phone) => /^\d+$/.test(phone);
@@ -116,6 +118,9 @@ useEffect(() => {
         case "dateOfBirth":
           if (!isValidDate(value)) error = t("signup.invalidDate");
           break;
+        case "country":
+          if (!value) error = t("signup.countryRequired");
+          break;
       }
     }
 
@@ -128,7 +133,7 @@ useEffect(() => {
     validateField(name, value);
   };
 
-   const handleDateChange = (event, selectedDate) => {
+  const handleDateChange = (event, selectedDate) => {
     setShowDatePicker(false);
     if (selectedDate) {
       setDate(selectedDate);
@@ -148,7 +153,8 @@ useEffect(() => {
       isValid = validateField("dateOfBirth", signupDetails.dateOfBirth) && 
                 validateField("placeOfBirth", signupDetails.placeOfBirth) && 
                 validateField("phone", signupDetails.phone) && 
-                validateField("address", signupDetails.address);
+                validateField("address", signupDetails.address) &&
+                validateField("country", signupDetails.country);
     }
     
     return isValid;
@@ -189,13 +195,14 @@ useEffect(() => {
       address: signupDetails.address,
       referralCode: signupDetails.referralCode,
       dateOfBirth: signupDetails.dateOfBirth,
-      placeOfBirth: signupDetails.placeOfBirth
+      placeOfBirth: signupDetails.placeOfBirth,
+      country: signupDetails.country // Add country to payload
     };
     console.log("Signup payload:", payload);
     try {
       dispatch(signupStart({ phone: signupDetails.phone }));
       const response = await register(payload).unwrap();
-       console.log("response from the backend:", response)
+      console.log("response from the backend:", response)
       if (response.accessToken) {
         await AsyncStorage.setItem('@accessToken', response.accessToken);
       }
@@ -207,7 +214,7 @@ useEffect(() => {
         text2: 'Account created successfully',
       });
     } catch (err) {
-     console.error("Registration error:", JSON.stringify(err, null, 2));
+      console.error("Registration error:", JSON.stringify(err, null, 2));
       const errorData = {
         message: err?.data?.message || "Registration failed",
         status: err?.status,
@@ -268,15 +275,17 @@ useEffect(() => {
     return () => dispatch(resetSignupState());
   }, [isSignupSuccess]);
 
-  const openModal = () => setIsModalVisible(true);
-  const closeModal = () => setIsModalVisible(false);
+  const openCountryModal = () => setIsCountryModalVisible(true);
+  const closeCountryModal = () => setIsCountryModalVisible(false);
+  
   const selectCountry = (country) => {
     setSelectedCountry({ 
       name: country.name,
       code: country.callingCode, 
       flag: country.flag 
     });
-    closeModal();
+    handleChange("country", country.name); // Update the country field in form
+    closeCountryModal();
   };
 
   const toggleReferralCode = () => {
@@ -300,7 +309,7 @@ useEffect(() => {
     </View>
   );
 
-    const renderCountry = ({ item }) => (
+  const renderCountry = ({ item }) => (
     <TouchableOpacity
       onPress={() => selectCountry(item)}
       className="flex-row items-center px-4 py-3 border-b border-gray-100"
@@ -439,7 +448,7 @@ useEffect(() => {
 
       {/* Date of Birth */}
       <Text className="text-sm font-medium text-gray-700 mb-1 pl-3">  {t("signup.DOB")}</Text>
-     <TouchableOpacity
+      <TouchableOpacity
         onPress={() => setShowDatePicker(true)}
         className="border-[#fff] bg-[#ffffff] rounded-3xl mb-2 py-4"
         style={{
@@ -507,6 +516,35 @@ useEffect(() => {
         <Text className="text-red-500 text-xs mb-3 pl-3">{validationErrors.placeOfBirth}</Text>
       )}
 
+      {/* Country */}
+      <Text className="text-sm font-medium text-gray-700 mb-1 pl-3">{t("signup.country")}</Text>
+      <TouchableOpacity
+        onPress={openCountryModal}
+        className="border-[#fff] bg-[#ffffff] rounded-3xl mb-2 py-4 flex-row items-center justify-between px-4"
+        style={{
+          backgroundColor: '#fff',
+          borderRadius: 30,
+          paddingVertical: 14,
+          paddingHorizontal: 20,
+          fontSize: 16,
+          borderWidth: 1,
+          borderColor: validationErrors.country ? '#ff4444' : '#ddd',
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 1 },
+          shadowOpacity: 0.1,
+          shadowRadius: 2,
+          elevation: 2,
+        }}
+      >
+        <Text style={{ color: signupDetails.country ? '#000' : '#888' }}>
+          {signupDetails.country || t("signup.selectCountry")}
+        </Text>
+        <AntDesign name="down" size={16} color="#888" />
+      </TouchableOpacity>
+      {validationErrors.country && (
+        <Text className="text-red-500 text-xs mb-3 pl-3">{validationErrors.country}</Text>
+      )}
+
       {/* Phone */}
       <Text className="text-sm font-medium text-gray-700 mb-1 pl-3">{t("signup.phone")}</Text>
       <View
@@ -520,7 +558,7 @@ useEffect(() => {
           color: '#000'
         }}
       >
-        <TouchableOpacity onPress={openModal} className="px-3 flex-row items-center">
+        <TouchableOpacity onPress={openCountryModal} className="px-3 flex-row items-center">
           {selectedCountry.flag ? (
             <Image
               source={{ uri: selectedCountry.flag }}
@@ -764,12 +802,12 @@ useEffect(() => {
         )}
 
         {/* Country Picker Modal */}
-       <Modal visible={isModalVisible} animationType="slide" transparent={false}>
+        <Modal visible={isCountryModalVisible} animationType="slide" transparent={false}>
           <SafeAreaView className="flex-1 bg-white">
             {/* Header avec bouton retour et titre */}
             <View className="flex-row items-center px-4 py-3 border-b border-gray-200">
               <TouchableOpacity 
-                onPress={closeModal}
+                onPress={closeCountryModal}
                 className="p-2 mr-2"
               >
                 <AntDesign name="arrowleft" size={24} color="black" />
