@@ -80,6 +80,7 @@ const ChatScreen = ({ route, navigation }) => {
   const [attachments, setAttachments] = useState([]);
   const flatListRef = useRef(null);
   const [userToken, setUserToken] = useState(null);
+  const [socket, setSocket] = useState(null);
   const [sending, setSending] = useState(false);
   const [messages, setMessages] = useState([]);
   const [typingStatus, setTypingStatus] = useState(false);
@@ -113,23 +114,35 @@ const ChatScreen = ({ route, navigation }) => {
   const [createConversation] = useCreateConversationMutation();
 
   useEffect(() => {
-    const fetchToken = async () => {
+    const fetchTokenAndInitSocket = async () => {
       const accessToken = await getData('@authData');
       setUserToken(accessToken);
+      
+      if (accessToken) {
+        const token = accessToken.accessToken;
+        const s = initSocket(token);
+        setSocket(s);
+
+        s.io.on("open", () => {
+          console.log("Socket connection opened");
+        });
+
+        // Set up event listeners once
+        s.on('new_message', handleNewMessage);
+        s.on('typing', handleTyping);
+        s.on('stop_typing', handleStopTyping);
+
+        return () => {
+          s.off('new_message', handleNewMessage);
+          s.off('typing', handleTyping);
+          s.off('stop_typing', handleStopTyping);
+          s.disconnect();
+        };
+      }
     };
-    fetchToken();
+
+    fetchTokenAndInitSocket();
   }, []);
-
-  useEffect(() => {
-    if (userToken) {
-      const token = userToken.accessToken;
-      const s = initSocket(token);
-
-      s.io.on("open", () => {
-        console.log(" Socket connection opened, auth:", s.io.opts.auth);
-      });
-    }
-  }, [userToken]);
 
   useEffect(() => {
     const keyboardDidShowListener = Keyboard.addListener(
@@ -153,6 +166,41 @@ const ChatScreen = ({ route, navigation }) => {
       keyboardDidHideListener.remove();
     };
   }, []);
+
+  
+  // Separate handlers for socket events
+  const handleNewMessage = (message: Message) => {
+    if (message.conversationId === selectedConversation?.id) {
+      setMessages(prev => [
+        ...prev.filter(msg => !msg.id.startsWith('temp-')),
+        message
+      ]);
+    }
+  };
+
+  const handleTyping = ({ conversationId }: { conversationId: string }) => {
+    if (conversationId === selectedConversation?.id) {
+      setTypingStatus(true);
+    }
+  };
+
+  const handleStopTyping = ({ conversationId }: { conversationId: string }) => {
+    if (conversationId === selectedConversation?.id) {
+      setTypingStatus(false);
+    }
+  };
+
+   const emitTyping = () => {
+    const socket = getSocket();
+    if (!socket || !selectedConversation?.id) return;
+
+    socket.emit('typing', { conversationId: selectedConversation.id });
+    clearTimeout(typingTimeout);
+
+    typingTimeout = setTimeout(() => {
+      socket.emit('stop_typing', { conversationId: selectedConversation.id });
+    }, 1000);
+  };
 
   // Join/leave conversation
   useEffect(() => {
@@ -181,53 +229,54 @@ const ChatScreen = ({ route, navigation }) => {
   }, [messagesResponse]);
 
   // Handle socket events
-  useEffect(() => {
-    const socket = getSocket();
-    if (!socket) return;
+  // useEffect(() => {
+  //   const socket = getSocket();
+  //   if (!socket) return;
 
-    const handleNewMessage = (message: Message) => {
-      if (message.conversationId === selectedConversation?.id) {
-        setMessages(prev => [
-          ...prev.filter(msg => !msg.id.startsWith('temp-')),
-          message
-        ]);
-      }
-    };
+  //   const handleNewMessage = (message: Message) => {
+  //     if (message.conversationId === selectedConversation?.id) {
+  //       setMessages(prev => [
+  //         ...prev.filter(msg => !msg.id.startsWith('temp-')),
+  //         message
+  //       ]);
+  //     }
+  //   };
+  //   socket.on('new_message', handleNewMessage);
 
-    const handleTyping = ({ conversationId }: { conversationId: string }) => {
-      if (conversationId === selectedConversation?.id) {
-        setTypingStatus(true);
-      }
-    };
+  //   const handleTyping = ({ conversationId }: { conversationId: string }) => {
+  //     if (conversationId === selectedConversation?.id) {
+  //       setTypingStatus(true);
+  //     }
+  //   };
 
-    const handleStopTyping = ({ conversationId }: { conversationId: string }) => {
-      if (conversationId === selectedConversation?.id) {
-        setTypingStatus(false);
-      }
-    };
+  //   const handleStopTyping = ({ conversationId }: { conversationId: string }) => {
+  //     if (conversationId === selectedConversation?.id) {
+  //       setTypingStatus(false);
+  //     }
+  //   };
 
-    socket.on('new_message', handleNewMessage);
-    socket.on('typing', handleTyping);
-    socket.on('stop_typing', handleStopTyping);
+  //   socket.on('new_message', handleNewMessage);
+  //   socket.on('typing', handleTyping);
+  //   socket.on('stop_typing', handleStopTyping);
 
-    return () => {
-      socket.off('new_message', handleNewMessage);
-      socket.off('typing', handleTyping);
-      socket.off('stop_typing', handleStopTyping);
-    };
-  }, [selectedConversation?.id]);
+  //   return () => {
+  //     socket.off('new_message', handleNewMessage);
+  //     socket.off('typing', handleTyping);
+  //     socket.off('stop_typing', handleStopTyping);
+  //   };
+  // }, [selectedConversation?.id]);
 
-  const handleTyping = () => {
-    const socket = getSocket();
-    if (!socket || !selectedConversation?.id) return;
+  // const handleTyping = () => {
+  //   const socket = getSocket();
+  //   if (!socket || !selectedConversation?.id) return;
 
-    socket.emit('typing', { conversationId: selectedConversation.id });
-    clearTimeout(typingTimeout);
+  //   socket.emit('typing', { conversationId: selectedConversation.id });
+  //   clearTimeout(typingTimeout);
 
-    typingTimeout = setTimeout(() => {
-      socket.emit('stop_typing', { conversationId: selectedConversation.id });
-    }, 1000);
-  };
+  //   typingTimeout = setTimeout(() => {
+  //     socket.emit('stop_typing', { conversationId: selectedConversation.id });
+  //   }, 1000);
+  // };
 
   // Upload attachment to server
   const handleUploadAttachments = async (attachments: Attachment[]): Promise<string[]> => {
@@ -647,9 +696,9 @@ const ChatScreen = ({ route, navigation }) => {
 
         <TextInput
           value={input}
-          onChangeText={text => {
+           onChangeText={text => {
             setInput(text);
-            handleTyping();
+            emitTyping(); // Changed from handleTyping() to emitTyping()
           }}
           placeholder="Type a message..."
           style={styles.textInput}
