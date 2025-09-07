@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import { View, Text, TouchableOpacity, Image, ScrollView,Platform, StatusBar } from 'react-native';
+import { View, Text, TouchableOpacity, Image, ScrollView, Platform, StatusBar } from 'react-native';
 import { CheckBox } from 'react-native-elements';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -234,7 +234,12 @@ useEffect(() => {
         {/* Back button */}
         <TouchableOpacity
           onPress={() => navigation.goBack()}
-          style={{ position: 'absolute', left: 15, top: Platform.OS === 'android' ? StatusBar.currentHeight + 10 : 50 }}
+          style={{ 
+            position: 'absolute', 
+            left: 15, 
+            top: Platform.OS === 'android' ? StatusBar.currentHeight + 10 : 50,
+            zIndex: 10 
+          }}
         >
           <MaterialCommunityIcons name="arrow-left" size={24} color="#fff" />
         </TouchableOpacity>
@@ -288,30 +293,36 @@ return (
         paddingBottom: 20,
         alignItems: 'center',
         justifyContent: 'center',
+        flexDirection: 'row',
+        position: 'relative',
       }}
     >
       {/* Back button */}
       <TouchableOpacity
         onPress={() => navigation.goBack()}
-        style={{ position: 'absolute', left: 15, top: Platform.OS === 'android' ? StatusBar.currentHeight + 10 : 50 }}
+        style={{ 
+          position: 'absolute', 
+          left: 15, 
+          top: Platform.OS === 'android' ? StatusBar.currentHeight + 10 : 50,
+          zIndex: 10 
+        }}
       >
         <MaterialCommunityIcons name="arrow-left" size={24} color="#fff" />
       </TouchableOpacity>
 
-    
+      {/* Title */}
+      <View style={{ flex: 1, alignItems: 'center', marginHorizontal: 40 }}>
         <Text
           style={{
             color: '#fff',
             fontSize: 19,
             fontWeight: 'bold',
-            flex: 1,
             textAlign: 'center',
           }}
         >
           {t('screens.niuRequest')}
         </Text>
-
-
+      </View>
     </View>
 
       <ScrollView className="flex-1 pb-3 bg-white rounded-t-3xl">

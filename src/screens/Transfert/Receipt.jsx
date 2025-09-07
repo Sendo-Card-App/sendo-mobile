@@ -115,23 +115,29 @@ const ReceiptScreen = () => {
 
 const getLocalImageBase64 = async () => {
   try {
-    // Chemin vers votre logo dans l'application
-    const logoPath = require('../../images/LogoSendo.png');
-    // Pour Expo, vous pouvez utiliser Asset.fromModule pour obtenir l'URI
+    const logoPath = require('../../../assets/LogoSendo.png');
     const asset = Asset.fromModule(logoPath);
+
+    // In production, we must ensure asset is downloaded
     await asset.downloadAsync();
-    
-    // Lire le fichier et le convertir en base64
-    const base64 = await FileSystem.readAsStringAsync(asset.localUri, {
+
+    // Use asset.localUri OR asset.uri (fallback if localUri is null)
+    const fileUri = asset.localUri || asset.uri;
+    if (!fileUri) {
+      throw new Error("Logo asset not found");
+    }
+
+    const base64 = await FileSystem.readAsStringAsync(fileUri, {
       encoding: FileSystem.EncodingType.Base64,
     });
-    
+
     return `data:image/png;base64,${base64}`;
   } catch (error) {
-    console.error('Error loading local image:', error);
+    console.error("Error loading local image:", error);
     return null;
   }
 };
+
 
 // Modifiez handleDownloadReceipt pour inclure le logo local
 const handleDownloadReceipt = async () => {

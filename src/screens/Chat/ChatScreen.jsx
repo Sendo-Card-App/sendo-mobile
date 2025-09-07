@@ -418,13 +418,17 @@ const ChatScreen = ({ route, navigation }) => {
       });
 
       // Send message through socket
-      socket.emit('send_message', {
+      const payload = {
         conversationId: currentConversationId,
         senderType: 'CUSTOMER',
         userId: userId, 
         content: input.trim() !== '' ? input : '[Attachment]',
         attachments: uploadedAttachmentUrls,
-      });
+      };
+
+      console.log(" Sending socket message:", JSON.stringify(payload, null, 2));
+
+      socket.emit('send_message', payload);
 
       setInput('');
       setAttachments([]);

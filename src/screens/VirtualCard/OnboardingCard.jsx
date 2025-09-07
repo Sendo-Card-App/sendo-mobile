@@ -152,24 +152,16 @@ const OnboardingCardScreen = () => {
       await refetch();
     } catch (error) {
       console.log("Full response:", JSON.stringify(error, null, 2));
-      const backendMessage = error?.data?.message || 'Erreur lors de la demande de carte';
+     const backendMessage = error?.data?.data?.errors?.[0] 
+      || error?.data?.message 
+      || 'Erreur lors de la demande de carte';
 
-      const details = error?.data?.data?.details?.required;
-      const errors = error?.data?.data?.errors;
+    Toast.show({
+      type: 'error',
+      text1: 'Erreur',
+      text2: backendMessage,
+    });
 
-      let fullMessage = backendMessage;
-
-      if (details?.mandatoryTypes) {
-        fullMessage += `\nDocuments requis: ${details.mandatoryTypes.join(', ')}`;
-      } else if (errors && errors.length > 0) {
-        fullMessage += `\n${errors.join('\n')}`;
-      }
-
-      Toast.show({
-        type: 'error',
-        text1: 'Erreur',
-        text2: fullMessage,
-      });
     }
   };
 
