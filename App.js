@@ -76,6 +76,7 @@ import TransactionHistory from "./src/screens/VirtualCard/TransactionHistory";
 import OnboardingCard from "./src/screens/VirtualCard/OnboardingCard";
 import VerifyIdentity from "./src/screens/VirtualCard/VerifyIdentity";
 import KYCValidation from "./src/screens/VirtualCard/KYCValidation";
+import HistoryCard from "./src/screens/VirtualCard/HistoryCard"
 import ManageVirtualCard from "./src/screens/VirtualCard/ManageVirtualCard";
 import TransactionDetails from "./src/screens/VirtualCard/TransactionDetails";
 import KycResume from "./src/screens/VirtualCard/KycResume";
@@ -383,8 +384,9 @@ function MainStack() {
       <Stack.Screen name="ConfirmTransfer" component={ConfirmTransfer} options={{ headerShown: false }} />
       <Stack.Screen name="Historique" component={Historique} options={{ headerShown: false }} />
       <Stack.Screen name="BuySharing" component={BuySharing} options={{ headerShown: false }} />
-      <Stack.Screen name="DetailScreen" component={DetailScreen } options={{ headerShown: false }} />
-      <Stack.Screen name="DemandDetailScreen" component={DemandDetailScreen } options={{ headerShown: false }} />
+      <Stack.Screen name="DetailScreen" component={DetailScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="DemandDetailScreen" component={DemandDetailScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="HistoryCard" component={HistoryCard} options={{ headerShown: false }} />
       
       <Stack.Screen name="AddRecipient" component={AddRecipient } options={{ headerShown: false }} />
       <Stack.Screen name="CreateRequest" component={CreateRequest } options={{ headerShown: false }} />

@@ -139,24 +139,28 @@ const {
 
 
 
-  useFocusEffect(
-    useCallback(() => {
-      setChecking(true); // show loader before checking
+ useFocusEffect(
+  useCallback(() => {
+    setChecking(true); // show loader before checking
 
-      if (!isProfileLoading) {
-        const virtualCard = userProfile?.data?.virtualCard;
-        const isCardMissingOrEmpty =
-          !virtualCard || (typeof virtualCard === "object" && Object.keys(virtualCard).length === 0);
-        const status = virtualCard?.status;
+    if (!isProfileLoading) {
+      const virtualCard = userProfile?.data?.virtualCard;
+      const isCardMissingOrEmpty =
+        !virtualCard || (typeof virtualCard === "object" && Object.keys(virtualCard).length === 0);
+      const status = virtualCard?.status;
 
-        if (isCardMissingOrEmpty || (status !== "ACTIVE" && status !== "PRE_ACTIVE" && status !== "FROZEN")) {
-          navigation.navigate("OnboardingCard");
-        }
+      // Allow these statuses to stay on the ManageVirtualCard screen
+      const allowedStatuses = ["ACTIVE", "PRE_ACTIVE", "FROZEN"];
+      
+      // Only redirect if the card is missing OR if the status is not in allowed list
+      if (isCardMissingOrEmpty || !allowedStatuses.includes(status)) {
+        navigation.navigate("OnboardingCard");
       }
+    }
 
-      setChecking(false); // hide loader after check
-    }, [userProfile, isProfileLoading, navigation])
-  );
+    setChecking(false); // hide loader after check
+  }, [userProfile, isProfileLoading, navigation])
+);
 
   if (checking || isProfileLoading) {
     return (
@@ -241,9 +245,16 @@ const {
 
 const handleFreezeUnfreeze = async () => {
   const cardId = cardData?.cardId;
+  const cardStatus = cardData?.status; // ✅ get status
   if (!cardId) return;
 
-  setIsLoadingFreeze(true); 
+  //  Handle PRE_ACTIVE and non-active cases before doing API calls
+   if (cardStatus === "PRE_ACTIVE") {
+    setPreActiveModalVisible(true);
+    return;
+  }
+
+  setIsLoadingFreeze(true);
 
   try {
     if (isCardFrozen) {
@@ -267,6 +278,7 @@ const handleFreezeUnfreeze = async () => {
     setIsLoadingFreeze(false); // Stop loading
   }
 };
+
 
 
   const handleShowCardDetails = async () => {
@@ -343,7 +355,7 @@ const handleFreezeUnfreeze = async () => {
           <View className="bg-gray-100 p-2 rounded-full">{icon}</View>
           <View>
             <Text className="font-semibold">
-              {isCashIn ? "Rechargement carte" : "Paiement avec carte"}
+             {item.description}
             </Text>
             <Text className="text-xs text-gray-500">{formattedDate}</Text>
          <Text
@@ -673,7 +685,7 @@ const handleFreezeUnfreeze = async () => {
           <View className="flex-row justify-between items-center mb-2">
             <Text className="font-bold text-gray-700">{t('manageVirtualCard.history')}</Text>
             <TouchableOpacity  onPress={() =>
-                  navigation.navigate("History")
+                  navigation.navigate("HistoryCard")
                 }>
               <Text className="font-bold text-gray-700">voir tout</Text>
             </TouchableOpacity>

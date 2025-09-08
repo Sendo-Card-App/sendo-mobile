@@ -991,6 +991,8 @@
     "title": "Make a withdrawal",
     "secureNote": "Secured by bank-level encryption",
     "accountNumber": "Your account number",
+     "finalAmount": "Final Amount",
+    "feesNote": "Fees",
     "amount": "Amount",
     "fullName": "Full name",
     "email": "Email",
@@ -1005,6 +1007,8 @@
     "title": "Make a withdrawal",
     "secureNote": "Secured by bank-level encryption",
     "accountNumber": "Your account number",
+    "finalDeposit": "Net credited amount",
+"feesNote": "Applied fees",
     "amount": "Amount",
     "fullName": "Full name",
     "email": "Email",
@@ -1669,7 +1673,16 @@
     "title": "KYC Required",
     "message": "Missing KYC documents. Please submit your KYC to start using the app.",
     "okButton": "OK"
-  }
+  },
+   "cardHistory": "Card History",
+  "loadingHistory": "Loading card history...",
+  "filters": {
+    "all": "All",
+    "completed": "COMPLETED",
+    "pending": "PENDING",
+    "failed": "FAILED"
+  },
+  "noTransactions": "No transactions found"
    
  
 

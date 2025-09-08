@@ -980,6 +980,8 @@
     "title": "Effectuer un retrait",
     "secureNote": "Sécurisé par un cryptage bancaire",
     "accountNumber": "Numéro de votre compte",
+     "finalAmount": "Montant final",
+    "feesNote": "Frais",
     "amount": "Montant",
     "fullName": "Nom complet",
     "email": "Email",
@@ -995,6 +997,8 @@
     "secureNote": "Sécurisé par un cryptage bancaire",
     "accountNumber": "Numéro de votre compte",
     "amount": "Montant",
+     "finalDeposit": "Montant net crédité",
+  "feesNote": "Frais appliqués",
     "fullName": "Nom complet",
     "email": "Email",
     "message": "Votre depôt a ete initialisé avec succès. Veuillez suivre les instructions ci-dessous pour effectuer le paiement.",
@@ -1665,7 +1669,16 @@
     "title": "KYC Requis",
     "message": "Documents KYC manquants. Veuillez soumettre vos KYC pour commencer à utiliser l'application.",
     "okButton": "OK"
-  }
+  },
+    "cardHistory": "Historique de la carte",
+  "loadingHistory": "Chargement de l’historique de la carte...",
+  "filters": {
+    "all": "Tous",
+    "completed": "TERMINÉ",
+    "pending": "EN ATTENTE",
+    "failed": "ÉCHOUÉ"
+  },
+  "noTransactions": "Aucune transaction trouvée"
 
     
     
