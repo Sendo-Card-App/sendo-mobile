@@ -28,17 +28,18 @@ const OnboardingCardScreen = () => {
   const navigation = useNavigation();
   const { t } = useTranslation();
   const [requestCard, { isLoading: isRequesting }] = useRequestVirtualCardMutation();
-  const {
-    data: cardRequest,
-    isLoading: isFetchingStatus,
-    refetch,
-  } = useGetVirtualCardStatusQuery(undefined, {
-    pollingInterval: 1000,
-  });
+  
+  // Remove pollingInterval to prevent excessive re-renders
+  const { data: cardRequest, isLoading: isFetchingStatus, refetch } = 
+  useGetVirtualCardStatusQuery();
  
   const status = cardRequest?.data?.onboardingSession?.onboardingSessionStatus;
+  
   const [requestDate, setRequestDate] = useState(null);
   const [remainingTime, setRemainingTime] = useState(null);
+  
+  const hasNavigated = useRef(false);
+  const navigationTriggered = useRef(false);
   
   // Animations
   const earthRotation = useRef(new Animated.Value(0)).current;
@@ -59,8 +60,8 @@ const OnboardingCardScreen = () => {
     ).start();
   }, []);
 
-  // Animation pour le sablier
-  const startSablierRotation = () => {
+  // Animation pour le sablier - use useCallback to memoize
+  const startSablierRotation = useCallback(() => {
     setIsSablierRotating(true);
     Animated.loop(
       Animated.timing(sablierRotation, {
@@ -70,13 +71,13 @@ const OnboardingCardScreen = () => {
         useNativeDriver: true,
       })
     ).start();
-  };
+  }, [sablierRotation]);
 
-  const stopSablierRotation = () => {
+  const stopSablierRotation = useCallback(() => {
     setIsSablierRotating(false);
     sablierRotation.stopAnimation();
     sablierRotation.setValue(0);
-  };
+  }, [sablierRotation]);
 
   useEffect(() => {
     if (['PENDING', 'WAITING_FOR_INFORMATION'].includes(status)) {
@@ -88,11 +89,30 @@ const OnboardingCardScreen = () => {
     return () => {
       stopSablierRotation();
     };
-  }, [status]);
+  }, [status, startSablierRotation, stopSablierRotation]);
 
+  // FIXED: Use useFocusEffect with proper cleanup
+  useFocusEffect(
+    useCallback(() => {
+      // Reset navigation flag when screen comes into focus
+      navigationTriggered.current = false;
+      
+      return () => {
+        // Cleanup when screen loses focus
+        navigationTriggered.current = false;
+      };
+    }, [])
+  );
+
+  // FIXED: Navigation effect with proper conditions
   useEffect(() => {
-    if (status === 'VERIFIED') {
-      navigation.replace('CreateVirtualCard');
+    if (status === 'VERIFIED' && !navigationTriggered.current) {
+      navigationTriggered.current = true;
+      
+      // Use setTimeout to ensure navigation happens after current render cycle
+      setTimeout(() => {
+        navigation.replace('CreateVirtualCard');
+      }, 100);
     }
   }, [status, navigation]);
 
@@ -127,16 +147,7 @@ const OnboardingCardScreen = () => {
     return () => clearInterval(interval);
   }, [requestDate]);
 
-  useFocusEffect(
-    useCallback(() => {
-      const interval = setInterval(() => {
-        refetch();
-      }, 10000);
-      return () => clearInterval(interval);
-    }, [refetch])
-  );
-
- const handleRequestCard = async () => {
+  const handleRequestCard = async () => {
     try {
       const response = await requestCard({ documentType: DEFAULT_DOCUMENT_TYPE }).unwrap();
 
@@ -151,17 +162,15 @@ const OnboardingCardScreen = () => {
       setRequestDate(now);
       await refetch();
     } catch (error) {
-      console.log("Full response:", JSON.stringify(error, null, 2));
-     const backendMessage = error?.data?.data?.errors?.[0] 
-      || error?.data?.message 
-      || 'Erreur lors de la demande de carte';
+      const backendMessage = error?.data?.data?.errors?.[0] 
+        || error?.data?.message 
+        || 'Erreur lors de la demande de carte';
 
-    Toast.show({
-      type: 'error',
-      text1: 'Erreur',
-      text2: backendMessage,
-    });
-
+      Toast.show({
+        type: 'error',
+        text1: 'Erreur',
+        text2: backendMessage,
+      });
     }
   };
 

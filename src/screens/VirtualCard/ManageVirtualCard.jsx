@@ -131,26 +131,12 @@ const {
 
  //console.log(balanceData)
   useEffect(() => {
-    if (cards?.data?.length > 0) {
-      setSelectedCardId(cards.data[0].cardId);
-    }
-  }, [cards]);
+  if (cards?.data?.length > 0 && selectedCardId !== cards.data[0].cardId) {
+    setSelectedCardId(cards.data[0].cardId);
+  }
+}, [cards, selectedCardId]);
 
-   useFocusEffect(
-    React.useCallback(() => {
-      if (!cardData?.id) return; // No card id, do nothing
 
-      const interval = setInterval(() => {
-        refetchDebts();
-        refetchBalance();
-        refetchTransactions();
-        refetchCardDetails();
-        refetchCardDetailsHide(); 
-      }, 1000);
-
-      return () => clearInterval(interval); // Clean up on blur/unfocus
-    }, [cardData?.id, refetchDebts, refetchBalance, refetchTransactions, refetchCardDetails, refetchCardDetailsHide])
-  );
 
 
   useFocusEffect(
@@ -163,7 +149,7 @@ const {
           !virtualCard || (typeof virtualCard === "object" && Object.keys(virtualCard).length === 0);
         const status = virtualCard?.status;
 
-        if (isCardMissingOrEmpty || (status !== "ACTIVE" && status !== "PRE_ACTIVE")) {
+        if (isCardMissingOrEmpty || (status !== "ACTIVE" && status !== "PRE_ACTIVE" && status !== "FROZEN")) {
           navigation.navigate("OnboardingCard");
         }
       }
