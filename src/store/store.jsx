@@ -37,7 +37,7 @@ export const store = configureStore({
     [fundRequestApi.reducerPath]: fundRequestApi.reducer,
     [tontineApi.reducerPath]: tontineApi.reducer,
     [pubApi.reducerPath]: pubApi.reducer,
-    [cardApi.reducerPath]: cardApi.reducer, // Add cardApi reducer
+    [cardApi.reducerPath]: cardApi.reducer, 
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
@@ -54,6 +54,6 @@ export const store = configureStore({
       fundRequestApi.middleware,
       tontineApi.middleware,
       pubApi.middleware,
-      cardApi.middleware // Add cardApi middleware
+      cardApi.middleware
     ),
 });

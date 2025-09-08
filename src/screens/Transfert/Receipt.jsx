@@ -6,6 +6,7 @@ import {
   ScrollView,
   SafeAreaView,
   Alert,
+  Platform,
   StatusBar
 } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
@@ -114,23 +115,29 @@ const ReceiptScreen = () => {
 
 const getLocalImageBase64 = async () => {
   try {
-    // Chemin vers votre logo dans l'application
-    const logoPath = require('../../images/LogoSendo.png');
-    // Pour Expo, vous pouvez utiliser Asset.fromModule pour obtenir l'URI
+    const logoPath = require('../../../assets/LogoSendo.png');
     const asset = Asset.fromModule(logoPath);
+
+    // In production, we must ensure asset is downloaded
     await asset.downloadAsync();
-    
-    // Lire le fichier et le convertir en base64
-    const base64 = await FileSystem.readAsStringAsync(asset.localUri, {
+
+    // Use asset.localUri OR asset.uri (fallback if localUri is null)
+    const fileUri = asset.localUri || asset.uri;
+    if (!fileUri) {
+      throw new Error("Logo asset not found");
+    }
+
+    const base64 = await FileSystem.readAsStringAsync(fileUri, {
       encoding: FileSystem.EncodingType.Base64,
     });
-    
+
     return `data:image/png;base64,${base64}`;
   } catch (error) {
-    console.error('Error loading local image:', error);
+    console.error("Error loading local image:", error);
     return null;
   }
 };
+
 
 // Modifiez handleDownloadReceipt pour inclure le logo local
 const handleDownloadReceipt = async () => {
@@ -408,7 +415,7 @@ const getStatusSteps = () => {
         alignItems: "center",
         justifyContent: "space-between",
         paddingVertical: 16,
-        paddingTop: 50,
+         paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
         paddingHorizontal: 12,
         backgroundColor: "#7ddd7d",
       }}
@@ -568,12 +575,13 @@ const getStatusSteps = () => {
           <Text className="text-green-600 font-semibold my-1">Reçu</Text>
           <Text className="text-gray-600 text-sm">Montant du transfert: {transaction.amount} {transaction.currency}</Text>
           <Text className="text-gray-600 text-sm">
-            Frais de transfert: {
-              transaction.type === 'TRANSFER' 
-                ? (transaction.sendoFees * getExchangeRate()).toFixed(2) + ' XAF'
-                : (transaction.sendoFees || 0) + ' XAF'
-            }
-          </Text>
+              Frais de transfert: {
+                transaction.type === 'TRANSFER' 
+                  ? (transaction.sendoFees * getExchangeRate()).toFixed(2) + ' ' + transaction.currency
+                  : (transaction.sendoFees || 0) + ' ' + transaction.currency
+              }
+            </Text>
+
           <Text className="text-gray-600 text-sm mb-2">Total: {transaction.totalAmount} {transaction.currency}</Text>
 
           <Text className="text-green-600 font-semibold mt-2">Détails du transfert</Text>

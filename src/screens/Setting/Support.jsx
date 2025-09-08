@@ -84,7 +84,7 @@ const Support = ({ navigation }) => {
         {/* Phone + WhatsApp */}
         <View className="bg-green-50 p-3 px-6 mt-3 rounded-lg">
           <Text className="text-gray-900 font-bold">{t("support2.phone")}</Text>
-          <TouchableOpacity onPress={() => callNumber("+237640726036")}>
+          <TouchableOpacity>
             <Text className="text-green-600 underline">+237 6 40 72 60 36</Text>
           </TouchableOpacity>
           <View className="flex-row mt-2">

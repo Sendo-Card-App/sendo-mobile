@@ -109,6 +109,7 @@
     "firstNamePlaceholder": "Enter your first name",
     "lastName": "Last Name",
     "select_country": "Select a country",
+     "country": "Select a country",
     "search_country": "Search for a country...",
     "no_countries_found": "No countries found",
     "lastNamePlaceholder": "Enter your last name",

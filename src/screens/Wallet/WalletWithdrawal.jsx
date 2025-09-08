@@ -129,7 +129,7 @@ const WalletWithdrawal = () => {
         Toast.show({
           type: "success",
           text1: "Succès",
-          text2: "Transaction initiée, vérification du statut...",
+          text2: "votre retrait a été effectué avec succès",
         });
 
         setCheckParams({

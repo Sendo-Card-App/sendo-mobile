@@ -8,6 +8,7 @@ import {
   SafeAreaView,
   Image,
   StyleSheet,
+  Platform,
 } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -176,8 +177,8 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 15,
-    marginTop: 1,
+      paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+    
   },
   logo: {
     width: 100,
