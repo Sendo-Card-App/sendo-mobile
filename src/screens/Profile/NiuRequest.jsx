@@ -36,9 +36,11 @@ const NiuRequest = () => {
       topOffset: 50,
     });
   };
+  
   const { data: userProfile, isLoading: isProfileLoading, refetch } = useGetUserProfileQuery(undefined, {
-    pollingInterval: 1000, // fetch every 1 second
+    pollingInterval: 1000,
   });
+  
   const userId = userProfile?.data.id;
   const hasNiuProof = userProfile?.data?.kycDocuments?.some(doc => doc.type === "NIU_PROOF");
 
@@ -49,8 +51,9 @@ const NiuRequest = () => {
     isLoading: isRequestsLoading,
     error: requestsError,
     refetch: refetchRequests,
-  } = useGetUserRequestsQuery(userId, { skip: !userId ,
-      pollingInterval: 1000,
+  } = useGetUserRequestsQuery(userId, { 
+    skip: !userId,
+    pollingInterval: 1000,
   });
 
   const {
@@ -64,38 +67,32 @@ const NiuRequest = () => {
   const niuConfig = configData?.data?.find(item => item.name === "NIU_REQUEST_FEES");
   const feeAmount = Number(niuConfig?.value);
 
-
   useFocusEffect(
     useCallback(() => {
-     refetch();
       refetch();
       refetchRequests();
       refetchConfig();
     }, [userId])
   );
 
-useEffect(() => {
-  if (configError) {
-    //console.log('Config fetch error:', JSON.stringify(configError, null, 2));
-  }
-  if (requestsError) {
-    //console.log('Requests fetch error:', JSON.stringify(requestsError, null, 2));
-  }
-}, [configError, requestsError]);
-
-
-
+  useEffect(() => {
+    if (configError) {
+      //console.log('Config fetch error:', JSON.stringify(configError, null, 2));
+    }
+    if (requestsError) {
+      //console.log('Requests fetch error:', JSON.stringify(requestsError, null, 2));
+    }
+  }, [configError, requestsError]);
 
   useEffect(() => {
-  const interval = setInterval(() => {
-    if (userId) {
-      refetchRequests();
-    }
-  }, 1000); 
+    const interval = setInterval(() => {
+      if (userId) {
+        refetchRequests();
+      }
+    }, 1000); 
 
-  return () => clearInterval(interval); 
-}, [userId]);
-
+    return () => clearInterval(interval); 
+  }, [userId]);
 
   useEffect(() => {
     if (userRequests?.data?.items) {
@@ -150,7 +147,7 @@ useEffect(() => {
     try {
       const requestData = {
         type: "NIU_REQUEST",
-       description: "Demande de NIU",
+        description: "Demande de NIU",
         userId: userId,
         status: "pending",
       };
@@ -209,6 +206,13 @@ useEffect(() => {
     return null;
   };
 
+  // Check if user has processed NIU request OR has NIU proof in KYC documents
+  const hasProcessedNiuRequest = userRequests?.data?.items?.some(
+    req => req.type === 'NIU_REQUEST' && req.status === 'PROCESSED'
+  );
+
+  const shouldShowAlreadyHaveScreen = hasNiuProof || hasProcessedNiuRequest;
+
   if (isConfigLoading || isProfileLoading || isBalanceLoading || isRequestsLoading) {
     return (
       <View className="flex-1 justify-center items-center">
@@ -217,10 +221,75 @@ useEffect(() => {
     );
   }
 
-  // Show different UI if user already has NIU proof
- if (hasNiuProof) {
+  // Show "already have NIU" screen if user has NIU proof OR processed NIU request
+  if (shouldShowAlreadyHaveScreen) {
+    return (
+      <View className="bg-[#181e25] flex-1 pt-0 relative">
+        {/* Header */}
+        <View
+          style={{
+            backgroundColor: '#7ddd7d',
+            paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 40,
+            paddingBottom: 20,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          {/* Back button */}
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={{ 
+              position: 'absolute', 
+              left: 15, 
+              top: Platform.OS === 'android' ? StatusBar.currentHeight + 10 : 50,
+              zIndex: 10 
+            }}
+          >
+            <MaterialCommunityIcons name="arrow-left" size={24} color="#fff" />
+          </TouchableOpacity>
+
+          {/* Centered Logo */}
+          <Image
+            source={TopLogo}
+            style={{ height: 60, width: 100, resizeMode: 'contain' }}
+          />
+        </View>
+
+        {/* Body */}
+        <View className="flex-1 pb-3 bg-white rounded-t-3xl justify-center items-center p-5">
+          <MaterialCommunityIcons
+            name="check-circle"
+            size={80}
+            color="#7ddd7d"
+            style={{ marginBottom: 20 }}
+          />
+
+          <Text className="text-2xl font-bold text-center mb-4">
+            {t('niu.alreadyHave.title')}
+          </Text>
+
+          <Text className="text-lg text-center text-gray-600 mb-8">
+            {t('niu.alreadyHave.message')}
+          </Text>
+
+          <TouchableOpacity
+            onPress={() => navigation.navigate('MainTabs')}
+            className="bg-[#7ddd7d] rounded-lg py-4 px-8"
+          >
+            <Text className="text-white text-lg font-semibold">
+              {t('niu.alreadyHave.backButton')}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  // Default flow for users who don't have NIU yet
   return (
     <View className="bg-[#181e25] flex-1 pt-0 relative">
+      <StatusBar backgroundColor="#7ddd7d" barStyle="light-content" />
+      
       {/* Header */}
       <View
         style={{
@@ -229,6 +298,8 @@ useEffect(() => {
           paddingBottom: 20,
           alignItems: 'center',
           justifyContent: 'center',
+          flexDirection: 'row',
+          position: 'relative',
         }}
       >
         {/* Back button */}
@@ -244,86 +315,20 @@ useEffect(() => {
           <MaterialCommunityIcons name="arrow-left" size={24} color="#fff" />
         </TouchableOpacity>
 
-        {/* Centered Logo */}
-        <Image
-          source={TopLogo}
-          style={{ height: 60, width: 100, resizeMode: 'contain' }}
-        />
-      </View>
-
-      {/* Body */}
-      <View className="flex-1 pb-3 bg-white rounded-t-3xl justify-center items-center p-5">
-        <MaterialCommunityIcons
-          name="check-circle"
-          size={80}
-          color="#7ddd7d"
-          style={{ marginBottom: 20 }}
-        />
-
-        <Text className="text-2xl font-bold text-center mb-4">
-          {t('niu.alreadyHave.title')}
-        </Text>
-
-        <Text className="text-lg text-center text-gray-600 mb-8">
-          {t('niu.alreadyHave.message')}
-        </Text>
-
-        <TouchableOpacity
-          onPress={() => navigation.navigate('MainTabs')}
-          className="bg-[#7ddd7d] rounded-lg py-4 px-8"
-        >
-          <Text className="text-white text-lg font-semibold">
-            {t('niu.alreadyHave.backButton')}
+        {/* Title */}
+        <View style={{ flex: 1, alignItems: 'center', marginHorizontal: 40 }}>
+          <Text
+            style={{
+              color: '#fff',
+              fontSize: 19,
+              fontWeight: 'bold',
+              textAlign: 'center',
+            }}
+          >
+            {t('screens.niuRequest')}
           </Text>
-        </TouchableOpacity>
+        </View>
       </View>
-    </View>
-  );
-}
-
-// Default flow
-return (
-  <View className="bg-[#181e25] flex-1 pt-0 relative">
-     <StatusBar backgroundColor="#7ddd7d" barStyle="light-content" />
-    {/* Header */}
-    <View
-      style={{
-        backgroundColor: '#7ddd7d',
-        paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 40,
-        paddingBottom: 20,
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexDirection: 'row',
-        position: 'relative',
-      }}
-    >
-      {/* Back button */}
-      <TouchableOpacity
-        onPress={() => navigation.goBack()}
-        style={{ 
-          position: 'absolute', 
-          left: 15, 
-          top: Platform.OS === 'android' ? StatusBar.currentHeight + 10 : 50,
-          zIndex: 10 
-        }}
-      >
-        <MaterialCommunityIcons name="arrow-left" size={24} color="#fff" />
-      </TouchableOpacity>
-
-      {/* Title */}
-      <View style={{ flex: 1, alignItems: 'center', marginHorizontal: 40 }}>
-        <Text
-          style={{
-            color: '#fff',
-            fontSize: 19,
-            fontWeight: 'bold',
-            textAlign: 'center',
-          }}
-        >
-          {t('screens.niuRequest')}
-        </Text>
-      </View>
-    </View>
 
       <ScrollView className="flex-1 pb-3 bg-white rounded-t-3xl">
         <View className="p-5">
@@ -353,40 +358,39 @@ return (
         </View>
 
         {/* Terms */}
-      {!completedSteps[1] && (
-        <View className="p-5">
-          <CheckBox
-            title={t('niu.request.termsAccept')}
-            checked={termsAccepted}
-            onPress={() => setTermsAccepted(!termsAccepted)}
-            containerStyle={{ backgroundColor: 'transparent', borderWidth: 0 }}
-            textStyle={{ color: 'black' }}
-            checkedColor="#7ddd7d"
-          />
-          <CheckBox
-            title={`${t('niu.request.paymentAccept')} ${feeAmount.toLocaleString()} FCFA`}
-            checked={paymentAccepted}
-            onPress={() => setPaymentAccepted(!paymentAccepted)}
-            containerStyle={{ backgroundColor: 'transparent', borderWidth: 0 }}
-            textStyle={{ color: '#333', fontWeight: 'normal' }}
-            checkedColor="#7ddd7d"
-          />
-        </View>
-      )}
-
+        {!completedSteps[1] && (
+          <View className="p-5">
+            <CheckBox
+              title={t('niu.request.termsAccept')}
+              checked={termsAccepted}
+              onPress={() => setTermsAccepted(!termsAccepted)}
+              containerStyle={{ backgroundColor: 'transparent', borderWidth: 0 }}
+              textStyle={{ color: 'black' }}
+              checkedColor="#7ddd7d"
+            />
+            <CheckBox
+              title={`${t('niu.request.paymentAccept')} ${feeAmount.toLocaleString()} FCFA`}
+              checked={paymentAccepted}
+              onPress={() => setPaymentAccepted(!paymentAccepted)}
+              containerStyle={{ backgroundColor: 'transparent', borderWidth: 0 }}
+              textStyle={{ color: '#333', fontWeight: 'normal' }}
+              checkedColor="#7ddd7d"
+            />
+          </View>
+        )}
 
         {/* Pay Button */}
-          {!completedSteps[1] && (
-            <TouchableOpacity
-              onPress={handlePayPress}
-              className="bg-green-600 mx-5 mb-5 rounded-lg py-4 items-center"
-              disabled={isSubmitting}
-            >
-              <Text className="text-white text-lg font-semibold">
-                {t('niu.request.payButton')}
-              </Text>
-            </TouchableOpacity>
-          )}
+        {!completedSteps[1] && (
+          <TouchableOpacity
+            onPress={handlePayPress}
+            className="bg-green-600 mx-5 mb-5 rounded-lg py-4 items-center"
+            disabled={isSubmitting}
+          >
+            <Text className="text-white text-lg font-semibold">
+              {t('niu.request.payButton')}
+            </Text>
+          </TouchableOpacity>
+        )}
       </ScrollView>
 
       {/* Modal */}
@@ -400,7 +404,6 @@ return (
         confirmLabel={t('niu.paymentModal.confirm')}
         cancelLabel={t('niu.paymentModal.cancel', 'Annuler')}
       />
-
     </View>
   );
 };

@@ -105,13 +105,15 @@ const SENDO_DEPOSIT_FEES = getConfigValue("SENDO_DEPOSIT_FEES");
   const netDeposit = calculateNetDeposit();
 
   const handleRecharge = async () => {
-    const trimmedPhone = phone.trim();
+      const trimmedPhone = phone.trim();
     const normalizedPhone = trimmedPhone.startsWith("+237")
-      ? trimmedPhone
-      : `+237${trimmedPhone}`;
+    ? trimmedPhone
+    : trimmedPhone.startsWith("+237")
+    ? `+${trimmedPhone}`
+    : `+237${trimmedPhone}`;
 
     if (
-      normalizedPhone.length !== 12 ||
+      normalizedPhone.length !== 12 &&
       !normalizedPhone.startsWith("+237")
     ) {
       Toast.show({

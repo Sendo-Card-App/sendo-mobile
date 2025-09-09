@@ -163,6 +163,12 @@ const WalletWithdrawal = () => {
           type: type || "WITHDRAWAL",
           transactionId,
         });
+        
+         navigation.navigate("WalletOk", {
+          status: "PENDING",
+          transactionId,
+          type,
+        });
       } else {
         Toast.show({
           type: "error",

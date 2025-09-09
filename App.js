@@ -219,29 +219,28 @@ function ManageVirtualCardWrapper() {
   const { t } = useTranslation();
   const { data: userProfile, isLoading: isProfileLoading, refetch } = useGetUserProfileQuery();
 
-  useFocusEffect(
+ useFocusEffect(
     useCallback(() => {
-      refetch(); // refresh data when screen is focused
+      refetch();
     }, [])
   );
 
-  const navigation = useNavigation();
+  if (isProfileLoading) {
+    return <ActivityIndicator size="large" color={Colors.primary} />;
+  }
 
-  useEffect(() => {
-    if (!isProfileLoading) {
-      const virtualCard = userProfile?.data?.virtualCard;
-      const isCardMissingOrEmpty =
-        !virtualCard || (typeof virtualCard === 'object' && Object.keys(virtualCard).length === 0);
-      const status = virtualCard?.status;
+  const virtualCard = userProfile?.data?.virtualCard;
+  const isCardMissingOrEmpty =
+    !virtualCard || (typeof virtualCard === 'object' && Object.keys(virtualCard).length === 0);
+  const status = virtualCard?.status;
 
-      if (isCardMissingOrEmpty || (status !== 'ACTIVE' && status !== 'PRE_ACTIVE')) {
-        navigation.navigate('OnboardingCard');
-      }
-    }
-  }, [userProfile, isProfileLoading, navigation]);
+  // Render OnboardingCard conditionally instead of navigating
+  if (isCardMissingOrEmpty || (status !== 'ACTIVE' && status !== 'PRE_ACTIVE')) {
+    return <OnboardingCard />;
+  }
 
-  // If checks pass, render the actual ManageVirtualCard component
   return <ManageVirtualCard />;
+
 }
 
 
