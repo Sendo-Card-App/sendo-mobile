@@ -9,7 +9,9 @@ import {
   Dimensions,
   ActivityIndicator,
   Animated,
-  Easing 
+  Easing,
+  ScrollView,
+  SafeAreaView
 } from 'react-native';
 import Toast from 'react-native-toast-message';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -28,17 +30,18 @@ const OnboardingCardScreen = () => {
   const navigation = useNavigation();
   const { t } = useTranslation();
   const [requestCard, { isLoading: isRequesting }] = useRequestVirtualCardMutation();
-  const {
-    data: cardRequest,
-    isLoading: isFetchingStatus,
-    refetch,
-  } = useGetVirtualCardStatusQuery(undefined, {
-    pollingInterval: 1000,
-  });
+  
+  // Remove pollingInterval to prevent excessive re-renders
+  const { data: cardRequest, isLoading: isFetchingStatus, refetch } = 
+  useGetVirtualCardStatusQuery();
  
   const status = cardRequest?.data?.onboardingSession?.onboardingSessionStatus;
+  
   const [requestDate, setRequestDate] = useState(null);
   const [remainingTime, setRemainingTime] = useState(null);
+  
+  const hasNavigated = useRef(false);
+  const navigationTriggered = useRef(false);
   
   // Animations
   const earthRotation = useRef(new Animated.Value(0)).current;
@@ -59,8 +62,8 @@ const OnboardingCardScreen = () => {
     ).start();
   }, []);
 
-  // Animation pour le sablier
-  const startSablierRotation = () => {
+  // Animation pour le sablier - use useCallback to memoize
+  const startSablierRotation = useCallback(() => {
     setIsSablierRotating(true);
     Animated.loop(
       Animated.timing(sablierRotation, {
@@ -70,13 +73,13 @@ const OnboardingCardScreen = () => {
         useNativeDriver: true,
       })
     ).start();
-  };
+  }, [sablierRotation]);
 
-  const stopSablierRotation = () => {
+  const stopSablierRotation = useCallback(() => {
     setIsSablierRotating(false);
     sablierRotation.stopAnimation();
     sablierRotation.setValue(0);
-  };
+  }, [sablierRotation]);
 
   useEffect(() => {
     if (['PENDING', 'WAITING_FOR_INFORMATION'].includes(status)) {
@@ -88,11 +91,30 @@ const OnboardingCardScreen = () => {
     return () => {
       stopSablierRotation();
     };
-  }, [status]);
+  }, [status, startSablierRotation, stopSablierRotation]);
 
+  // FIXED: Use useFocusEffect with proper cleanup
+  useFocusEffect(
+    useCallback(() => {
+      // Reset navigation flag when screen comes into focus
+      navigationTriggered.current = false;
+      
+      return () => {
+        // Cleanup when screen loses focus
+        navigationTriggered.current = false;
+      };
+    }, [])
+  );
+
+  // FIXED: Navigation effect with proper conditions
   useEffect(() => {
-    if (status === 'VERIFIED') {
-      navigation.replace('CreateVirtualCard');
+    if (status === 'VERIFIED' && !navigationTriggered.current) {
+      navigationTriggered.current = true;
+      
+      // Use setTimeout to ensure navigation happens after current render cycle
+      setTimeout(() => {
+        navigation.replace('CreateVirtualCard');
+      }, 100);
     }
   }, [status, navigation]);
 
@@ -127,16 +149,7 @@ const OnboardingCardScreen = () => {
     return () => clearInterval(interval);
   }, [requestDate]);
 
-  useFocusEffect(
-    useCallback(() => {
-      const interval = setInterval(() => {
-        refetch();
-      }, 10000);
-      return () => clearInterval(interval);
-    }, [refetch])
-  );
-
- const handleRequestCard = async () => {
+  const handleRequestCard = async () => {
     try {
       const response = await requestCard({ documentType: DEFAULT_DOCUMENT_TYPE }).unwrap();
 
@@ -151,21 +164,70 @@ const OnboardingCardScreen = () => {
       setRequestDate(now);
       await refetch();
     } catch (error) {
-      console.log("Full response:", JSON.stringify(error, null, 2));
-     const backendMessage = error?.data?.data?.errors?.[0] 
-      || error?.data?.message 
-      || 'Erreur lors de la demande de carte';
+      const backendMessage = error?.data?.data?.errors?.[0] 
+        || error?.data?.message 
+        || 'Erreur lors de la demande de carte';
 
-    Toast.show({
-      type: 'error',
-      text1: 'Erreur',
-      text2: backendMessage,
-    });
-
+      Toast.show({
+        type: 'error',
+        text1: 'Erreur',
+        text2: backendMessage,
+      });
     }
   };
 
   const renderMainContent = () => {
+    if (status === 'REFUSED_TIMEOUT') {
+      return (
+        <View style={styles.statusContainer}>
+          <Image
+            source={require('../../images/time-out.png')}
+            style={styles.statusImage}
+            resizeMode="contain"
+          />
+          <Text style={styles.statusTitle}>
+            {t('onboardingCard.refusedTimeout.title')}
+          </Text>
+          <Text style={styles.statusSubtitle}>
+            {t('onboardingCard.refusedTimeout.subtitle')}
+          </Text>
+          
+          {/* Explanation section */}
+          <View style={styles.explanationContainer}>
+            <Text style={styles.explanationTitle}>
+              {t('onboardingCard.refusedTimeout.explanationTitle')}
+            </Text>
+            <Text style={styles.explanationText}>
+              {t('onboardingCard.refusedTimeout.explanationText')}
+            </Text>
+          </View>
+          
+          {/* Next steps */}
+          <View style={styles.nextStepsContainer}>
+            <Text style={styles.nextStepsTitle}>
+              {t('onboardingCard.refusedTimeout.nextStepsTitle')}
+            </Text>
+            <View style={styles.stepItem}>
+              <View style={styles.stepNumber}>
+                <Text style={styles.stepNumberText}>1</Text>
+              </View>
+              <Text style={styles.stepText}>
+                {t('onboardingCard.refusedTimeout.step1')}
+              </Text>
+            </View>
+            <View style={styles.stepItem}>
+              <View style={styles.stepNumber}>
+                <Text style={styles.stepNumberText}>2</Text>
+              </View>
+              <Text style={styles.stepText}>
+                {t('onboardingCard.refusedTimeout.step2')}
+              </Text>
+            </View>
+          </View>
+        </View>
+      );
+    }
+
     if (['PENDING', 'WAITING_FOR_INFORMATION'].includes(status)) {
       return (
         <View style={styles.pendingContainer}>
@@ -300,50 +362,70 @@ const OnboardingCardScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
-      {/* Back Button */}
-      <TouchableOpacity 
-        onPress={() => navigation.navigate("MainTabs")}
-        style={styles.backButton}
-      >
-        <Ionicons name="arrow-back" size={24} color="black" />
-      </TouchableOpacity>
-      
-      {renderMainContent()}
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        {/* Back Button */}
+        <TouchableOpacity 
+          onPress={() => navigation.navigate("MainTabs")}
+          style={styles.backButton}
+        >
+          <Ionicons name="arrow-back" size={24} color="black" />
+        </TouchableOpacity>
+        
+        <ScrollView 
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {renderMainContent()}
+        </ScrollView>
 
-      <TouchableOpacity
-        onPress={handleRequestCard}
-        style={[
-          styles.button,
-          (isRequesting || ['PENDING', 'WAITING_FOR_INFORMATION'].includes(status) || isFetchingStatus) && 
-          styles.buttonDisabled
-        ]}
-        disabled={isRequesting || ['PENDING', 'WAITING_FOR_INFORMATION'].includes(status) || isFetchingStatus}
-      >
-        {isRequesting || isFetchingStatus ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.buttonText}>
-            {['PENDING', 'WAITING_FOR_INFORMATION'].includes(status)
-              ? t('onboardingCard.button.pending')
-              : t('onboardingCard.button.default')}
-          </Text>
-        )}
-      </TouchableOpacity>
-    </View>
+        <TouchableOpacity
+          onPress={handleRequestCard}
+          style={[
+            styles.button,
+            (isRequesting || ['PENDING', 'WAITING_FOR_INFORMATION', 'REFUSED_TIMEOUT'].includes(status) || isFetchingStatus) && 
+            styles.buttonDisabled
+          ]}
+          disabled={isRequesting || ['PENDING', 'WAITING_FOR_INFORMATION', 'REFUSED_TIMEOUT'].includes(status) || isFetchingStatus}
+        >
+          {isRequesting || isFetchingStatus ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.buttonText}>
+              {status === 'REFUSED_TIMEOUT' 
+                ? t('onboardingCard.button.retry')
+                : ['PENDING', 'WAITING_FOR_INFORMATION'].includes(status)
+                ? t('onboardingCard.button.pending')
+                : t('onboardingCard.button.default')}
+            </Text>
+          )}
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
   container: {
     flex: 1,
     backgroundColor: '#fff',
-    alignItems: 'center',
     paddingHorizontal: 20,
     paddingTop: 40,
-    justifyContent: 'space-between',
   },
-  // Back button style
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 20,
+  },
   backButton: {
     position: 'absolute',
     top: 50,
@@ -374,139 +456,11 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   
-  // Pending state styles
-  pendingContainer: {
-    alignItems: 'center',
-    width: '100%',
-    marginTop: 30,
-  },
-  statusIllustration: {
-    position: 'relative',
-    marginBottom: 30,
-  },
-  pendingImage: {
-    width: width * 0.4,
-    height: width * 0.4,
-  },
-  statusBadge: {
-    position: 'absolute',
-    bottom: -10,
-    alignSelf: 'center',
-    paddingHorizontal: 15,
-    paddingVertical: 5,
-    borderRadius: 20,
-  },
-  statusBadgePending: {
-    backgroundColor: '#7ddd7d',
-  },
-  statusBadgeWaiting: {
-    backgroundColor: '#7ddd7d',
-  },
-  statusBadgeText: {
-    color: 'white',
-    fontWeight: 'bold',
-    fontSize: 14,
-  },
-  pendingTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 10,
-    textAlign: 'center',
-  },
-  pendingSubtitle: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 30,
-    paddingHorizontal: 20,
-    lineHeight: 24,
-  },
-  timelineContainer: {
-    width: '80%',
-    marginBottom: 30,
-  },
-  timeline: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: 40,
-  },
-  timelineDot: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 3,
-  },
-  timelineDotActive: {
-    backgroundColor: '#4CAF50',
-    borderColor: '#4CAF50',
-  },
-  timelineDotInactive: {
-    backgroundColor: 'white',
-    borderColor: '#CCCCCC',
-  },
-  timelineLine: {
-    height: 3,
-    width: '20%',
-  },
-  timelineLineActive: {
-    backgroundColor: '#7ddd7d',
-  },
-  timelineLineInactive: {
-    backgroundColor: '#CCCCCC',
-  },
-  timelineLabels: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 10,
-  },
-  timelineLabel: {
-    fontSize: 12,
-    color: '#666',
-    width: '33%',
-    textAlign: 'center',
-  },
-  detailsContainer: {
-    width: '90%',
-    backgroundColor: '#F8F8F8',
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 20,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 15,
-    alignItems: 'center',
-  },
-  detailLabel: {
-    fontSize: 14,
-    color: '#555',
-    fontWeight: '500',
-  },
-  detailValue: {
-    fontSize: 14,
-    color: '#222',
-    fontWeight: '600',
-  },
-  timerContainer: {
-    backgroundColor: '#E3F2FD',
-    borderRadius: 15,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-  },
-  timerText: {
-    color: '#1976D2',
-    fontWeight: 'bold',
-    fontSize: 14,
-  },
-  
   // Status container styles
   statusContainer: {
     alignItems: 'center',
     width: '100%',
-    marginTop: 50,
+    marginTop: 20,
     paddingHorizontal: 20,
   },
   statusTitle: {
@@ -522,6 +476,185 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 30,
     lineHeight: 24,
+  },
+  
+  // REFUSED_TIMEOUT specific styles
+  explanationContainer: {
+    backgroundColor: '#FFF3CD',
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 20,
+    width: '100%',
+    borderWidth: 1,
+    borderColor: '#FFEAA7',
+  },
+  explanationTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#856404',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  explanationText: {
+    fontSize: 14,
+    color: '#856404',
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  nextStepsContainer: {
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
+    padding: 20,
+    width: '100%',
+    borderWidth: 1,
+    borderColor: '#E9ECEF',
+  },
+  nextStepsTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 15,
+    textAlign: 'center',
+  },
+  stepItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  stepNumber: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#7ddd7d',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  stepNumberText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 12,
+  },
+  stepText: {
+    fontSize: 14,
+    color: '#555',
+    flex: 1,
+    lineHeight: 20,
+  },
+  
+  // Pending state styles
+  pendingContainer: {
+    alignItems: 'flex-start',
+    width: '100%',
+    marginTop: 20,
+    paddingHorizontal: 10,
+  },
+  headerContainer: {
+    alignItems: 'center',
+    width: '100%',
+    marginBottom: 10,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    color: '#000',
+  },
+  pendingImage: {
+    width: width * 0.4,
+    height: width * 0.4,
+  },
+  statusSubHeader: {
+    fontSize: 14,
+    color: '#666',
+    backgroundColor: '#7ddd7d',
+    marginBottom: 30,
+    textAlign: 'center',
+    width: '100%',
+    paddingHorizontal: 15,
+    paddingVertical: 5,
+    borderRadius: 20,
+  },
+  contentContainer: {
+    width: '100%',
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#000',
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  sectionDescription: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 30,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  statusTimeline: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 30,
+    width: '100%',
+  },
+  timelineItem: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  timelineDot: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  timelineDotActive: {
+    backgroundColor: '#7ddd7d',
+  },
+  timelineDotInactive: {
+    backgroundColor: '#CCCCCC',
+  },
+  timelineLine: {
+    height: 3,
+    width: '100%',
+    position: 'absolute',
+    top: 6,
+    left: '50%',
+  },
+  timelineLineActive: {
+    backgroundColor: '#7ddd7d',
+  },
+  timelineLineInactive: {
+    backgroundColor: '#CCCCCC',
+  },
+  timelineText: {
+    fontSize: 12,
+    color: '#333',
+    textAlign: 'center',
+    marginTop: 5,
+    fontWeight: '500',
+  },
+  detailsContainer: {
+    width: '100%',
+    backgroundColor: '#F8F8F8',
+    borderRadius: 8,
+    padding: 15,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+    alignItems: 'center',
+  },
+  detailLabel: {
+    fontSize: 14,
+    color: '#666',
+  },
+  detailValue: {
+    fontSize: 14,
+    color: '#000',
+    fontWeight: '500',
   },
   
   // Title styles
@@ -550,6 +683,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 25,
     marginBottom: 40,
     width: '90%',
+    alignSelf: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
@@ -565,165 +699,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 16,
   },
-   headerContainer: {
-   
-    alignItems: 'center',
-    width: '100%',
-    marginBottom: 10,
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-     textAlign: 'center',
-    color: '#000',
-  },
-  statusSubHeader: {
-    fontSize: 14,
-    color: '#666',
-     backgroundColor: '#7ddd7d',
-    marginBottom: 30,
-     textAlign: 'center',
-    width: '100%',
-     paddingHorizontal: 15,
-    paddingVertical: 5,
-    borderRadius: 20,
-   
-  },
-  contentContainer: {
-    width: '100%',
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#000',
-     textAlign: 'center',
-    marginBottom: 10,
-  },
-  sectionDescription: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 30,
-     textAlign: 'center',
-    lineHeight: 20,
-  },
-  statusTimeline: {
-    marginBottom: 30,
-  },
-  timelineItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  timelineDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    marginRight: 10,
-  },
-  timelineDotActive: {
-    backgroundColor: '#7ddd7d',
-  },
-  timelineDotInactive: {
-    backgroundColor: '#CCCCCC',
-  },
-  timelineText: {
-    fontSize: 14,
-    color: '#333',
-  },
-  
-  // Update existing styles to match the design
-  pendingContainer: {
-    alignItems: 'flex-start',
-    width: '100%',
-    marginTop: 20,
-    paddingHorizontal: 10,
-  },
-  statusBadge: {
-    backgroundColor: '#FFA500',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 12,
-  },
-  statusBadgeText: {
-    color: 'white',
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  detailsContainer: {
-    width: '100%',
-    backgroundColor: '#F8F8F8',
-    borderRadius: 8,
-    padding: 15,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 10,
-    alignItems: 'center',
-  },
-  detailLabel: {
-    fontSize: 14,
-    color: '#666',
-  },
-  detailValue: {
-    fontSize: 14,
-    color: '#000',
-    fontWeight: '500',
-  },
-  timerContainer: {
-    backgroundColor: '#E3F2FD',
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  timerText: {
-    color: '#1976D2',
-    fontWeight: '500',
-    fontSize: 12,
-  },
-  statusTimeline: {
-  flexDirection: 'row',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  marginBottom: 30,
-  width: '100%',
-},
-timelineItem: {
-  alignItems: 'center',
-  flex: 1,
-},
-timelineDot: {
-  width: 16,
-  height: 16,
-  borderRadius: 8,
-  marginBottom: 8,
-},
-timelineDotActive: {
-  backgroundColor: '#7ddd7d',
-},
-timelineDotInactive: {
-  backgroundColor: '#CCCCCC',
-},
-timelineLine: {
-  height: 3,
-  width: '100%',
-  position: 'absolute',
-  top: 6, // Half the dot height (16/2 = 8) minus half the line height (3/2 = 1.5) → 8-1.5=6.5 ≈ 6
-  left: '50%',
-},
-timelineLineActive: {
-  backgroundColor: '#7ddd7d',
-},
-timelineLineInactive: {
-  backgroundColor: '#CCCCCC',
-},
-timelineText: {
-  fontSize: 12,
-  color: '#333',
-  textAlign: 'center',
-  marginTop: 5,
-  fontWeight: '500',
-},
 });
 
 export default OnboardingCardScreen;

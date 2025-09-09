@@ -991,6 +991,8 @@
     "title": "Make a withdrawal",
     "secureNote": "Secured by bank-level encryption",
     "accountNumber": "Your account number",
+     "finalAmount": "Final Amount",
+    "feesNote": "Fees",
     "amount": "Amount",
     "fullName": "Full name",
     "email": "Email",
@@ -1005,6 +1007,8 @@
     "title": "Make a withdrawal",
     "secureNote": "Secured by bank-level encryption",
     "accountNumber": "Your account number",
+    "finalDeposit": "Net credited amount",
+"feesNote": "Applied fees",
     "amount": "Amount",
     "fullName": "Full name",
     "email": "Email",
@@ -1558,7 +1562,17 @@
   "onboardingCard": {
     "title": "INTERNATIONAL MONEY\nMADE SIMPLE",
     "subtitle": "Spend abroad like at home. No markups, no hide fees.",
+    "refusedTimeout": {
+    "title": "Processing Time Expired",
+    "subtitle": "Your request was not processed within the allotted time",
+    "explanationTitle": "Why did this happen?",
+    "explanationText": "Your documents were not reviewed within 24 hours of your request. This timeframe is necessary to ensure the security of your account.",
+    "nextStepsTitle": "Next Steps",
+    "step1": "Make sure your documents are clear and readable",
+    "step2": "Resubmit your request for a new review"
+  },
     "button": {
+       "retry": "Retry",
       "default": "Order a debit card",
       "pending": "Request in progress..."
     },
@@ -1669,7 +1683,16 @@
     "title": "KYC Required",
     "message": "Missing KYC documents. Please submit your KYC to start using the app.",
     "okButton": "OK"
-  }
+  },
+   "cardHistory": "Card History",
+  "loadingHistory": "Loading card history...",
+  "filters": {
+    "all": "All",
+    "completed": "COMPLETED",
+    "pending": "PENDING",
+    "failed": "FAILED"
+  },
+  "noTransactions": "No transactions found"
    
  
 

@@ -980,6 +980,8 @@
     "title": "Effectuer un retrait",
     "secureNote": "Sécurisé par un cryptage bancaire",
     "accountNumber": "Numéro de votre compte",
+     "finalAmount": "Montant final",
+    "feesNote": "Frais",
     "amount": "Montant",
     "fullName": "Nom complet",
     "email": "Email",
@@ -995,6 +997,8 @@
     "secureNote": "Sécurisé par un cryptage bancaire",
     "accountNumber": "Numéro de votre compte",
     "amount": "Montant",
+     "finalDeposit": "Montant net crédité",
+  "feesNote": "Frais appliqués",
     "fullName": "Nom complet",
     "email": "Email",
     "message": "Votre depôt a ete initialisé avec succès. Veuillez suivre les instructions ci-dessous pour effectuer le paiement.",
@@ -1555,8 +1559,18 @@
   "onboardingCard": {
     "title": "L'ARGENT\nINTERNATIONAL\nSIMPLIFIÉ",
     "subtitle": "Dépensez à l'étranger comme à la maison. Pas de majorations, pas de frais cachés.",
+     "refusedTimeout": {
+      "title": "Délai de traitement expiré",
+      "subtitle": "Votre demande n'a pas été traitée dans les délais impartis",
+      "explanationTitle": "Pourquoi cela s'est produit ?",
+      "explanationText": "Vos documents n'ont pas été examinés dans les 24 heures suivant votre demande. Ce délai est nécessaire pour assurer la sécurité de votre compte.",
+      "nextStepsTitle": "Prochaines étapes",
+      "step1": "Vérifiez que vos documents sont clairs et lisibles",
+      "step2": "Soumettez à nouveau votre demande pour un nouveau traitement"
+    },
     "button": {
       "default": "Commandez une carte de débit",
+       "retry": "Réessayer",
       "pending": "Demande en cours..."
     },
     "pending": {
@@ -1665,7 +1679,16 @@
     "title": "KYC Requis",
     "message": "Documents KYC manquants. Veuillez soumettre vos KYC pour commencer à utiliser l'application.",
     "okButton": "OK"
-  }
+  },
+    "cardHistory": "Historique de la carte",
+  "loadingHistory": "Chargement de l’historique de la carte...",
+  "filters": {
+    "all": "Tous",
+    "completed": "TERMINÉ",
+    "pending": "EN ATTENTE",
+    "failed": "ÉCHOUÉ"
+  },
+  "noTransactions": "Aucune transaction trouvée"
 
     
     

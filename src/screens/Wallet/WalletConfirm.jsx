@@ -6,7 +6,7 @@ import TopLogo from "../../images/TopLogo.png";
 //import InfoIcon from "../../images/InfoIcon.png"; // Your green info icon
 import { useTranslation } from 'react-i18next';
 
-const walletConfirm = ({ navigation }) => {
+const WalletConfirm = ({ navigation }) => {
   const { t } = useTranslation();
 
   return (
@@ -67,4 +67,4 @@ const walletConfirm = ({ navigation }) => {
   );
 };
 
-export default walletConfirm;
+export default WalletConfirm;

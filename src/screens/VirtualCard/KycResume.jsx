@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Image, FlatList, Alert } from "react-native";
 import { useSelector, useDispatch } from 'react-redux';
 import { useSubmitKYCMutation, useSendSelfieMutation, useUpdateProfileMutation } from '../../services/Kyc/kycApi';
@@ -18,13 +18,28 @@ const KycResume = ({ navigation }) => {
   const [submitKYC] = useSubmitKYCMutation();
   const [sendSelfie] = useSendSelfieMutation(); 
   const [updateProfile] = useUpdateProfileMutation();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { personalDetails, selfie, identityDocument, niuDocument, addressProof, submissionStatus } = useSelector(state => state.kyc);
   const isKYCComplete = useSelector(selectIsKYCComplete);
   const { t } = useTranslation();
   const { data: userProfile, isLoading: isProfileLoading, error: profileError } = useGetUserProfileQuery();
 
-  //console.log("Tontine List:", JSON.stringify(userProfile, null, 2));
+   useEffect(() => {
+    const unsubscribe = navigation.addListener('beforeRemove', (e) => {
+      if (isSubmitting) {
+        e.preventDefault();
+        Toast.show({
+          type: 'info',
+          text1: 'Veuillez patienter',
+          text2: 'Soumission en cours...',
+        });
+      }
+    });
+
+    return unsubscribe;
+  }, [navigation, isSubmitting]);
+
 
   const Data = [
     { id: "1", name: t('kyc_resume.personal_details'), route: "PersonalDetail", 
@@ -62,7 +77,7 @@ const KycResume = ({ navigation }) => {
   };
 
 const handleSubmit = async () => {
-  if (!isKYCComplete) {
+if (isSubmitting || !isKYCComplete) {
     Toast.show({
       type: 'error',
       text1: 'Incomplet',
@@ -70,7 +85,7 @@ const handleSubmit = async () => {
     });
     return;
   }
-
+    setIsSubmitting(true);
   dispatch(setSubmissionStatus('loading'));
 
   try {
@@ -265,7 +280,7 @@ const handleSubmit = async () => {
         }
         className="p-1"
       >
-        <Ionicons name="arrow-back" size={24} color="#333" />
+        <Ionicons name="arrow-back" size={24} color="#fff" />
       </TouchableOpacity>
         <TouchableOpacity onPress={() => navigation.openDrawer()} className="ml-auto">
           <Ionicons name="menu-outline" size={24} color="white" />
