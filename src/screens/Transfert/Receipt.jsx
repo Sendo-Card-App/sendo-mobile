@@ -24,30 +24,27 @@ const ReceiptScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const transaction = route.params?.transaction;
-  //console.log(transaction)
   const user = transaction?.receiver; 
-  console.log(user)
   const [isGenerating, setIsGenerating] = React.useState(false);
   const { t } = useTranslation();
-     const {
-         data: configData,
-         isLoading: isConfigLoading,
-         error: configError
-       } = useGetConfigQuery(undefined, {
-         pollingInterval: 1000,
-       });
+  
+  const {
+    data: configData,
+    isLoading: isConfigLoading,
+    error: configError
+  } = useGetConfigQuery(undefined, {
+    pollingInterval: 1000,
+  });
 
-    const getConfigValue = (name) => {
-      const configItem = configData?.data?.find(item => item.name === name);
-        return configItem ? configItem.value : null;
-      };
+  const getConfigValue = (name) => {
+    const configItem = configData?.data?.find(item => item.name === name);
+    return configItem ? configItem.value : null;
+  };
 
-      const getExchangeRate = () => {
-  // You might want to fetch this from your config or API
-      const exchangeRate = getConfigValue('TRANSFER_FEES'); // Default fallback
-          return parseFloat(exchangeRate);
-        };
-      
+  const getExchangeRate = () => {
+    const exchangeRate = getConfigValue('TRANSFER_FEES');
+    return parseFloat(exchangeRate) || 1; // Default to 1 if not found
+  };
 
   if (!transaction) {
     return (
@@ -113,330 +110,349 @@ const ReceiptScreen = () => {
     return transaction.type;
   };
 
-const getLocalImageBase64 = async () => {
-  try {
-    const logoPath = require('../../../assets/LogoSendo.png');
-    const asset = Asset.fromModule(logoPath);
+  // Improved version of getLocalImageBase64
+  const getLocalImageBase64 = async () => {
+    try {
+      // Load the logo image from assets
+      const logoAsset = Asset.fromModule(require('../../../assets/LogoSendo.png'));
+      
+      // Ensure the asset is downloaded
+      await logoAsset.downloadAsync();
+      
+      // Use localUri if available, otherwise fall back to uri
+      const imageUri = logoAsset.localUri || logoAsset.uri;
+      
+      if (!imageUri) {
+        console.error("No valid URI found for logo asset");
+        return null;
+      }
+      
+      // Read the image file and convert to base64
+      const base64 = await FileSystem.readAsStringAsync(imageUri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+      
+      // Return as data URI
+      return `data:image/png;base64,${base64}`;
+    } catch (error) {
+      console.error("Error loading local image:", error);
+      return null;
+    }
+  };
 
-    // In production, we must ensure asset is downloaded
-    await asset.downloadAsync();
-
-    // Use asset.localUri OR asset.uri (fallback if localUri is null)
-    const fileUri = asset.localUri || asset.uri;
-    if (!fileUri) {
-      throw new Error("Logo asset not found");
+  const handleDownloadReceipt = async () => {
+    if (transaction.status !== 'COMPLETED') {
+      Alert.alert(
+        "Reçu indisponible",
+        "Le reçu est uniquement disponible pour les transactions réussies"
+      );
+      return;
     }
 
-    const base64 = await FileSystem.readAsStringAsync(fileUri, {
-      encoding: FileSystem.EncodingType.Base64,
-    });
+    setIsGenerating(true);
+    try {
+      // Get the logo as base64
+      const logoBase64 = await getLocalImageBase64();
+      
+      // Generate HTML with the logo
+      const html = generateReceiptHTML(transaction, user, getTypeLabel, logoBase64);
+      
+      // Convert HTML to PDF
+      const { uri } = await Print.printToFileAsync({ html });
+      
+      // Move to a more permanent location
+      const newUri = `${FileSystem.documentDirectory}Reçu_Sendo_${transaction.transactionId}.pdf`;
+      await FileSystem.moveAsync({ from: uri, to: newUri });
 
-    return `data:image/png;base64,${base64}`;
-  } catch (error) {
-    console.error("Error loading local image:", error);
-    return null;
-  }
-};
+      // Share the PDF
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(newUri);
+      } else {
+        Alert.alert("Succès", "Reçu généré avec succès");
+      }
+    } catch (error) {
+      console.error("Error generating receipt:", error);
+      Alert.alert("Erreur", "Échec de génération du reçu. Veuillez réessayer.");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
-
-// Modifiez handleDownloadReceipt pour inclure le logo local
-const handleDownloadReceipt = async () => {
-  if (transaction.status !== 'COMPLETED') {
-    Alert.alert(
-      "Reçu indisponible",
-      "Le reçu est uniquement disponible pour les transactions réussies"
-    );
-    return;
-  }
-
-  setIsGenerating(true);
-  try {
-    // Obtenez l'image en base64
-    const logoBase64 = await getLocalImageBase64();
+  const generateReceiptHTML = (transaction, user, getTypeLabel, logoBase64) => {
+    const displayType = getTransactionDisplayType(transaction);
+    const logoUrl = logoBase64 || "https://res.cloudinary.com/dviktmefh/image/upload/v1735143153/sendo-logo_aej8vq.png";
     
-    // Passez logoBase64 comme paramètre à generateReceiptHTML
-    const html = generateReceiptHTML(transaction, user, getTypeLabel, logoBase64);
-    const { uri } = await Print.printToFileAsync({ html });
-    const newUri = `${FileSystem.documentDirectory}Reçu_Sendo_${transaction.transactionId}.pdf`;
-    await FileSystem.moveAsync({ from: uri, to: newUri });
+    return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Reçu Sendo</title>
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          padding: 20px;
+          line-height: 1.6;
+        }
+        .header {
+          text-align: center;
+          margin-bottom: 20px;
+          border-bottom: 2px solid #7ddd7d;
+          padding-bottom: 10px;
+        }
+        .logo-container {
+          margin-bottom: 15px;
+        }
+        .logo {
+          width: 120px;
+          height: 120px;
+          object-fit: contain;
+        }
+        .title {
+          font-size: 24px;
+          font-weight: bold;
+          color: #2c3e50;
+          margin-bottom: 5px;
+        }
+        .subtitle {
+          font-size: 16px;
+          color: #7f8c8d;
+          margin-bottom: 10px;
+        }
+        .reference {
+          font-size: 14px;
+          color: #7f8c8d;
+        }
+        .section {
+          margin: 15px 0;
+          padding: 10px;
+          border: 1px solid #ecf0f1;
+          border-radius: 5px;
+        }
+        .section-title {
+          font-weight: bold;
+          color: #2c3e50;
+          margin-bottom: 10px;
+          font-size: 16px;
+        }
+        .row {
+          display: flex;
+          justify-content: space-between;
+          margin: 8px 0;
+        }
+        .label {
+          font-weight: bold;
+          color: #0b0c0cff;
+        }
+        .value {
+          color: #2c3e50;
+        }
+        .amount {
+          font-weight: bold;
+          color: #2c3e50;
+          font-size: 18px;
+        }
+        .footer {
+          margin-top: 30px;
+          text-align: center;
+          font-size: 12px;
+          color: #95a5a6;
+          border-top: 1px solid #ecf0f1;
+          padding-top: 10px;
+        }
+        .status-completed {
+          color: #27ae60;
+          font-weight: bold;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <div class="logo-container">
+          <img class="logo" src="${logoUrl}" alt="Sendo Logo">
+        </div>
+        <div class="subtitle">Reçu de transaction</div>
+        <div class="reference">Référence: ${transaction.transactionId}</div>
+      </div>
 
-    if (await Sharing.isAvailableAsync()) {
-      await Sharing.shareAsync(newUri);
-    } else {
-      Alert.alert("Succès", "Reçu généré avec succès");
-    }
-  } catch (error) {
-    console.error("Error generating receipt:", error);
-    Alert.alert("Erreur", "Échec de génération du reçu. Veuillez réessayer.");
-  } finally {
-    setIsGenerating(false);
-  }
-};
+      <div class="section">
+        <div class="section-title">Informations de transaction</div>
+        <div class="row">
+          <span class="label">Date:</span>
+          <span class="value">${moment(transaction.createdAt).format('DD/MM/YYYY HH:mm')}</span>
+        </div>
+        <div class="row">
+          <span class="label">Statut:</span>
+          <span class="status-completed">${transaction.status}</span>
+        </div>
+        <div class="row">
+          <span class="label">Type:</span>
+          <span class="value">${getTypeLabel(transaction.type)}</span>
+        </div>
+      </div>
 
-// Modifiez la signature de la fonction pour accepter logoBase64
-const generateReceiptHTML = (transaction, user, getTypeLabel, logoBase64) => {
-  const displayType = getTransactionDisplayType(transaction);
-  const logoUrl = logoBase64 || "https://res.cloudinary.com/dviktmefh/image/upload/v1735143153/sendo-logo_aej8vq.png";
-  
-  return `
-  <!DOCTYPE html>
-  <html>
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reçu Sendo</title>
-    <style>
-      body {
-        font-family: Arial, sans-serif;
-        padding: 20px;
-        line-height: 1.6;
-      }
-      .header {
-        text-align: center;
-        margin-bottom: 20px;
-        border-bottom: 2px solid #7ddd7d;
-        padding-bottom: 10px;
-      }
-      .logo-container {
-        margin-bottom: 15px;
-      }
-      .logo {
-        width: 120px;
-        height: 120px;
-        object-fit: contain;
-      }
-      .title {
-        font-size: 24px;
-        font-weight: bold;
-        color: #2c3e50;
-        margin-bottom: 5px;
-      }
-      .subtitle {
-        font-size: 16px;
-        color: #7f8c8d;
-        margin-bottom: 10px;
-      }
-      .reference {
-        font-size: 14px;
-        color: #7f8c8d;
-      }
-      .section {
-        margin: 15px 0;
-        padding: 10px;
-        border: 1px solid #ecf0f1;
-        border-radius: 5px;
-      }
-      .section-title {
-        font-weight: bold;
-        color: #2c3e50;
-        margin-bottom: 10px;
-        font-size: 16px;
-      }
-      .row {
-        display: flex;
-        justify-content: space-between;
-        margin: 8px 0;
-      }
-      .label {
-        font-weight: bold;
-        color: #0b0c0cff;
-      }
-      .value {
-        color: #2c3e50;
-      }
-      .amount {
-        font-weight: bold;
-        color: #2c3e50;
-        font-size: 18px;
-      }
-      .footer {
-        margin-top: 30px;
-        text-align: center;
-        font-size: 12px;
-        color: #95a5a6;
-        border-top: 1px solid #ecf0f1;
-        padding-top: 10px;
-      }
-      .status-completed {
-        color: #27ae60;
-        font-weight: bold;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="header">
-      <div class="logo-container">
-        <img class="logo" src="${logoUrl}" alt="Sendo Logo">
+      <div class="section">
+        <div class="section-title">Montants</div>
+        <div class="row">
+          <span class="label">Montant envoyé:</span>
+          <span class="amount">${transaction.amount} ${transaction.currency}</span>
+        </div>
+        <div class="row">
+          <span class="label">Frais:</span>
+          <span class="value">${transaction.partnerFees || 0} XAF</span>
+        </div>
+        <div class="row">
+          <span class="label">Total:</span>
+          <span class="amount">${transaction.totalAmount} ${transaction.currency}</span>
+        </div>
       </div>
-      <div class="subtitle">Reçu de transaction</div>
-      <div class="reference">Référence: ${transaction.transactionId}</div>
-    </div>
 
-    <div class="section">
-      <div class="section-title">Informations de transaction</div>
-      <div class="row">
-        <span class="label">Date:</span>
-        <span class="value">${moment(transaction.createdAt).format('DD/MM/YYYY HH:mm')}</span>
+      ${displayType === 'NIU_PAYMENT' ? `
+      <div class="section">
+        <div class="section-title">Détails NIU</div>
+        <div class="row">
+          <span class="label">Type de paiement:</span>
+          <span class="value">Frais NIU</span>
+        </div>
+        <div class="row">
+          <span class="label">Méthode:</span>
+          <span class="value">Wallet Sendo</span>
+        </div>
+        <div class="row">
+          <span class="label">Centre des impôts:</span>
+          <span class="value">DGI – Centre régional</span>
+        </div>
       </div>
-      <div class="row">
-        <span class="label">Statut:</span>
-        <span class="status-completed">${transaction.status}</span>
-      </div>
-      <div class="row">
-        <span class="label">Type:</span>
-        <span class="value">${getTypeLabel(transaction.type)}</span>
-      </div>
-    </div>
-
-    <div class="section">
-      <div class="section-title">Montants</div>
-      <div class="row">
-        <span class="label">Montant envoyé:</span>
-        <span class="amount">${transaction.amount} ${transaction.currency}</span>
-      </div>
-      <div class="row">
-        <span class="label">Frais:</span>
-        <span class="value">${transaction.partnerFees || 0} XAF</span>
-      </div>
-      <div class="row">
-        <span class="label">Total:</span>
-        <span class="amount">${transaction.totalAmount} ${transaction.currency}</span>
-      </div>
-    </div>
-
-    ${displayType === 'NIU_PAYMENT' ? `
-    <div class="section">
-      <div class="section-title">Détails NIU</div>
-      <div class="row">
-        <span class="label">Type de paiement:</span>
-        <span class="value">Frais NIU</span>
-      </div>
-      <div class="row">
-        <span class="label">Méthode:</span>
-        <span class="value">Wallet Sendo</span>
-      </div>
-      <div class="row">
-        <span class="label">Centre des impôts:</span>
-        <span class="value">DGI – Centre régional</span>
-      </div>
-    </div>
-    ` : transaction.receiver || user ? `
-    <div class="section">
-      <div class="section-title">${displayType === 'VIRTUAL_CARD_RECHARGE' ? 'Carte Virtuelle' : 'Bénéficiaire'}</div>
-      ${displayType === 'VIRTUAL_CARD_RECHARGE' && transaction.card ? `
-      <div class="row">
-        <span class="label">Nom sur la carte:</span>
-        <span class="value">${transaction.card.cardName}</span>
-      </div>
-      <div class="row">
-        <span class="label">Numéro:</span>
-        <span class="value">**** **** **** ${transaction.card.last4Digits}</span>
-      </div>
-      <div class="row">
-        <span class="label">Expiration:</span>
-        <span class="value">${transaction.card.expirationDate}</span>
-      </div>
-      ` : `
-      <div class="row">
-        <span class="label">Nom:</span>
-        <span class="value">${transaction.receiver?.firstname || user?.firstname} ${transaction.receiver?.lastname || user?.lastname}</span>
-      </div>
-      ${displayType !== 'NIU_PAYMENT' && (transaction.receiver?.phone || user?.phone) ? `
-      <div class="row">
-        <span class="label">Téléphone:</span>
-        <span class="value">${transaction.receiver?.phone || user?.phone}</span>
+      ` : transaction.receiver || user ? `
+      <div class="section">
+        <div class="section-title">${displayType === 'VIRTUAL_CARD_RECHARGE' ? 'Carte Virtuelle' : 'Bénéficiaire'}</div>
+        ${displayType === 'VIRTUAL_CARD_RECHARGE' && transaction.card ? `
+        <div class="row">
+          <span class="label">Nom sur la carte:</span>
+          <span class="value">${transaction.card.cardName}</span>
+        </div>
+        <div class="row">
+          <span class="label">Numéro:</span>
+          <span class="value">**** **** **** ${transaction.card.last4Digits}</span>
+        </div>
+        <div class="row">
+          <span class="label">Expiration:</span>
+          <span class="value">${transaction.card.expirationDate}</span>
+        </div>
+        ` : `
+        <div class="row">
+          <span class="label">Nom:</span>
+          <span class="value">${transaction.receiver?.firstname || user?.firstname} ${transaction.receiver?.lastname || user?.lastname}</span>
+        </div>
+        ${displayType !== 'NIU_PAYMENT' && (transaction.receiver?.phone || user?.phone) ? `
+        <div class="row">
+          <span class="label">Téléphone:</span>
+          <span class="value">${transaction.receiver?.phone || user?.phone}</span>
+        </div>
+        ` : ''}
+        `}
       </div>
       ` : ''}
-      `}
-    </div>
-    ` : ''}
 
-    <div class="footer">
-      Ce reçu a été généré automatiquement le ${moment().format('DD/MM/YYYY HH:mm')}<br>
-      et peut être utilisé comme justificatif de transaction.
-    </div>
-  </body>
-  </html>
-  `;
-};
+      <div class="footer">
+        Ce reçu a été généré automatiquement le ${moment().format('DD/MM/YYYY HH:mm')}<br>
+        et peut être utilisé comme justificatif de transaction.
+      </div>
+    </body>
+    </html>
+    `;
+  };
 
-const getStatusSteps = () => {
-  const formatDate = (date) => date ? moment(date).format('DD/MM/YYYY HH:mm') : 'N/A';
+  const getStatusSteps = () => {
+    const formatDate = (date) => date ? moment(date).format('DD/MM/YYYY HH:mm') : 'N/A';
 
-  if (transaction.status === 'COMPLETED') {
+    if (transaction.status === 'COMPLETED') {
+      return [
+        {
+          status: "Terminé",
+          description: "Le transfert a réussi",
+          completed: true,
+          time: transaction.updatedAt ? formatDate(transaction.updatedAt) : formatDate(transaction.createdAt),
+          icon: "checkcircle",
+          color: "#27ae60"
+        }
+      ];
+    }
+
+    if (transaction.status === 'FAILED') {
+      return [
+        {
+          status: "Échec",
+          description: "Le transfert a échoué",
+          completed: false,
+          time: transaction.updatedAt ? formatDate(transaction.updatedAt) : formatDate(transaction.createdAt),
+          icon: "closecircle",
+          color: "#e74c3c"
+        }
+      ];
+    }
+
+    // Pending / in progress
     return [
       {
-        status: "Terminé",
-        description: "Le transfert a réussi",
+        status: "Transmis",
+        description: "Transaction initié avec succès",
         completed: true,
-        time: transaction.updatedAt ? formatDate(transaction.updatedAt) : formatDate(transaction.createdAt),
-        icon: "checkmark-done"
+        time: formatDate(transaction.createdAt),
+        icon: "checkcircle",
+        color: "#27ae60"
+      },
+      {
+        status: "En traitement",
+        description: "Vérification en cours",
+        completed: transaction.status !== 'PENDING',
+        time: transaction.processedAt ? formatDate(transaction.processedAt) : 'En attente',
+        icon: "time",
+        color: "#f39c12"
+      },
+      {
+        status: transaction.status === 'COMPLETED' ? "Terminé" : "En attente",
+        description: transaction.status === 'COMPLETED'
+          ? "La transaction a réussi"
+          : "La transaction a échoué",
+        completed: transaction.status === 'COMPLETED',
+        time: transaction.updatedAt ? formatDate(transaction.updatedAt) : 'N/A',
+        icon: transaction.status === 'COMPLETED' ? "checkcircle" : "closecircle",
+        color: transaction.status === 'COMPLETED' ? "#27ae60" : "#e74c3c"
       }
     ];
-  }
-
-  return [
-    {
-      status: "Transmis",
-      description: "Transfert initié avec succès",
-      completed: true,
-      time: formatDate(transaction.createdAt),
-      icon: "checkmark-circle"
-    },
-    {
-      status: "En traitement",
-      description: "Vérification en cours",
-      completed: transaction.status !== 'PENDING' && transaction.status !== 'FAILED',
-      time: transaction.processedAt ? formatDate(transaction.processedAt) : 'En attente',
-      icon: "time"
-    },
-    {
-      status: transaction.status === 'COMPLETED' ? "Terminé" : "En attente",
-      description: transaction.status === 'COMPLETED'
-        ? "Le transfert a réussi"
-        : "Le transfert a échoué",
-      completed: transaction.status === 'COMPLETED',
-      time: transaction.updatedAt ? formatDate(transaction.updatedAt) : 'N/A',
-      icon: transaction.status === 'COMPLETED' ? "checkmark-done" : "close-circle"
-    }
-  ];
-};
-
+  };
 
   const displayType = getTransactionDisplayType(transaction);
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
-       <StatusBar backgroundColor="#7ddd7d" barStyle="light-content" />
+    <View className="flex-1 bg-white">
+      <StatusBar backgroundColor="#7ddd7d" barStyle="light-content" />
       
-       <View
-      style={{
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-        paddingVertical: 16,
-         paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
-        paddingHorizontal: 12,
-        backgroundColor: "#7ddd7d",
-      }}
-    >
-      {/* Back button */}
-      <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 40, alignItems: "flex-start" }}>
-        <AntDesign name="arrowleft" size={24} color="white" />
-      </TouchableOpacity>
+      {/* Header with proper background coverage */}
+      <View className="bg-[#7ddd7d] pt-0">
+        <SafeAreaView style={{ paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 }}>
+          <View
+            className="flex-row items-center justify-between py-4 px-3"
+          >
+            <TouchableOpacity onPress={() => navigation.goBack()} className="w-10 items-start">
+              <AntDesign name="arrowleft" size={24} color="white" />
+            </TouchableOpacity>
 
-      {/* Centered Title */}
-      <Text style={{ flex: 1, textAlign: "center", fontSize: 18, fontWeight: "bold", color: "white" }}>
-        {t('screens.receipt')}
-      </Text>
+            <Text className="flex-1 text-center text-lg font-bold text-white">
+              {t('screens.receipt')}
+            </Text>
 
-      {/* Placeholder for symmetry */}
-      <View style={{ width: 40 }} />
-    </View>
+            <View className="w-10" />
+          </View>
+        </SafeAreaView>
+      </View>
+      
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
         <View className="items-center my-4 px-4">
           <Text className="text-lg font-semibold text-gray-700">
-            Transferts récents
+            Transaction récents
           </Text>
         </View>
 
@@ -449,21 +465,20 @@ const getStatusSteps = () => {
 
           <View className="mb-4">
             {getStatusSteps().map((step, index) => (
-            <View key={index} className="flex-row items-center mb-2">
-              <AntDesign 
-                name="checkcircle" 
-                size={20} 
-                color={step.completed ? "#7ddd7d" : "#d1d5db"} 
-              />
-              <View className="ml-3 flex-1">
-                <Text className="text-gray-800 font-semibold">{step.status}</Text>
-                {step.time && (
-                  <Text className="text-xs text-gray-600">{step.time}</Text>
-                )}
+              <View key={index} className="flex-row items-center mb-2">
+                <AntDesign 
+                  name={step.icon} 
+                  size={20} 
+                  color={step.color || (step.completed ? "#7ddd7d" : "#d1d5db")} 
+                />
+                <View className="ml-3 flex-1">
+                  <Text className="text-gray-800 font-semibold">{step.status}</Text>
+                  {step.time && (
+                    <Text className="text-xs text-gray-600">{step.time}</Text>
+                  )}
+                </View>
               </View>
-            </View>
-          ))}
-
+            ))}
           </View>
 
           {displayType === 'VIRTUAL_CARD_RECHARGE' ? (
@@ -512,13 +527,13 @@ const getStatusSteps = () => {
           ) : displayType === 'BANK_TRANSFER' ? (
             <>
               <Text className="text-gray-800 font-semibold text-sm mb-2">
-                Transfert bancaire effectué
+                Transaction bancaire effectué
               </Text>
               <Text className="text-gray-600 text-sm">
                 Bénéficiaire : {transaction.receiver?.firstname || user?.firstname} {transaction.receiver?.lastname || user?.lastname}
               </Text>
               <Text className="text-gray-600 text-sm">
-                Méthode de Paiement : Transfert Bancaire
+                Méthode de Paiement : Transaction Bancaire
               </Text>
               <Text className="text-gray-600 text-sm mb-2">
                 Référence : {transaction.transactionId}
@@ -536,7 +551,7 @@ const getStatusSteps = () => {
               <>
                {transaction.status === 'COMPLETED' && (
                   <Text className="text-gray-800 font-semibold text-sm mb-2">
-                    {(transaction.receiver?.firstname || user?.firstname) || 'Le bénéficiaire'} a reçu votre transfert.
+                    {(transaction.receiver?.firstname || user?.firstname) || 'Le bénéficiaire'} a reçu votre transaction.
                   </Text>
                 )}
               <Text className="text-gray-600 text-sm">
@@ -573,9 +588,9 @@ const getStatusSteps = () => {
           )}
 
           <Text className="text-green-600 font-semibold my-1">Reçu</Text>
-          <Text className="text-gray-600 text-sm">Montant du transfert: {transaction.amount} {transaction.currency}</Text>
+          <Text className="text-gray-600 text-sm">Montant de la transaction: {transaction.amount} {transaction.currency}</Text>
           <Text className="text-gray-600 text-sm">
-              Frais de transfert: {
+              Frais de transaction: {
                 transaction.type === 'TRANSFER' 
                   ? (transaction.sendoFees * getExchangeRate()).toFixed(2) + ' ' + transaction.currency
                   : (transaction.sendoFees || 0) + ' ' + transaction.currency
@@ -584,9 +599,9 @@ const getStatusSteps = () => {
 
           <Text className="text-gray-600 text-sm mb-2">Total: {transaction.totalAmount} {transaction.currency}</Text>
 
-          <Text className="text-green-600 font-semibold mt-2">Détails du transfert</Text>
+          <Text className="text-green-600 font-semibold mt-2">Détails de la transaction</Text>
           <Text className="text-gray-600 text-sm">Envoyé : {moment(transaction.createdAt).format('DD/MM/YYYY HH:mm')}</Text>
-          <Text className="text-gray-600 text-sm">Référence du transfert : {transaction.transactionId}</Text>
+          <Text className="text-gray-600 text-sm">Référence de la transaction : {transaction.transactionId}</Text>
 
           <TouchableOpacity
             onPress={handleDownloadReceipt}
@@ -608,11 +623,11 @@ const getStatusSteps = () => {
           className="items-center mt-6"
         >
           <Text className="text-green-500 font-semibold">
-            AFFICHER TOUS LES TRANSFERTS
+            AFFICHER TOUS LES TRANSACTIONS
           </Text>
         </TouchableOpacity>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 

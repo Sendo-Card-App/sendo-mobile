@@ -64,6 +64,7 @@ const HomeScreen = () => {
       pollingInterval: 1000,
     }
   );
+   //console.log("history Data:", JSON.stringify(history, null, 2));
 
   const { data: pubs, isLoading: isLoadingPubs, error: pubsError } = useGetPubsQuery();
 
@@ -535,7 +536,14 @@ const HomeScreen = () => {
             const iconSource = getMethodIcon(item);
 
             const isPdfLink = typeof item.description === 'string' && item.description.endsWith('.pdf');
-            const readableDescription = isPdfLink ? t('home.viewDocument') : (item.description || typeLabel);
+           // const readableDescription = isPdfLink ? t('home.viewDocument') : (item.description || typeLabel);
+
+            const isBankDepositLink = item.method === "BANK_TRANSFER" && typeof item.description === "string" && item.description.startsWith("http");
+  
+            const readableDescription = isBankDepositLink
+              ? t('home.viewDocument') // Use a translation key like "Document de versement Bancaire"
+              : item.description || typeLabel;
+
 
             return (
               <TouchableOpacity

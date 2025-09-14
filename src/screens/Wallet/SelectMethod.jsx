@@ -18,7 +18,7 @@ import { useTranslation } from 'react-i18next';
 import om from '../../images/om.png';
 import mtn from '../../images/mtn.png';
 import HomeImage2 from '../../images/HomeImage2.png';
-import TopLogo from '../../images/TopLogo.png';
+import TopLogo from '../../images/icon-sendo.png';
 import { useGetConfigQuery } from '../../services/Config/configApi';
 
 const { height, width } = Dimensions.get('window');
@@ -62,7 +62,6 @@ const SelectMethod = ({ navigation }) => {
     {
       id: 'mobile',
       title: t('select_method.transfer_to_mobile'),
-     subtitle: `${t('select_method.transfer_fee')}: ${SENDO_WITHDRAWAL_FEES} XAF`,
       icon: <AntDesign name="mobile1" size={40} color="#0D1C6A" />,
       action: () => setShowServiceModal(true),
       color: '#0D1C6A'

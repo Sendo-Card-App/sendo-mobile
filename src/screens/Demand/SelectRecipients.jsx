@@ -51,54 +51,72 @@ const SelectRecipients = ({ navigation, route }) => {
     });
   }, [searchQuery, synchronizedContacts, userId]);
 
-  const toggleFriend = (id) => {
-    setSelectedFriends((prev) =>
-      prev.includes(id) ? prev.filter((n) => n !== id) : [...prev, id]
-    );
-  };
+ const toggleFriend = (id) => {
+  if (selectedFriends.includes(id)) {
+    setSelectedFriends([]); // unselect if clicked again
+  } else {
+    setSelectedFriends([id]); // allow only one friend
+  }
+};
+
 
   const handleNext = () => {
-    const totalParticipants = selectedFriends.length + (includeSelf ? 1 : 0);
-     if (totalParticipants < 2) { 
+  if (!includeSelf && selectedFriends.length === 0) {
+    Toast.show({
+      type: "error",
+      text1: t("selectRecipient.no_recipients_selected"),
+      text2: t("selectRecipient.select_one"),
+    });
+    return;
+  }
+
+  setIsSubmitting(true);
+
+  try {
+    let recipient = null;
+
+    if (includeSelf && userId) {
+      recipient = {
+        id: userId,
+        matriculeWallet: userWalletId,
+        name: userFullName || t("selectRecipient.me"),
+      };
+    } else if (selectedFriends.length === 1) {
+      const friend = synchronizedContacts.find((f) => f.id === selectedFriends[0]);
+      if (friend) {
+        recipient = {
+          id: friend.id,
+          matriculeWallet: friend.ownerUser?.wallet?.matricule,
+          name: friend.name,
+        };
+      }
+    }
+
+    if (!recipient) {
       Toast.show({
         type: "error",
-        text1: t("selectRecipient.no_recipients_selected"),
-        text2: t("selectRecipient.select_at_least_one"),
+        text1: t("selectRecipient.error"),
+        text2: t("selectRecipient.no_valid_recipient"),
       });
       return;
     }
 
-    setIsSubmitting(true);
+    navigation.navigate("ConfirmInformation", {
+      ...route.params,
+      recipient, //  single object
+    });
+  } catch (error) {
+    console.error(error);
+    Toast.show({
+      type: "error",
+      text1: t("selectRecipient.error"),
+      text2: t("selectRecipient.something_went_wrong"),
+    });
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
-    try {
-      const recipients = [];
-      selectedFriends.forEach((id) => {
-        const friend = synchronizedContacts.find((f) => f.id === id);
-        if (friend) {
-          recipients.push({
-          id: friend.id,
-          matriculeWallet: friend.ownerUser?.wallet?.matricule,
-          name: friend.name,
-        });
-
-        }
-      });
-
-      navigation.navigate("ConfirmInformation", {
-        ...route.params,
-        recipients,
-      });
-    } catch (error) {
-      console.error(error);
-      Toast.show({
-        type: "error",
-        text1: t("selectRecipient.error"),
-        text2: t("selectRecipient.something_went_wrong"),
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   const renderItem = ({ item }) => {
     const isSelected = selectedFriends.includes(item.id);

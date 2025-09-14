@@ -12,11 +12,11 @@ module.exports = {
     version: "1.0.4",
     owner: "sfesendo",
     orientation: "portrait",
-    icon: "./assets/logo.png", 
+    icon: "./assets/icon-sendo.png", 
     userInterfaceStyle: "light",
     newArchEnabled: true,
     splash: {
-      image: "./assets/logo.png",
+      image: "./assets/icon-sendo.png",
       resizeMode: "contain",
       backgroundColor: "#181e25"
     },

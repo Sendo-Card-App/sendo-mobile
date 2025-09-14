@@ -89,7 +89,9 @@ const lastname = nameParts.slice(1).join(' ') || '';
       const TRANSFER_FEES = getConfigValue('TRANSFER_FEES');
       const transferFeeCAD = parseFloat(TRANSFER_FEES || "0");
       const transferFeeXAF = transferFeeCAD * parseFloat(cadRealTimeValue || "0");
+      const totalDebitedCAD = parseFloat(amount || "0") + transferFeeCAD;
       const totalDebitedXAF = parseFloat(convertedAmount || "0") + transferFeeXAF;
+
 
 const handleConfirmPress = () => {
   navigation.navigate('Auth', {
@@ -234,7 +236,7 @@ const handleConfirmPress = () => {
             },
             {
               label: t("confirmeTheTransfer.transferFee"),
-             value: `${transferFeeXAF.toFixed(0)} XAF`, 
+              value: `${transferFeeCAD.toFixed(2)} CAD`, 
             },
             {
               label: t("confirmeTheTransfer.exchangeRate"),
@@ -244,10 +246,20 @@ const handleConfirmPress = () => {
               label: t("confirmeTheTransfer.convertedAmount"),
               value: `${convertedAmount} ${toCurrency}`,
             },
-            {
+          {
               label: t("confirmeTheTransfer.totalDebited"),
-              value: `${totalDebitedXAF.toFixed(0)} ${toCurrency}`, 
-            },
+              value: (
+                <View className=" px-3 py-2 rounded-xl items-center">
+                  <Text className="text-black-400 font-bold text-lg">
+                    {totalDebitedCAD.toFixed(2)} CAD
+                  </Text>
+                  <Text className="text-black-300 text-sm mt-1">
+                    {totalDebitedXAF.toFixed(0)} {toCurrency}
+                  </Text>
+                </View>
+              ),
+            }
+
           ].map((item, index) => (
             <View
               key={index}

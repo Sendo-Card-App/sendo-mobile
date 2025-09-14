@@ -19,6 +19,7 @@ import { StatusBar } from "expo-status-bar";
 import { useNavigation } from "@react-navigation/native";
 import CardImg from "../../images/virtual.png";
 import { useTranslation } from "react-i18next";
+import { useGetConfigQuery } from "../../services/Config/configApi";
 import {
   useGetVirtualCardsQuery,
   useGetVirtualCardDetailsQuery,
@@ -44,7 +45,7 @@ const ManageVirtualCard = () => {
     data: cards,
     isLoading: isCardsLoading,
   } = useGetVirtualCardsQuery();
-
+   //console.log("cards Status:", JSON.stringify(cards, null, 2));
     const { data: userProfile, isLoading: isProfileLoading, refetch } = useGetUserProfileQuery();
     //console.log('User Profile:', JSON.stringify(userProfile, null, 2));
 
@@ -64,6 +65,7 @@ const ManageVirtualCard = () => {
     skip: !selectedCardId,
       pollingInterval: 1000, // Refetch every 30 seconds
   });
+   //console.log("cardDetails Status:", JSON.stringify(cardDetails, null, 2));
 
   const { data: unlockStatus, isLoading: isUnlockStatusLoading } = useGetUnlockStatusQuery(selectedCardId, {
     skip: !selectedCardId,
@@ -136,31 +138,43 @@ const {
   }
 }, [cards, selectedCardId]);
 
+ const {
+    data: configData,
+    isLoading: isConfigLoading,
+    error: configError,
+  } = useGetConfigQuery();
+
+  const getConfigValue = (name) => {
+    const configItem = configData?.data?.find((item) => item.name === name);
+    return configItem ? configItem.value : null;
+  };
+
+  const SENDO_VIEW_DETAILS_CARD_FEES = getConfigValue("SENDO_VIEW_DETAILS_CARD_FEES");
 
 
 
- useFocusEffect(
-  useCallback(() => {
-    setChecking(true); // show loader before checking
+//  useFocusEffect(
+//   useCallback(() => {
+//     setChecking(true); // show loader before checking
 
-    if (!isProfileLoading) {
-      const virtualCard = userProfile?.data?.virtualCard;
-      const isCardMissingOrEmpty =
-        !virtualCard || (typeof virtualCard === "object" && Object.keys(virtualCard).length === 0);
-      const status = virtualCard?.status;
+//     if (!isProfileLoading) {
+//       const virtualCard = userProfile?.data?.virtualCard;
+//       const isCardMissingOrEmpty =
+//         !virtualCard || (typeof virtualCard === "object" && Object.keys(virtualCard).length === 0);
+//       const status = virtualCard?.status;
 
-      // Allow these statuses to stay on the ManageVirtualCard screen
-      const allowedStatuses = ["ACTIVE", "PRE_ACTIVE", "FROZEN"];
+//       // Allow these statuses to stay on the ManageVirtualCard screen
+//       const allowedStatuses = ["ACTIVE", "PRE_ACTIVE", "FROZEN",  "BLOCKED", "SUPENDED"];
       
-      // Only redirect if the card is missing OR if the status is not in allowed list
-      if (isCardMissingOrEmpty || !allowedStatuses.includes(status)) {
-        navigation.navigate("OnboardingCard");
-      }
-    }
+//       // Only redirect if the card is missing OR if the status is not in allowed list
+//       if (isCardMissingOrEmpty || !allowedStatuses.includes(status)) {
+//         navigation.navigate("OnboardingCard");
+//       }
+//     }
 
-    setChecking(false); // hide loader after check
-  }, [userProfile, isProfileLoading, navigation])
-);
+//     setChecking(false); // hide loader after check
+//   }, [userProfile, isProfileLoading, navigation])
+// );
 
   if (checking || isProfileLoading) {
     return (
@@ -281,35 +295,71 @@ const handleFreezeUnfreeze = async () => {
 
 
 
-  const handleShowCardDetails = async () => {
-    // Check if card is ACTIVE
+const handleShowCardDetails = async () => {
+  try {
     if (cardStatus === "ACTIVE") {
-      try {
-        setIsLoadingIframe(true);
-        const response = await refetchCardDetailsHide();
-        
-        if (response.data?.data?.link) {
-          setIframeUrl(response.data.data.link);
-          setIframeModalVisible(true);
-          setWebViewLoading(true); // Reset loading state when opening modal
-        } else {
-          showModal("error", "Impossible de charger les détails de la carte");
-        }
-      } catch (err) {
-        showModal("error", "Une erreur s'est produite");
-      } finally {
-        setIsLoadingIframe(false);
-      }
+      // Show confirmation modal for ACTIVE cards about fees
+      Alert.alert(
+      "Frais d'affichage",
+      `Attention! ${SENDO_VIEW_DETAILS_CARD_FEES || "XAF des frais"} seront déduits du **portefeuille Sendo** à chaque fois que vous consulterez les détails. Souhaitez-vous continuer?`,
+      [
+
+          {
+            text: "Annuler",
+            style: "cancel"
+          },
+          {
+            text: "Continuer",
+            onPress: async () => {
+              setIsLoadingIframe(true);
+              const response = await refetchCardDetailsHide();
+
+              if (response.data?.data?.link) {
+                setIframeUrl(response.data.data.link);
+                setIframeModalVisible(true);
+                setWebViewLoading(true);
+                setReadOnlyMode(false);
+              } else {
+                showModal("error", "Impossible de charger les détails de la carte");
+              }
+              setIsLoadingIframe(false);
+            }
+          }
+        ]
+      );
     } 
-    // Check if card is PRE_ACTIVE
+    else if (cardStatus === "FROZEN") {
+      setIsLoadingIframe(true);
+      const response = await refetchCardDetailsHide();
+
+      if (response.data?.data?.link) {
+        setIframeUrl(response.data.data.link);
+        setIframeModalVisible(true);
+        setWebViewLoading(true);
+        setReadOnlyMode(true);
+      } else {
+        showModal("error", "Impossible de charger les détails de la carte degeler votre carte ");
+      }
+      setIsLoadingIframe(false);
+    }
+    else if (cardStatus === "BLOCKED") {
+      showModal("error", "Votre carte a été bloquée");
+    }
     else if (cardStatus === "PRE_ACTIVE") {
       setPreActiveModalVisible(true);
     }
-    // For other statuses, show appropriate message
     else {
-      showModal("error", "Les détails de la carte ne sont disponibles que lorsque la carte est active");
+      showModal(
+        "error",
+        "Les détails de la carte ne sont disponibles que lorsque la carte est active ou verrouillée"
+      );
     }
-  };
+  } catch (err) {
+    showModal("error", "Une erreur s'est produite");
+  } finally {
+    setIsLoadingIframe(false);
+  }
+};
 
   const ActionItem = ({ icon, label, onPress, disabled = false }) => (
   <TouchableOpacity 
@@ -427,9 +477,16 @@ const handleFreezeUnfreeze = async () => {
         {/* Card Display */}
         <View className="relative rounded-2xl overflow-hidden mt-2" style={{ height: width / 1.66 }}>
           <Image source={CardImg} className="w-full h-full absolute" resizeMode="contain" />
-          {isCardFrozen && (
+          {(isCardFrozen || cardStatus === "BLOCKED") && (
             <View className="absolute inset-0 bg-[#d7f0f7] bg-opacity-60 z-10 justify-center items-center">
-              <FontAwesome5 name="snowflake" size={50} color="#a0e1f5" />
+              <FontAwesome5 
+                name={cardStatus === "BLOCKED" ? "ban" : "snowflake"} 
+                size={50} 
+                color={cardStatus === "BLOCKED" ? "#ff6b6b" : "#a0e1f5"} 
+              />
+              {cardStatus === "BLOCKED" && (
+                <Text className="text-white font-bold mt-2">BLOQUÉE</Text>
+              )}
             </View>
           )}
 
