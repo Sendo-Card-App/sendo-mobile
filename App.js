@@ -246,7 +246,7 @@ function ManageVirtualCardWrapper() {
   const status = virtualCard?.status;
 
   // Render OnboardingCard conditionally instead of navigating
-  if (isCardMissingOrEmpty || (status !== 'ACTIVE' && status !== 'PRE_ACTIVE')) {
+  if (isCardMissingOrEmpty || (status !== 'ACTIVE' && status !== 'PRE_ACTIVE' && status !== 'FROZEN' && status !== 'BLOCKED' && status !== 'SUPENDED')) {
     return <OnboardingCard />;
   }
 
