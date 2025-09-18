@@ -190,7 +190,7 @@ const getLocalImageBase64 = async () => {
     setIsGenerating(true);
     try {
       // Get the logo as base64
-      const logoBase64 = await getLocalImageBase64();
+     const logoUrl = "https://res.cloudinary.com/dviktmefh/image/upload/v1758140850/WhatsApp_Image_2025-09-17_at_21.26.01_hjgtfa.jpg";
       
       // Generate HTML with the logo
       const html = generateReceiptHTML(transaction, user, getTypeLabel, logoBase64);
