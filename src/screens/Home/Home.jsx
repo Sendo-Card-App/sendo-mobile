@@ -397,7 +397,7 @@ const HomeScreen = () => {
               onPress={() => navigation.navigate("SelectMethod")}
               className="bg-white px-3 py-2 rounded-full flex-row items-center flex-1 justify-center"
             >
-              <Ionicons name="send-outline" size={18} color="black" />
+               <Ionicons name="arrow-up-circle-outline" size={20} color="black" />
               <Text className="text-black font-bold text-xs ml-2">
                 {t("home.transfer")}
               </Text>
@@ -407,7 +407,7 @@ const HomeScreen = () => {
               onPress={() => navigation.navigate("MethodType")}
               className="bg-white px-3 py-2 rounded-full flex-row items-center flex-1 justify-center"
             >
-              <Ionicons name="refresh-outline" size={18} color="black" />
+              <Ionicons name="wallet-outline" size={18} color="black" />
               <Text className="text-black font-bold text-xs ml-2">
                 {t("home.recharge")}
               </Text>
