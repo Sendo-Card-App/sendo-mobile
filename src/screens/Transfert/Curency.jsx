@@ -145,7 +145,7 @@ const {
 
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <AntDesign name="arrowleft" size={24} color="black" />
+          <AntDesign name="left" size={24} color="black" />
         </TouchableOpacity>
 
         <Image source={button} style={styles.logo} resizeMode="contain" />

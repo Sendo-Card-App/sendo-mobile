@@ -4,13 +4,13 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  SafeAreaView,
   StatusBar,
   Image,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useSelector } from 'react-redux';
 import { AntDesign, MaterialIcons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -118,7 +118,7 @@ const handleSubmit = async () => {
             className="absolute z-10 top-5 left-5"
             onPress={() => navigation.goBack()}
           >
-            <AntDesign name="arrowleft" size={24} color="white" />
+            <AntDesign name="left" size={24} color="white" />
           </TouchableOpacity>
 
           <View className="items-center justify-center py-8">

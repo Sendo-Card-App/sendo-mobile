@@ -23,7 +23,7 @@ import Loader from "../../components/Loader";
 const ConfirmInformation = ({ navigation, route }) => {
   const { t } = useTranslation();
   const initialParams = route.params || {};
- //console.log(initialParams)
+  //console.log(initialParams)
   const [amount, setAmount] = useState(initialParams.amount);
   const [description, setDescription] = useState(initialParams.description);
   const [deadline, setDeadline] = useState(initialParams.deadline);
@@ -183,8 +183,11 @@ const handleSubmit = async () => {
             fontSize: 22,
             fontWeight: "bold",
             marginBottom: 2,
-            marginTop:20,
+            marginTop: 20,
             color: "#7ddd7d",
+                // rounded corners
+            padding: 10,            // inner spacing
+            textAlign: "center",    // optional: center text
           }}
         >
           {t("confirmDemand.confirm_information")}

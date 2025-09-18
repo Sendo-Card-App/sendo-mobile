@@ -59,7 +59,7 @@ const NotificationComponent = ({ navigation }) => {
   if (profileLoading || notificationsLoading) {
     return (
       <View style={styles.loading}>
-        <Loader size="large" color="#0D1C6A" />
+        <Loader size="large" color="#7ddd7d" />
       </View>
     );
   }
@@ -125,7 +125,7 @@ const NotificationComponent = ({ navigation }) => {
         ListEmptyComponent={() => (
           <View style={styles.emptyContainer}>
             <MaterialIcons name="notifications-off" size={40} color="#ccc" />
-            <Text style={styles.emptyText}>No notifications</Text>
+            <Text style={styles.emptyText}>Acune notifications</Text>
           </View>
         )}
       />

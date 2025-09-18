@@ -42,35 +42,45 @@ const CardActionScreen = ({ route }) => {
   };
 
   const handleSubmit = async () => {
-    if (!amount || isNaN(amount) || Number(amount) <= 0) {
-      showModal('error', t('manageVirtualCard.invalidAmount'));
-      return;
-    }
+  const numericAmount = Number(amount);
 
-    if (!matriculeWallet) {
-      showModal('error', t('manageVirtualCard.missingMatricule'));
-      return;
-    }
+  if (!amount || isNaN(numericAmount) || numericAmount <= 0) {
+    showModal('error', t('manageVirtualCard.invalidAmount'));
+    return;
+  }
 
-    const payload = {
-      amount: Number(amount),
-      idCard: Number(cardId),
-      matriculeWallet,
-    };
-   console.log(payload)
-    try {
-      if (actionType === 'recharge') {
-        await rechargeCard(payload).unwrap();
-        showModal('success', t('manageVirtualCard.rechargedSuccessfully'));
-      } else {
-        await withdrawFromCard(payload).unwrap();
-        showModal('success', t('manageVirtualCard.withdrawnSuccessfully'));
-      }
-    } catch (err) {
-      console.log(' Réponse du backend :', JSON.stringify(err, null, 2));
-      showModal('error', t('manageVirtualCard.actionFailed'));
-    }
+  // New validation for backend limits
+  if (numericAmount < 500 || numericAmount > 500000) {
+    showModal('error', t('manageVirtualCard.amountOutOfRange'));
+    return;
+  }
+
+  if (!matriculeWallet) {
+    showModal('error', t('manageVirtualCard.missingMatricule'));
+    return;
+  }
+
+  const payload = {
+    amount: numericAmount,
+    idCard: Number(cardId),
+    matriculeWallet,
   };
+  console.log(payload);
+
+  try {
+    if (actionType === 'recharge') {
+      await rechargeCard(payload).unwrap();
+      showModal('success', t('manageVirtualCard.rechargedSuccessfully'));
+    } else {
+      await withdrawFromCard(payload).unwrap();
+      showModal('success', t('manageVirtualCard.withdrawnSuccessfully'));
+    }
+  } catch (err) {
+    console.log('Réponse du backend :', JSON.stringify(err, null, 2));
+    showModal('error', t('manageVirtualCard.actionFailed'));
+  }
+};
+
 
   const clearAmount = () => setAmount('');
 
@@ -163,7 +173,16 @@ const CardActionScreen = ({ route }) => {
       {/* Submit Button */}
       <TouchableOpacity
         disabled={isLoading || !amount || isNaN(amount) || Number(amount) <= 0}
-        onPress={handleSubmit}
+        onPress={() =>
+            navigation.navigate("Auth", {
+              screen: "PinCode",
+              params: {
+                onSuccess: async () => {
+                  await handleSubmit();
+                },
+              },
+            })
+          }
         className={`p-4 rounded-lg flex-row justify-center items-center ${isLoading || !amount || isNaN(amount) || Number(amount) <= 0 ? 'bg-green-300' : 'bg-green-600'}`}
         accessibilityLabel={t('manageVirtualCard.submitAction')}
       >

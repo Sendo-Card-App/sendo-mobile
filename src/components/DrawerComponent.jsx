@@ -8,8 +8,9 @@ import {
   Platform,
   Image,
   RefreshControl,
-  SafeAreaView,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+
 import { useNavigation } from "@react-navigation/native";
 import {
   AntDesign,
@@ -275,7 +276,7 @@ Utilise mon code lors de ton inscription !`;
     <View className="flex-row justify-between items-center py-4">
       <Loader/>
       <TouchableOpacity onPress={() => navigation.closeDrawer()}>
-        <AntDesign name="arrowleft" size={24} color="white" />
+        <AntDesign name="left" size={24} color="white" />
       </TouchableOpacity>
     </View>
   ) : (
@@ -284,7 +285,7 @@ Utilise mon code lors de ton inscription !`;
         <Text className="text-white font-bold text-xl">
         </Text>
         <TouchableOpacity onPress={() => navigation.closeDrawer()}>
-          <AntDesign name="arrowleft" size={24} color="white" />
+          <AntDesign name="left" size={24} color="white" />
         </TouchableOpacity>
       </View>
 
@@ -357,7 +358,7 @@ Utilise mon code lors de ton inscription !`;
 
       {/* Body */}
       <View className="flex-1 mx-8">
-        <View className="border-b border-gray-400 py-3">
+        {/* <View className="border-b border-gray-400 py-3">
           <Text className="font-bold text-gray-600">{t('drawer.bonus')}</Text>
           <Text className="text-xs text-gray-500 my-2">
             {t('drawer.bonus_description')}
@@ -371,7 +372,7 @@ Utilise mon code lors de ton inscription !`;
             </Text>
           </View>
           </TouchableOpacity>
-        </View>
+        </View> */}
 
         <ScrollView
           className="py-4"
@@ -388,7 +389,7 @@ Utilise mon code lors de ton inscription !`;
             className="flex-row gap-2 my-2 mb-5"
             onPress={() => navigation2.navigate("History")}
           >
-            <Ionicons name="document-text-outline" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
+            <Ionicons name="list-outline" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
             <View>
               <Text className="font-bold text-gray-500">{t('drawer.history')}</Text>
               <Text className="text-sm text-gray-500">
@@ -401,7 +402,7 @@ Utilise mon code lors de ton inscription !`;
             className="flex-row gap-2 my-2 mb-5"
             onPress={() => navigation2.navigate("Account")}
           >
-            <Feather name="user" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
+            <Ionicons name="person-outline" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
             <View>
               <Text className="font-bold text-gray-500">{t('drawer.account')}</Text>
               <Text className="text-sm text-gray-500">
@@ -415,7 +416,7 @@ Utilise mon code lors de ton inscription !`;
                       className="flex-row gap-2 my-2 mb-5"
                       onPress={() => navigation2.navigate("VerifyIdentity")}
                     >
-                      <Feather name="file-text" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
+                       <MaterialCommunityIcons name="fingerprint" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
                       <View>
                         <Text className="font-bold text-gray-500">{t('drawer.request')}</Text>
                         <Text className="text-sm text-gray-500">
@@ -427,7 +428,7 @@ Utilise mon code lors de ton inscription !`;
                       className="flex-row gap-2 my-2 mb-5"
                       onPress={() => navigation2.navigate("NiuRequest")}
                     >
-                      <Feather name="file-text" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
+                       <MaterialCommunityIcons name="file-document-outline" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
                       <View>
                         <Text className="font-bold text-gray-500">{t('drawer.request1')}</Text>
                         <Text className="text-sm text-gray-500">
@@ -439,7 +440,7 @@ Utilise mon code lors de ton inscription !`;
                   className="flex-row gap-2 my-2 items-center mb-5"
                     onPress={() => navigation2.navigate("PaymentSimulator")}
                     >
-                      <AntDesign name="calculator" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
+                       <Ionicons name="calculator-outline" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
                       <View>
                         <Text className="font-bold text-gray-500">{t('drawer.balance')}</Text>
                         <Text className="text-sm text-gray-500">
@@ -463,7 +464,7 @@ Utilise mon code lors de ton inscription !`;
             onPress={() => navigation2.navigate("AddFavorite")}
             className="flex-row gap-2 my-2 mb-5"
           >
-            <MaterialCommunityIcons name="heart" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
+            <MaterialCommunityIcons name="heart-outline" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
             <View>
               <Text className="font-bold text-gray-500">{t('drawer.favorite')}</Text>
             </View>
@@ -486,11 +487,7 @@ Utilise mon code lors de ton inscription !`;
                 className="flex-row gap-2 my-2 mb-5"
                 onPress={() => navigation2.navigate("WelcomeDemand")}
               >
-                <MaterialCommunityIcons
-                  name="hand-coin-outline" // ou "cash-send"
-                  size={Platform.OS === "ios" ? 32 : 24}
-                  color="gray"
-                />
+                 <MaterialCommunityIcons name="hand-coin" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
                 <View>
                   <Text className="font-bold text-gray-500">{t("drawer.demand")}</Text>
                 </View>
@@ -499,12 +496,8 @@ Utilise mon code lors de ton inscription !`;
               <TouchableOpacity
                 className="flex-row gap-2 my-2 mb-5 items-center"
                  onPress={() => navigation2.navigate("TontineList")}
-              >
-                <Feather
-                  name="users"
-                  size={Platform.OS === "ios" ? 28 : 22}
-                  color="gray"
-                />
+              >   
+               <MaterialCommunityIcons name="account-group" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
                 <View>
                   <Text className="font-bold text-gray-500">{t("drawer.tontine")}</Text>
                   <Text className="text-sm text-gray-500">{t('drawer.h2')}</Text>
@@ -525,7 +518,7 @@ Utilise mon code lors de ton inscription !`;
             className="flex-row gap-2 my-2 mb-5"
             onPress={() => navigation2.navigate("Support")}
           >
-            <EvilIcons name="question" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
+            <Ionicons name="help-circle-outline" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
             <View>
               <Text className="font-bold text-gray-500">{t('drawer.support')}</Text>
               <Text className="text-sm text-gray-500">
@@ -538,7 +531,7 @@ Utilise mon code lors de ton inscription !`;
             className="flex-row gap-2 my-2 mb-5"
             onPress={() => navigation2.navigate("AboutUs")}
           >
-            <EvilIcons name="exclamation" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
+            <Ionicons name="information-circle-outline" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
             <View>
               <Text className="font-bold text-gray-500">{t('drawer.about_us')}</Text>
               <Text className="text-sm text-gray-500 pr-8">

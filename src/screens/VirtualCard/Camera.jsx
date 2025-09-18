@@ -98,7 +98,7 @@ const handleSubmit = () => {
       {/* the top navigation with a back arrow */}
       <View className="py-4">
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <AntDesign name="arrowleft" size={24} color="white" />
+          <AntDesign name="left" size={24} color="white" />
         </TouchableOpacity>
       </View>
 

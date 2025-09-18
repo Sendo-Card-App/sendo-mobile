@@ -239,7 +239,7 @@ const Settings = ({ navigation }) => {
         {/* Privacy Policy */}
        <TouchableOpacity
           style={styles.settingCard}
-          onPress={() => Linking.openURL('https://www.sf-e.ca/')}
+          onPress={() => Linking.openURL('https://www.sf-e.ca/politique-de-confidentialite-sendo/')}
         >
           <FontAwesome name="shield" size={24} color="black" />
 

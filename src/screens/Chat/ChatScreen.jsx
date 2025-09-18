@@ -13,10 +13,10 @@ import {
   KeyboardAvoidingView,
   Platform,
   StatusBar,
-  SafeAreaView,
   Linking,
   Modal
 } from 'react-native';
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from 'react-i18next';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import * as DocumentPicker from 'expo-document-picker';

@@ -30,8 +30,12 @@ export const walletApi = createApi({
   const { accessToken } = getState().auth;
   const { passcode } = getState().passcode;
 
-  headers.set('Accept', 'application/json');
-  headers.set('Content-Type', 'application/json');
+    headers.set('Accept', 'application/json');
+
+    if (endpoint !== 'bankrecharge') {
+    headers.set('Content-Type', 'application/json');
+  }
+
 
   if (accessToken) {
     headers.set('Authorization', `Bearer ${accessToken}`);

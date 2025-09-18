@@ -5,13 +5,13 @@ import {
   Text,
   TouchableOpacity,
   Image,
-  SafeAreaView,
   StatusBar,
   Modal,
   Pressable,
   ScrollView,
   Platform,
 } from 'react-native';
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from 'react-i18next';
 
 import om from "../../images/om.png";
@@ -56,7 +56,7 @@ const MethodType = ({ navigation }) => {
         }}
       >
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <AntDesign name="arrowleft" size={24} color="white" />
+          <AntDesign name="left" size={24} color="white" />
         </TouchableOpacity>
 
         <Text style={{ color: 'white', fontSize: 18, fontWeight: 'bold' }}>
@@ -88,7 +88,7 @@ const MethodType = ({ navigation }) => {
             marginBottom: 20,
           }}
         >
-          <AntDesign name="mobile1" size={50} color="#999" style={{ marginRight: 5 }} />
+          <AntDesign name="mobile" size={50} color="#999" style={{ marginRight: 5 }} />
           <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#0D1C6A', marginLeft: 10, flex: 1 }}>
             {t('method.transfer_to_mobile')}
           </Text>

@@ -11,8 +11,8 @@ import {
   Animated,
   Easing,
   ScrollView,
-  SafeAreaView
 } from 'react-native';
+import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from 'react-native-toast-message';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTranslation } from 'react-i18next';
@@ -22,6 +22,7 @@ import {
   useRequestVirtualCardMutation,
   useGetVirtualCardStatusQuery
 } from '../../services/Card/cardApi';
+import { useGetConfigQuery } from "../../services/Config/configApi";
 
 const { width, height } = Dimensions.get('window');
 const REQUEST_DATE_KEY = '@cardRequestDate';
@@ -30,13 +31,33 @@ const OnboardingCardScreen = () => {
   const navigation = useNavigation();
   const { t } = useTranslation();
   const [requestCard, { isLoading: isRequesting }] = useRequestVirtualCardMutation();
+  const { data: configData, isLoading: isConfigLoading } = useGetConfigQuery(undefined, { 
+    pollingInterval: 1000 // Refetch every 1 second
+  });
+
+  const getConfigValue = (key) => {
+    const item = configData?.data?.find((c) => c.name === key);
+    return item?.value ?? null;
+  };
+
+    const cardFees = getConfigValue("SENDO_CREATING_CARD_FEES");
+  const isFirstCardFree = getConfigValue("IS_FREE_FIRST_CREATING_CARD") === "1";
+  const displayedFees = isFirstCardFree ? "0 XAF" : `${cardFees} XAF`;
+  const total = displayedFees;
   
   // Remove pollingInterval to prevent excessive re-renders
-  const { data: cardRequest, isLoading: isFetchingStatus, refetch } = 
-  useGetVirtualCardStatusQuery();
+  const { 
+    data: cardRequest, 
+    isLoading: isFetchingStatus, 
+    refetch 
+  } = useGetVirtualCardStatusQuery(undefined, { 
+    pollingInterval: 1000 // Refetch every 1 second
+  });
+
+   //console.log("card request:", JSON.stringify(cardRequest, null, 2));
  
   const status = cardRequest?.data?.onboardingSession?.onboardingSessionStatus;
-  
+    //console.log("card request:", JSON.stringify(status, null, 2));
   const [requestDate, setRequestDate] = useState(null);
   const [remainingTime, setRemainingTime] = useState(null);
   
@@ -354,9 +375,18 @@ const OnboardingCardScreen = () => {
         <Text style={styles.title}>
           {t('onboardingCard.title')}
         </Text>
+         {/*  Fees message */}
+        {!isConfigLoading && (
+          <Text style={styles.feeMessage}>
+            {t("onboardingCard.feeMessage", {
+              total,
+            })}
+          </Text>
+        )}
         <Text style={styles.subtitle}>
           {t('onboardingCard.subtitle')}
         </Text>
+        
       </>
     );
   };
@@ -432,6 +462,13 @@ const styles = StyleSheet.create({
     left: 20,
     zIndex: 10,
     padding: 10,
+  },
+    feeMessage: {
+    marginTop: 15,
+    fontSize: 16,
+    color: "#444",
+    textAlign: "center",
+    fontWeight: "500",
   },
   imageContainer: {
     marginTop: 50,
@@ -681,7 +718,7 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     paddingVertical: 15,
     paddingHorizontal: 25,
-    marginBottom: 40,
+    marginBottom: 5,
     width: '90%',
     alignSelf: 'center',
     shadowColor: '#000',

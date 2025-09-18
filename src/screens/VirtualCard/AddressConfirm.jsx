@@ -1,7 +1,7 @@
 import { View, Text, TouchableOpacity, Image, ScrollView } from "react-native";
 import React, { useState } from "react";
-import * as FileSystem from "expo-file-system";
-import * as ImagePicker from "expo-image-picker";
+// ✅ Use legacy API to avoid "getInfoAsync is deprecated" crash
+import * as FileSystem from "expo-file-system/legacy";
 import * as DocumentPicker from "expo-document-picker";
 import Toast from "react-native-toast-message";
 import TopLogo from "../../images/TopLogo.png";
@@ -18,43 +18,45 @@ const AddressConfirm = ({ navigation }) => {
   const [selectedDoc, setSelectedDoc] = useState(null);
 
   const pickDocument = async () => {
-  try {
-    const result = await DocumentPicker.getDocumentAsync({
-      type: ["application/pdf", "image/*"],
-      copyToCacheDirectory: true,
-      multiple: false,
-    });
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ["application/pdf", "image/*"],
+        copyToCacheDirectory: true,
+        multiple: false,
+      });
 
-    if (!result?.assets?.length) return;
+      if (!result?.assets?.length) return;
 
-    const file = result.assets[0];
-    const fileInfo = await FileSystem.getInfoAsync(file.uri);
-    const fileSizeMB = fileInfo.size / (1024 * 1024);
+      const file = result.assets[0];
 
-    if (fileSizeMB > 5) {
+      // ✅ Use legacy getInfoAsync
+      const fileInfo = await FileSystem.getInfoAsync(file.uri);
+      const fileSizeMB = fileInfo.size / (1024 * 1024);
+
+      if (fileSizeMB > 5) {
+        Toast.show({
+          type: "error",
+          text1: t("niu.fileTooLarge"),
+          text2: t("niu.documentSizeLimit"),
+        });
+        return;
+      }
+
+      setSelectedDoc({
+        name: file.name,
+        uri: file.uri,
+        mimeType: file.mimeType || "application/octet-stream",
+        type: file.mimeType?.includes("image") ? "image" : "document",
+      });
+    } catch (error) {
+      console.error("Document selection error:", error);
       Toast.show({
         type: "error",
-        text1: t("niu.fileTooLarge"),
-        text2: t("niu.documentSizeLimit"),
+        text1: t("niu.error"),
+        text2: error.message || t("niu.documentSelectionError"),
       });
-      return;
     }
-
-    setSelectedDoc({
-      name: file.name,
-      uri: file.uri,
-      mimeType: file.mimeType || "application/octet-stream",
-      type: file.mimeType?.includes("image") ? "image" : "document",
-    });
-  } catch (error) {
-    console.error("Document selection error:", error);
-    Toast.show({
-      type: "error",
-      text1: t("niu.error"),
-      text2: error.message || t("niu.documentSelectionError"),
-    });
-  }
-};
+  };
 
   const handleConfirm = () => {
     if (!selectedDoc) {
@@ -139,7 +141,7 @@ const AddressConfirm = ({ navigation }) => {
 
         <View className="flex-row items-center justify-between px-5 pt-16">
           <TouchableOpacity onPress={() => navigation.navigate("AddressSelect")}>
-            <AntDesign name="arrowleft" size={24} color="white" />
+            <AntDesign name="left" size={24} color="white" />
           </TouchableOpacity>
           <TouchableOpacity onPress={() => navigation.openDrawer()} className="ml-auto">
             <Ionicons name="menu-outline" size={24} color="white" />

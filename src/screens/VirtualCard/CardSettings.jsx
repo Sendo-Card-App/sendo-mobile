@@ -198,7 +198,7 @@ const CardSettingsScreen = () => {
           <Ionicons name="wallet-outline" size={22} color="#333" />
           <View className="ml-3">
             <Text className="text-base font-semibold text-gray-800">{t("cardLimit")}</Text>
-            <Text className="text-sm text-gray-600">{t("cardLimitDesc")}</Text>
+            {/* <Text className="text-sm text-gray-600">{t("cardLimitDesc")}</Text> */}
           </View>
         </TouchableOpacity>
       </View>

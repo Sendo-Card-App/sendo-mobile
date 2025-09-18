@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, Modal, FlatList, SafeAreaView, StatusBar } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image, Modal, FlatList, StatusBar } from 'react-native';
+import { SafeAreaView } from "react-native-safe-area-context";
 import { EvilIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import Toast from 'react-native-toast-message';

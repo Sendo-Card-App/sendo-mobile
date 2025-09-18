@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity,
-  SafeAreaView, StatusBar, Modal, FlatList
+  View, Text, TextInput, TouchableOpacity, StatusBar, Modal, FlatList
 } from 'react-native';
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from 'react-i18next';
 import { AntDesign, Ionicons } from '@expo/vector-icons';
 
@@ -75,7 +75,7 @@ const AddContact = ({ navigation, route }) => {
         }}
       >
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <AntDesign name="arrowleft" size={24} color="white" /> 
+          <AntDesign name="left" size={24} color="white" /> 
         </TouchableOpacity>
         <Text style={{ fontSize: 18, fontWeight: 'bold', color: 'white' }}>
           {t('screens.addContact')}

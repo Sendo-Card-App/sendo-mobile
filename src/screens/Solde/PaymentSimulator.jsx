@@ -73,8 +73,25 @@ const PaymentSimulator = () => {
   const CAD_SENDO_VALUE = getConfigValue('CAD_SENDO_VALUE');
   const YEN_SENDO_VALUE = getConfigValue('YEN_SENDO_VALUE');
   const PARTNER_VISA_FEES = getConfigValue('PARTNER_VISA_FEES');
-  const SENDO_SERVICE_FEES = getConfigValue('SENDO_SERVICE_FEES');
+  const SENDO_TRANSACTION_CARD_FEES = parseFloat(getConfigValue('SENDO_TRANSACTION_CARD_FEES'));
+  const SENDO_TRANSACTION_CARD_PERCENTAGE = parseFloat(getConfigValue('SENDO_TRANSACTION_CARD_PERCENTAGE'));
+  
+  // Get the conversion rate for the selected currency
+  const currentCurrencyRate = {
+    USD: parseFloat(getConfigValue('USD_SENDO_VALUE')) || 0,
+    EUR: parseFloat(getConfigValue('EUR_SENDO_VALUE')) || 0,
+    CAD: parseFloat(getConfigValue('CAD_SENDO_VALUE')) || 0,
+    JPY: parseFloat(getConfigValue('YEN_SENDO_VALUE')) || 0,
+  }[currency] || 0;
 
+  // Safely parse the input amount
+  const amountNumber = parseFloat(amount) || 0;
+
+  // Calculate Sendo fees in FCFA
+  const sendoFeesCalculated = SENDO_TRANSACTION_CARD_FEES + 
+    (amountNumber * SENDO_TRANSACTION_CARD_PERCENTAGE / 100) * currentCurrencyRate;
+
+ //console.log(sendoFeesCalculated)
   const currencies = [
     { code: 'USD', name: 'US Dollar', rate: USD_SENDO_VALUE },
     { code: 'EUR', name: 'Euro', rate: EUR_SENDO_VALUE },
@@ -163,7 +180,7 @@ const PaymentSimulator = () => {
       {/* HEADER */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 40 }}>
-          <AntDesign name="arrowleft" size={24} color="#fff" />
+          <AntDesign name="left" size={24} color="#fff" />
         </TouchableOpacity>
 
         <Text style={styles.headerTitle}>
@@ -287,17 +304,18 @@ const PaymentSimulator = () => {
             </Text>
           </View>
 
-          <View style={styles.feeRow}>
+         <View style={styles.feeRow}>
             <Text style={styles.feeLabel}>
               {t('paymentSimulator.sendoFees')}
             </Text>
             <Text style={styles.feeValue}>
-              {conversionData.data.result.sendoFees.toLocaleString('fr-FR', {
+              {sendoFeesCalculated.toLocaleString('fr-FR', {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2
-              })} FCFA ({SENDO_SERVICE_FEES}%)
+              })} FCFA ({SENDO_TRANSACTION_CARD_PERCENTAGE}% + {SENDO_TRANSACTION_CARD_FEES} FCFA)
             </Text>
           </View>
+
 
           <View style={styles.feeRow}>
             <Text style={styles.totalLabel}>

@@ -17,7 +17,7 @@ import { contactsApi } from '../services/Contact/contactsApi';
 import { tontineApi } from '../services/Tontine/tontineApi';
 import { pubApi } from '../services/Pub/pubApi';
 import passcodeReducer from '../features/Auth/passcodeSlice';
-import { config } from 'dotenv';
+
 
 export const store = configureStore({
   reducer: {

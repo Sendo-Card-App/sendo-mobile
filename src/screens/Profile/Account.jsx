@@ -7,9 +7,9 @@ import {
   Platform,
   TextInput,
   TouchableOpacity,
-  SafeAreaView,
   StatusBar,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { AntDesign, EvilIcons, Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
@@ -32,7 +32,7 @@ import { useTranslation } from 'react-i18next';
 import OtpVerificationModal from "../../components/OtpVerificationModal";
 import { useSendNotificationMutation } from "../../services/Notification/notificationApi";
 import { TypesNotification } from "../../utils/constants";
-import { getFCMToken } from "../../services/Notification/firebaseNotifications";
+
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
@@ -380,7 +380,7 @@ const handleVerifySecondPhoneOtp = async ({ phone, code }) => {
       >
         {/* Back Button */}
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 40, alignItems: "flex-start" }}>
-          <AntDesign name="arrowleft" size={24} color="white" />
+          <AntDesign name="left" size={24} color="white" />
         </TouchableOpacity>
 
         {/* Centered Title */}

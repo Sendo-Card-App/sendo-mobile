@@ -1,4 +1,6 @@
-import { View, Text, TouchableOpacity, Linking } from "react-native";
+import { View, Text, TouchableOpacity, Linking,
+  Alert
+ } from "react-native";
 import React from "react";
 import { StatusBar } from "react-native"; // ✅ use react-native instead of expo-status-bar
 import { AntDesign, Ionicons } from '@expo/vector-icons';
@@ -19,6 +21,30 @@ const Support = ({ navigation }) => {
     Linking.openURL(`https://wa.me/${phoneNumber.replace(/\D/g, '')}`);
   };
 
+  const handleCall = () => {
+  Alert.alert(
+    "Choisir le numéro",
+    "Sélectionnez le numéro que vous souhaitez appeler:",
+    [
+      { text: "+237 6 40 72 60 36", onPress: () => callNumber("+237640726036") },
+      { text: "+1 582 907 2096", onPress: () => callNumber("+15829072096") },
+      { text: "Annuler", style: "cancel" },
+    ]
+  );
+};
+
+const handleWhatsApp = () => {
+  Alert.alert(
+    "Choisir le numéro",
+    "Sélectionnez le numéro que vous souhaitez utiliser sur WhatsApp:",
+    [
+      { text: "+237 6 40 72 60 36", onPress: () => openWhatsApp("+237640726036") },
+      { text: "+1 581 907 2096", onPress: () => openWhatsApp("+15819072096") },
+      { text: "Annuler", style: "cancel" },
+    ]
+  );
+};
+
   return (
     <View className="flex-1 bg-white">
       {/* ✅ StatusBar */}
@@ -37,7 +63,7 @@ const Support = ({ navigation }) => {
         }}
       >
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <AntDesign name="arrowleft" size={24} color="white" />
+          <AntDesign name="left" size={24} color="white" />
         </TouchableOpacity>
         <Text style={{ fontSize: 18, fontWeight: "bold", color: "white" }}>
           {t("screens.support")}
@@ -85,21 +111,23 @@ const Support = ({ navigation }) => {
         <View className="bg-green-50 p-3 px-6 mt-3 rounded-lg">
           <Text className="text-gray-900 font-bold">{t("support2.phone")}</Text>
           <TouchableOpacity>
-            <Text className="text-green-600 underline">+237 6 40 72 60 36</Text>
+            <Text className="text-green-600 underline">+237 6 40 72 60 36 / +1 581 907 2096</Text>
           </TouchableOpacity>
           <View className="flex-row mt-2">
             <TouchableOpacity
-              className="mr-4 p-2 bg-green-100 rounded-full"
-              onPress={() => callNumber("+237640726036")}
+              className="p-2 bg-green-100 rounded-full"
+              onPress={handleCall}
             >
               <Ionicons name="call-outline" size={20} color="green" />
             </TouchableOpacity>
+
             <TouchableOpacity
               className="p-2 bg-green-100 rounded-full"
-              onPress={() => openWhatsApp("+237640726036")}
+              onPress={handleWhatsApp}
             >
               <Ionicons name="logo-whatsapp" size={20} color="green" />
             </TouchableOpacity>
+            
           </View>
         </View>
 

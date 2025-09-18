@@ -4,7 +4,6 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  SafeAreaView,
   StatusBar,
   Image,
   Modal,
@@ -12,6 +11,7 @@ import {
   TextInput as RNTextInput,
   ActivityIndicator,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from "@react-navigation/native";
 import { AntDesign } from "@expo/vector-icons";
@@ -776,7 +776,7 @@ const Signup = () => {
         <StatusBar style="light" backgroundColor="#181e25" />
 
         <TouchableOpacity className="absolute z-10 top-20 left-5" onPress={() => navigation.goBack()}>
-          <AntDesign name="arrowleft" size={24} color="white" />
+          <AntDesign name="left" size={24} color="white" />
         </TouchableOpacity>
 
         <Image source={require("../../images/logo2.png")} className="mt-50 mb-3 w-28 h-28" />
@@ -810,7 +810,7 @@ const Signup = () => {
                 onPress={closeCountryModal}
                 className="p-2 mr-2"
               >
-                <AntDesign name="arrowleft" size={24} color="black" />
+                <AntDesign name="left" size={24} color="black" />
               </TouchableOpacity>
               <Text className="text-xl font-bold flex-1 text-center">
                 {t("signup.select_country")}

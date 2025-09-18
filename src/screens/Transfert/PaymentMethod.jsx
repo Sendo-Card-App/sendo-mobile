@@ -57,7 +57,7 @@ const PaymentMethod = () => {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <AntDesign name="arrowleft" size={24} color="#000" />
+          <AntDesign name="left" size={24} color="#000" />
         </TouchableOpacity>
         <Image source={button} style={styles.buttonLogo} resizeMode="contain" />
         <Image source={HomeImage} style={styles.homeImage} resizeMode="contain" />

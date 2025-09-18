@@ -33,7 +33,7 @@ const KycSelfie = ({ navigation }) => {
 
       <View className="border-b border-dashed border-white flex-row justify-between py-4 mt-10 items-center mx-5 pt-5">
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <AntDesign name="arrowleft" size={24} color="white" />
+          <AntDesign name="left" size={24} color="white" />
         </TouchableOpacity>
         <TouchableOpacity onPress={() => navigation.openDrawer()} className="ml-auto">
           <Ionicons name="menu-outline" size={24} color="white" />

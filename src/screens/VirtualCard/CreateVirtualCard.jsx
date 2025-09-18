@@ -3,7 +3,6 @@ import {
   View,
   Text,
   Image,
-  SafeAreaView,
   TouchableOpacity,
   ActivityIndicator,
   TextInput,
@@ -13,6 +12,8 @@ import {
   Modal,
   StatusBar,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+
 import Card from "../../images/virtual.png";
 import { useNavigation } from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
@@ -106,7 +107,12 @@ const CreateVirtualCard = () => {
         paddingBottom: 15,
         paddingHorizontal: 15,
       }}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 40 }}>
+        <TouchableOpacity onPress={() =>
+              navigation.reset({
+                index: 0,
+                routes: [{ name: "MainTabs" }],
+              })
+            }style={{ width: 40 }}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
 
@@ -149,21 +155,22 @@ const CreateVirtualCard = () => {
               editable={!isLoading}
             />
 
-            {/* Frais de création */}
+            {/* Frais de création
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
               <Text style={{ color: '#9CA3AF' }}>{t("virtual_card.card_price")}</Text>
               <Text style={{ fontWeight: 'bold', color: '#374151' }}>
                 {isConfigLoading ? "..." : displayedFees}
               </Text>
-            </View>
+            </View> */}
 
             {/* Total */}
+           {/*             
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
               <Text style={{ fontWeight: 'bold', color: '#374151' }}>{t("virtual_card.total")}</Text>
               <Text style={{ fontWeight: 'bold', color: '#374151' }}>
                 {isConfigLoading ? "..." : total}
               </Text>
-            </View>
+            </View> */}
 
             {/* Bouton créer carte */}
             <TouchableOpacity

@@ -26,13 +26,16 @@ const CardHistory = () => {
 
   // Fetch all cards
   const { data: cards, isLoading: isCardsLoading } = useGetVirtualCardsQuery();
-
+   //console.log(cards)
   // Auto-select the first card if not already selected
-  useEffect(() => {
-    if (cards?.data?.length > 0 && !selectedCardId) {
-      setSelectedCardId(cards.data[0].cardId);
-    }
-  }, [cards, selectedCardId]);
+    useEffect(() => {
+      if (cards?.data && !selectedCardId) {
+        const activeCard = cards.data; // it's a single object, not array
+
+        setSelectedCardId(activeCard.cardId);
+      }
+    }, [cards, selectedCardId]);
+
 
   // Fetch card details
   const {
@@ -44,7 +47,6 @@ const CardHistory = () => {
   });
 
   const cardData = cardDetails?.data;
-
   // Fetch transactions
   const {
     data: cardTransactions,

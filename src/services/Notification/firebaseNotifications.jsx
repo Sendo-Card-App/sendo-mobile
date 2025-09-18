@@ -1,4 +1,4 @@
-import messaging from '@react-native-firebase/messaging';
+
 import { storeData, getData } from '../storage';
 import { Alert } from 'react-native';
 import * as Device from 'expo-device';

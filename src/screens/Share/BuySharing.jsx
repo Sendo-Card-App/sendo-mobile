@@ -32,7 +32,7 @@ export default function Historique({ navigation }) {
   );
 
   const sharedExpenses = sharedExpensesList?.data || [];
-
+   //console.log(sharedExpenses)
   // Filter expenses based on selected filter
   const filteredExpenses = sharedExpenses.filter((item) => {
     const status = item.sharedExpense.status;
@@ -219,6 +219,12 @@ export default function Historique({ navigation }) {
                     </View>
                   </View>
 
+                  <View style={{ marginBottom: 6 }}>
+                    <Text style={styles.requestIdText}>
+                       #{expense.id}
+                    </Text>
+                  </View>
+
                   {/* Your Part */}
                   <View style={styles.partContainer}>
                     <Text style={styles.partText}>
@@ -305,6 +311,7 @@ const styles = StyleSheet.create({
     borderColor: "#7ddd7d",
     borderWidth: 1,
   },
+  requestIdText: { fontSize: 12, color: "#555", fontStyle: "italic" },
   filterText: { marginRight: 5, color: "#444", fontSize: 14 },
   filterTextActive: { color: "#7ddd7d", fontWeight: "600" },
   scrollViewContent: { paddingHorizontal: 20, paddingBottom: 20, paddingTop: 10 },

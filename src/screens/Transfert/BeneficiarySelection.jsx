@@ -4,7 +4,6 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  SafeAreaView,
   StatusBar,
   FlatList,
   Alert,
@@ -12,6 +11,7 @@ import {
   ActivityIndicator,
   StyleSheet
 } from 'react-native';
+import { SafeAreaView } from "react-native-safe-area-context";
 import { AntDesign } from '@expo/vector-icons';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
@@ -223,7 +223,7 @@ const BeneficiarySelection = ({ route }) => {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <AntDesign name="arrowleft" size={24} color="black" />
+          <AntDesign name="left" size={24} color="black" />
         </TouchableOpacity>
         <Image source={button} resizeMode="contain" style={styles.logo} />
         <Image source={HomeImage} resizeMode="contain" style={styles.homeImage} />
