@@ -10,7 +10,7 @@ import {
   TextInput,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, AntDesign} from '@expo/vector-icons';
 import TopLogo from '../../images/TopLogo.png';
 import Toast from 'react-native-toast-message';
 
@@ -129,7 +129,7 @@ const RequestPay = ({ navigation, route }) => {
         alignItems: 'center',
       }}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color="#fff" />
+         <AntDesign name="left" size={24} color="white" />
         </TouchableOpacity>
         <TouchableOpacity onPress={() => navigation.openDrawer()}>
           <Ionicons name="menu-outline" size={26} color="#fff" />

@@ -179,42 +179,43 @@ const getLocalImageBase64 = async () => {
 
 
   const handleDownloadReceipt = async () => {
-    if (transaction.status !== 'COMPLETED') {
-      Alert.alert(
-        "Reçu indisponible",
-        "Le reçu est uniquement disponible pour les transactions réussies"
-      );
-      return;
-    }
+  if (transaction.status !== 'COMPLETED') {
+    Alert.alert(
+      "Reçu indisponible",
+      "Le reçu est uniquement disponible pour les transactions réussies"
+    );
+    return;
+  }
 
-    setIsGenerating(true);
-    try {
-      // Get the logo as base64
-     const logoUrl = "https://res.cloudinary.com/dviktmefh/image/upload/v1758140850/WhatsApp_Image_2025-09-17_at_21.26.01_hjgtfa.jpg";
-      
-      // Generate HTML with the logo
-      const html = generateReceiptHTML(transaction, user, getTypeLabel, logoBase64);
-      
-      // Convert HTML to PDF
-      const { uri } = await Print.printToFileAsync({ html });
-      
-      // Move to a more permanent location
-      const newUri = `${FileSystem.documentDirectory}Reçu_Sendo_${transaction.transactionId}.pdf`;
-      await FileSystem.moveAsync({ from: uri, to: newUri });
+  setIsGenerating(true);
+  try {
+    // Use Cloudinary hosted logo
+    const logoUrl = "https://res.cloudinary.com/dviktmefh/image/upload/v1758140850/WhatsApp_Image_2025-09-17_at_21.26.01_hjgtfa.jpg";
+    
+    // Generate HTML with the hosted logo
+    const html = generateReceiptHTML(transaction, user, getTypeLabel, logoUrl);
+    
+    // Convert HTML to PDF
+    const { uri } = await Print.printToFileAsync({ html });
+    
+    // Move to permanent location
+    const newUri = `${FileSystem.documentDirectory}Reçu_Sendo_${transaction.transactionId}.pdf`;
+    await FileSystem.moveAsync({ from: uri, to: newUri });
 
-      // Share the PDF
-      if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(newUri);
-      } else {
-        Alert.alert("Succès", "Reçu généré avec succès");
-      }
-    } catch (error) {
-      console.error("Error generating receipt:", error);
-      Alert.alert("Erreur", "Échec de génération du reçu. Veuillez réessayer.");
-    } finally {
-      setIsGenerating(false);
+    // Share the PDF
+    if (await Sharing.isAvailableAsync()) {
+      await Sharing.shareAsync(newUri);
+    } else {
+      Alert.alert("Succès", "Reçu généré avec succès");
     }
-  };
+  } catch (error) {
+    console.error("Error generating receipt:", error);
+    Alert.alert("Erreur", "Échec de génération du reçu. Veuillez réessayer.");
+  } finally {
+    setIsGenerating(false);
+  }
+};
+
 
   const generateReceiptHTML = (transaction, user, getTypeLabel, logoBase64) => {
     const displayType = getTransactionDisplayType(transaction);

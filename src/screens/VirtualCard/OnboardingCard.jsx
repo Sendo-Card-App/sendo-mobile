@@ -16,7 +16,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from 'react-native-toast-message';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTranslation } from 'react-i18next';
-import Ionicons from 'react-native-vector-icons/Ionicons';
+import { Ionicons, AntDesign } from "@expo/vector-icons";
 
 import {
   useRequestVirtualCardMutation,
@@ -422,7 +422,7 @@ const OnboardingCardScreen = () => {
           onPress={() => navigation.navigate("MainTabs")}
           style={styles.backButton}
         >
-          <Ionicons name="arrow-back" size={24} color="black" />
+          <AntDesign name="left" size={24} color="white" />
         </TouchableOpacity>
         
         <ScrollView 

@@ -7,7 +7,7 @@ import {
   Image,
   Modal,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, AntDesign } from "@expo/vector-icons";
 import Toast from "react-native-toast-message";
 import Loader from "../../components/Loader";
 import { useGetConfigQuery } from '../../services/Config/configApi';
@@ -293,7 +293,7 @@ const handleSaveOrdreRotation = async () => {
       {/* Header */}
       <View className="flex-row mb-2 items-center justify-between px-4">
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color="#fff" />
+          <AntDesign name="left" size={24} color="white" />
         </TouchableOpacity>
         <TouchableOpacity onPress={() => navigation.openDrawer()}>
           <Ionicons name="menu-outline" size={26} color="#fff" />

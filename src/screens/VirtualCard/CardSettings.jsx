@@ -10,7 +10,7 @@ import {
   ActivityIndicator ,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, AntDesign } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 import {
   useFreezeCardMutation,
@@ -142,7 +142,7 @@ const CardSettingsScreen = () => {
       <SafeAreaView className="bg-[#7ddd7d]   rounded-b-2xl">
         <View className="flex-row items-center justify-between px-4 py-3  border-b border-gray-200 rounded-b-2xl">
           <TouchableOpacity onPress={() => navigation.goBack()} className="p-1">
-            <Ionicons name="arrow-back" size={24} color="#333" />
+           <AntDesign name="left" size={24} color="white" />
           </TouchableOpacity>
           <Text className="text-2xl font-bold text-gray-800 text-center flex-1 -ml-5">
             {cardName || t("myCard")}
@@ -151,7 +151,7 @@ const CardSettingsScreen = () => {
             onPress={() => navigation.openDrawer()}
             className="p-1"
           >
-            <Ionicons name="menu-outline" size={28} color="#333" />
+            <Ionicons name="menu-outline" size={28} color="#fff" />
           </TouchableOpacity>
         </View>
       </SafeAreaView>

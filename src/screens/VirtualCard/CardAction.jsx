@@ -7,7 +7,7 @@ import {
   ActivityIndicator,
   Modal,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, AntDesign } from "@expo/vector-icons";
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 
@@ -93,7 +93,7 @@ const CardActionScreen = ({ route }) => {
           className="p-2 rounded-full bg-gray-100"
           accessibilityLabel={t('back')}
         >
-          <Ionicons name="arrow-back" size={20} color="black" />
+          <AntDesign name="left" size={24} color="black" />
         </TouchableOpacity>
         <Text className="ml-4 text-xl font-bold">
           {t(`manageVirtualCard.${actionType}Card`)}

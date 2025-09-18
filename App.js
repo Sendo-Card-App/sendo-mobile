@@ -466,10 +466,11 @@ function DrawerNavigator() {
 
 export default function App() {
   useEffect(() => {
-    registerForPushNotificationsAsync().then((token) => {
-      console.log("Expo Push Token:", token);
-    });
+    (async () => {
+      await registerForPushNotificationsAsync();
+    })();
   }, []);
+
 
   return (
     <Provider store={store}>

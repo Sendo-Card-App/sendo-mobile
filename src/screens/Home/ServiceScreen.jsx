@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, TouchableOpacity, FlatList, Dimensions, StatusBar } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, AntDesign } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -105,11 +105,11 @@ const ServiceScreen = () => {
         }}
       >
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color="black" />
+         <AntDesign name="left" size={24} color="white" />
         </TouchableOpacity>
         <Text className="text-2xl font-bold text-white">{t("home.services")}</Text>
         <TouchableOpacity onPress={() => navigation.openDrawer()}>
-          <Ionicons name="menu-outline" size={24} color="black" />
+          <Ionicons name="menu-outline" size={24} color="white" />
         </TouchableOpacity>
       </View>
 

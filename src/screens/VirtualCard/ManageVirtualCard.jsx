@@ -14,7 +14,7 @@ import {
   Alert,
 } from "react-native";
 import { Feather } from '@expo/vector-icons';
-import { Ionicons, FontAwesome5, Entypo } from "@expo/vector-icons";
+import { Ionicons, FontAwesome5, Entypo, AntDesign } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 import { useNavigation } from "@react-navigation/native";
 import CardImg from "../../images/virtual.png";
@@ -476,13 +476,13 @@ const handleShowCardDetails = async () => {
             }
             className="p-1"
           >
-            <Ionicons name="arrow-back" size={24} color="#333" />
+            <AntDesign name="left" size={24} color="white" />
           </TouchableOpacity>
           <Text className="text-2xl font-bold text-gray-800 text-center flex-1">
             {cardData?.cardName || "Ma Carte"}
           </Text>
           <TouchableOpacity onPress={() => navigation.openDrawer()} className="p-1">
-            <Ionicons name="menu-outline" size={28} color="#333" />
+            <Ionicons name="menu-outline" size={28} color="#fff" />
           </TouchableOpacity>
         </View>
       </SafeAreaView>
