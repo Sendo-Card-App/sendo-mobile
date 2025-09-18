@@ -20,11 +20,11 @@ export default function OrderSelection({ navigation, route }) {
       title: t("orderSelection.fixedOrder"),
       description: t("orderSelection.fixedDescription"),
     },
-    {
-      id: 2,
-      title: t("orderSelection.randomOrder"),
-      description: t("orderSelection.randomDescription"),
-    },
+    // {
+    //   id: 2,
+    //   title: t("orderSelection.randomOrder"),
+    //   description: t("orderSelection.randomDescription"),
+    // },
   ];
 
   const handleNext = async () => {

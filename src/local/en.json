@@ -594,6 +594,7 @@
     "debtLabel": "Outstanding Debt",
  "currentBalance": "Current balance",
    "viewNumbers": "View my card numbers",
+   "amountOutOfRange": "The amount must be between 500 and 500,000 XAF",
    "viewInfo": "View info",
     "freeze": "Freeze",
     "unfreeze": "Unfreeze",
@@ -864,10 +865,11 @@
     "withdraw": "Withdraw",
     "transfer": " CA - CAM Transfer",
     "share": "Shared payment",
-     "wallet": "Wallet Transfer",
+     "wallet": "Sendo-Sendo Transfer",
      "fund": " Funds Request ",
+      "demand": "Funds Request Paiement",
       "payment": "Payment ",
-      "tontine": "Tontine payment ",
+      "tontine": "Tontine distribution ",
     "mobileMoney": "Mobile Money",
     "Portefeuille": "Wallet",
     "bankTransfer": "Bank Transfer",
@@ -1562,6 +1564,7 @@
   "onboardingCard": {
     "title": "INTERNATIONAL MONEY\nMADE SIMPLE",
     "subtitle": "Spend abroad like at home. No markups, no hide fees.",
+     "feeMessage": "A card creation fee of {{total}} will be deducted from your wallet.",
     "refusedTimeout": {
     "title": "Processing Time Expired",
     "subtitle": "Your request was not processed within the allotted time",
@@ -1651,7 +1654,7 @@
   "cardLimitDesc": "Set a limit on your monthly spending.",
   "limitDetailsTitle": "Card Limits",
   "limitMaxTransaction": "Maximum per transaction: 500,000 FCFA",
-  "limitMaxDaily": "Maximum per day: 500,000 FCFA",
+
   "limitMaxMonthly": "Maximum per month: 1,000,000 FCFA",
   "close": "Close",
   "other": "Others",

@@ -24,7 +24,7 @@ const Success = () => {
       {/* the white formsection of the screen */}
       <View className="flex-1 gap-6 py-3 bg-white px-8 rounded-t-3xl mt-14 items-center justify-center">
         <View className="flex-1 items-center justify-center">
-          <AntDesign name="checkcircleo" size={260} color={"#7ddd7d"} />
+          <AntDesign name="check-circle" size={260} color={"#7ddd7d"} />
           <Text className="text-[#7ddd7d] text-2xl font-bold text-center w-[240px] mt-6">
             {message}
           </Text>

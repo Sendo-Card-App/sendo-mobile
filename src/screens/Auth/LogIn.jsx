@@ -8,12 +8,12 @@ import {
   TextInput,
   Image,
   TouchableOpacity,
-  SafeAreaView,
   StatusBar,
   Modal,
   FlatList,
   ActivityIndicator
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import KeyboardAvoidinWrapper from "../../components/KeyboardAvoidinWrapper";
 import { useTranslation } from "react-i18next";
@@ -181,7 +181,7 @@ const Log = () => {
 
           <View className="absolute top-14 w-full px-6 flex-row justify-between z-10">
             <TouchableOpacity onPress={() => navigation.goBack()}>
-              <AntDesign name="arrowleft" size={24} color="white" />
+              <AntDesign name="left" size={24} color="white" />
             </TouchableOpacity>
 
             <TouchableOpacity onPress={() => setLanguageModalVisible(true)}>
@@ -303,7 +303,7 @@ const Log = () => {
                   }}
                   className="p-2 mr-2"
                 >
-                  <AntDesign name="arrowleft" size={24} color="black" />
+                  <AntDesign name="left" size={24} color="black" />
                 </TouchableOpacity>
                 <Text className="text-xl font-bold flex-1 text-center">
                   {t("log.select_country")}

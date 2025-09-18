@@ -6,9 +6,9 @@ import {
   TouchableOpacity,
   Image,
   FlatList,
-  SafeAreaView,
   StatusBar,
 } from 'react-native';
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const AddBeneficiary = ({navigation}) => {
   const [search, setSearch] = useState('');

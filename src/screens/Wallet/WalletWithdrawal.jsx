@@ -258,13 +258,8 @@ const WalletWithdrawal = () => {
             {/* Net Withdrawal Preview */}
             {amount && !isNaN(amount) && (
               <View className="mt-6 mb-2 bg-gray-100 rounded-xl p-4">
-                <Text className="text-gray-700 text-base font-semibold text-center">
-                  {t("walletWithdrawal.finalAmount")}
-                </Text>
-                <Text className="text-green-600 text-xl font-bold text-center mt-1">
-                  {netWithdrawal.toLocaleString()} XAF
-                </Text>
-                <Text className="text-xs text-gray-500 text-center mt-1">
+               
+                <Text className="text-l text-gray-500 text-center mt-1">
                   ({t("walletWithdrawal.feesNote")}: {SENDO_WITHDRAWAL_PERCENTAGE || 0}% + {SENDO_WITHDRAWAL_FEES || 0} XAF)
                 </Text>
               </View>
@@ -273,11 +268,18 @@ const WalletWithdrawal = () => {
 
           {/* Confirm Button */}
           <TouchableOpacity
-            onPress={handleWithdrawal}
+            onPress={() =>
+              navigation.navigate("Auth", {
+              screen: "PinCode",
+              params: {
+                onSuccess: async () => {
+                  await handleWithdrawal();
+                },
+              },
+            })
+            }
             activeOpacity={0.8}
-            className={`py-4 px-10 rounded-full self-center shadow-lg w-11/12 mt-4 flex-row justify-center items-center ${
-              netWithdrawal < 500 || isWithdrawing ? "bg-gray-400" : "bg-[#7ddd7d]"
-            }`}
+            className="bg-[#7ddd7d] py-4 px-10 rounded-full self-center shadow-lg w-11/12 mt-4 flex-row justify-center items-center"
             style={{
               elevation: 5,
               shadowColor: "#000",
@@ -285,7 +287,7 @@ const WalletWithdrawal = () => {
               shadowOpacity: 0.3,
               shadowRadius: 4,
             }}
-            disabled={netWithdrawal < 500 || isWithdrawing}
+           
           >
             {isWithdrawing ? (
               <Loader size="small" />
@@ -295,6 +297,7 @@ const WalletWithdrawal = () => {
               </Text>
             )}
           </TouchableOpacity>
+
         </ScrollView>
       </View>
 

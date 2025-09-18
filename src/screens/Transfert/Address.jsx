@@ -95,7 +95,7 @@ const Address = () => {
       <StatusBar style="light" />
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <AntDesign name="arrowleft" size={24} color={COLORS.text} />
+          <AntDesign name="left" size={24} color={COLORS.text} />
         </TouchableOpacity>
         <Image source={button} style={styles.logo} resizeMode="contain" />
         <Image source={HomeImage} style={styles.icon} resizeMode="contain" />
@@ -131,7 +131,7 @@ const Address = () => {
           />
         </View>
 
-        {["phone",  "address"].map((field) => (
+        {["phone",  "address", "description"].map((field) => (
           <View key={field} style={styles.inputWrapper}>
             <Text style={styles.label}>
               {t(`addressScreen.fields.${field}`)}

@@ -64,6 +64,7 @@ const HomeScreen = () => {
       pollingInterval: 1000,
     }
   );
+   //console.log("history Data:", JSON.stringify(history, null, 2));
 
   const { data: pubs, isLoading: isLoadingPubs, error: pubsError } = useGetPubsQuery();
 
@@ -251,6 +252,7 @@ const HomeScreen = () => {
       case 'WITHDRAWAL': return t('history1.withdraw');
       case 'TRANSFER': return t('history1.transfer');
       case 'SHARED_PAYMENT': return t('history1.share');
+      case 'FUND_REQUEST_PAYMENT': return t('history1.fund');
       case 'WALLET_TO_WALLET': return t('history1.wallet');
       case 'TONTINE_PAYMENT': return t('history1.tontine');
       case 'PAYMENT': return t('history1.payment');
@@ -263,7 +265,7 @@ const HomeScreen = () => {
       case 'MOBILE_MONEY':
         if (transaction.provider === 'ORANGE_MONEY' || transaction.provider?.toLowerCase() === 'orange') {
           return require('../../images/om.png');
-        } else if (transaction.provider === 'MTN') {
+        } else if (transaction.provider === 'MTN_MONEY') {
           return require('../../images/mtn.png');
         } else if (transaction.provider === 'WALLET_PAYMENT') {
           return require('../../images/wallet.jpeg');
@@ -395,7 +397,7 @@ const HomeScreen = () => {
               onPress={() => navigation.navigate("SelectMethod")}
               className="bg-white px-3 py-2 rounded-full flex-row items-center flex-1 justify-center"
             >
-              <Ionicons name="send-outline" size={18} color="black" />
+               <Ionicons name="arrow-up-circle-outline" size={20} color="black" />
               <Text className="text-black font-bold text-xs ml-2">
                 {t("home.transfer")}
               </Text>
@@ -405,7 +407,7 @@ const HomeScreen = () => {
               onPress={() => navigation.navigate("MethodType")}
               className="bg-white px-3 py-2 rounded-full flex-row items-center flex-1 justify-center"
             >
-              <Ionicons name="refresh-outline" size={18} color="black" />
+              <Ionicons name="wallet-outline" size={18} color="black" />
               <Text className="text-black font-bold text-xs ml-2">
                 {t("home.recharge")}
               </Text>
@@ -430,7 +432,10 @@ const HomeScreen = () => {
         {/* Action buttons row */}
         <View className="flex-row justify-between">
           {[
-            { label: t("home.virtualCard"), icon: "card-outline", route: "OnboardingCard" },
+             // Conditionally render virtualCard only for Cameroon
+            ...(userProfile?.data?.country === "Cameroon"
+              ? [{ label: t("home.virtualCard"), icon: "card-outline", route: "OnboardingCard" }]
+              : []),
             { label: t("home.friendsShare"), icon: "people-outline", route: "WelcomeShare" },
             { label: t("home.fundRequest"), icon: "cash-outline", route: "WelcomeDemand" },
             { label: t("home.etontine"), icon: "layers-outline" },
@@ -534,8 +539,9 @@ const HomeScreen = () => {
             const typeLabel = getTypeLabel(item.type, t);
             const iconSource = getMethodIcon(item);
 
-            const isPdfLink = typeof item.description === 'string' && item.description.endsWith('.pdf');
-            const readableDescription = isPdfLink ? t('home.viewDocument') : (item.description || typeLabel);
+            const readableDescription = getTypeLabel(item.type, t);
+
+
 
             return (
               <TouchableOpacity
@@ -549,10 +555,10 @@ const HomeScreen = () => {
                 <Image source={iconSource} className="w-10 h-10 mr-3 rounded-full" resizeMode="contain" />
                 <View className="flex-1">
                   <Text className="text-black font-semibold">
-                    {readableDescription}
+                     {typeLabel}
                   </Text>
                   <Text className="text-black text-sm">
-                    {item.amount?.toLocaleString()} {item.currency}
+                    {item.totalAmount?.toLocaleString()} {item.currency}
                   </Text>
                 </View>
                 <Text className={`text-xs font-semibold ${statusColor}`}>

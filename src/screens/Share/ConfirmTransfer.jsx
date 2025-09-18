@@ -119,7 +119,7 @@ const handleConfirm = async () => {
             }
           }}
         >
-          <AntDesign name="arrowleft" size={24} color="white" />
+          <AntDesign name="left" size={24} color="white" />
         </TouchableOpacity>
 
         <TouchableOpacity 

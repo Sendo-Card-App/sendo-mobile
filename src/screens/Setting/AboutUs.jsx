@@ -24,7 +24,7 @@ const AboutUs = ({ navigation }) => {
         }}
       >
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <AntDesign name="arrowleft" size={24} color="white" />
+          <AntDesign name="left" size={24} color="white" />
         </TouchableOpacity>
         <Text style={{ fontSize: 18, fontWeight: "bold", color: "white" }}>
           {t("screens.aboutUs")}
@@ -60,9 +60,9 @@ const AboutUs = ({ navigation }) => {
             Financiers Étudiants Inc., une entreprise de services monétaires
             basée au Québec, Canada. Nous sommes autorisés à exercer nos
             activités sous le permis {"\n"}
-            numéro 19525 délivré par Revenu Québec et sommes inscrits {"\n"}
+            numéro 19525 délivré par Revenu Québec et sommes inscrits
             au Centre d’analyse des opérations et déclarations ﬁnancières du
-            Canada (CANAFE).
+            Canada C100000856 (numéro du CANAFE à mettre où c'est mentionné).
           </Text>
         </View>
 
@@ -72,7 +72,7 @@ const AboutUs = ({ navigation }) => {
             Siège social : 2001 Boulevard Robert-Bourassa, Montréal, Québec,
             Canada, H3A 2A6. {"\n"}
             Courriel de contact : infosendo@sf-e.ca. {"\n"}
-            Numéro de téléphone du service client : 237 640 72 60 36. Numéro
+            Numéro de téléphone du service client : 237 640 72 60 36 / +1 582 907 2096. Numéro
             d’entreprise du Québec (NEQ) : 1180279300.
           </Text>
         </View>
@@ -152,7 +152,7 @@ const AboutUs = ({ navigation }) => {
           <Text className="text-gray-400 text-sm ml-4 -mt-3">
             Pour toute question ou assistance, vous pouvez nous contacter via le
             service client intégré ou par courriel à infosendo@sf-e.ca ou au
-            237 640 72 60 36.
+            237 640 72 60 36 / +1 582 907 2096.
           </Text>
         </View>
 

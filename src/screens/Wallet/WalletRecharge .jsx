@@ -295,13 +295,7 @@ const SENDO_DEPOSIT_FEES = getConfigValue("SENDO_DEPOSIT_FEES");
         {/* Net deposit preview */}
         {amount && !isNaN(amount) && (
           <View className="mt-6 mb-2 bg-gray-100 rounded-xl p-4">
-            <Text className="text-gray-700 text-base font-semibold text-center">
-              {t("walletRecharge.finalDeposit")}
-            </Text>
-            <Text className="text-green-600 text-xl font-bold text-center mt-1">
-              {netDeposit.toLocaleString()} XAF
-            </Text>
-            <Text className="text-xs text-gray-500 text-center mt-1">
+            <Text className="text-l text-gray-500 text-center mt-1">
               ({t("walletRecharge.feesNote")} :{" "}
               {SENDO_DEPOSIT_PERCENTAGE || 0}% + {SENDO_DEPOSIT_FEES || 0} XAF)
             </Text>
@@ -312,14 +306,19 @@ const SENDO_DEPOSIT_FEES = getConfigValue("SENDO_DEPOSIT_FEES");
           {t("walletRecharge.confirmationNote")}
         </Text>
 
-        <TouchableOpacity
-          onPress={handleRecharge}
+       <TouchableOpacity
+          onPress={() =>
+            navigation.navigate("Auth", {
+              screen: "PinCode",
+              params: {
+                onSuccess: async () => {
+                  await handleRecharge();
+                },
+              },
+            })
+          }
           activeOpacity={0.8}
-          className={`py-4 px-10 rounded-full self-center shadow-lg w-11/12 mt-4 flex-row justify-center items-center ${
-            netDeposit < 500 || isRecharging
-              ? "bg-gray-400"
-              : "bg-[#7ddd7d]"
-          }`}
+           className="bg-[#7ddd7d] py-4 px-10 rounded-full self-center shadow-lg w-11/12 mt-4 flex-row justify-center items-center"
           style={{
             elevation: 5,
             shadowColor: "#000",
@@ -327,7 +326,6 @@ const SENDO_DEPOSIT_FEES = getConfigValue("SENDO_DEPOSIT_FEES");
             shadowOpacity: 0.3,
             shadowRadius: 4,
           }}
-          disabled={netDeposit < 500 || isRecharging}
         >
           {isRecharging ? (
             <Loader size="small" />
@@ -337,6 +335,7 @@ const SENDO_DEPOSIT_FEES = getConfigValue("SENDO_DEPOSIT_FEES");
             </Text>
           )}
         </TouchableOpacity>
+
       </View>
     <View className="py-4 flex-row justify-center items-center gap-2 bg-[#181e25] mt-auto">
           <Ionicons name="shield-checkmark" size={18} color="orange" />

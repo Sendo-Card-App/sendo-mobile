@@ -320,7 +320,7 @@ const VirtualCardRechargeDetails = () => {
         </TouchableOpacity>
 
         <TouchableOpacity
-          onPress={() => navigation.navigate("History")}
+          onPress={() =>   navigation.navigate("HistoryCard")}
           className="items-center py-3"
         >
           <Text className="text-green-500 font-semibold">

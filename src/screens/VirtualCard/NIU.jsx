@@ -13,7 +13,7 @@ import Toast from 'react-native-toast-message';
 import { AntDesign, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 import * as DocumentPicker from "expo-document-picker";
-import * as FileSystem from "expo-file-system";
+import * as FileSystem from "expo-file-system/legacy";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import TopLogo from "../../images/TopLogo.png";
 import { useDispatch } from "react-redux";
@@ -264,7 +264,7 @@ const NIU = ({ navigation }) => {
           <Image source={TopLogo} className="h-36 w-40" resizeMode="contain" />
         </View>
         <TouchableOpacity onPress={() => navigation.navigate("KycResume")}>
-          <AntDesign name="arrowleft" size={24} color="white" />
+          <AntDesign name="left" size={24} color="white" />
         </TouchableOpacity>
         <TouchableOpacity onPress={() => navigation.openDrawer()} className="ml-auto">
           <Ionicons name="menu-outline" size={24} color="white" />

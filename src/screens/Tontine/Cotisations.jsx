@@ -45,9 +45,10 @@ const Cotisations = () => {
   const [showDistributeModal, setShowDistributeModal] = useState(false);
   const [showMissingContributorsModal, setShowMissingContributorsModal] = useState(false);
   const [missingContributors, setMissingContributors] = useState("");
+  const [isRotationSaved, setIsRotationSaved] = useState(false);
   const STATUS_OPTIONS = [
-  { key: "ACTIVE", en: "Active", fr: "Actif" },
-  { key: "SUSPENDED", en: "Suspended", fr: "Suspendu" },
+  { key: "ACTIVE", en: "Active", fr: "Active" },
+  { key: "SUSPENDED", en: "Suspended", fr: "Suspendre" },
   { key: "CLOSED", en: "Closed", fr: "Fermé" },
 ];
 
@@ -185,27 +186,30 @@ const distributionAmount = nextTourId ? calculateDistributionAmount(nextTourId) 
     }
   };
 
-  const handleSaveOrdreRotation = async () => {
-    setLoading(true);
-    try {
-      const ordreRotation = ordreList.map((item) => parseInt(item.key));
-      await setTontineOrder({ tontineId, ordreRotation }).unwrap();
+const handleSaveOrdreRotation = async () => {
+  setLoading(true);
+  try {
+    const ordreRotation = ordreList.map((item) => parseInt(item.key));
+    await setTontineOrder({ tontineId, ordreRotation }).unwrap();
 
-      Toast.show({
-        type: "success",
-        text1: "Success",
-        text2: "Rotation order updated successfully",
-      });
-    } catch (error) {
-      Toast.show({
-        type: "error",
-        text1: "Error",
-        text2: error?.data?.message || "An error occurred",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+    Toast.show({
+      type: "success",
+      text1: "Success",
+      text2: "Rotation order updated successfully",
+    });
+
+    // Mark rotation as saved to hide the button
+    setIsRotationSaved(true);
+  } catch (error) {
+    Toast.show({
+      type: "error",
+      text1: "Error",
+      text2: error?.data?.message || "An error occurred",
+    });
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleDistribute = async () => {
     try {
@@ -328,48 +332,51 @@ const distributionAmount = nextTourId ? calculateDistributionAmount(nextTourId) 
             <Text className="text-black font-semibold">{tontine.montant}</Text>
           </View>
 
-     <View className="flex-row mt-2 justify-between">
-        {STATUS_OPTIONS.map((status) => (
-          <TouchableOpacity
-            key={status.key}
-            disabled={tontine.etat === status.key || loading}
-            className={`py-2 px-4 rounded-full items-center ${
-              tontine.etat === status.key ? "bg-gray-400" : "bg-yellow-500"
-            }`}
-            onPress={async () => {
-              if (tontine.etat === status.key) return;
-              try {
-                setLoading(true);
-                await changeTontineStatus({ tontineId, status: status.key }).unwrap();
-                Toast.show({
-                  type: "success",
-                  text1: currentLang === "fr" ? "Succès" : "Success",
-                  text2:
-                    currentLang === "fr"
-                      ? `Le statut est passé à ${status.fr}`
-                      : `Status changed to ${status.en}`,
-                });
-              } catch (error) {
-                Toast.show({
-                  type: "error",
-                  text1: currentLang === "fr" ? "Erreur" : "Error",
-                  text2:
-                    error?.data?.message ||
-                    (currentLang === "fr"
-                      ? "Échec du changement de statut"
-                      : "Failed to change status"),
-                });
-              } finally {
-                setLoading(false);
-              }
-            }}
-          >
-            <Text className="text-black font-bold">
-              {currentLang === "fr" ? status.fr : status.en}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+    <View className="flex-row mt-2 justify-between">
+      {STATUS_OPTIONS.filter(
+        (status) => !(tontine.etat === "ACTIVE" && status.key === "ACTIVE")
+      ).map((status) => (
+        <TouchableOpacity
+          key={status.key}
+          disabled={tontine.etat === status.key || loading}
+          className={`py-2 px-4 rounded-full items-center ${
+            tontine.etat === status.key ? "bg-gray-400" : "bg-yellow-500"
+          }`}
+          onPress={async () => {
+            if (tontine.etat === status.key) return;
+            try {
+              setLoading(true);
+              await changeTontineStatus({ tontineId, status: status.key }).unwrap();
+              Toast.show({
+                type: "success",
+                text1: currentLang === "fr" ? "Succès" : "Success",
+                text2:
+                  currentLang === "fr"
+                    ? `Le statut est passé à ${status.fr}`
+                    : `Status changed to ${status.en}`,
+              });
+            } catch (error) {
+              Toast.show({
+                type: "error",
+                text1: currentLang === "fr" ? "Erreur" : "Error",
+                text2:
+                  error?.data?.message ||
+                  (currentLang === "fr"
+                    ? "Échec du changement de statut"
+                    : "Failed to change status"),
+              });
+            } finally {
+              setLoading(false);
+            }
+          }}
+        >
+          <Text className="text-black font-bold">
+            {currentLang === "fr" ? status.fr : status.en}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+
 
 
           {tontine.etat !== "CLOSED" && (
@@ -615,22 +622,24 @@ const distributionAmount = nextTourId ? calculateDistributionAmount(nextTourId) 
               )}
             />
 
-            {Array.isArray(tontine?.toursDeDistribution) &&
-              tontine.toursDeDistribution.length === 0 && (
-                <TouchableOpacity
-                  className="bg-green-500 py-3 mt-4 rounded-full items-center flex-row justify-center"
-                  onPress={handleSaveOrdreRotation}
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <Loader color="#fff" />
-                  ) : (
-                    <Text className="text-white font-semibold text-base">
-                      {t("actions.saveOrder")}
-                    </Text>
-                  )}
-                </TouchableOpacity>
-              )}
+            {!isRotationSaved &&
+            Array.isArray(tontine?.toursDeDistribution) &&
+            tontine.toursDeDistribution.length === 0 && (
+              <TouchableOpacity
+                className="bg-green-500 py-3 mt-4 rounded-full items-center flex-row justify-center"
+                onPress={handleSaveOrdreRotation}
+                disabled={loading}
+              >
+                {loading ? (
+                  <Loader color="#fff" />
+                ) : (
+                  <Text className="text-white font-semibold text-base">
+                    {t("actions.saveOrder")}
+                  </Text>
+                )}
+              </TouchableOpacity>
+          )}
+
           </ScrollView>
         )}
 

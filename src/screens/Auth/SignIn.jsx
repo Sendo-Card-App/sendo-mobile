@@ -6,9 +6,9 @@ import {
   TextInput,
   Image,
   TouchableOpacity,
-  SafeAreaView,
   StatusBar,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import KeyboardAvoidinWrapper from "../../components/KeyboardAvoidinWrapper";
 import { useDispatch } from "react-redux";
@@ -225,7 +225,7 @@ const SignIn = () => {
           className="absolute z-10 top-20 left-5"
           onPress={() => navigation.goBack()}
         >
-          <AntDesign name="arrowleft" size={24} color="white" />
+          <AntDesign name="left" size={24} color="white" />
         </TouchableOpacity>
 
         <Image
@@ -292,7 +292,7 @@ const SignIn = () => {
         style={{ position: "absolute", right: 15, top: 12 }}
       >
         <AntDesign
-          name={showPassword ? "eye" : "eyeo"}
+          name={showPassword ? "eye" : "eye"}
           size={24}
           color="gray"
         />

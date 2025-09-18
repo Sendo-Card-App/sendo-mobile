@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import { StatusBar, Platform, View, Text, ScrollView, TouchableOpacity, Image, TextInput ,SafeAreaView, Alert } from 'react-native';
+import { StatusBar, Platform, View, Text, ScrollView, TouchableOpacity, Image, TextInput , Alert } from 'react-native';
+import { SafeAreaView } from "react-native-safe-area-context";
 import Modal from 'react-native-modal';
 import { useCreatePasscodeMutation } from '../../services/Auth/authAPI';
 import { useSelector, useDispatch } from 'react-redux';
@@ -250,120 +251,122 @@ useEffect(() => {
     }
   };
 
-    const handleComplete = async (enteredPin) => {
-      setIsLoading(true);
-      try {
-        const checkResponse = await checkPincode(enteredPin).unwrap();
-        console.log('Check Pincode Response:', checkResponse);
+   const handleComplete = async (enteredPin) => {
+  setIsLoading(true);
+  try {
+    const checkResponse = await checkPincode(enteredPin).unwrap();
+    console.log('Check Pincode Response:', checkResponse);
 
-        // ✅ Pincode is correct
-        if (checkResponse.status === 200 && checkResponse.data?.pincode === true) {
-          dispatch(resetAttempts());
+    // ✅ Pincode is correct
+    if (checkResponse.status === 200 && checkResponse.data?.pincode === true) {
+      dispatch(resetAttempts());
 
-          // Save passcode in Redux + local storage
-          dispatch(setPasscode(enteredPin));
-          await storeData('@passcode', enteredPin);
+      // Save passcode in Redux + local storage
+      dispatch(setPasscode(enteredPin));
+      await storeData('@passcode', enteredPin);
 
-          if (route.params?.showBalance) {
-            if (route.params?.onSuccess) {
-              await route.params.onSuccess(enteredPin);
-            }
-            navigation.goBack();
-          } else if (route.params?.onSuccess) {
-            await route.params.onSuccess(enteredPin);
-            navigation.replace('Main', { screen: 'Success' });
-          } else {
-            navigation.replace('Main');
-          }
+      if (route.params?.onSuccess) {
+        // If WalletRecharge (or another screen) passed a callback
+        await route.params.onSuccess(enteredPin);
 
-          return;
-        }
-
-        // ❌ Pincode incorrect
-        if (
-          checkResponse.status === 403 ||
-          (checkResponse.status === 200 && checkResponse.data?.pincode === false)
-        ) {
-          const newAttempts = attempts + 1;
-          dispatch(incrementAttempt());
-
-          if (newAttempts >= 3) {
-            setIsBlocked(true);
-            setShowContactSupportModal(true);
-
-            const errorMessage =
-              checkResponse.data?.message === 'Compte suspendu ou bloqué'
-                ? t('pin.accountSuspended')
-                : t('pin.accountBlocked');
-
-            setError(errorMessage);
-
-            // Lock for 5 minutes
-            const lockTime = new Date();
-            lockTime.setMinutes(lockTime.getMinutes() + 5);
-            dispatch(lockPasscode(lockTime.toISOString()));
-              // 🧹 Clear stored passcode + Redux state after 3 failed attempts
-            await removeData('@passcode');
-            dispatch(clearPasscode());
-          } else {
-            setError(t('pin.incorrectPin'));
-          }
-
-          setPin('');
-          return;
-        }
-
-        // ❗ Unexpected case inside try
-        setError(t('pin.unexpectedError'));
-        setPin('');
-      } catch (error) {
-        console.log('pincode error:', JSON.stringify(error, null, 2));
-
-        // 🆕 No PIN yet → create one
-        if (
-          error?.data?.message?.includes('Aucun pincode défini')
-        ) {
-          try {
-            const createResponse = await createPasscode({ passcode: enteredPin }).unwrap();
-
-            if (createResponse.status === 200) {
-              await storeData('@passcode', enteredPin);
-              dispatch(setPasscode(enteredPin));
-              dispatch(setIsNewUser(false));
-              navigation.navigate('Main');
-            } else {
-              setError(t('pin.validationError'));
-              setPin('');
-            }
-          } catch (createError) {
-            console.log('create pin error:', createError);
-            setError(t('pin.validationError'));
-            setPin('');
-          }
-          return;
-        }
-
-        if (error?.data?.message === 'Compte suspendu ou bloqué') {
-          setIsBlocked(true);
-          setShowContactSupportModal(true);
-          setError(t('pin.accountSuspended'));
-
-          // Clear stored passcode if account is suspended
-          await removeData('@passcode');
-          dispatch(clearPasscode());
-        } else {
-          showToast(
-            'error',
-            t('errors.title'),
-            error?.data?.message || t('errors.default')
-          );
-        }
-
-        setPin('');
-      } finally {
-        setIsLoading(false);
+        // Always return to previous screen after success
+        navigation.goBack();
+      } else if (route.params?.showBalance) {
+        // Special case: just show balance
+        navigation.goBack();
+      } else {
+        // Default flow → go to Main / Success
+        navigation.replace('Main', { screen: 'MainTabs' });
       }
-    };
+
+      return;
+    }
+
+    //  Pincode incorrect
+    if (
+      checkResponse.status === 403 ||
+      (checkResponse.status === 200 && checkResponse.data?.pincode === false)
+    ) {
+      const newAttempts = attempts + 1;
+      dispatch(incrementAttempt());
+
+      if (newAttempts >= 3) {
+        setIsBlocked(true);
+        setShowContactSupportModal(true);
+
+        const errorMessage =
+          checkResponse.data?.message === 'Compte suspendu ou bloqué'
+            ? t('pin.accountSuspended')
+            : t('pin.accountBlocked');
+
+        setError(errorMessage);
+
+        // Lock for 5 minutes
+        const lockTime = new Date();
+        lockTime.setMinutes(lockTime.getMinutes() + 5);
+        dispatch(lockPasscode(lockTime.toISOString()));
+
+        // 🧹 Clear stored passcode + Redux state after 3 failed attempts
+        await removeData('@passcode');
+        dispatch(clearPasscode());
+      } else {
+        setError(t('pin.incorrectPin'));
+      }
+
+      setPin('');
+      return;
+    }
+
+    // ❗ Unexpected case
+    setError(t('pin.unexpectedError'));
+    setPin('');
+  } catch (error) {
+    console.log('pincode error:', JSON.stringify(error, null, 2));
+
+    // 🆕 No PIN yet → create one
+    if (error?.data?.message?.includes('Aucun pincode défini')) {
+      try {
+        const createResponse = await createPasscode({ passcode: enteredPin }).unwrap();
+
+        if (createResponse.status === 200) {
+          await storeData('@passcode', enteredPin);
+          dispatch(setPasscode(enteredPin));
+          dispatch(setIsNewUser(false));
+          navigation.navigate('Main');
+        } else {
+          setError(t('pin.validationError'));
+          setPin('');
+        }
+      } catch (createError) {
+        console.log('create pin error:', createError);
+        setError(t('pin.validationError'));
+        setPin('');
+      }
+      return;
+    }
+
+    if (error?.data?.message === 'Compte suspendu ou bloqué') {
+      setIsBlocked(true);
+      setShowContactSupportModal(true);
+      setError(t('pin.accountSuspended'));
+
+      // Clear stored passcode if account is suspended
+      await removeData('@passcode');
+      dispatch(clearPasscode());
+    } else {
+      showToast(
+        'error',
+        t('errors.title'),
+        error?.data?.message || t('errors.default')
+      );
+    }
+
+    setPin('');
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 
 
 

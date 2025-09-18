@@ -31,10 +31,11 @@ const ChangePassword = ({ navigation }) => {
   const [showOldPassword, setShowOldPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+
 
   const { data: profile } = useGetMyProfileQuery();
-  const [updatePassword] = useUpdatePasswordMutation();
+ const [updatePassword, { isLoading }] = useUpdatePasswordMutation();
+
 
   const getPasswordStrength = (password) => {
     let strength = 0;
@@ -51,7 +52,6 @@ const ChangePassword = ({ navigation }) => {
   const passwordStrength = getPasswordStrength(newPassword);
 
   const handlePasswordUpdate = async () => {
-    setIsLoading(true);
     try {
       const userId = profile?.data?.id;
       const result = await updatePassword({
@@ -101,9 +101,7 @@ const ChangePassword = ({ navigation }) => {
         text1: t('Wrong password'),
         text2: t('Please enter your correct old password.'),
       });
-    } finally {
-      setIsLoading(false);
-    }
+    } 
   };
 
   const handleSubmit = () => {
@@ -251,24 +249,31 @@ const ChangePassword = ({ navigation }) => {
         </View>
 
         {/* Submit */}
-        <TouchableOpacity
-          onPress={handleSubmit}
-          disabled={isLoading}
-          style={{
-            backgroundColor: '#7ddd7d',
-            paddingVertical: 15,
-            borderRadius: 10,
-            alignItems: 'center',
-            marginTop: 20,
-            elevation: 3,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.2,
-            shadowRadius: 3,
-          }}
-        >
-          {isLoading ? <Loader color="#fff" /> : <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 18 }}>{t('submit')}</Text>}
-        </TouchableOpacity>
+       <TouchableOpacity
+        onPress={handleSubmit}
+        disabled={isLoading}
+        style={{
+          backgroundColor: '#7ddd7d',
+          paddingVertical: 15,
+          borderRadius: 10,
+          alignItems: 'center',
+          marginTop: 20,
+          elevation: 3,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.2,
+          shadowRadius: 3,
+        }}
+      >
+        {isLoading ? (
+          <Loader color="#fff" />
+        ) : (
+          <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 18 }}>
+            {t('submit')}
+          </Text>
+        )}
+      </TouchableOpacity>
+
 
         <Toast />
       </ScrollView>

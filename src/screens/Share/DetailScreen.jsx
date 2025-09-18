@@ -222,7 +222,7 @@ const DetailScreen = () => {
                 <Text className="text-black text-sm">
                   {formatAmount(p.part)} {p.currency || transaction.currency}
                 </Text>
-                {!(status === "PAYÉ" || status === "COMPLETE") && (
+                {!(status === "PAYED" || status === "COMPLETE") && (
                   <TouchableOpacity onPress={() => openEditModal(i)}>
                     <Ionicons name="create-outline" size={16} color="gray" />
                   </TouchableOpacity>
@@ -237,29 +237,37 @@ const DetailScreen = () => {
           );
         })}
 
-        <TouchableOpacity
-          disabled={isUpdating}
-          onPress={handleSaveModifications}
-          className="bg-green-500 rounded-full py-3 mt-6 items-center flex-row justify-center space-x-2"
-        >
-          <Ionicons name="save-outline" size={20} color="white" />
-          <Text className="text-white font-semibold text-base">
-            {isUpdating ? t("saving") : t("save")}
-          </Text>
-        </TouchableOpacity>
+       {/* Boutons Save & Delete : visibles seulement si aucun participant n’a payé */}
+        {!participantsState.some(
+          (p) => p.paymentStatus === "PAYED" || p.paymentStatus === "COMPLETE"
+        ) && (
+          <>
+            <TouchableOpacity
+              disabled={isUpdating}
+              onPress={handleSaveModifications}
+              className="bg-green-500 rounded-full py-3 mt-6 items-center flex-row justify-center space-x-2"
+            >
+              <Ionicons name="save-outline" size={20} color="white" />
+              <Text className="text-white font-semibold text-base">
+                {t("detail.save")}
+              </Text>
+            </TouchableOpacity>
 
-        <TouchableOpacity
-          onPress={handleDelete}
-          disabled={isDeleting}
-          className={`bg-red-600 rounded-full py-3 mt-5 items-center flex-row justify-center space-x-2 ${
-            isDeleting ? "opacity-50" : ""
-          }`}
-        >
-          <Ionicons name="trash-outline" size={20} color="white" />
-          <Text className="text-white font-semibold text-base">
-            {isDeleting ? t("deleting") : t("delete")}
-          </Text>
-        </TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleDelete}
+              disabled={isDeleting}
+              className={`bg-red-600 rounded-full py-3 mt-5 items-center flex-row justify-center space-x-2 ${
+                isDeleting ? "opacity-50" : ""
+              }`}
+            >
+              <Ionicons name="trash-outline" size={20} color="white" />
+              <Text className="text-white font-semibold text-base">
+                {t("detail.delete")}
+              </Text>
+            </TouchableOpacity>
+          </>
+        )}
+
       </ScrollView>
 
       {/* Modal */}

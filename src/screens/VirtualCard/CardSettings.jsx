@@ -198,7 +198,7 @@ const CardSettingsScreen = () => {
           <Ionicons name="wallet-outline" size={22} color="#333" />
           <View className="ml-3">
             <Text className="text-base font-semibold text-gray-800">{t("cardLimit")}</Text>
-            <Text className="text-sm text-gray-600">{t("cardLimitDesc")}</Text>
+            {/* <Text className="text-sm text-gray-600">{t("cardLimitDesc")}</Text> */}
           </View>
         </TouchableOpacity>
       </View>
@@ -234,7 +234,6 @@ const CardSettingsScreen = () => {
           <View className="bg-gray-200 rounded-2xl p-6 w-11/12 shadow-lg">
             <Text className="text-lg font-bold text-gray-800 mb-2">{t("limitDetailsTitle")}</Text>
             <Text className="text-sm text-gray-700 mb-1">• {t("limitMaxTransaction")}</Text>
-            <Text className="text-sm text-gray-700 mb-1">• {t("limitMaxDaily")}</Text>
             <Text className="text-sm text-gray-700 mb-1">• {t("limitMaxMonthly")}</Text>
 
             <TouchableOpacity

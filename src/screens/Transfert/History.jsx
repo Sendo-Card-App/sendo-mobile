@@ -64,7 +64,7 @@ const getMethodIcon = () => {
     case 'MOBILE_MONEY':
       if (provider === 'ORANGE_MONEY' || provider?.toLowerCase() === 'orange') {
         return require('../../images/om.png');
-      } else if (provider === 'MTN') {
+      } else if (provider === 'MTN_MONEY') {
         return require('../../images/mtn.png');
       } else if (provider === 'WALLET_PAYMENT') {
         return require('../../images/wallet.jpeg');
@@ -566,7 +566,7 @@ const applyFilters = () => {
   }
 
   const transactions = data?.data?.transactions?.items || [];
-  
+  //console.log(transactions)
   const userData = data?.data?.user || {};
   const pagination = data?.data?.transactions || { page: 1, totalItems: 0, totalPages: 1 };
 

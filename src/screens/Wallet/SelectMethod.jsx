@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   Image,
   Modal,
-  SafeAreaView,
   StatusBar,
   Pressable,
   ScrollView,
@@ -13,12 +12,14 @@ import {
   Platform,
   StyleSheet
 } from 'react-native';
+import { SafeAreaView } from "react-native-safe-area-context";
 import { AntDesign, Entypo, MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import om from '../../images/om.png';
 import mtn from '../../images/mtn.png';
 import HomeImage2 from '../../images/HomeImage2.png';
-import TopLogo from '../../images/TopLogo.png';
+import TopLogo from '../../images/icon-sendo.png';
+import { useGetUserProfileQuery} from "../../services/Auth/authAPI";
 import { useGetConfigQuery } from '../../services/Config/configApi';
 
 const { height, width } = Dimensions.get('window');
@@ -41,33 +42,47 @@ const SelectMethod = ({ navigation }) => {
   };
 
   const SENDO_WITHDRAWAL_FEES = getConfigValue('SENDO_WITHDRAWAL_FEES');
+  
+   const { 
+      data: userProfile, 
+      isLoading: isProfileLoading, 
+      error: profileError,
+      refetch 
+    } = useGetUserProfileQuery(undefined, {
+      pollingInterval: 1000,
+    });
+  //console.log(userProfile)
 
-  const methods = [
-    {
-      id: 'transfer',
-      title: t('select_method.sendo_transfer'),
-      subtitle: t('select_method.transfer'),
-      icon: <Image source={TopLogo} style={styles.methodIcon} />,
-      action: () => navigation.navigate("WalletTransfer"),
-      color: '#7ddd7d'
-    },
-    {
-      id: 'ca_cm',
-      title: 'Transfert CA-CM',
-      subtitle: "D'argent",
-      icon: <Image source={HomeImage2} style={styles.methodIconLarge} />,
-      action: () => navigation.navigate("BeneficiaryScreen"),
-      color: '#7ddd7d'
-    },
-    {
-      id: 'mobile',
-      title: t('select_method.transfer_to_mobile'),
-     subtitle: `${t('select_method.transfer_fee')}: ${SENDO_WITHDRAWAL_FEES} XAF`,
-      icon: <AntDesign name="mobile1" size={40} color="#0D1C6A" />,
-      action: () => setShowServiceModal(true),
-      color: '#0D1C6A'
-    }
-  ];
+const methods = [
+  {
+    id: 'transfer',
+    title: t('select_method.sendo_transfer'),
+    subtitle: t('select_method.transfer'),
+    icon: <Image source={TopLogo} style={styles.methodIcon} />,
+    action: () => navigation.navigate("WalletTransfer"),
+    color: '#7ddd7d'
+  },
+  {
+    id: 'mobile',
+    title: t('select_method.transfer_to_mobile'),
+    icon: <AntDesign name="mobile" size={40} color="#0D1C6A" />,
+    action: () => setShowServiceModal(true),
+    color: '#0D1C6A'
+  }
+];
+
+// 👉 Only push CA-CM method if country is Canada
+if (userProfile?.data?.country === "Canada") {
+  methods.push({
+    id: 'ca_cm',
+    title: 'Transfert CA-CM',
+    subtitle: "D'argent",
+    icon: <Image source={HomeImage2} style={styles.methodIconLarge} />,
+    action: () => navigation.navigate("BeneficiaryScreen"),
+    color: '#7ddd7d'
+  });
+}
+
 
   const services = [
     { id: 'OM', name: t('service_om'), icon: om },
@@ -98,7 +113,7 @@ const SelectMethod = ({ navigation }) => {
         style={styles.backButton}
         onPress={() => navigation.goBack()}
       >
-        <AntDesign name="arrowleft" size={24} color="#fff" />
+        <AntDesign name="left" size={24} color="#fff" />
       </TouchableOpacity>
 
       <Text style={styles.headerTitle}>{t('screens.selectMethod')}</Text>

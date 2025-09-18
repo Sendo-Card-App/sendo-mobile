@@ -39,17 +39,12 @@ const WalletConfirm = ({ navigation }) => {
 
         {/* Buttons */}
         <View className="flex-row gap-4 mt-12">
-          <TouchableOpacity
-            className="border border-[#7ddd7d] px-6 py-2 rounded-full"
-            onPress={() => navigation.goBack()}
-          >
-            <Text className="text-[#181e25] font-bold">{t("walletRecharge.cancel")}</Text>
-          </TouchableOpacity>
+        
           <TouchableOpacity
             className="bg-[#7ddd7d] px-6 py-2 rounded-full"
            onPress={() => navigation.navigate("MainTabs")}
           >
-            <Text className="text-black font-bold">{t("walletRecharge.valid")}</Text>
+            <Text className="text-black font-bold">{t("walletRecharge.cancel")}</Text>
           </TouchableOpacity>
         </View>
       </View>
