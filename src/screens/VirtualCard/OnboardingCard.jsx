@@ -22,6 +22,7 @@ import {
   useRequestVirtualCardMutation,
   useGetVirtualCardStatusQuery
 } from '../../services/Card/cardApi';
+import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
 import { useGetConfigQuery } from "../../services/Config/configApi";
 
 const { width, height } = Dimensions.get('window');
@@ -60,7 +61,19 @@ const OnboardingCardScreen = () => {
     //console.log("card request:", JSON.stringify(status, null, 2));
   const [requestDate, setRequestDate] = useState(null);
   const [remainingTime, setRemainingTime] = useState(null);
-  
+   const { data: userProfile, isLoading: isProfileLoading } = useGetUserProfileQuery(undefined, { 
+    pollingInterval: 1000 // Refetch every 1 second
+  });
+    //console.log("userProfile list:", JSON.stringify(userProfile, null, 2));
+
+    const profileStatus = userProfile?.data?.virtualCard?.status;
+
+    //  First try onboardingSession (cardRequest)
+    // If not found, fallback to virtualCard status from userProfile
+     const finalStatus =
+        cardRequest?.data?.onboardingSession?.onboardingSessionStatus ||
+        userProfile?.data?.virtualCard?.status;
+
   const hasNavigated = useRef(false);
   const navigationTriggered = useRef(false);
   
@@ -128,16 +141,26 @@ const OnboardingCardScreen = () => {
   );
 
   // FIXED: Navigation effect with proper conditions
-  useEffect(() => {
-    if (status === 'VERIFIED' && !navigationTriggered.current) {
-      navigationTriggered.current = true;
-      
-      // Use setTimeout to ensure navigation happens after current render cycle
+    useEffect(() => {
+    if (!finalStatus || navigationTriggered.current) return;
+
+    navigationTriggered.current = true;
+
+    if (finalStatus === "VERIFIED") {
+      // User finished KYC, redirect to create card
       setTimeout(() => {
-        navigation.replace('CreateVirtualCard');
+        navigation.replace("CreateVirtualCard");
+      }, 100);
+    } else if (
+      ["ACTIVE", "PRE_ACTIVE", "FROZEN", "BLOCKED", "SUPENDED"].includes(finalStatus)
+    ) {
+      // User already has a card → manage it
+      setTimeout(() => {
+        navigation.replace("ManageVirtualCard");
       }, 100);
     }
-  }, [status, navigation]);
+  }, [finalStatus, navigation]);
+
 
   useEffect(() => {
     const loadDate = async () => {
