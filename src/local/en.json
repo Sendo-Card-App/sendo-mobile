@@ -1654,7 +1654,7 @@
   "cardLimitDesc": "Set a limit on your monthly spending.",
   "limitDetailsTitle": "Card Limits",
   "limitMaxTransaction": "Maximum per transaction: 500,000 FCFA",
-  "limitMaxDaily": "Maximum per day: 500,000 FCFA",
+
   "limitMaxMonthly": "Maximum per month: 1,000,000 FCFA",
   "close": "Close",
   "other": "Others",

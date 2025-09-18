@@ -1650,7 +1650,6 @@
   "cardLimitDesc": "Fixez une limite à vos dépenses mensuelles.",
   "limitDetailsTitle": "Détails des limites",
   "limitMaxTransaction": "Montant maximum par transaction : 500 000 FCFA",
-  "limitMaxDaily": "Montant maximum par jour : 500 000 FCFA",
   "limitMaxMonthly": "Montant maximum par mois : 1 000 000 FCFA",
   "close": "Fermer",
   "other": "Autres",
