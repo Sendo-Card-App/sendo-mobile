@@ -22,7 +22,6 @@ import { Ionicons, AntDesign,FontAwesome,FontAwesome5   } from "@expo/vector-ico
 
 import * as Notifications from "expo-notifications";
 import { registerForPushNotificationsAsync } from "./src/services/notificationService";
-import app from "./src/configs/firebaseConfig";
  
 import { useGetUserProfileQuery } from "./src/services/Auth/authAPI";
 import CustomTabBar from './src/components/CustomTabBar';
@@ -153,68 +152,80 @@ const headerHeight = Platform.select({
 const screenWidth = Dimensions.get('window').width;
 
 // Tab Navigator
-function MainTabs() {
-  const { t } = useTranslation();
-  const navigation = useNavigation();
- const { data: userProfile, isLoading: isProfileLoading, refetch } = useGetUserProfileQuery(
-  undefined, 
-  {
-    pollingInterval: 1000, // rafraîchit toutes les 1000ms = 1s
+// Tab Navigator
+  function MainTabs() {
+    const { t } = useTranslation();
+    const navigation = useNavigation();
+    const { data: userProfile, isLoading: isProfileLoading } = useGetUserProfileQuery(
+      undefined,
+      {
+        pollingInterval: 1000, // refresh every 1s
+      }
+    );
+
+    return (
+      <Tab.Navigator
+        tabBar={(props) => <CustomTabBar {...props} />}
+        screenOptions={({ route }) => ({
+          headerShown: false,
+          tabBarButton: (props) => <TouchableOpacity {...props} />,
+        })}
+      >
+        <Tab.Screen
+          name="HomeTab"
+          component={Home}
+          options={{
+            title: t('tabs.home'),
+            unmountOnBlur: true,
+          }}
+        />
+
+        <Tab.Screen
+          name="TransferTab"
+          component={History}
+          options={{
+            title: t('tabs.history'),
+            unmountOnBlur: true,
+          }}
+        />
+
+        {/*  Only show BeneficiaryTab if user is from Canada */}
+        {userProfile?.data?.country === "Canada" && (
+          <Tab.Screen
+            name="BeneficiaryTab"
+            component={BeneficiaryScreen}
+            options={{
+              title: '',
+              unmountOnBlur: true,
+            }}
+          />
+        )}
+
+
+      {userProfile?.data?.country === "Cameroon" && (
+        <Tab.Screen
+          name="ManageVirtualCardTab"
+          component={ManageVirtualCardWrapper}
+          options={{
+            title: t('tabs.cards'),
+            unmountOnBlur: true,
+          }}
+        />
+         )}
+
+        <Tab.Screen
+          name="SettingsTab"
+          component={Settings}
+          options={{
+            title: t('tabs.settings'),
+            unmountOnBlur: true,
+          }}
+        />
+      </Tab.Navigator>
+    );
   }
-);
 
 
-  return (
-    <Tab.Navigator
-      tabBar={(props) => <CustomTabBar {...props} />}
-      screenOptions={({ route }) => ({
-        headerShown: false,
-        tabBarButton: (props) => <TouchableOpacity {...props} />,
-      })}
-    >
-      <Tab.Screen
-        name="HomeTab"
-        component={Home}
-        options={{
-          title: t('tabs.home'),
-          unmountOnBlur: true,
-        }}
-      />
-      <Tab.Screen
-        name="TransferTab"
-        component={History}
-        options={{
-          title: t('tabs.history'),
-          unmountOnBlur: true,
-        }}
-      />
-      <Tab.Screen
-        name="BeneficiaryTab"
-        component={BeneficiaryScreen}
-        options={{
-          title: '',
-          unmountOnBlur: true,
-        }}
-      />
-      <Tab.Screen 
-        name="ManageVirtualCardTab" 
-        component={ManageVirtualCardWrapper} 
-        options={{ 
-          title: t('tabs.cards'),
-          unmountOnBlur: true 
-        }}
-      />
-      <Tab.Screen
-        name="SettingsTab"
-        component={Settings}
-        options={{
-          title: t('tabs.settings'),
-          unmountOnBlur: true,
-        }}
-      />
-    </Tab.Navigator>
-  );
-}
 function ManageVirtualCardWrapper() {
   const { t } = useTranslation();
   const { data: userProfile, isLoading: isProfileLoading, refetch } = useGetUserProfileQuery();
@@ -289,7 +300,7 @@ function MainStack() {
             <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 12 }}>
               {Platform.OS === 'ios'
                 ? <Text style={{ fontSize: 24, color: Colors.text }}>{'< '}</Text>
-                : <AntDesign name="arrowleft" size={20} color={Colors.text} />}
+                : <AntDesign name="left" size={20} color={Colors.text} />}
             </TouchableOpacity>
           ),
         })}
