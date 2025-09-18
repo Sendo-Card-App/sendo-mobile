@@ -233,7 +233,7 @@ const CardSettingsScreen = () => {
         <View className="flex-1 justify-center items-center bg-transparent bg-opacity-40">
           <View className="bg-gray-200 rounded-2xl p-6 w-11/12 shadow-lg">
             <Text className="text-lg font-bold text-gray-800 mb-2">{t("limitDetailsTitle")}</Text>
-            <Text className="text-sm text-gray-700 mb-1">• {t("limitMaxTransaction")}</Text>
+            {/* <Text className="text-sm text-gray-700 mb-1">• {t("limitMaxTransaction")}</Text> */}
             <Text className="text-sm text-gray-700 mb-1">• {t("limitMaxMonthly")}</Text>
 
             <TouchableOpacity
