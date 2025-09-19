@@ -49,6 +49,7 @@ const HistoryCard = ({ transaction, user, onPress }) => {
       case 'TRANSFER': return t('history1.transfer');
        case 'SHARED_PAYMENT': return t('history1.share');
        case 'WALLET_TO_WALLET': return t('history1.wallet');
+        case 'VIEW_CARD_DETAILS': return t('history1.cardView');
        case 'TONTINE_PAYMENT': return t('history1.tontine');
         case 'FUND_REQUEST_PAYMENT': return t('history1.fund');
         case 'PAYMENT': return t('history1.payment');

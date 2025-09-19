@@ -69,13 +69,13 @@ const ManageVirtualCard = () => {
 
   const { data: unlockStatus, isLoading: isUnlockStatusLoading } = useGetUnlockStatusQuery(selectedCardId, {
     skip: !selectedCardId,
-      pollingInterval: 1000, // Refetch every 30 seconds
+     pollingInterval: 1000,  // Refetch every 30 seconds
   });
     //console.log("Unlock Status:", JSON.stringify(unlockStatus, null, 2));
-  const { data: cardDetailsHide, isLoading: isDetailsHideLoading, refetch: refetchCardDetailsHide } =
+  const { data: cardDetailsHide, refetch: refetchCardDetailsHide } =
     useGetVirtualCardDetailsHideQuery(selectedCardId, {
       skip: !selectedCardId,
-      pollingInterval: 1000,
+     
     });
 
 
@@ -107,16 +107,16 @@ const ManageVirtualCard = () => {
     refetch: refetchTransactions,
   } = useGetCardTransactionsQuery(cardData?.id, {
     skip: !cardData?.id,
-      pollingInterval: 1000,
+     pollingInterval: 1000, 
   });
- //console.log("Full response:", JSON.stringify(cardTransactions, null, 2));
+ ///console.log("Full response:", JSON.stringify(cardTransactions, null, 2));
   const {
   data: balanceData,
   isLoading: isBalanceLoading,
   refetch: refetchBalance,
 } = useGetCardBalanceQuery({ idCard: cardData?.id }, {
   skip: !cardData?.id,
-    pollingInterval: 1000,
+   pollingInterval: 1000,  
 });
 //console.log("balanceData Data:", JSON.stringify(balanceData, null, 2));
 const {
@@ -125,7 +125,7 @@ const {
   refetch: refetchDebts,
 } = useGetCardDebtsQuery(cardData?.id, {
   skip: !cardData?.id,
-    pollingInterval: 1000,
+   pollingInterval: 1000, 
 });
  //console.log("Debts Data:", JSON.stringify(debtsData, null, 2));
 
@@ -283,10 +283,10 @@ const handleFreezeUnfreeze = async () => {
   try {
     if (isCardFrozen) {
       const response = await unfreezeCard(cardId).unwrap();
-      showModal("success", `Carte débloquée avec succès.\n${response?.message || ""}`);
+      showModal("success", `${response?.message || ""}`);
     } else {
       const response = await freezeCard(cardId).unwrap();
-      showModal("success", `Carte bloquée avec succès.\n${response?.message || ""}`);
+      showModal("success", `${response?.message || ""}`);
     }
 
     refetchCardDetails();
@@ -309,13 +309,13 @@ const handleShowCardDetails = async () => {
   try {
     const balance = balanceData?.data?.balance ?? 0;
 
-    if (balance < 1000) {
-      Alert.alert(
-        "Solde insuffisant",
-        "Vous devez avoir au moins 1 000 XAF sur votre carte pour consulter les détails."
-      );
-      return;
-    }
+    // if (balance < 1000) {
+    //   Alert.alert(
+    //     "Solde insuffisant",
+    //     "Vous devez avoir au moins 1 000 XAF sur votre carte pour consulter les détails."
+    //   );
+    //   return;
+    // }
 
     if (cardStatus === "ACTIVE") {
       Alert.alert(
@@ -330,7 +330,17 @@ const handleShowCardDetails = async () => {
             onPress: async () => {
               setIsLoadingIframe(true);
               const response = await refetchCardDetailsHide();
-               //console.log("response Data:", JSON.stringify(response, null, 2));
+               console.log("response Data:", JSON.stringify(response, null, 2));
+                // ✅ Handle error
+              if (response.error) {
+                const errorMsg =
+                  response.error?.data?.message ||
+                  response.error?.data?.data?.errors?.[0] ||
+                  "Impossible de charger les détails de la carte";
+                showModal("error", errorMsg);
+                setIsLoadingIframe(false);
+                return; // Exit early on error
+              }
               if (response.data?.data?.link) {
                 setIframeUrl(response.data.data.link);
                 setIframeModalVisible(true);
@@ -411,18 +421,18 @@ const handleShowCardDetails = async () => {
     });
 
     return (
-      <TouchableOpacity
-        className="flex-row justify-between items-center py-3 border-b border-gray-200"
-        onPress={() => navigation.navigate("TransactionDetails", { transaction: item })}
-      >
-        <View className="flex-row items-center gap-2">
-          <View className="bg-gray-100 p-2 rounded-full">{icon}</View>
-          <View>
-            <Text className="font-semibold">
-             {item.description}
-            </Text>
-            <Text className="text-xs text-gray-500">{formattedDate}</Text>
-         <Text
+   <TouchableOpacity
+      className="flex-row justify-between items-center py-3 border-b border-gray-200"
+      onPress={() => navigation.navigate("TransactionDetails", { transaction: item })}
+    >
+      <View className="flex-row items-center gap-2 flex-1">
+        <View className="bg-gray-100 p-2 rounded-full">{icon}</View>
+        <View className="flex-1">
+          <Text className="font-semibold flex-wrap">
+            {item.description}
+          </Text>
+          <Text className="text-xs text-gray-500">{formattedDate}</Text>
+          <Text
             className={`text-xs ${
               item.status === "COMPLETED"
                 ? "text-green-600"
@@ -437,16 +447,14 @@ const handleShowCardDetails = async () => {
               ? "En cours de traitement"
               : "Échec"}
           </Text>
-
-
-          </View>
         </View>
-       <Text className={`font-bold ${item.status === "PENDING" ? "text-gray-400" : isCashIn ? "text-green-600" : "text-red-500"}`}>
-          {isCashIn ? "+" : "-"}
-          {item.amount.toLocaleString("fr-FR")} FCFA
-        </Text>
+      </View>
+      <Text className={`font-bold ${item.status === "PENDING" ? "text-gray-400" : isCashIn ? "text-green-600" : "text-red-500"}`}>
+        {isCashIn ? "+" : "-"}
+        {item.amount.toLocaleString("fr-FR")} FCFA
+      </Text>
+    </TouchableOpacity>
 
-      </TouchableOpacity>
     );
   };
 
@@ -517,6 +525,10 @@ const handleShowCardDetails = async () => {
                     params: {
                       onSuccess: () => {
                         setShowBalance(true);  // Reveal balance after successful pin
+                          // Automatically hide balance after 20s
+                          setTimeout(() => {
+                            setShowBalance(false);
+                          }, 20000);
                         return Promise.resolve();
                       },
                       showBalance: true,
@@ -611,25 +623,35 @@ const handleShowCardDetails = async () => {
           )}
             {/* 🔸 Action Buttons */}
           <View className="flex flex-row justify-between mt-1">
-            <TouchableOpacity
-              className="flex flex-1 bg-gray-100 mx-1 py-1 px-4 rounded-xl flex-col items-center justify-center"
-              onPress={debouncedHandleShowCardDetails}
-              disabled={isProcessing || isLoadingIframe || isDetailsHideLoading}
-            >
-              <Ionicons name="eye-outline" size={24} color="#333" />
-              <Text className="mt-2 text-center text-sm">{t('manageVirtualCard.viewInfo')}</Text>
-            </TouchableOpacity>
+              <TouchableOpacity
+                className="flex flex-1 bg-gray-100 mx-1 py-1 px-4 rounded-xl flex-col items-center justify-center"
+                onPress={debouncedHandleShowCardDetails}
+                disabled={isProcessing || isLoadingIframe }
+              >
+                {isProcessing || isLoadingIframe ? (
+                  <ActivityIndicator size="small" color="#7ddd7d" />
+                ) : (
+                  <Ionicons name="eye-outline" size={24} color="#333" />
+                )}
+                <Text className="mt-2 text-center text-sm">{t('manageVirtualCard.viewInfo')}</Text>
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              className="flex flex-1 bg-gray-100 mx-1 py-1 px-4 rounded-xl flex-col items-center justify-center"
-              onPress={debouncedHandleFreezeUnfreeze}
-              disabled={isProcessingFreeze || isLoadingFreeze}
-            >
-              <Ionicons name="snow-outline" size={24} color="#333" />
-              <Text className="mt-2 text-center text-sm">
-                {isCardFrozen ? t('manageVirtualCard.unfreeze') : t('manageVirtualCard.freeze')}
-              </Text>
-            </TouchableOpacity>
+              {/* Freeze / Unfreeze Button */}
+              <TouchableOpacity
+                className="flex flex-1 bg-gray-100 mx-1 py-1 px-4 rounded-xl flex-col items-center justify-center"
+                onPress={debouncedHandleFreezeUnfreeze}
+                disabled={isProcessingFreeze || isLoadingFreeze}
+              >
+                {isProcessingFreeze || isLoadingFreeze ? (
+                  <ActivityIndicator size="small" color="#7ddd7d" />
+                ) : (
+                  <Ionicons name="snow-outline" size={24} color="#333" />
+                )}
+                <Text className="mt-2 text-center text-sm">
+                  {isCardFrozen ? t('manageVirtualCard.unfreeze') : t('manageVirtualCard.freeze')}
+                </Text>
+              </TouchableOpacity>
+
 
             <TouchableOpacity
               className="flex flex-1 bg-gray-100 mx-1 py-1 px-3 rounded-xl flex-col items-center justify-center"

@@ -106,6 +106,7 @@ const ReceiptScreen = () => {
       case 'WITHDRAWAL': return t('history1.withdraw');
       case 'TRANSFER': return t('history1.transfer');
       case 'SHARED_PAYMENT': return t('history1.share');
+       case 'VIEW_CARD_DETAILS': return t('history1.cardView');
       case 'WALLET_TO_WALLET': return t('history1.wallet');
       case 'WALLET_PAYMENT': return t('history1.walletPayment');
       case 'TONTINE_PAYMENT': return t('history1.tontine');

@@ -13,7 +13,7 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import moment from "moment";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from "expo-file-system/legacy";
 import { useTranslation } from "react-i18next";
 
 const VirtualCardRechargeDetails = () => {
@@ -198,23 +198,26 @@ const VirtualCardRechargeDetails = () => {
     `;
   };
 
-  const handleDownloadReceipt = async () => {
-    try {
-      const html = generateReceiptHTML();
-      const { uri } = await Print.printToFileAsync({ html });
-      const newUri = `${FileSystem.documentDirectory}Reçu_Sendo_${transaction.transactionId}.pdf`;
-      await FileSystem.moveAsync({ from: uri, to: newUri });
+const handleDownloadReceipt = async () => {
+  try {
+    const html = generateReceiptHTML();
+    const { uri } = await Print.printToFileAsync({ html });
 
-      if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(newUri);
-      } else {
-        Alert.alert("Succès", "Reçu généré avec succès");
-      }
-    } catch (error) {
-      console.error("Error generating receipt:", error);
-      Alert.alert("Erreur", "Échec de génération du reçu. Veuillez réessayer.");
+    const newUri = `${FileSystem.documentDirectory}Reçu_Sendo_${transaction.transactionId}.pdf`;
+
+    await FileSystem.moveAsync({ from: uri, to: newUri });
+
+    if (await Sharing.isAvailableAsync()) {
+      await Sharing.shareAsync(newUri);
+    } else {
+      Alert.alert("Succès", "Reçu généré avec succès");
     }
-  };
+  } catch (error) {
+    console.error("Error generating receipt:", error);
+    Alert.alert("Erreur", "Échec de génération du reçu. Veuillez réessayer.");
+  }
+};
+
 
   return (
     <SafeAreaView className="flex-1 bg-white">

@@ -55,7 +55,7 @@ const PaymentSimulator = () => {
     skip: !selectedCardId,
   });
   const cardData = cardDetails?.data;
-
+  //console.log(cardData)
   const [simulatePayment] = useSimulatePaymentMutation();
   const { 
     data: configData, 
@@ -126,10 +126,10 @@ const PaymentSimulator = () => {
   };
 
   useEffect(() => {
-    if (cards?.data?.length > 0) {
-      setSelectedCardId(cards.data[0].cardId);
-    }
-  }, [cards]);
+   if (cards?.data && selectedCardId !== cards.data.cardId) {
+     setSelectedCardId(cards.data.cardId);
+   }
+ }, [cards, selectedCardId]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
