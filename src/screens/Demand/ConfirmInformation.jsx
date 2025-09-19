@@ -110,7 +110,7 @@ const handleSubmit = async () => {
     }
 
     navigation.navigate("SuccessSharing", {
-      transactionDetails: "Votre demande de fond a été créée avec succès.",
+      transactionDetails: "Votre demande de fonds a été créée avec succès.",
     });
 
   } catch (error) {

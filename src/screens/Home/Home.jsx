@@ -571,9 +571,7 @@ const HomeScreen = () => {
                 <Image source={iconSource} className="w-10 h-10 mr-3 rounded-full" resizeMode="contain" />
                 <View className="flex-1">
                   <Text className="text-black font-semibold">
-                    {item.type?.toUpperCase() === "TONTINE_PAYMENT"
-                      ? description || ""
-                      : displayLabel}
+                   {transaction.description}
                   </Text>
                   <Text className="text-black text-sm">
                     {item.totalAmount?.toLocaleString()} {item.currency}

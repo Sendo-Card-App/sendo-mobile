@@ -114,7 +114,7 @@ const getMethodIcon = () => {
             {transaction.transactionId || t('history1.unknownTransaction')}
           </Text>
           <Text className="text-gray-600 text-sm">
-            {getTypeLabel(transaction.type)}
+            {transaction.description}
           </Text>
         </View>
       </View>
