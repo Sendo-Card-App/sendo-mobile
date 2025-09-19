@@ -5,10 +5,10 @@ import {
   Text, 
   ScrollView, 
   TouchableOpacity, 
-  SafeAreaView,
   Alert
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons, AntDesign } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import moment from "moment";
 import * as Print from "expo-print";
@@ -256,7 +256,7 @@ const VirtualCardRechargeDetails = () => {
       
       <View className="flex-row items-center p-4" style={{ backgroundColor: "#7ddd7d" }}>
         <TouchableOpacity onPress={() => navigation.goBack()} className="mr-2">
-          <Ionicons name="arrow-back" size={24} color="#fff" />
+         <AntDesign name="left" size={24} color="white" />
         </TouchableOpacity>
         <Text className="text-xl font-bold text-white">Détails de la transaction</Text>
       </View>

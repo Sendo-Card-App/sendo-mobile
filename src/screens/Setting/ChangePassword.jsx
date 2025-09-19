@@ -21,7 +21,7 @@ import {
 } from '../../services/notificationService';
 import Toast from 'react-native-toast-message';
 import Loader from '../../components/Loader';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, AntDesign } from '@expo/vector-icons';
 
 const ChangePassword = ({ navigation }) => {
   const { t } = useTranslation();
@@ -154,7 +154,7 @@ const ChangePassword = ({ navigation }) => {
         }}
       >
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 40 }}>
-          <Ionicons name="arrow-back" size={24} color="#fff" />
+           <AntDesign name="left" size={24} color="white" />
         </TouchableOpacity>
 
         <Text style={{ color: '#fff', fontSize: 20, fontWeight: 'bold', flex: 1, textAlign: 'center' }}>

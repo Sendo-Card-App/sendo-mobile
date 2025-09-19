@@ -20,7 +20,7 @@ import { useTranslation } from "react-i18next";
 import { useGetConfigQuery } from "../../services/Config/configApi";
 import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
 import { useCreateVirtualCardMutation } from "../../services/Card/cardApi";
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, AntDesign } from '@expo/vector-icons';
 
 const CreateVirtualCard = () => {
   const navigation = useNavigation();
@@ -113,7 +113,7 @@ const CreateVirtualCard = () => {
                 routes: [{ name: "MainTabs" }],
               })
             }style={{ width: 40 }}>
-          <Ionicons name="arrow-back" size={24} color="#fff" />
+          <AntDesign name="left" size={24} color="white" />
         </TouchableOpacity>
 
         <Text style={{ color: '#fff', fontSize: 20, fontWeight: 'bold', flex: 1, textAlign: 'center' }}>

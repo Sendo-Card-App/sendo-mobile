@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   StatusBar,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, AntDesign } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import ButtomLogo from "../../images/ButtomLogo1.png";
 import { useTranslation } from "react-i18next";
@@ -106,7 +106,7 @@ const TermsAndConditions = ({ route, navigation }) => {
           className="h-[50px] w-[150px]"
         />
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="close" size={26} color="black" />
+           <AntDesign name="left" size={24} color="white" />
         </TouchableOpacity>
       </View>
 

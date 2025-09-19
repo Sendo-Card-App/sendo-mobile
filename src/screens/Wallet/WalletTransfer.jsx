@@ -19,7 +19,7 @@ import {
 import { useGetUserProfileQuery } from '../../services/Auth/authAPI';
 import Toast from 'react-native-toast-message';
 import { useTranslation } from 'react-i18next';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, AntDesign } from '@expo/vector-icons';
 import { showErrorToast } from '../../utils/errorHandler';
 import Loader from '../../components/Loader';
 import PinVerificationModal from '../../components/PinVerificationModal'; // PIN modal
@@ -151,7 +151,7 @@ const WalletTransfer = ({ navigation }) => {
         paddingHorizontal: 15,
       }}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 40 }}>
-          <Ionicons name="arrow-back" size={24} color="#fff" />
+          <AntDesign name="left" size={24} color="white" />
         </TouchableOpacity>
 
         <Text style={{

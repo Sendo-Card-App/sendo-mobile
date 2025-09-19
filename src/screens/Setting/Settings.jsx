@@ -144,7 +144,7 @@ const Settings = ({ navigation }) => {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 40 }}>
-          <Ionicons name="arrow-back" size={24} color="#fff" />
+           <AntDesign name="left" size={24} color="white" />
         </TouchableOpacity>
 
         <Text style={styles.headerTitle}>{t('screens.setting')}</Text>

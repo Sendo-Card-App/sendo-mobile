@@ -15,7 +15,7 @@ import * as Contacts from 'expo-contacts';
 import * as Linking from 'expo-linking';
 import { useNavigation } from '@react-navigation/native';
 import { Picker } from '@react-native-picker/picker';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons, AntDesign, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useTranslation } from 'react-i18next';
 import Toast from 'react-native-toast-message';
 import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
@@ -441,7 +441,7 @@ const AddFavorite = () => {
         }}
       >
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 40 }}>
-          <MaterialCommunityIcons name="arrow-left" size={24} color="#fff" />
+          <AntDesign name="left" size={24} color="white" />
         </TouchableOpacity>
 
         <Text style={{ 

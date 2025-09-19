@@ -10,7 +10,7 @@ import {
   Platform,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, AntDesign } from "@expo/vector-icons";
 import TopLogo from "../../images/TopLogo.png";
 import Toast from "react-native-toast-message";
 import { useTranslation } from "react-i18next";

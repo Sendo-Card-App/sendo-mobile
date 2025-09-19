@@ -254,6 +254,7 @@ const HomeScreen = () => {
       case 'SHARED_PAYMENT': return t('history1.share');
       case 'FUND_REQUEST_PAYMENT': return t('history1.fund');
       case 'WALLET_TO_WALLET': return t('history1.wallet');
+      case 'VIEW_CARD_DETAILS': return t('history1.cardView');
       case 'TONTINE_PAYMENT': return t('history1.tontine');
       case 'PAYMENT': return t('history1.payment');
       default: return type;
@@ -341,33 +342,40 @@ const HomeScreen = () => {
 
         <View className="z-10">
           {/* Ligne avec Bonjour + icône œil */}
-          <View className="flex-row justify-between items-center mb-1">
-            <Text className="text-black text-lg">{t("home.greeting")}</Text>
-            <TouchableOpacity
-              onPress={() => {
-                if (showBalance) {
-                  setShowBalance(false);
-                } else {
-                  navigation.navigate("Auth", {
-                    screen: "PinCode",
-                    params: {
-                      onSuccess: () => {
-                        setShowBalance(true);
-                        return Promise.resolve();
-                      },
-                      showBalance: true,
+        <View className="flex-row justify-between items-center mb-1">
+          <Text className="text-black text-lg">{t("home.greeting")}</Text>
+          <TouchableOpacity
+            onPress={() => {
+              if (showBalance) {
+                setShowBalance(false);
+              } else {
+                navigation.navigate("Auth", {
+                  screen: "PinCode",
+                  params: {
+                    onSuccess: () => {
+                      setShowBalance(true);
+
+                      // Automatically hide balance after 20s
+                      setTimeout(() => {
+                        setShowBalance(false);
+                      }, 20000);
+
+                      return Promise.resolve();
                     },
-                  });
-                }
-              }}
-            >
-              <Ionicons
-                name={showBalance ? "eye-outline" : "eye-off-outline"}
-                size={isSmallScreen ? scale(22) : scale(24)}
-                color="black"
-              />
-            </TouchableOpacity>
-          </View>
+                    showBalance: true,
+                  },
+                });
+              }
+            }}
+          >
+            <Ionicons
+              name={showBalance ? "eye-outline" : "eye-off-outline"}
+              size={isSmallScreen ? scale(22) : scale(24)}
+              color="black"
+            />
+          </TouchableOpacity>
+        </View>
+
 
           {/* Nom aligné sous Bonjour */}
           <Text className="text-black text-2xl font-bold mb-2">
@@ -536,8 +544,16 @@ const HomeScreen = () => {
         <ScrollView showsVerticalScrollIndicator={false}>
           {history?.data?.transactions?.items?.map((item, index) => {
             const statusColor = getStatusColor(item.status);
-            const typeLabel = getTypeLabel(item.type, t);
-            const iconSource = getMethodIcon(item);
+          const typeLabel = getTypeLabel(item.type, t);
+            let displayLabel = typeLabel;
+            let description = item.description;
+
+            if (item.type?.toUpperCase() === "TONTINE_PAYMENT") {
+              if (description) {
+                description = description.replace(/#\d+/, "").trim();
+              }
+            }
+              const iconSource = getMethodIcon(item);
 
             const readableDescription = getTypeLabel(item.type, t);
 
@@ -555,7 +571,9 @@ const HomeScreen = () => {
                 <Image source={iconSource} className="w-10 h-10 mr-3 rounded-full" resizeMode="contain" />
                 <View className="flex-1">
                   <Text className="text-black font-semibold">
-                     {typeLabel}
+                    {item.type?.toUpperCase() === "TONTINE_PAYMENT"
+                      ? description || ""
+                      : displayLabel}
                   </Text>
                   <Text className="text-black text-sm">
                     {item.totalAmount?.toLocaleString()} {item.currency}
