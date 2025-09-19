@@ -309,13 +309,13 @@ const handleShowCardDetails = async () => {
   try {
     const balance = balanceData?.data?.balance ?? 0;
 
-    // if (balance < 1000) {
-    //   Alert.alert(
-    //     "Solde insuffisant",
-    //     "Vous devez avoir au moins 1 000 XAF sur votre carte pour consulter les détails."
-    //   );
-    //   return;
-    // }
+    if (balance < 1000) {
+      Alert.alert(
+        "Solde insuffisant",
+        "Vous devez avoir au moins 1 000 XAF sur votre carte pour consulter les détails."
+      );
+      return;
+    }
 
     if (cardStatus === "ACTIVE") {
       Alert.alert(
