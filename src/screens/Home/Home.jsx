@@ -548,11 +548,21 @@ const HomeScreen = () => {
             let displayLabel = typeLabel;
             let description = item.description;
 
-            if (item.type?.toUpperCase() === "TONTINE_PAYMENT") {
-              if (description) {
-                description = description.replace(/#\d+/, "").trim();
-              }
-            }
+            // Handle BANK_TRANSFER deposits with URL descriptions
+                if (item.type?.toUpperCase() === "DEPOSIT" && 
+                    item.method?.toUpperCase() === "BANK_TRANSFER" &&
+                    description && 
+                    (description.startsWith('http://') || description.startsWith('https://'))) {
+                  description = t("home.viewDocument"); // "Document de versement Bancaire"
+                }
+
+                // Handle TONTINE_PAYMENT descriptions to remove # and numbers
+                if (item.type?.toUpperCase() === "TONTINE_PAYMENT") {
+                  if (description) {
+                    description = description.replace(/#\d+/, "").trim();
+                  }
+                }
+
               const iconSource = getMethodIcon(item);
 
             const readableDescription = getTypeLabel(item.type, t);
@@ -571,7 +581,7 @@ const HomeScreen = () => {
                 <Image source={iconSource} className="w-10 h-10 mr-3 rounded-full" resizeMode="contain" />
                 <View className="flex-1">
                   <Text className="text-black font-semibold">
-                   {transaction.description}
+                       {description}
                   </Text>
                   <Text className="text-black text-sm">
                     {item.totalAmount?.toLocaleString()} {item.currency}
