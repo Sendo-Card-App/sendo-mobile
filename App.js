@@ -1,6 +1,7 @@
 import "./global.css";
 import { ThemeProvider } from './src/constants/ThemeContext';
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState,useRef } from "react";
+import { AppState } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback } from "react";
 import { Colors } from './src/constants/colors'; // Adjust the path as needed
@@ -144,6 +145,7 @@ import TermsAndConditions from "./src/screens/Tontine/TermsAndConditions";
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
 const Tab = createBottomTabNavigator();
+const navigationRef = React.createRef();
 
 const headerHeight = Platform.select({
   ios: 60,
@@ -465,10 +467,29 @@ function DrawerNavigator() {
 }
 
 export default function App() {
+   const appState = useRef(AppState.currentState);
+
   useEffect(() => {
     (async () => {
       await registerForPushNotificationsAsync();
     })();
+  }, []);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", nextAppState => {
+      if (
+        appState.current.match(/inactive|background/) &&
+        nextAppState === "active"
+      ) {
+        //  When app comes back, force PIN screen
+        if (navigationRef.current) {
+          navigationRef.current.navigate("PinCode");
+        }
+      }
+      appState.current = nextAppState;
+    });
+
+    return () => subscription.remove();
   }, []);
 
 
