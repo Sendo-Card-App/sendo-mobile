@@ -416,10 +416,15 @@ const getLocalImageBase64 = async () => {
           <span class="value">${transaction.receiver?.firstname || user?.firstname} ${transaction.receiver?.lastname || user?.lastname}</span>
         </div>
         <div class="section">
-        <div class="row">
-          <span class="label">${counterpartLabel}</span>
-          <span class="value">${counterpartName}</span>
-        </div>
+       ${transaction.type === 'WALLET_TO_WALLET' ? `
+          <div class="section">
+            <div class="row">
+              <span class="label">${counterpartLabel}</span>
+              <span class="value">${counterpartName}</span>
+            </div>
+          </div>
+        ` : ''}
+
       </div>
         ${displayType !== 'NIU_PAYMENT' && (transaction.receiver?.phone || user?.phone) ? `
         <div class="row">

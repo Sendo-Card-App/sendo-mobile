@@ -552,17 +552,36 @@ const handleSaveOrdreRotation = async () => {
                               <Text className="text-orange-500 font-medium text-sm mr-2">
                                 {item.statutPaiement}
                               </Text>
-                              <TouchableOpacity
-                                className={`bg-green-400 rounded-full px-3 py-1 flex-row items-center justify-center ${isLoading ? "opacity-50" : ""}`}
-                                disabled={isLoading}
-                                onPress={() => handleRelance(item.id)}
-                              >
-                                {isLoadingRelance ? (
-                                  <Loader size="small" color="#fff" />
-                                ) : (
-                                  <Text className="text-white text-xs font-semibold">{t("actions.remind")}</Text>
-                                )}
-                              </TouchableOpacity>
+                               <TouchableOpacity
+                                  className={`bg-green-400 rounded-full px-3 py-1 flex-row items-center justify-center ${isLoading ? "opacity-50" : ""}`}
+                                  disabled={isLoading}
+                                  onPress={() => {
+                                    setIsLoadingRelance(true);
+                                    relanceCotisation(item.id)
+                                      .unwrap()
+                                      .then(() => {
+                                        Toast.show({
+                                          type: "success",
+                                          text1: "Success",
+                                          text2: "Reminder sent successfully",
+                                        });
+                                      })
+                                      .catch((error) => {
+                                        Toast.show({
+                                          type: "error",
+                                          text1: "Error",
+                                          text2: error?.data?.message || "Failed to send reminder",
+                                        });
+                                      })
+                                      .finally(() => setIsLoadingRelance(false));
+                                  }}
+                                >
+                                  {isLoadingRelance ? ( 
+                                    <Loader size="small" color="#fff" /> 
+                                  ) : (
+                                    <Text className="text-white text-xs font-semibold">{t("actions.remind")}</Text>
+                                  )}
+                                </TouchableOpacity>
                             </View>
                           )}
                         </View>
