@@ -72,7 +72,7 @@ const DemandDetailScreen = () => {
   try {
     await paySharedExpense({ expenseId: sharedExpense.id }).unwrap();
     navigation.navigate("SuccessSharing", {
-      transactionDetails: "Payment completed successfully",
+      transactionDetails: "Paiement effectué avec succès",
     });
   } catch (error) {
     console.log("Response:", JSON.stringify(error, null, 2));

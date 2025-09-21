@@ -139,7 +139,7 @@ const DetailScreen = () => {
 
       await updateSharedExpense({ id: transaction.id, data: payload }).unwrap();
      
-      Toast.show({ type: "success", text1: "Changes saved successfully." });
+      Toast.show({ type: "success", text1: "Modifications enregistrées avec succès." });
     } catch(error) {
       console.log('Update shared error:', JSON.stringify(error, null, 2));
       Toast.show({ type: "error", text1: "Failed to save changes" });
