@@ -145,7 +145,7 @@ const VirtualCardRechargeDetails = () => {
           </div>
           <div class="row">
             <span class="label">Type:</span>
-            <span class="value">Recharge de carte virtuelle</span>
+            <span class="value">${transaction.description}</span>
           </div>
         </div>
 
@@ -235,7 +235,7 @@ const handleDownloadReceipt = async () => {
           <View className="bg-[#7ddd7d] w-16 h-16 rounded-full justify-center items-center mb-2">
             <Ionicons name="card" size={30} color="#fff" />
           </View>
-          <Text className="text-lg font-semibold text-gray-800">Recharge effectuée</Text>
+          <Text className="text-lg font-semibold text-gray-800">{transaction.description}</Text>
           <Text className="text-gray-500">Terminé le {formatDate(transaction.createdAt)}</Text>
         </View>
 
