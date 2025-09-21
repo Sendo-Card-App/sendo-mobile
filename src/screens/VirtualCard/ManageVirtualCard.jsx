@@ -27,7 +27,7 @@ import {
   useUnfreezeCardMutation,
   useGetCardTransactionsQuery,
   useGetCardBalanceQuery,
-  useGetVirtualCardDetailsHideQuery,
+  useLazyGetVirtualCardDetailsHideQuery,
   useGetCardDebtsQuery,
   useGetUnlockStatusQuery,
 } from "../../services/Card/cardApi";
@@ -50,6 +50,7 @@ const ManageVirtualCard = () => {
     //console.log('User Profile:', JSON.stringify(userProfile, null, 2));
 
   const [selectedCardId, setSelectedCardId] = useState(null);
+  const [readOnlyMode, setReadOnlyMode] = useState(false);
   const [iframeModalVisible, setIframeModalVisible] = useState(false);
   const [iframeUrl, setIframeUrl] = useState('');
   const [isPreventingScreenshot, setIsPreventingScreenshot] = useState(false);
@@ -72,11 +73,11 @@ const ManageVirtualCard = () => {
      pollingInterval: 1000,  // Refetch every 30 seconds
   });
     //console.log("Unlock Status:", JSON.stringify(unlockStatus, null, 2));
-  const { data: cardDetailsHide, refetch: refetchCardDetailsHide } =
-    useGetVirtualCardDetailsHideQuery(selectedCardId, {
-      skip: !selectedCardId,
-     
-    });
+
+ const [getVirtualCardDetailsHide, { data: hideData, isLoading: isHideLoading, error: hideError }] = useLazyGetVirtualCardDetailsHideQuery();
+
+
+
 
 
     //console.log("cardDetailsHide:", JSON.stringify(cardDetailsHide, null, 2));
@@ -215,18 +216,7 @@ const {
   }
 };
 
-const debouncedHandleShowCardDetails = async () => {
-  if (isProcessing) return;
 
-  try {
-    setIsProcessing(true);
-    await handleShowCardDetails();
-  } catch (err) {
-    console.error(err);
-  } finally {
-    setIsProcessing(false);
-  }
-};
 
 
   
@@ -261,15 +251,16 @@ const debouncedHandleShowCardDetails = async () => {
     };
   }, [iframeModalVisible]);
 
-  const showModal = (type, message) => {
-    setModalType(type);
-    setModalMessage(message);
-    setModalVisible(true);
-  };
+  const showModal = (type, title, message = "") => {
+  setModalType(type);
+  setModalMessage(message ? `${title}: ${message}` : title);
+  setModalVisible(true);
+};
+
 
 const handleFreezeUnfreeze = async () => {
   const cardId = cardData?.cardId;
-  const cardStatus = cardData?.status; // ✅ get status
+  const cardStatus = cardData?.status; //  get status
   if (!cardId) return;
 
   //  Handle PRE_ACTIVE and non-active cases before doing API calls
@@ -304,86 +295,107 @@ const handleFreezeUnfreeze = async () => {
 };
 
 
-
 const handleShowCardDetails = async () => {
-  try {
-    const balance = balanceData?.data?.balance ?? 0;
+    try {
+      const balance = balanceData?.data?.balance ?? 0;
 
-    if (balance < 1000) {
-      Alert.alert(
-        "Solde insuffisant",
-        "Vous devez avoir au moins 1 000 XAF sur votre carte pour consulter les détails."
-      );
+      if (balance < 1000) {
+        Alert.alert(
+          "Solde insuffisant",
+          "Vous devez avoir au moins 1 000 XAF sur votre carte pour consulter les détails."
+        );
+        return;
+      }
+
+      if (cardStatus === "ACTIVE") {
+        // Show alert and wait for user response
+        Alert.alert(
+          "Frais d'affichage",
+          `Attention! ${SENDO_VIEW_DETAILS_CARD_FEES} XAF des frais seront déduits de **votre carte Sendo** à chaque fois que vous consulterez les détails. Souhaitez-vous continuer?`,
+          [
+            { 
+              text: "Annuler", 
+              style: "cancel",
+              onPress: () => {
+                setIsLoadingIframe(false); // Ensure loader stops if user cancels
+              }
+            },
+            {
+              text: "Continuer",
+              onPress: async () => {
+                await handleCardDetailsRequest(false); // false for not read-only
+              },
+            },
+          ]
+        );
+      } else if (cardStatus === "FROZEN") {
+        await handleCardDetailsRequest(true); // true for read-only
+      } else if (cardStatus === "BLOCKED") {
+        showModal("error", "Votre carte a été bloquée");
+      } else if (cardStatus === "PRE_ACTIVE") {
+        setPreActiveModalVisible(true);
+      } else {
+        showModal("error", "Les détails de la carte ne sont disponibles que lorsque la carte est active ou verrouillée");
+      }
+    } catch (err) {
+      console.error("API Error:", err);
+      showModal("error", "Une erreur s'est produite");
+      setIsLoadingIframe(false);
+    }
+  };
+
+// Separate function to handle the API request
+const handleCardDetailsRequest = async (isReadOnly) => {
+  setIsLoadingIframe(true);
+  
+  try {
+    console.log("📡 Sending request with cardId:", selectedCardId);
+    
+    // Use the lazy query hook correctly
+    const response = await getVirtualCardDetailsHide(selectedCardId).unwrap();
+    
+    console.log("response Data:", JSON.stringify(response, null, 2));
+    
+    // Handle different response structures
+    if (response.error || response.status >= 400) {
+      const errorMsg = response.error?.data?.message ||
+                       response.error?.data?.data?.errors?.[0] ||
+                       response.message ||
+                       "Impossible de charger les détails de la carte";
+      showModal("error", errorMsg);
       return;
     }
-
-    if (cardStatus === "ACTIVE") {
-      Alert.alert(
-
-        "Frais d'affichage",
-        `Attention! ${SENDO_VIEW_DETAILS_CARD_FEES || "XAF des frais"} seront déduits de **votre carte Sendo** à chaque fois que vous consulterez les détails. Souhaitez-vous continuer?`,
-        [
-          { text: "Annuler", style: "cancel" },
-
-          {
-            text: "Continuer",
-            onPress: async () => {
-              setIsLoadingIframe(true);
-              const response = await refetchCardDetailsHide();
-               console.log("response Data:", JSON.stringify(response, null, 2));
-                // ✅ Handle error
-              if (response.error) {
-                const errorMsg =
-                  response.error?.data?.message ||
-                  response.error?.data?.data?.errors?.[0] ||
-                  "Impossible de charger les détails de la carte";
-                showModal("error", errorMsg);
-                setIsLoadingIframe(false);
-                return; // Exit early on error
-              }
-              if (response.data?.data?.link) {
-                setIframeUrl(response.data.data.link);
-                setIframeModalVisible(true);
-                setWebViewLoading(true);
-                setReadOnlyMode(false);
-              } else {
-                showModal("error", "Impossible de charger les détails de la carte");
-              }
-              setIsLoadingIframe(false);
-            },
-          },
-        ]
-      );
-    } else if (cardStatus === "FROZEN") {
-      setIsLoadingIframe(true);
-      const response = await refetchCardDetailsHide();
-
-      if (response.data?.data?.link) {
-        setIframeUrl(response.data.data.link);
-        setIframeModalVisible(true);
-        setWebViewLoading(true);
-        setReadOnlyMode(true);
-      } else {
-        showModal("error", "Impossible de charger les détails de la carte. Débloquez votre carte.");
-      }
-      setIsLoadingIframe(false);
-    } else if (cardStatus === "BLOCKED") {
-      showModal("error", "Votre carte a été bloquée");
-    } else if (cardStatus === "PRE_ACTIVE") {
-      setPreActiveModalVisible(true);
+    
+    // Check for link in different possible response structures
+    const link = response.data?.data?.link || response.data?.link || response.link;
+    
+    if (link) {
+      setIframeUrl(link);
+      setIframeModalVisible(true);
+      setWebViewLoading(true);
+      setReadOnlyMode(isReadOnly);
     } else {
-      showModal(
-        "error",
-        "Les détails de la carte ne sont disponibles que lorsque la carte est active ou verrouillée"
-      );
+      showModal("error", "Impossible de charger les détails de la carte");
     }
-  } catch (err) {
-    showModal("error", "Une erreur s'est produite");
+  } catch (error) {
+    console.log("API call failed:", JSON.stringify(error, null, 2));
+    
+    // Handle different error structures
+    if (error?.status === 500 && error?.data?.status === 500) {
+      showModal("error", "Les détails de la carte ne sont pas disponibles pour le moment. Merci de réessayer.");
+    } else {
+      // Handle other error structures
+      const errorMsg = error?.data?.message ||
+                       error?.data?.data?.errors?.[0] ||
+                       error?.message ||
+                       "Erreur de connexion au serveur";
+      
+      showModal("error", errorMsg);
+    }
   } finally {
     setIsLoadingIframe(false);
   }
 };
-
 
   const ActionItem = ({ icon, label, onPress, disabled = false }) => (
   <TouchableOpacity 
@@ -625,8 +637,8 @@ const handleShowCardDetails = async () => {
           <View className="flex flex-row justify-between mt-1">
               <TouchableOpacity
                 className="flex flex-1 bg-gray-100 mx-1 py-1 px-4 rounded-xl flex-col items-center justify-center"
-                onPress={debouncedHandleShowCardDetails}
-                disabled={isProcessing || isLoadingIframe }
+                onPress={handleShowCardDetails}
+               disabled={isProcessing || isLoadingIframe || isHideLoading}
               >
                 {isProcessing || isLoadingIframe ? (
                   <ActivityIndicator size="small" color="#7ddd7d" />
