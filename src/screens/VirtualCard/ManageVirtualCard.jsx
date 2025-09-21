@@ -349,12 +349,12 @@ const handleCardDetailsRequest = async (isReadOnly) => {
   setIsLoadingIframe(true);
   
   try {
-    console.log("📡 Sending request with cardId:", selectedCardId);
+    //console.log("Sending request with cardId:", selectedCardId);
     
     // Use the lazy query hook correctly
     const response = await getVirtualCardDetailsHide(selectedCardId).unwrap();
     
-    console.log("response Data:", JSON.stringify(response, null, 2));
+    //console.log("response Data:", JSON.stringify(response, null, 2));
     
     // Handle different response structures
     if (response.error || response.status >= 400) {
@@ -378,7 +378,7 @@ const handleCardDetailsRequest = async (isReadOnly) => {
       showModal("error", "Impossible de charger les détails de la carte");
     }
   } catch (error) {
-    console.log("API call failed:", JSON.stringify(error, null, 2));
+    //console.log("API call failed:", JSON.stringify(error, null, 2));
     
     // Handle different error structures
     if (error?.status === 500 && error?.data?.status === 500) {
