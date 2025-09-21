@@ -79,10 +79,10 @@ export const cardApi = createApi({
       providesTags: ['Card'],
     }),
 
-     getVirtualCardDetailsHide: builder.query({
-      query: (cardId) => `${CARD_ENDPOINTS.GET_VIRTUAL_CARD_HIDE}${cardId}`,
-      providesTags: ['Card'],
+    getVirtualCardDetailsHide: builder.query({
+      query: (cardId) => `cards/details/${cardId}`,
     }),
+
 
     freezeCard: builder.mutation({
       query: (cardId) => ({
@@ -156,7 +156,7 @@ export const {
   useGetVirtualCardStatusQuery,
   useGetVirtualCardsQuery,
   useGetVirtualCardDetailsQuery,
-  useGetVirtualCardDetailsHideQuery,
+  useLazyGetVirtualCardDetailsHideQuery,
   useFreezeCardMutation,
   useUnfreezeCardMutation,
   useRechargeCardMutation,
