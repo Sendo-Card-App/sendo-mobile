@@ -1,4 +1,4 @@
-package com.sfe.sendo2025
+package com.sendo
 
 import android.os.Build
 import android.os.Bundle

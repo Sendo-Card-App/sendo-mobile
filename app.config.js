@@ -22,11 +22,10 @@ module.exports = {
     },
     ios: {
       supportsTablet: true,
-
       bundleIdentifier: "www.sendo.com",
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
-         NSNotificationsUsageDescription: "This app uses notifications to inform you about updates."
+        NSNotificationsUsageDescription: "This app uses notifications to inform you about updates."
       }
     },
     android: {
@@ -39,18 +38,15 @@ module.exports = {
         "android.permission.INTERNET",
         "android.permission.READ_CONTACTS",
         "android.permission.WRITE_CONTACTS"
+        // Explicitly REMOVED media permissions
       ],
-
-
       package: "www.sendo.com"
-
-
     },
     web: {
       favicon: "./assets/favicon.png"
     },
     plugins: [
-       "expo-notifications",
+      "expo-notifications",
       [
         "expo-camera",
         {
@@ -64,14 +60,21 @@ module.exports = {
         {
           contactsPermission: "Allow $(PRODUCT_NAME) to access your contacts"
         }
+      ],
+      // ADD this plugin configuration to disable image-picker's automatic permissions
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow $(PRODUCT_NAME) to access your photos for profile pictures only.",
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera for taking profile pictures."
+        }
       ]
     ],
     extra: {
       eas: {
         apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL,
-       "projectId": "08a59933-10e3-45bc-b064-54b97ea7eca9"
+        "projectId": "08a59933-10e3-45bc-b064-54b97ea7eca9"
       }
-    },
-    
+    }
   }
 };
