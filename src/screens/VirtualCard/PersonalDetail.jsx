@@ -85,7 +85,6 @@ const PersonalDetail = ({ navigation }) => {
 
           {/* Champs */}
           {[
-            { key: 'country', placeholder: 'enterCountry' },
             { key: 'region', placeholder: 'enterRegion' },     
             { key: 'city', placeholder: 'enterCity' },
             { key: 'cni', placeholder: 'enterCni' },

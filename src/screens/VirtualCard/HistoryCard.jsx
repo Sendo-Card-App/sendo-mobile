@@ -7,7 +7,7 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from "react-native";
-import { Ionicons, FontAwesome5, Entypo } from "@expo/vector-icons";
+import { Ionicons, FontAwesome5, Entypo,AntDesign } from "@expo/vector-icons";
 import {
   useGetVirtualCardsQuery,
   useGetVirtualCardDetailsQuery,
@@ -117,7 +117,7 @@ const CardHistory = () => {
       {/* Custom Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color="#fff" />
+          <AntDesign name="left" size={24} color="white" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t("cardHistory")}</Text>
         <View style={{ width: 24 }} />

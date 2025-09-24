@@ -9,7 +9,7 @@ import {
   Platform,
 } from "react-native";
 import React, { useEffect, useState } from "react";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, AntDesign } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 import TopLogo from "../../images/TopLogo.png";
 import { useTranslation } from "react-i18next";
@@ -238,7 +238,7 @@ const SENDO_DEPOSIT_FEES = getConfigValue("SENDO_DEPOSIT_FEES");
         </View>
         <View className="border-b border-dashed border-white flex-row justify-between py-4 mt-10 items-center mx-5 pt-5">
           <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back" size={24} color="white" />
+            <AntDesign name="left" size={24} color="white" />
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => navigation.openDrawer()}

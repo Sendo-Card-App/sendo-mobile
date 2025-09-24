@@ -280,7 +280,7 @@ if (isSubmitting || !isKYCComplete) {
         }
         className="p-1"
       >
-        <Ionicons name="arrow-back" size={24} color="#fff" />
+       <AntDesign name="left" size={24} color="white" />
       </TouchableOpacity>
         <TouchableOpacity onPress={() => navigation.openDrawer()} className="ml-auto">
           <Ionicons name="menu-outline" size={24} color="white" />

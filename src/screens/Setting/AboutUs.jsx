@@ -62,20 +62,23 @@ const AboutUs = ({ navigation }) => {
             activités sous le permis {"\n"}
             numéro 19525 délivré par Revenu Québec et sommes inscrits
             au Centre d’analyse des opérations et déclarations ﬁnancières du
-            Canada C100000856 (numéro du CANAFE à mettre où c'est mentionné).
+            Canada.
           </Text>
         </View>
 
         {/* Adresse */}
-        <View className="mt-3 px-4">
-          <Text className="text-gray-400 text-sm ml-4 mt-3">
-            Siège social : 2001 Boulevard Robert-Bourassa, Montréal, Québec,
-            Canada, H3A 2A6. {"\n"}
-            Courriel de contact : infosendo@sf-e.ca. {"\n"}
-            Numéro de téléphone du service client : 237 640 72 60 36 / +1 582 907 2096. Numéro
-            d’entreprise du Québec (NEQ) : 1180279300.
-          </Text>
-        </View>
+       <View className="mt-3 px-4">
+        <Text className="text-gray-400 text-sm ml-4 mt-3">
+          Siège social : {"\n"}
+          - Canada : 2001 Boulevard Robert-Bourassa, Montréal, Québec,
+          Canada, H3A 2A6. {"\n"}
+          - Cameroun : Douala, Akwa Bonakouamouan, immeuble MZ, 3ᵉ étage. {"\n\n"}
+          Courriel de contact : infosendo@sf-e.ca. {"\n"}
+          Numéro de téléphone du service client : 237 640 72 60 36 / +1 581 907 2096. {"\n"}
+          Numéro d’entreprise du Québec (NEQ) : C100000856.
+        </Text>
+      </View>
+
 
         {/* Légal */}
         <View className="mt-3 px-4">
@@ -152,7 +155,7 @@ const AboutUs = ({ navigation }) => {
           <Text className="text-gray-400 text-sm ml-4 -mt-3">
             Pour toute question ou assistance, vous pouvez nous contacter via le
             service client intégré ou par courriel à infosendo@sf-e.ca ou au
-            237 640 72 60 36 / +1 582 907 2096.
+            237 640 72 60 36 / +1 581 907 2096.
           </Text>
         </View>
 

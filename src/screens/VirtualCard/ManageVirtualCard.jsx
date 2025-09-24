@@ -14,7 +14,7 @@ import {
   Alert,
 } from "react-native";
 import { Feather } from '@expo/vector-icons';
-import { Ionicons, FontAwesome5, Entypo } from "@expo/vector-icons";
+import { Ionicons, FontAwesome5, Entypo, AntDesign } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 import { useNavigation } from "@react-navigation/native";
 import CardImg from "../../images/virtual.png";
@@ -27,7 +27,7 @@ import {
   useUnfreezeCardMutation,
   useGetCardTransactionsQuery,
   useGetCardBalanceQuery,
-  useGetVirtualCardDetailsHideQuery,
+  useLazyGetVirtualCardDetailsHideQuery,
   useGetCardDebtsQuery,
   useGetUnlockStatusQuery,
 } from "../../services/Card/cardApi";
@@ -50,6 +50,7 @@ const ManageVirtualCard = () => {
     //console.log('User Profile:', JSON.stringify(userProfile, null, 2));
 
   const [selectedCardId, setSelectedCardId] = useState(null);
+  const [readOnlyMode, setReadOnlyMode] = useState(false);
   const [iframeModalVisible, setIframeModalVisible] = useState(false);
   const [iframeUrl, setIframeUrl] = useState('');
   const [isPreventingScreenshot, setIsPreventingScreenshot] = useState(false);
@@ -69,14 +70,14 @@ const ManageVirtualCard = () => {
 
   const { data: unlockStatus, isLoading: isUnlockStatusLoading } = useGetUnlockStatusQuery(selectedCardId, {
     skip: !selectedCardId,
-      pollingInterval: 1000, // Refetch every 30 seconds
+     pollingInterval: 1000,  // Refetch every 30 seconds
   });
     //console.log("Unlock Status:", JSON.stringify(unlockStatus, null, 2));
-  const { data: cardDetailsHide, isLoading: isDetailsHideLoading, refetch: refetchCardDetailsHide } =
-    useGetVirtualCardDetailsHideQuery(selectedCardId, {
-      skip: !selectedCardId,
-      pollingInterval: 1000,
-    });
+
+ const [getVirtualCardDetailsHide, { data: hideData, isLoading: isHideLoading, error: hideError }] = useLazyGetVirtualCardDetailsHideQuery();
+
+
+
 
 
     //console.log("cardDetailsHide:", JSON.stringify(cardDetailsHide, null, 2));
@@ -107,16 +108,16 @@ const ManageVirtualCard = () => {
     refetch: refetchTransactions,
   } = useGetCardTransactionsQuery(cardData?.id, {
     skip: !cardData?.id,
-      pollingInterval: 1000,
+     pollingInterval: 1000, 
   });
- //console.log("Full response:", JSON.stringify(cardTransactions, null, 2));
+ ///console.log("Full response:", JSON.stringify(cardTransactions, null, 2));
   const {
   data: balanceData,
   isLoading: isBalanceLoading,
   refetch: refetchBalance,
 } = useGetCardBalanceQuery({ idCard: cardData?.id }, {
   skip: !cardData?.id,
-    pollingInterval: 1000,
+   pollingInterval: 1000,  
 });
 //console.log("balanceData Data:", JSON.stringify(balanceData, null, 2));
 const {
@@ -125,7 +126,7 @@ const {
   refetch: refetchDebts,
 } = useGetCardDebtsQuery(cardData?.id, {
   skip: !cardData?.id,
-    pollingInterval: 1000,
+   pollingInterval: 1000, 
 });
  //console.log("Debts Data:", JSON.stringify(debtsData, null, 2));
 
@@ -215,18 +216,7 @@ const {
   }
 };
 
-const debouncedHandleShowCardDetails = async () => {
-  if (isProcessing) return;
 
-  try {
-    setIsProcessing(true);
-    await handleShowCardDetails();
-  } catch (err) {
-    console.error(err);
-  } finally {
-    setIsProcessing(false);
-  }
-};
 
 
   
@@ -261,15 +251,16 @@ const debouncedHandleShowCardDetails = async () => {
     };
   }, [iframeModalVisible]);
 
-  const showModal = (type, message) => {
-    setModalType(type);
-    setModalMessage(message);
-    setModalVisible(true);
-  };
+  const showModal = (type, title, message = "") => {
+  setModalType(type);
+  setModalMessage(message ? `${title}: ${message}` : title);
+  setModalVisible(true);
+};
+
 
 const handleFreezeUnfreeze = async () => {
   const cardId = cardData?.cardId;
-  const cardStatus = cardData?.status; // ✅ get status
+  const cardStatus = cardData?.status; //  get status
   if (!cardId) return;
 
   //  Handle PRE_ACTIVE and non-active cases before doing API calls
@@ -283,10 +274,10 @@ const handleFreezeUnfreeze = async () => {
   try {
     if (isCardFrozen) {
       const response = await unfreezeCard(cardId).unwrap();
-      showModal("success", `Carte débloquée avec succès.\n${response?.message || ""}`);
+      showModal("success", `${response?.message || ""}`);
     } else {
       const response = await freezeCard(cardId).unwrap();
-      showModal("success", `Carte bloquée avec succès.\n${response?.message || ""}`);
+      showModal("success", `${response?.message || ""}`);
     }
 
     refetchCardDetails();
@@ -304,76 +295,107 @@ const handleFreezeUnfreeze = async () => {
 };
 
 
-
 const handleShowCardDetails = async () => {
-  try {
-    const balance = balanceData?.data?.balance ?? 0;
+    try {
+      const balance = balanceData?.data?.balance ?? 0;
 
-    if (balance < 1000) {
-      Alert.alert(
-        "Solde insuffisant",
-        "Vous devez avoir au moins 1 000 XAF sur votre carte pour consulter les détails."
-      );
+      if (balance < 1000) {
+        Alert.alert(
+          "Solde insuffisant",
+          "Vous devez avoir au moins 1 000 XAF sur votre carte pour consulter les détails."
+        );
+        return;
+      }
+
+      if (cardStatus === "ACTIVE") {
+        // Show alert and wait for user response
+        Alert.alert(
+          "Frais d'affichage",
+          `Attention! ${SENDO_VIEW_DETAILS_CARD_FEES} XAF des frais seront déduits de **votre carte Sendo** à chaque fois que vous consulterez les détails. Souhaitez-vous continuer?`,
+          [
+            { 
+              text: "Annuler", 
+              style: "cancel",
+              onPress: () => {
+                setIsLoadingIframe(false); // Ensure loader stops if user cancels
+              }
+            },
+            {
+              text: "Continuer",
+              onPress: async () => {
+                await handleCardDetailsRequest(false); // false for not read-only
+              },
+            },
+          ]
+        );
+      } else if (cardStatus === "FROZEN") {
+        await handleCardDetailsRequest(true); // true for read-only
+      } else if (cardStatus === "BLOCKED") {
+        showModal("error", "Votre carte a été bloquée");
+      } else if (cardStatus === "PRE_ACTIVE") {
+        setPreActiveModalVisible(true);
+      } else {
+        showModal("error", "Les détails de la carte ne sont disponibles que lorsque la carte est active ou verrouillée");
+      }
+    } catch (err) {
+      console.error("API Error:", err);
+      showModal("error", "Une erreur s'est produite");
+      setIsLoadingIframe(false);
+    }
+  };
+
+// Separate function to handle the API request
+const handleCardDetailsRequest = async (isReadOnly) => {
+  setIsLoadingIframe(true);
+  
+  try {
+    //console.log("Sending request with cardId:", selectedCardId);
+    
+    // Use the lazy query hook correctly
+    const response = await getVirtualCardDetailsHide(selectedCardId).unwrap();
+    
+    //console.log("response Data:", JSON.stringify(response, null, 2));
+    
+    // Handle different response structures
+    if (response.error || response.status >= 400) {
+      const errorMsg = response.error?.data?.message ||
+                       response.error?.data?.data?.errors?.[0] ||
+                       response.message ||
+                       "Impossible de charger les détails de la carte";
+      showModal("error", errorMsg);
       return;
     }
-
-    if (cardStatus === "ACTIVE") {
-      Alert.alert(
-
-        "Frais d'affichage",
-        `Attention! ${SENDO_VIEW_DETAILS_CARD_FEES || "XAF des frais"} seront déduits de **votre carte Sendo** à chaque fois que vous consulterez les détails. Souhaitez-vous continuer?`,
-        [
-          { text: "Annuler", style: "cancel" },
-
-          {
-            text: "Continuer",
-            onPress: async () => {
-              setIsLoadingIframe(true);
-              const response = await refetchCardDetailsHide();
-               //console.log("response Data:", JSON.stringify(response, null, 2));
-              if (response.data?.data?.link) {
-                setIframeUrl(response.data.data.link);
-                setIframeModalVisible(true);
-                setWebViewLoading(true);
-                setReadOnlyMode(false);
-              } else {
-                showModal("error", "Impossible de charger les détails de la carte");
-              }
-              setIsLoadingIframe(false);
-            },
-          },
-        ]
-      );
-    } else if (cardStatus === "FROZEN") {
-      setIsLoadingIframe(true);
-      const response = await refetchCardDetailsHide();
-
-      if (response.data?.data?.link) {
-        setIframeUrl(response.data.data.link);
-        setIframeModalVisible(true);
-        setWebViewLoading(true);
-        setReadOnlyMode(true);
-      } else {
-        showModal("error", "Impossible de charger les détails de la carte. Débloquez votre carte.");
-      }
-      setIsLoadingIframe(false);
-    } else if (cardStatus === "BLOCKED") {
-      showModal("error", "Votre carte a été bloquée");
-    } else if (cardStatus === "PRE_ACTIVE") {
-      setPreActiveModalVisible(true);
+    
+    // Check for link in different possible response structures
+    const link = response.data?.data?.link || response.data?.link || response.link;
+    
+    if (link) {
+      setIframeUrl(link);
+      setIframeModalVisible(true);
+      setWebViewLoading(true);
+      setReadOnlyMode(isReadOnly);
     } else {
-      showModal(
-        "error",
-        "Les détails de la carte ne sont disponibles que lorsque la carte est active ou verrouillée"
-      );
+      showModal("error", "Impossible de charger les détails de la carte");
     }
-  } catch (err) {
-    showModal("error", "Une erreur s'est produite");
+  } catch (error) {
+    //console.log("API call failed:", JSON.stringify(error, null, 2));
+    
+    // Handle different error structures
+    if (error?.status === 500 && error?.data?.status === 500) {
+      showModal("error", "Les détails de la carte ne sont pas disponibles pour le moment. Merci de réessayer.");
+    } else {
+      // Handle other error structures
+      const errorMsg = error?.data?.message ||
+                       error?.data?.data?.errors?.[0] ||
+                       error?.message ||
+                       "Erreur de connexion au serveur";
+      
+      showModal("error", errorMsg);
+    }
   } finally {
     setIsLoadingIframe(false);
   }
 };
-
 
   const ActionItem = ({ icon, label, onPress, disabled = false }) => (
   <TouchableOpacity 
@@ -411,18 +433,18 @@ const handleShowCardDetails = async () => {
     });
 
     return (
-      <TouchableOpacity
-        className="flex-row justify-between items-center py-3 border-b border-gray-200"
-        onPress={() => navigation.navigate("TransactionDetails", { transaction: item })}
-      >
-        <View className="flex-row items-center gap-2">
-          <View className="bg-gray-100 p-2 rounded-full">{icon}</View>
-          <View>
-            <Text className="font-semibold">
-             {item.description}
-            </Text>
-            <Text className="text-xs text-gray-500">{formattedDate}</Text>
-         <Text
+   <TouchableOpacity
+      className="flex-row justify-between items-center py-3 border-b border-gray-200"
+      onPress={() => navigation.navigate("TransactionDetails", { transaction: item })}
+    >
+      <View className="flex-row items-center gap-2 flex-1">
+        <View className="bg-gray-100 p-2 rounded-full">{icon}</View>
+        <View className="flex-1">
+          <Text className="font-semibold flex-wrap">
+            {item.description}
+          </Text>
+          <Text className="text-xs text-gray-500">{formattedDate}</Text>
+          <Text
             className={`text-xs ${
               item.status === "COMPLETED"
                 ? "text-green-600"
@@ -437,16 +459,14 @@ const handleShowCardDetails = async () => {
               ? "En cours de traitement"
               : "Échec"}
           </Text>
-
-
-          </View>
         </View>
-       <Text className={`font-bold ${item.status === "PENDING" ? "text-gray-400" : isCashIn ? "text-green-600" : "text-red-500"}`}>
-          {isCashIn ? "+" : "-"}
-          {item.amount.toLocaleString("fr-FR")} FCFA
-        </Text>
+      </View>
+      <Text className={`font-bold ${item.status === "PENDING" ? "text-gray-400" : isCashIn ? "text-green-600" : "text-red-500"}`}>
+        {isCashIn ? "+" : "-"}
+        {item.amount.toLocaleString("fr-FR")} FCFA
+      </Text>
+    </TouchableOpacity>
 
-      </TouchableOpacity>
     );
   };
 
@@ -476,13 +496,13 @@ const handleShowCardDetails = async () => {
             }
             className="p-1"
           >
-            <Ionicons name="arrow-back" size={24} color="#333" />
+            <AntDesign name="left" size={24} color="white" />
           </TouchableOpacity>
           <Text className="text-2xl font-bold text-gray-800 text-center flex-1">
             {cardData?.cardName || "Ma Carte"}
           </Text>
           <TouchableOpacity onPress={() => navigation.openDrawer()} className="p-1">
-            <Ionicons name="menu-outline" size={28} color="#333" />
+            <Ionicons name="menu-outline" size={28} color="#fff" />
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -517,6 +537,10 @@ const handleShowCardDetails = async () => {
                     params: {
                       onSuccess: () => {
                         setShowBalance(true);  // Reveal balance after successful pin
+                          // Automatically hide balance after 20s
+                          setTimeout(() => {
+                            setShowBalance(false);
+                          }, 20000);
                         return Promise.resolve();
                       },
                       showBalance: true,
@@ -611,25 +635,35 @@ const handleShowCardDetails = async () => {
           )}
             {/* 🔸 Action Buttons */}
           <View className="flex flex-row justify-between mt-1">
-            <TouchableOpacity
-              className="flex flex-1 bg-gray-100 mx-1 py-1 px-4 rounded-xl flex-col items-center justify-center"
-              onPress={debouncedHandleShowCardDetails}
-              disabled={isProcessing || isLoadingIframe || isDetailsHideLoading}
-            >
-              <Ionicons name="eye-outline" size={24} color="#333" />
-              <Text className="mt-2 text-center text-sm">{t('manageVirtualCard.viewInfo')}</Text>
-            </TouchableOpacity>
+              <TouchableOpacity
+                className="flex flex-1 bg-gray-100 mx-1 py-1 px-4 rounded-xl flex-col items-center justify-center"
+                onPress={handleShowCardDetails}
+               disabled={isProcessing || isLoadingIframe || isHideLoading}
+              >
+                {isProcessing || isLoadingIframe ? (
+                  <ActivityIndicator size="small" color="#7ddd7d" />
+                ) : (
+                  <Ionicons name="eye-outline" size={24} color="#333" />
+                )}
+                <Text className="mt-2 text-center text-sm">{t('manageVirtualCard.viewInfo')}</Text>
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              className="flex flex-1 bg-gray-100 mx-1 py-1 px-4 rounded-xl flex-col items-center justify-center"
-              onPress={debouncedHandleFreezeUnfreeze}
-              disabled={isProcessingFreeze || isLoadingFreeze}
-            >
-              <Ionicons name="snow-outline" size={24} color="#333" />
-              <Text className="mt-2 text-center text-sm">
-                {isCardFrozen ? t('manageVirtualCard.unfreeze') : t('manageVirtualCard.freeze')}
-              </Text>
-            </TouchableOpacity>
+              {/* Freeze / Unfreeze Button */}
+              <TouchableOpacity
+                className="flex flex-1 bg-gray-100 mx-1 py-1 px-4 rounded-xl flex-col items-center justify-center"
+                onPress={debouncedHandleFreezeUnfreeze}
+                disabled={isProcessingFreeze || isLoadingFreeze}
+              >
+                {isProcessingFreeze || isLoadingFreeze ? (
+                  <ActivityIndicator size="small" color="#7ddd7d" />
+                ) : (
+                  <Ionicons name="snow-outline" size={24} color="#333" />
+                )}
+                <Text className="mt-2 text-center text-sm">
+                  {isCardFrozen ? t('manageVirtualCard.unfreeze') : t('manageVirtualCard.freeze')}
+                </Text>
+              </TouchableOpacity>
+
 
             <TouchableOpacity
               className="flex flex-1 bg-gray-100 mx-1 py-1 px-3 rounded-xl flex-col items-center justify-center"

@@ -19,6 +19,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from 'react-i18next';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { Ionicons, AntDesign } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
@@ -639,7 +640,7 @@ const ChatScreen = ({ route, navigation }) => {
           onPress={() => navigation.goBack()}
           style={{ width: 40, alignItems: 'flex-start' }}
         >
-          <Icon name="arrow-back" size={24} color="white" />
+         <AntDesign name="left" size={24} color="white" />
         </TouchableOpacity>
 
         {/* Centered Title */}

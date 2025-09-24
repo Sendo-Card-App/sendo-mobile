@@ -8,12 +8,12 @@ import {
   Alert
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, AntDesign } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import moment from "moment";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from "expo-file-system/legacy";
 import { useTranslation } from "react-i18next";
 
 const VirtualCardRechargeDetails = () => {
@@ -145,7 +145,7 @@ const VirtualCardRechargeDetails = () => {
           </div>
           <div class="row">
             <span class="label">Type:</span>
-            <span class="value">Recharge de carte virtuelle</span>
+            <span class="value">${transaction.description}</span>
           </div>
         </div>
 
@@ -198,23 +198,26 @@ const VirtualCardRechargeDetails = () => {
     `;
   };
 
-  const handleDownloadReceipt = async () => {
-    try {
-      const html = generateReceiptHTML();
-      const { uri } = await Print.printToFileAsync({ html });
-      const newUri = `${FileSystem.documentDirectory}Reçu_Sendo_${transaction.transactionId}.pdf`;
-      await FileSystem.moveAsync({ from: uri, to: newUri });
+const handleDownloadReceipt = async () => {
+  try {
+    const html = generateReceiptHTML();
+    const { uri } = await Print.printToFileAsync({ html });
 
-      if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(newUri);
-      } else {
-        Alert.alert("Succès", "Reçu généré avec succès");
-      }
-    } catch (error) {
-      console.error("Error generating receipt:", error);
-      Alert.alert("Erreur", "Échec de génération du reçu. Veuillez réessayer.");
+    const newUri = `${FileSystem.documentDirectory}Reçu_Sendo_${transaction.transactionId}.pdf`;
+
+    await FileSystem.moveAsync({ from: uri, to: newUri });
+
+    if (await Sharing.isAvailableAsync()) {
+      await Sharing.shareAsync(newUri);
+    } else {
+      Alert.alert("Succès", "Reçu généré avec succès");
     }
-  };
+  } catch (error) {
+    console.error("Error generating receipt:", error);
+    Alert.alert("Erreur", "Échec de génération du reçu. Veuillez réessayer.");
+  }
+};
+
 
   return (
     <SafeAreaView className="flex-1 bg-white">
@@ -222,7 +225,7 @@ const VirtualCardRechargeDetails = () => {
       
       <View className="flex-row items-center p-4" style={{ backgroundColor: "#7ddd7d" }}>
         <TouchableOpacity onPress={() => navigation.goBack()} className="mr-2">
-          <Ionicons name="arrow-back" size={24} color="#fff" />
+         <AntDesign name="left" size={24} color="white" />
         </TouchableOpacity>
         <Text className="text-xl font-bold text-white">Détails de la transaction</Text>
       </View>
@@ -232,7 +235,7 @@ const VirtualCardRechargeDetails = () => {
           <View className="bg-[#7ddd7d] w-16 h-16 rounded-full justify-center items-center mb-2">
             <Ionicons name="card" size={30} color="#fff" />
           </View>
-          <Text className="text-lg font-semibold text-gray-800">Recharge effectuée</Text>
+          <Text className="text-lg font-semibold text-gray-800">{transaction.description}</Text>
           <Text className="text-gray-500">Terminé le {formatDate(transaction.createdAt)}</Text>
         </View>
 

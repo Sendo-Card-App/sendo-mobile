@@ -11,7 +11,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useGetNotificationsQuery, useMarkAsReadMutation } from '../services/Notification/notificationApi';
 import { useGetUserProfileQuery } from '../services/Auth/authAPI';
-import { MaterialIcons, Ionicons } from '@expo/vector-icons';
+import { MaterialIcons, Ionicons, AntDesign } from '@expo/vector-icons';
 import Loader from './Loader';
 import { skipToken } from '@reduxjs/toolkit/query/react';
 import { TypesNotification } from '../utils/constants';
@@ -107,7 +107,7 @@ const NotificationComponent = ({ navigation }) => {
         paddingHorizontal: 15,
       }}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 40 }}>
-          <Ionicons name="arrow-back" size={24} color="#fff" />
+         <AntDesign name="left" size={24} color="white" />
         </TouchableOpacity>
 
         <Text style={{ color: '#fff', fontSize: 20, fontWeight: 'bold', flex: 1, textAlign: 'center' }}>

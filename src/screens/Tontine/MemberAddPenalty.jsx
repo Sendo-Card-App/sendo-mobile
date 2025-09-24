@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Image, Modal, Platform } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, AntDesign } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 import { Toast } from 'react-native-toast-message';
 
@@ -38,7 +38,7 @@ export default function MembersPenalty({ navigation }) {
       {/* Header */}
       <View className="flex-row mb-4 items-center justify-between px-4">
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color="#000" />
+           <AntDesign name="left" size={24} color="black" />
         </TouchableOpacity>
         <TouchableOpacity onPress={() => navigation.openDrawer()}>
           <Ionicons name="menu-outline" size={26} color="#000" />

@@ -10,7 +10,7 @@ import {
   Modal,
   Pressable,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, AntDesign } from "@expo/vector-icons";
 import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
 import { useGetSharedListQuery } from "../../services/Shared/sharedExpenseApi";
 import { skipToken } from "@reduxjs/toolkit/query";
@@ -94,7 +94,7 @@ export default function Historique({ navigation }) {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color="black" />
+          <AntDesign name="left" size={24} color="white" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t("his.title")}</Text>
         <TouchableOpacity onPress={() => navigation.openDrawer()}>

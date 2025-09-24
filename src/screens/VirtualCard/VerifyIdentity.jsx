@@ -3,7 +3,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import React, { useCallback, useState } from "react";
 import TopLogo from "../../images/TopLogo.png";
 import Loader from "../../components/Loader";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, AntDesign } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 import VerifyImage from "../../images/VerifyImage.png";
 import { useTranslation } from "react-i18next";

@@ -4,7 +4,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import Toast from 'react-native-toast-message';
 import Loader from "../../components/Loader";
 import { useBankrechargeMutation } from '../../services/WalletApi/walletApi';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, AntDesign } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 
 const BankDepositRecharge = ({ navigation }) => {
@@ -65,7 +65,7 @@ const handleSubmit = async () => {
       {/* Header */}
       <View style={{ backgroundColor: '#7ddd7d', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, paddingTop: 50 }}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color="white" />
+          <AntDesign name="left" size={24} color="white" />
         </TouchableOpacity>
         <Text style={{ color: 'white', fontSize: 18, fontWeight: 'bold' }}>{t('screens.bankDeposit')}</Text>
         <View style={{ width: 24 }} />

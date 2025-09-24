@@ -10,7 +10,7 @@ import {
   Modal,
   TextInput,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, AntDesign } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useDeleteSharedExpenseMutation, useUpdateSharedExpenseMutation } from "../../services/Shared/sharedExpenseApi";
 import TopLogo from "../../images/TopLogo.png";
@@ -139,7 +139,7 @@ const DetailScreen = () => {
 
       await updateSharedExpense({ id: transaction.id, data: payload }).unwrap();
      
-      Toast.show({ type: "success", text1: "Changes saved successfully." });
+      Toast.show({ type: "success", text1: "Modifications enregistrées avec succès." });
     } catch(error) {
       console.log('Update shared error:', JSON.stringify(error, null, 2));
       Toast.show({ type: "error", text1: "Failed to save changes" });
@@ -167,7 +167,7 @@ const DetailScreen = () => {
 
       <View className="h-[100px] px-5 pt-12 bg-[#151c1f] flex-row justify-between items-center rounded-b-2xl">
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color="#fff" />
+          <AntDesign name="left" size={24} color="white" />
         </TouchableOpacity>
         <TouchableOpacity onPress={() => navigation.openDrawer()}>
           <Ionicons name="menu-outline" size={26} color="#fff" />

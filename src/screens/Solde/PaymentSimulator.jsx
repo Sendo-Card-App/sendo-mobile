@@ -39,7 +39,7 @@ const PaymentSimulator = () => {
       result: {
         amountConverted: 0,
         partnerVisaFees: 0,
-        sendoFees: 0,
+        sendoFeesCalculated: 0,
         totalAmount: 0
       },
       fees: {
@@ -55,7 +55,7 @@ const PaymentSimulator = () => {
     skip: !selectedCardId,
   });
   const cardData = cardDetails?.data;
-
+  //console.log(cardData)
   const [simulatePayment] = useSimulatePaymentMutation();
   const { 
     data: configData, 
@@ -91,6 +91,10 @@ const PaymentSimulator = () => {
   const sendoFeesCalculated = SENDO_TRANSACTION_CARD_FEES + 
     (amountNumber * SENDO_TRANSACTION_CARD_PERCENTAGE / 100) * currentCurrencyRate;
 
+    const totalWithSendoFees =
+  (conversionData?.data?.result?.totalAmount || 0) + (sendoFeesCalculated || 0);
+
+
  //console.log(sendoFeesCalculated)
   const currencies = [
     { code: 'USD', name: 'US Dollar', rate: USD_SENDO_VALUE },
@@ -122,10 +126,10 @@ const PaymentSimulator = () => {
   };
 
   useEffect(() => {
-    if (cards?.data?.length > 0) {
-      setSelectedCardId(cards.data[0].cardId);
-    }
-  }, [cards]);
+   if (cards?.data && selectedCardId !== cards.data.cardId) {
+     setSelectedCardId(cards.data.cardId);
+   }
+ }, [cards, selectedCardId]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -321,12 +325,12 @@ const PaymentSimulator = () => {
             <Text style={styles.totalLabel}>
               {t('paymentSimulator.totalAmount')}
             </Text>
-            <Text style={styles.totalAmount}>
-              {conversionData.data.result.totalAmount.toLocaleString('fr-FR', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-              })} FCFA
-            </Text>
+          <Text style={styles.totalAmount}>
+            {totalWithSendoFees.toLocaleString('fr-FR', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2
+            })} FCFA
+          </Text>
           </View>
         </View>
 
