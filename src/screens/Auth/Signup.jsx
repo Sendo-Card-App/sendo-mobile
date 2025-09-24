@@ -4,13 +4,14 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  SafeAreaView,
   StatusBar,
   Image,
   Modal,
   FlatList,
   TextInput as RNTextInput,
+  ActivityIndicator,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from "@react-navigation/native";
 import { AntDesign } from "@expo/vector-icons";
@@ -38,17 +39,34 @@ const Signup = () => {
   const { error, isSignupSuccess } = useSelector((state) => state.auth);
 
   const [countries, setCountries] = useState([]);
+  const [filteredCountries, setFilteredCountries] = useState([]);
   const [selectedCountry, setSelectedCountry] = useState({
     name: 'Cameroon',
     code: '+237',
     flag: 'https://flagcdn.com/w40/cm.png'
   });
-  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isCountryModalVisible, setIsCountryModalVisible] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showReferralCode, setShowReferralCode] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [date, setDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
+
+  // Filtrage des pays basé sur la recherche
+  useEffect(() => {
+    if (searchQuery.trim() === "") {
+      setFilteredCountries(countries);
+    } else {
+      const filtered = countries.filter(country =>
+        country.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        country.callingCode.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      setFilteredCountries(filtered);
+    }
+  }, [searchQuery, countries]);
+  
 
   const [signupDetails, setSignupDetails] = useState({
     firstName: "",
@@ -59,7 +77,8 @@ const Signup = () => {
     address: "",
     referralCode: "",
     dateOfBirth: "",
-    placeOfBirth: ""
+    placeOfBirth: "",
+    country: "Cameroon" // Default country
   });
 
   const [validationErrors, setValidationErrors] = useState({
@@ -71,7 +90,8 @@ const Signup = () => {
     address: "",
     referralCode: "",
     dateOfBirth: "",
-    placeOfBirth: ""
+    placeOfBirth: "",
+    country: ""
   });
 
   const isValidPhone = (phone) => /^\d+$/.test(phone);
@@ -98,6 +118,9 @@ const Signup = () => {
         case "dateOfBirth":
           if (!isValidDate(value)) error = t("signup.invalidDate");
           break;
+        case "country":
+          if (!value) error = t("signup.countryRequired");
+          break;
       }
     }
 
@@ -110,7 +133,7 @@ const Signup = () => {
     validateField(name, value);
   };
 
-   const handleDateChange = (event, selectedDate) => {
+  const handleDateChange = (event, selectedDate) => {
     setShowDatePicker(false);
     if (selectedDate) {
       setDate(selectedDate);
@@ -130,7 +153,8 @@ const Signup = () => {
       isValid = validateField("dateOfBirth", signupDetails.dateOfBirth) && 
                 validateField("placeOfBirth", signupDetails.placeOfBirth) && 
                 validateField("phone", signupDetails.phone) && 
-                validateField("address", signupDetails.address);
+                validateField("address", signupDetails.address) &&
+                validateField("country", signupDetails.country);
     }
     
     return isValid;
@@ -171,13 +195,14 @@ const Signup = () => {
       address: signupDetails.address,
       referralCode: signupDetails.referralCode,
       dateOfBirth: signupDetails.dateOfBirth,
-      placeOfBirth: signupDetails.placeOfBirth
+      placeOfBirth: signupDetails.placeOfBirth,
+      country: signupDetails.country // Add country to payload
     };
     console.log("Signup payload:", payload);
     try {
       dispatch(signupStart({ phone: signupDetails.phone }));
       const response = await register(payload).unwrap();
-       console.log("response from the backend:", response)
+      console.log("response from the backend:", response)
       if (response.accessToken) {
         await AsyncStorage.setItem('@accessToken', response.accessToken);
       }
@@ -189,7 +214,7 @@ const Signup = () => {
         text2: 'Account created successfully',
       });
     } catch (err) {
-     console.error("Registration error:", JSON.stringify(err, null, 2));
+      console.error("Registration error:", JSON.stringify(err, null, 2));
       const errorData = {
         message: err?.data?.message || "Registration failed",
         status: err?.status,
@@ -250,15 +275,17 @@ const Signup = () => {
     return () => dispatch(resetSignupState());
   }, [isSignupSuccess]);
 
-  const openModal = () => setIsModalVisible(true);
-  const closeModal = () => setIsModalVisible(false);
+  const openCountryModal = () => setIsCountryModalVisible(true);
+  const closeCountryModal = () => setIsCountryModalVisible(false);
+  
   const selectCountry = (country) => {
     setSelectedCountry({ 
       name: country.name,
       code: country.callingCode, 
       flag: country.flag 
     });
-    closeModal();
+    handleChange("country", country.name); // Update the country field in form
+    closeCountryModal();
   };
 
   const toggleReferralCode = () => {
@@ -280,6 +307,30 @@ const Signup = () => {
         </View>
       ))}
     </View>
+  );
+
+  const renderCountry = ({ item }) => (
+    <TouchableOpacity
+      onPress={() => selectCountry(item)}
+      className="flex-row items-center px-4 py-3 border-b border-gray-100"
+    >
+      {item.flag ? (
+        <Image
+          source={{ uri: item.flag }}
+          style={{ width: 30, height: 20, borderRadius: 3, marginRight: 12 }}
+          resizeMode="contain"
+        />
+      ) : (
+        <View style={{ width: 30, height: 20, marginRight: 12 }} />
+      )}
+      <View className="flex-1">
+        <Text className="text-base font-medium">{item.name}</Text>
+        <Text className="text-sm text-gray-500">{item.callingCode}</Text>
+      </View>
+      {selectedCountry.name === item.name && (
+        <AntDesign name="check" size={20} color="#7ddd7d" />
+      )}
+    </TouchableOpacity>
   );
 
   const renderStepOne = () => (
@@ -397,7 +448,7 @@ const Signup = () => {
 
       {/* Date of Birth */}
       <Text className="text-sm font-medium text-gray-700 mb-1 pl-3">  {t("signup.DOB")}</Text>
-     <TouchableOpacity
+      <TouchableOpacity
         onPress={() => setShowDatePicker(true)}
         className="border-[#fff] bg-[#ffffff] rounded-3xl mb-2 py-4"
         style={{
@@ -465,6 +516,35 @@ const Signup = () => {
         <Text className="text-red-500 text-xs mb-3 pl-3">{validationErrors.placeOfBirth}</Text>
       )}
 
+      {/* Country */}
+      <Text className="text-sm font-medium text-gray-700 mb-1 pl-3">{t("signup.country")}</Text>
+      <TouchableOpacity
+        onPress={openCountryModal}
+        className="border-[#fff] bg-[#ffffff] rounded-3xl mb-2 py-4 flex-row items-center justify-between px-4"
+        style={{
+          backgroundColor: '#fff',
+          borderRadius: 30,
+          paddingVertical: 14,
+          paddingHorizontal: 20,
+          fontSize: 16,
+          borderWidth: 1,
+          borderColor: validationErrors.country ? '#ff4444' : '#ddd',
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 1 },
+          shadowOpacity: 0.1,
+          shadowRadius: 2,
+          elevation: 2,
+        }}
+      >
+        <Text style={{ color: signupDetails.country ? '#000' : '#888' }}>
+          {signupDetails.country || t("signup.selectCountry")}
+        </Text>
+        <AntDesign name="down" size={16} color="#888" />
+      </TouchableOpacity>
+      {validationErrors.country && (
+        <Text className="text-red-500 text-xs mb-3 pl-3">{validationErrors.country}</Text>
+      )}
+
       {/* Phone */}
       <Text className="text-sm font-medium text-gray-700 mb-1 pl-3">{t("signup.phone")}</Text>
       <View
@@ -478,7 +558,7 @@ const Signup = () => {
           color: '#000'
         }}
       >
-        <TouchableOpacity onPress={openModal} className="px-3 flex-row items-center">
+        <TouchableOpacity onPress={openCountryModal} className="px-3 flex-row items-center">
           {selectedCountry.flag ? (
             <Image
               source={{ uri: selectedCountry.flag }}
@@ -696,7 +776,7 @@ const Signup = () => {
         <StatusBar style="light" backgroundColor="#181e25" />
 
         <TouchableOpacity className="absolute z-10 top-20 left-5" onPress={() => navigation.goBack()}>
-          <AntDesign name="arrowleft" size={24} color="white" />
+          <AntDesign name="left" size={24} color="white" />
         </TouchableOpacity>
 
         <Image source={require("../../images/logo2.png")} className="mt-50 mb-3 w-28 h-28" />
@@ -722,32 +802,62 @@ const Signup = () => {
         )}
 
         {/* Country Picker Modal */}
-        <Modal visible={isModalVisible} animationType="slide">
+        <Modal visible={isCountryModalVisible} animationType="slide" transparent={false}>
           <SafeAreaView className="flex-1 bg-white">
-            <FlatList
-              data={countries}
-              keyExtractor={(item, index) => index.toString()}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  className="flex-row items-center p-4 border-b border-gray-200"
-                  onPress={() => selectCountry(item)}
-                >
-                  <Image
-                    source={{ uri: item.flag }}
-                    style={{ width: 24, height: 16, marginRight: 10, borderRadius: 2 }}
-                    resizeMode="contain"
-                  />
+            {/* Header avec bouton retour et titre */}
+            <View className="flex-row items-center px-4 py-3 border-b border-gray-200">
+              <TouchableOpacity 
+                onPress={closeCountryModal}
+                className="p-2 mr-2"
+              >
+                <AntDesign name="left" size={24} color="black" />
+              </TouchableOpacity>
+              <Text className="text-xl font-bold flex-1 text-center">
+                {t("signup.select_country")}
+              </Text>
+              <View style={{ width: 40 }} /> 
+            </View>
 
-                  <Text className="text-lg">{item.name} ({item.callingCode})</Text>
-                </TouchableOpacity>
-              )}
-            />
-            <TouchableOpacity
-              className="absolute bottom-5 left-5 right-5 bg-green-500 py-4 rounded-full"
-              onPress={closeModal}
-            >
-              <Text className="text-white text-center text-lg">{t("common.close")}</Text>
-            </TouchableOpacity>
+            {/* Barre de recherche */}
+            <View className="px-4 py-3 border-b border-gray-200">
+              <View className="flex-row items-center bg-gray-100 rounded-lg px-3 py-2">
+                <AntDesign name="search1" size={20} color="gray" />
+                <TextInput
+                  placeholder={t("signup.search_country")}
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                  className="flex-1 ml-2 text-base"
+                  autoFocus={true}
+                />
+                {searchQuery.length > 0 && (
+                  <TouchableOpacity onPress={() => setSearchQuery("")}>
+                    <AntDesign name="closecircle" size={18} color="gray" />
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+
+            {/* Liste des pays */}
+            {filteredCountries.length === 0 ? (
+              <View className="flex-1 justify-center items-center">
+                {countries.length === 0 ? (
+                  <ActivityIndicator size="large" color="#7ddd7d" />
+                ) : (
+                  <Text className="text-gray-500 text-lg">
+                    {t("signup.no_countries_found")}
+                  </Text>
+                )}
+              </View>
+            ) : (
+              <FlatList
+                data={filteredCountries}
+                keyExtractor={(item, index) => index.toString()}
+                renderItem={renderCountry}
+                contentContainerStyle={{ paddingVertical: 10 }}
+                initialNumToRender={20}
+                windowSize={10}
+              />
+            )}
           </SafeAreaView>
         </Modal>
 

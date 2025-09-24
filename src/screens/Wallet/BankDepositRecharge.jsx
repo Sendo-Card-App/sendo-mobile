@@ -1,131 +1,112 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Image } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Image, StatusBar } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
-import { useTranslation } from 'react-i18next';
 import Toast from 'react-native-toast-message';
 import Loader from "../../components/Loader";
-import { useBankrechargeMutation
- } from '../../services/WalletApi/walletApi';
-
+import { useBankrechargeMutation } from '../../services/WalletApi/walletApi';
+import { Ionicons, AntDesign } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 
 const BankDepositRecharge = ({ navigation }) => {
   const [amount, setAmount] = useState('');
   const [file, setFile] = useState(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showPinModal, setShowPinModal] = useState(false);
+  const [loading, setLoading] = useState(false);
   const { t } = useTranslation();
   const [bankRecharge] = useBankrechargeMutation();
 
-
-  const handleDocumentPick = async () => {
-    try {
-      const result = await DocumentPicker.getDocumentAsync({
-        type: ['application/pdf', 'image/*'],
-        copyToCacheDirectory: true,
-        multiple: false
-      });
-
-      if (result?.assets?.length > 0) {
-        setFile(result.assets[0]);
-      }
-    } catch (error) {
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: 'Failed to pick file.'
-      });
-    }
-  };
+const pickFile = async () => {
+  try {
+    const result = await DocumentPicker.getDocumentAsync({ type: '*/*' });
+    if (!result.assets || !result.assets.length) return;
+    setFile(result.assets[0]);
+  } catch (err) {
+    Toast.show({ type: 'error', text1: 'Erreur', text2: 'Impossible de sélectionner le fichier' });
+  }
+};
 
 const handleSubmit = async () => {
   if (!amount || !file) {
-    Toast.show({
-      type: 'error',
-      text1: 'Error',
-      text2: 'Please enter amount and upload a file',
-    });
+    Toast.show({ type: 'error', text1: 'Erreur', text2: 'Veuillez remplir tous les champs obligatoires' });
     return;
   }
 
-  setIsSubmitting(true); // Ajoute ça pour indiquer le chargement si besoin
-
+  setLoading(true);
   try {
     const formData = new FormData();
     formData.append('method', 'BANK_TRANSFER');
     formData.append('amount', amount);
-    // Suppression du champ PIN
     formData.append('bankFile', {
       uri: file.uri,
-      name: file.name || 'upload.pdf',
+      name: file.name || `fichier_${Date.now()}`,
       type: file.mimeType || 'application/octet-stream',
     });
 
     const response = await bankRecharge(formData).unwrap();
 
-    Toast.show({
-      type: 'success',
-      text1: 'Succès',
-      text2: 'Virement bancaire envoyé avec succès.',
-    });
+    Toast.show({ type: 'success', text1: 'Succès', text2: response?.message || 'Dépôt bancaire effectué avec succès' });
     navigation.goBack();
   } catch (error) {
-    console.error(error);
-    const message = error?.data?.message;
     Toast.show({
       type: 'error',
       text1: 'Erreur',
-      text2: message,
+      text2: error?.data?.message || error?.error || error?.message || 'Une erreur est survenue lors du dépôt bancaire'
     });
   } finally {
-    setIsSubmitting(false);
+    setLoading(false);
   }
 };
 
 
 
   return (
-    <ScrollView contentContainerStyle={{ flexGrow: 1, padding: 20, backgroundColor: '#fff' }}>
-      <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#0D1C6A', marginBottom: 30, textAlign: 'center' }}>
-        {t('bank_deposit.title') || 'Bank Deposit'}
-      </Text>
-
-      {/* Amount Input */}
-      <View style={{ marginBottom: 20 }}>
-        <Text style={{ fontSize: 14, color: '#666', marginBottom: 8 }}>{t('bank_deposit.amount')}</Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#ddd', borderRadius: 10, paddingHorizontal: 15, backgroundColor: '#f9f9f9' }}>
-          <TextInput
-            style={{ flex: 1, height: 50, color: '#333', fontSize: 16 }}
-            placeholder={t('bank_deposit.amount_placeholder')}
-            placeholderTextColor="#999"
-            keyboardType="numeric"
-            value={amount}
-            onChangeText={setAmount}
-          />
-        </View>
+    <View style={{ flex: 1, backgroundColor: 'white' }}>
+      <StatusBar backgroundColor="#7ddd7d" barStyle="light-content" />
+      
+      {/* Header */}
+      <View style={{ backgroundColor: '#7ddd7d', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, paddingTop: 50 }}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <AntDesign name="left" size={24} color="white" />
+        </TouchableOpacity>
+        <Text style={{ color: 'white', fontSize: 18, fontWeight: 'bold' }}>{t('screens.bankDeposit')}</Text>
+        <View style={{ width: 24 }} />
       </View>
 
-      {/* File Upload */}
-      <TouchableOpacity
-        onPress={handleDocumentPick}
-        style={{ padding: 15, backgroundColor: '#eee', borderRadius: 10, alignItems: 'center', marginBottom: 10 }}
-      >
-        <Text style={{ color: '#333' }}>
-          {file ? file.name : 'Upload PDF or Image'}
+      <ScrollView contentContainerStyle={{ padding: 20 }}>
+        <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#0D1C6A', marginBottom: 20, textAlign: 'center' }}>
+          {t('bank_deposit.title') || 'Bank Deposit'}
         </Text>
-      </TouchableOpacity>
 
-      {file?.mimeType?.startsWith('image') && (
-        <Image source={{ uri: file.uri }} style={{ width: '100%', height: 200, marginBottom: 20, borderRadius: 10 }} resizeMode="contain" />
-      )}
+        {/* Amount Input */}
+        <Text style={{ marginBottom: 5 }}>{t('bank_deposit.amount')}</Text>
+        <TextInput
+          style={{ borderWidth: 1, borderColor: '#ddd', borderRadius: 10, padding: 12, marginBottom: 20 }}
+          keyboardType="numeric"
+          placeholder={t('bank_deposit.amount_placeholder')}
+          value={amount}
+          onChangeText={setAmount}
+        />
 
-      <TouchableOpacity
-        style={{ backgroundColor: '#7ddd7d', borderRadius: 10, padding: 15, alignItems: 'center', marginTop: 20 }}
-        onPress={handleSubmit}
-        disabled={isSubmitting}
-      >
-        {isSubmitting ? <Loader color="white" /> : <Text style={{ color: 'white', fontSize: 16, fontWeight: 'bold' }}>{t('bank_deposit.submit')}</Text>}
-      </TouchableOpacity>
-    </ScrollView>
+        {/* File Upload */}
+        <TouchableOpacity onPress={pickFile} style={{ padding: 15, borderWidth: 1, borderColor: '#ddd', borderRadius: 10, marginBottom: 10, alignItems: 'center', backgroundColor: '#f5f5f5' }}>
+          <Text>{file ? file.name : t('bank_deposit.choose_file')}</Text>
+        </TouchableOpacity>
+
+        {file?.mimeType?.startsWith('image') && (
+          <Image source={{ uri: file.uri }} style={{ width: '100%', height: 180, marginBottom: 20, borderRadius: 10 }} resizeMode="contain" />
+        )}
+
+        {/* Submit Button */}
+        <TouchableOpacity
+          onPress={handleSubmit}
+          disabled={loading}
+          style={{ backgroundColor: loading ? '#ccc' : '#7ddd7d', padding: 15, borderRadius: 10, alignItems: 'center', marginBottom: 20 }}
+        >
+          {loading ? <Loader color="white" /> : <Text style={{ color: 'white', fontWeight: 'bold' }}>{t('bank_deposit.submit')}</Text>}
+        </TouchableOpacity>
+
+        <Text style={{ fontSize: 12, color: '#666', textAlign: 'center' }}>{t('bank_deposit.file_requirements')}</Text>
+      </ScrollView>
+    </View>
   );
 };
 

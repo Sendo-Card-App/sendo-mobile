@@ -7,9 +7,9 @@ import {
   TouchableOpacity,
   StatusBar,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, AntDesign } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import ButtomLogo from "../../images/ButtomLogo.png";
+import ButtomLogo from "../../images/ButtomLogo1.png";
 import { useTranslation } from "react-i18next";
 
 const TermsAndConditions = ({ route, navigation }) => {
@@ -97,6 +97,7 @@ const TermsAndConditions = ({ route, navigation }) => {
 
   return (
     <View className="flex-1 bg-white">
+       <StatusBar backgroundColor="#7ddd7d" barStyle="light-content" />
       {/* Header */}
       <View className="bg-[#7ddd7d] pt-12 pb-4 px-4 flex-row justify-between items-center z-10">
         <Image
@@ -105,7 +106,7 @@ const TermsAndConditions = ({ route, navigation }) => {
           className="h-[50px] w-[150px]"
         />
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="close" size={26} color="black" />
+           <AntDesign name="left" size={24} color="white" />
         </TouchableOpacity>
       </View>
 

@@ -5,9 +5,9 @@ import {
   Image,
   ScrollView,
   TouchableOpacity,
-  SafeAreaView,
 } from "react-native";
-import { Ionicons, Feather } from "@expo/vector-icons";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons, Feather, AntDesign } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import Toast from "react-native-toast-message";
 import { useTranslation } from "react-i18next";
@@ -38,7 +38,9 @@ const MemberDetail = () => {
   data: penaltiesResponse = {},
   isLoading: loadingPenalties,
   error,
-} = useGetMemberPenaltiesQuery({ tontineId, membreId });
+} = useGetMemberPenaltiesQuery({ tontineId, membreId,
+    pollingInterval: 1000, // Refetch every 30 seconds
+ });
 
 const penalties = penaltiesResponse.data || [];
 console.log("Penalties response:", penaltiesResponse);
@@ -47,7 +49,9 @@ console.log("Penalties response:", penaltiesResponse);
   const {
     data: allCotisations,
     error: cotisationError,
-  } = useGetValidatedCotisationsQuery({ tontineId,membreId });
+  } = useGetValidatedCotisationsQuery({ tontineId,membreId,
+      pollingInterval: 1000, // Refetch every 30 seconds
+   });
 
 
   const memberCotisations = allCotisations?.data || [];
@@ -81,7 +85,7 @@ console.log("Penalties response:", penaltiesResponse);
       <View className="bg-[#0C121D] pb-1">
         <View className="flex-row mt-1 items-center justify-between px-4 pt-1">
           <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back" size={24} color="#fff" />
+            <AntDesign name="left" size={24} color="white" />
           </TouchableOpacity>
           <TouchableOpacity onPress={() => navigation.openDrawer()}>
             <Ionicons name="menu-outline" size={26} color="#fff" />

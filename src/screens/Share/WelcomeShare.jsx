@@ -6,6 +6,7 @@ import {
   Image,
   TouchableOpacity,
   ScrollView,
+  StatusBar
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
@@ -23,6 +24,7 @@ const WelcomeShare = ({ navigation }) => {
 
   return (
     <ScrollView className="flex-1 bg-[#7ddd7d]">
+      <StatusBar backgroundColor="#7ddd7d" barStyle="light-content" />
       {/* Top Header */}
       <View className="flex-row justify-between items-center px-4 pt-12">
         <Image

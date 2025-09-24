@@ -5,19 +5,22 @@ import {
   TouchableOpacity,
   Image,
   Modal,
-  SafeAreaView,
   StatusBar,
   Pressable,
+  ScrollView,
   Dimensions,
   Platform,
   StyleSheet
 } from 'react-native';
+import { SafeAreaView } from "react-native-safe-area-context";
 import { AntDesign, Entypo, MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import om from '../../images/om.png';
 import mtn from '../../images/mtn.png';
 import HomeImage2 from '../../images/HomeImage2.png';
-import TopLogo from '../../images/TopLogo.png';
+import TopLogo from '../../images/icon-sendo.png';
+import { useGetUserProfileQuery} from "../../services/Auth/authAPI";
+import { useGetConfigQuery } from '../../services/Config/configApi';
 
 const { height, width } = Dimensions.get('window');
 
@@ -25,33 +28,61 @@ const SelectMethod = ({ navigation }) => {
   const { t } = useTranslation();
   const [showServiceModal, setShowServiceModal] = useState(false);
   const [selectedMethod, setSelectedMethod] = useState(null);
+   const {
+      data: configData,
+      isLoading: isConfigLoading,
+      error: configError
+    } = useGetConfigQuery(undefined, {
+      pollingInterval: 1000,
+    });
 
-  const methods = [
-    {
-      id: 'transfer',
-      title: t('select_method.sendo_transfer'),
-      subtitle: t('select_method.transfer'),
-      icon: <Image source={TopLogo} style={styles.methodIcon} />,
-      action: () => navigation.navigate("WalletTransfer"),
-      color: '#7ddd7d'
-    },
-    {
-      id: 'ca_cm',
-      title: 'Transfert CA-CM',
-      subtitle: "D'argent",
-      icon: <Image source={HomeImage2} style={styles.methodIconLarge} />,
-      action: () => navigation.navigate("BeneficiaryScreen"),
-      color: '#7ddd7d'
-    },
-    {
-      id: 'mobile',
-      title: t('select_method.transfer_to_mobile'),
-      subtitle: t('select_method.transfer_fee'),
-      icon: <AntDesign name="mobile1" size={40} color="#0D1C6A" />,
-      action: () => setShowServiceModal(true),
-      color: '#0D1C6A'
-    }
-  ];
+      const getConfigValue = (name) => {
+    const configItem = configData?.data?.find(item => item.name === name);
+    return configItem ? configItem.value : null;
+  };
+
+  const SENDO_WITHDRAWAL_FEES = getConfigValue('SENDO_WITHDRAWAL_FEES');
+  
+   const { 
+      data: userProfile, 
+      isLoading: isProfileLoading, 
+      error: profileError,
+      refetch 
+    } = useGetUserProfileQuery(undefined, {
+      pollingInterval: 1000,
+    });
+  //console.log(userProfile)
+
+const methods = [
+  {
+    id: 'transfer',
+    title: t('select_method.sendo_transfer'),
+    subtitle: t('select_method.transfer'),
+    icon: <Image source={TopLogo} style={styles.methodIcon} />,
+    action: () => navigation.navigate("WalletTransfer"),
+    color: '#7ddd7d'
+  },
+  {
+    id: 'mobile',
+    title: t('select_method.transfer_to_mobile'),
+    icon: <AntDesign name="mobile" size={40} color="#0D1C6A" />,
+    action: () => setShowServiceModal(true),
+    color: '#0D1C6A'
+  }
+];
+
+// 👉 Only push CA-CM method if country is Canada
+if (userProfile?.data?.country === "Canada") {
+  methods.push({
+    id: 'ca_cm',
+    title: 'Transfert CA-CM',
+    subtitle: "D'argent",
+    icon: <Image source={HomeImage2} style={styles.methodIconLarge} />,
+    action: () => navigation.navigate("BeneficiaryScreen"),
+    color: '#7ddd7d'
+  });
+}
+
 
   const services = [
     { id: 'OM', name: t('service_om'), icon: om },
@@ -70,39 +101,66 @@ const SelectMethod = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
-        <View style={styles.methodsGrid}>
-          {methods.map((method) => (
-            <Pressable
-              key={method.id}
-              style={[
-                styles.methodCard,
-                selectedMethod === method.id && styles.selectedMethodCard
-              ]}
-              onPress={() => handleMethodSelect(method)}
-            >
-              <View style={styles.methodHeader}>
-                <View style={[
-                  styles.radioButton,
-                  selectedMethod === method.id && styles.radioButtonSelected
-                ]}>
-                  {selectedMethod === method.id && (
-                    <Entypo name="check" size={16} color="white" />
-                  )}
+      {/* StatusBar */}
+      <StatusBar
+        backgroundColor="#7ddd7d" // Android
+        barStyle="light-content"   // iOS
+      />
+
+     {/* Green Header */}
+    <View style={styles.header}>
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => navigation.goBack()}
+      >
+        <AntDesign name="left" size={24} color="#fff" />
+      </TouchableOpacity>
+
+      <Text style={styles.headerTitle}>{t('screens.selectMethod')}</Text>
+      
+      {/* Empty view to balance space on the right */}
+      <View style={{ width: 40 }} />
+    </View>
+
+      {/* Scrollable white content */}
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.content}>
+          <View style={styles.methodsGrid}>
+            {methods.map((method) => (
+              <Pressable
+                key={method.id}
+                style={[
+                  styles.methodCard,
+                  selectedMethod === method.id && styles.selectedMethodCard
+                ]}
+                onPress={() => handleMethodSelect(method)}
+              >
+                <View style={styles.methodHeader}>
+                  <View style={[
+                    styles.radioButton,
+                    selectedMethod === method.id && styles.radioButtonSelected
+                  ]}>
+                    {selectedMethod === method.id && (
+                      <Entypo name="check" size={16} color="white" />
+                    )}
+                  </View>
                 </View>
-              </View>
-              
-              <View style={styles.methodContent}>
-                {method.icon}
-                <Text style={[styles.methodTitle, { color: method.color }]}>
-                  {method.title}
-                </Text>
-                <Text style={styles.methodSubtitle}>{method.subtitle}</Text>
-              </View>
-            </Pressable>
-          ))}
+                
+                <View style={styles.methodContent}>
+                  {method.icon}
+                  <Text style={[styles.methodTitle, { color: method.color }]}>
+                    {method.title}
+                  </Text>
+                  <Text style={styles.methodSubtitle}>{method.subtitle}</Text>
+                </View>
+              </Pressable>
+            ))}
+          </View>
         </View>
-      </View>
+      </ScrollView>
 
       {/* Service Selection Modal */}
       <Modal
@@ -146,23 +204,41 @@ const SelectMethod = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
-    paddingTop: StatusBar.currentHeight || 0,
+    backgroundColor: '#7ddd7d', // matches header and StatusBar
+  },
+header: {
+  backgroundColor: '#7ddd7d',
+  paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+  paddingBottom: 20,
+  flexDirection: 'row',
+  alignItems: 'center',        // vertically center back button and title
+  justifyContent: 'space-between', // space between left, center, and right
+  paddingHorizontal: 15,
+},
+headerTitle: {
+  color: '#fff',
+  fontSize: 20,
+  fontWeight: 'bold',
+  textAlign: 'center',
+  flex: 1,                     // ensures title takes remaining space
+},
+backButton: {
+  width: 40,                    // fixed width for proper alignment
+  justifyContent: 'center',
+  alignItems: 'flex-start',
+},
+
+
+  scrollContent: {
+    backgroundColor: '#fff',
+    flexGrow: 1,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingTop: 20,
   },
   content: {
-    flex: 1,
-    padding: 20,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#181e25',
-    marginBottom: 8,
-  },
-  headerSubtitle: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 30,
+    paddingHorizontal: 20,
+    paddingBottom: 40,
   },
   methodsGrid: {
     flexDirection: 'row',

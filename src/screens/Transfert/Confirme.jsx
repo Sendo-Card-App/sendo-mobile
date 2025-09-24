@@ -5,6 +5,9 @@ import {
   TouchableOpacity,
   Image,
   ScrollView,
+   LayoutAnimation,
+  UIManager,
+  Platform,
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
@@ -14,6 +17,7 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useInitTransferMutation } from "../../services/WalletApi/walletApi";
 import Toast from "react-native-toast-message";
 import Loader from "../../components/Loader";
+import { useGetConfigQuery } from '../../services/Config/configApi';
 import { PinVerificationModal } from "../../components/PinVerificationModal";
 import { incrementAttempt, resetAttempts, lockPasscode } from '../../features/Auth/passcodeSlice';
 import { useTranslation } from "react-i18next";
@@ -28,12 +32,35 @@ import TopLogo from "../../images/TopLogo.png";
 import om from "../../images/om.png";
 import mtn from "../../images/mtn.png";
 
+// Enable animation on Android
+if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
+
 const ConfirmeTheTransfer = () => {
   const navigation = useNavigation();
   const [showPinModal, setShowPinModal] = useState(false);
   const [initTransfer, { isLoading }] = useInitTransferMutation();
   const { t } = useTranslation();
+   const [expanded, setExpanded] = useState(false);
 
+  const toggleExpand = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setExpanded(!expanded);
+  };
+  const {
+      data: configData,
+      isLoading: isConfigLoading,
+      error: configError
+    } = useGetConfigQuery(undefined, {
+      pollingInterval: 1000,
+    });
+  
+     const getConfigValue = (name) => {
+      const configItem = configData?.data?.find(item => item.name === name);
+        return configItem ? configItem.value : null;
+      };
+  
   const route = useRoute();
   const {
     formData,
@@ -44,8 +71,8 @@ const ConfirmeTheTransfer = () => {
     provider,
     fromCurrency,
     toCurrency,
-    cadRealTimeValue,
-  } = route.params;
+      cadRealTimeValue,
+} = route.params;
   const fullName = formData.fullname || '';
 const nameParts = fullName.trim().split(' ');
 const firstname = nameParts[0] || '';
@@ -59,23 +86,22 @@ const lastname = nameParts.slice(1).join(' ') || '';
       : null;
 
 
-const handleConfirmPress = () => {
+      const TRANSFER_FEES = getConfigValue('TRANSFER_FEES');
+      const transferFeeCAD = parseFloat(TRANSFER_FEES || "0");
+      const transferFeeXAF = transferFeeCAD * parseFloat(cadRealTimeValue || "0");
+      const totalDebitedCAD = parseFloat(amount || "0") + transferFeeCAD;
+      const totalDebitedXAF = parseFloat(convertedAmount || "0") + transferFeeXAF;
 
+
+const handleConfirmPress = () => {
   navigation.navigate('Auth', {
     screen: 'PinCode',
     params: {
       onSuccess: async (pin) => {
-        const notificationData = {
-          title: "Transfert Initié",
-          body: `Vous avez envoyé ${convertedAmount} ${toCurrency}  a ${formData.firstname} via ${provider}.`,
-          type: "SUCCESS_TRANSFER_FUNDS",
-        };
-
         try {
           const response = await initTransfer({
             firstname,
             lastname,
-            email: formData.email,
             phone: formData.phone,
             country: formData.country,
             address: formData.address,
@@ -85,6 +111,7 @@ const handleConfirmPress = () => {
             pin,
           }).unwrap();
 
+          console.log(response)
 
           if (response.status === 200 && response.data) {
             Toast.show({
@@ -93,44 +120,12 @@ const handleConfirmPress = () => {
               text2: "Veuillez suivre l'évolution du statut dans l'historique.",
             });
 
-            try {
-              let pushToken = await getStoredPushToken();
-              if (!pushToken) {
-                pushToken = await registerForPushNotificationsAsync();
-              }
-
-              if (pushToken) {
-                await sendPushTokenToBackend(
-                  pushToken,
-                  notificationData.title,
-                  notificationData.body,
-                  notificationData.type,
-                  {
-                    ...formData,
-                    amount: totalAmount,
-                    provider,
-                    timestamp: new Date().toISOString(),
-                  }
-                );
-              }
-            } catch (notificationError) {
-              console.warn("Remote notification failed:", notificationError);
-              await sendPushNotification(notificationData.title, notificationData.body, {
-                data: {
-                  ...formData,
-                  type: notificationData.type,
-                  amount: totalAmount,
-                  provider,
-                },
-              });
-            }
-
             navigation.navigate("Success", { result: response.data });
           } else {
             throw new Error(response.message || "Une erreur est survenue.");
           }
         } catch (error) {
-
+          console.log("Error de la transcation CA-CAM:", JSON.stringify(error, null, 2));
           const status = error?.status || error?.data?.status;
           const detaila = error?.data?.data?.detaila;
           const responseCode = detaila?.response;
@@ -151,29 +146,11 @@ const handleConfirmPress = () => {
               text2: error.message || "Une erreur est survenue.",
             });
           }
-
-          try {
-            await sendPushNotification(
-              "Échec du transfert",
-              frCustomerMsg || error.message || "Impossible d'envoyer les fonds.",
-              {
-                data: {
-                  ...formData,
-                  type: "PAYMENT_FAILED",
-                  amount: totalAmount,
-                  provider,
-                },
-              }
-            );
-          } catch (pushError) {
-          }
         }
       }
     }
   });
 };
-
-
 
   return (
     <View className="bg-[#181e25] flex-1 pt-0 relative">
@@ -185,7 +162,7 @@ const handleConfirmPress = () => {
 
       <View className="border-b border-dashed border-white flex-row justify-between py-4 mt-10 items-center mx-5 pt-5">
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <AntDesign name="arrowleft" size={24} color="white" />
+          <AntDesign name="left" size={24} color="white" />
         </TouchableOpacity>
         <TouchableOpacity onPress={() => navigation.openDrawer()}>
           <Ionicons name="menu-outline" size={24} color="white" />
@@ -205,6 +182,42 @@ const handleConfirmPress = () => {
             <Text className="text-yellow-900 text-base text-center font-bold mt-2">
               {t("confirmeTheTransfer.interacPhone")}
             </Text>
+
+            {/* Chevron dropdown */}
+            <TouchableOpacity
+              onPress={toggleExpand}
+              className="flex-row justify-center items-center mt-3"
+            >
+              <Text className="text-blue-700 font-semibold mr-2">
+                {expanded ? t("confirmeTheTransfer.hideDetails") : t("confirmeTheTransfer.showDetails")}
+              </Text>
+              <Ionicons
+                name={expanded ? "chevron-up" : "chevron-down"}
+                size={18}
+                color="#1d4ed8"
+              />
+            </TouchableOpacity>
+
+            {expanded && (
+              <View className="mt-3 space-y-2">
+
+                <Text className="text-yellow-900 text-sm text-left">
+                  {t("confirmeTheTransfer.extraInfo2")}
+                </Text>
+
+                <Text className="text-yellow-900 text-sm text-left">
+                  {t("confirmeTheTransfer.extraInfo3")}
+                </Text>
+
+                <Text className="text-yellow-900 text-sm text-left">
+                   {t("confirmeTheTransfer.extraInfo4")}
+                </Text>
+
+                <Text className="text-yellow-900 text-sm text-left">
+                  {t("confirmeTheTransfer.extraInfo5")}
+                </Text>
+              </View>
+            )}
           </View>
         </View>
 
@@ -223,7 +236,7 @@ const handleConfirmPress = () => {
             },
             {
               label: t("confirmeTheTransfer.transferFee"),
-              value: '0 XAF',
+              value: `${transferFeeCAD.toFixed(2)} CAD`, 
             },
             {
               label: t("confirmeTheTransfer.exchangeRate"),
@@ -233,10 +246,20 @@ const handleConfirmPress = () => {
               label: t("confirmeTheTransfer.convertedAmount"),
               value: `${convertedAmount} ${toCurrency}`,
             },
-            {
+          {
               label: t("confirmeTheTransfer.totalDebited"),
-              value: `${convertedAmount} ${toCurrency}`,
-            },
+              value: (
+                <View className=" px-3 py-2 rounded-xl items-center">
+                  <Text className="text-black-400 font-bold text-lg">
+                    {totalDebitedCAD.toFixed(2)} CAD
+                  </Text>
+                  <Text className="text-black-300 text-sm mt-1">
+                    {totalDebitedXAF.toFixed(0)} {toCurrency}
+                  </Text>
+                </View>
+              ),
+            }
+
           ].map((item, index) => (
             <View
               key={index}

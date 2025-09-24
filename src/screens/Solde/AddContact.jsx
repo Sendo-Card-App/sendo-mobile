@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity,
-  SafeAreaView, StatusBar, Modal, FlatList
+  View, Text, TextInput, TouchableOpacity, StatusBar, Modal, FlatList
 } from 'react-native';
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from 'react-i18next';
-import { AntDesign } from '@expo/vector-icons';
+import { AntDesign, Ionicons } from '@expo/vector-icons';
 
 const COUNTRY_CODES = [
   { code: '+237', label: '🇨🇲 CM' },
@@ -28,9 +28,9 @@ const AddContact = ({ navigation, route }) => {
   const [selectedCode, setSelectedCode] = useState('+237');
   const [showModal, setShowModal] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState('');
-  const { t } = useTranslation();
   const [contactName, setContactName] = useState('');
   const [showRecommendation, setShowRecommendation] = useState(true);
+  const { t } = useTranslation();
 
   const handleSelectCode = (code) => {
     setSelectedCode(code);
@@ -60,10 +60,35 @@ const AddContact = ({ navigation, route }) => {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff', paddingTop: StatusBar.currentHeight }}>
-      <View style={{ flex: 1, paddingHorizontal: 20 }}>
+   <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
+      <StatusBar backgroundColor="#7ddd7d" barStyle="light-content" />
+      {/* Header */}
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          paddingHorizontal: 20,
+          paddingTop:12,
+          paddingVertical: 15,
+          backgroundColor: '#7ddd7d', // ✅ background applied
+        }}
+      >
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <AntDesign name="left" size={24} color="white" /> 
+        </TouchableOpacity>
+        <Text style={{ fontSize: 18, fontWeight: 'bold', color: 'white' }}>
+          {t('screens.addContact')}
+        </Text>
+        <TouchableOpacity onPress={() => navigation.openDrawer()}>
+          <Ionicons name="menu-outline" size={24} color="white" />
+        </TouchableOpacity>
+      </View>
 
-        <Text style={{ color: '#999', fontSize: 16, marginTop: 30, marginBottom: 10 }}>
+
+      <View style={{ flex: 1, paddingHorizontal: 20 }}>
+        {/* Phone Input */}
+        <Text style={{ color: '#999', fontSize: 16, marginTop: 20, marginBottom: 10 }}>
           {t("addContactScreen.mobileNumber")}
         </Text>
         <View style={{ flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#E0E0E0', borderRadius: 10, paddingHorizontal: 15, paddingVertical: 10, marginBottom: 20 }}>
@@ -77,10 +102,12 @@ const AddContact = ({ navigation, route }) => {
             placeholder={t("addContactScreen.phonePlaceholder")}
             keyboardType="phone-pad"
             value={phoneNumber}
+            maxLength={9}
             onChangeText={setPhoneNumber}
           />
         </View>
 
+        {/* Country Code Modal */}
         <Modal visible={showModal} transparent animationType="slide">
           <TouchableOpacity onPress={() => setShowModal(false)} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center' }}>
             <View style={{ marginHorizontal: 40, backgroundColor: '#fff', borderRadius: 10, paddingVertical: 10, paddingHorizontal: 20, maxHeight: 300 }}>
@@ -99,15 +126,16 @@ const AddContact = ({ navigation, route }) => {
 
         {showRecommendation && (
           <Text style={{ color: '#666', fontSize: 14, marginBottom: 30 }}>
-           {t("addContactScreen.recommendation")}
+            {t("addContactScreen.recommendation")}
           </Text>
         )}
 
+        {/* Contact Name Input */}
         <Text style={{ color: '#999', fontSize: 16, marginBottom: 5 }}>
-         {t("addContactScreen.labelPrompt")}
+          {t("addContactScreen.labelPrompt")}
         </Text>
         <Text style={{ color: '#999', fontSize: 14, marginBottom: 10, fontStyle: 'italic' }}>
-           {t("addContactScreen.example")}
+          {t("addContactScreen.example")}
         </Text>
         <TextInput
           style={{ borderWidth: 1, borderColor: '#E0E0E0', borderRadius: 10, paddingHorizontal: 15, paddingVertical: 10, fontSize: 16, color: '#000', marginBottom: 40 }}
@@ -116,12 +144,13 @@ const AddContact = ({ navigation, route }) => {
           placeholder="Nom du contact"
         />
 
+        {/* Save Button */}
         <TouchableOpacity
           style={{ backgroundColor: '#7ddd7d', paddingVertical: 15, borderRadius: 10, alignItems: 'center' }}
           onPress={handleSave}
         >
           <Text style={{ color: '#fff', fontSize: 18, fontWeight: 'bold' }}>
-           {t("addContactScreen.saveButton")}
+            {t("addContactScreen.saveButton")}
           </Text>
         </TouchableOpacity>
       </View>

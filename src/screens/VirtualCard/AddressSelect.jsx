@@ -45,8 +45,8 @@ const AddressSelect = ({ navigation, route }) => {
         </View>
         
         <View className="flex-row items-center justify-between px-5 pt-16">
-          <TouchableOpacity onPress={() => navigation.navigate("Adresse")}>
-            <AntDesign name="arrowleft" size={24} color="white" />
+          <TouchableOpacity onPress={() => navigation.navigate("KycResume")}>
+            <AntDesign name="left" size={24} color="white" />
           </TouchableOpacity>
           <TouchableOpacity onPress={() => navigation.openDrawer()} className="ml-auto">
             <Ionicons name="menu-outline" size={24} color="white" />

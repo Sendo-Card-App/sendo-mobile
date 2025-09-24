@@ -1,20 +1,20 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   FlatList,
-  ActivityIndicator,
   StyleSheet,
+  Platform,
   StatusBar,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useGetNotificationsQuery, useMarkAsReadMutation } from '../services/Notification/notificationApi';
 import { useGetUserProfileQuery } from '../services/Auth/authAPI';
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons, Ionicons, AntDesign } from '@expo/vector-icons';
 import Loader from './Loader';
 import { skipToken } from '@reduxjs/toolkit/query/react';
 import { TypesNotification } from '../utils/constants';
-import { useState } from 'react';
 
 export const getIconName = (type) => {
   const map = {
@@ -41,54 +41,45 @@ export const getIconName = (type) => {
     [TypesNotification.SHARED_EXPENSE]: 'group',
     [TypesNotification.TONTINE]: 'savings',
   };
-
   return map[type] || 'notifications';
 };
 
-
-const NotificationComponent = () => {
-  const { data: userProfile, isLoading: profileLoading } = useGetUserProfileQuery();
+const NotificationComponent = ({ navigation }) => {
+  const { data: userProfile, isLoading: profileLoading } = useGetUserProfileQuery(undefined, { pollingInterval: 1000 });
   const userId = userProfile?.data?.id;
-
+  const { t, i18n } = useTranslation();
   const [page, setPage] = useState(1);
-    const limit = 20;
+  const limit = 20;
 
-  const {
-    data: notificationsResponse,
-    isLoading: notificationsLoading,
-    refetch,
-  } = useGetNotificationsQuery(userId ? { userId, page, limit } : skipToken);
-
-   //console.log('Liste des notification:', JSON.stringify(notificationsResponse, null, 2));
+  const { data: notificationsResponse, isLoading: notificationsLoading, refetch } =
+    useGetNotificationsQuery(userId ? { userId, page, limit, pollingInterval: 1000 } : skipToken);
 
   const [markAsRead] = useMarkAsReadMutation();
 
   if (profileLoading || notificationsLoading) {
     return (
       <View style={styles.loading}>
-        <Loader size="large" color="#0D1C6A" />
+        <Loader size="large" color="#7ddd7d" />
       </View>
     );
   }
 
   const allNotifications = notificationsResponse?.data?.items || [];
-  //const unreadNotifications = allNotifications.filter((n) => !n.readed);
 
-const handleMarkRead = async (notification) => {
-  if (notification.readed) return;
-
-  try {
-    await markAsRead(notification.id).unwrap();
-    refetch(); // rafraîchir, mais on n'enlèvera pas la notification de l'affichage
-  } catch (err) {
-    console.warn('Failed to mark notification as read', err);
-  }
-}
+  const handleMarkRead = async (notification) => {
+    if (notification.readed) return;
+    try {
+      await markAsRead(notification.id).unwrap();
+      refetch();
+    } catch (err) {
+      console.warn('Failed to mark notification as read', err);
+    }
+  };
 
   const renderItem = ({ item }) => (
     <TouchableOpacity
       onPress={() => handleMarkRead(item)}
-      style={[styles.notificationItem, { backgroundColor: '#EBF4FF' }]}
+      style={[styles.notificationItem, { backgroundColor: item.readed ? '#f9f9f9' : '#EBF4FF' }]}
     >
       <View style={styles.iconContainer}>
         <MaterialIcons name={getIconName(item.type)} size={24} color="green" />
@@ -102,42 +93,44 @@ const handleMarkRead = async (notification) => {
   );
 
   return (
-  <FlatList
-    data={allNotifications}
-    renderItem={({ item }) => (
-      <TouchableOpacity
-        onPress={() => handleMarkRead(item)}
-        style={[
-          styles.notificationItem,
-          {
-            backgroundColor: item.readed ? '#f9f9f9' : '#EBF4FF',
-          },
-        ]}
-      >
-        <View style={styles.iconContainer}>
-          <MaterialIcons name={getIconName(item.type)} size={24} color="green" />
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={[styles.title, { fontWeight: '700', color: 'green' }]}>
-            {item.title}
-          </Text>
-          <Text style={styles.body}>{item.content}</Text>
-          <Text style={styles.date}>
-            {new Date(item.createdAt).toLocaleString()}
-          </Text>
-        </View>
-      </TouchableOpacity>
-    )}
-    keyExtractor={(item) => item.id.toString()}
-    contentContainerStyle={{ paddingBottom: 20 }}
-    ListEmptyComponent={() => (
-      <View style={styles.emptyContainer}>
-        <MaterialIcons name="notifications-off" size={40} color="#ccc" />
-        <Text style={styles.emptyText}>No notifications</Text>
+    <View style={{ flex: 1, backgroundColor: '#fff' }}>
+      <StatusBar backgroundColor="#7ddd7d" barStyle="light-content" />
+
+      {/* Header */}
+      <View style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        backgroundColor: '#7ddd7d',
+        paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 40,
+        paddingBottom: 15,
+        paddingHorizontal: 15,
+      }}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 40 }}>
+         <AntDesign name="left" size={24} color="white" />
+        </TouchableOpacity>
+
+        <Text style={{ color: '#fff', fontSize: 20, fontWeight: 'bold', flex: 1, textAlign: 'center' }}>
+          {t('screens.notification')}
+        </Text>
+
+        <View style={{ width: 40 }} /> 
       </View>
-    )}
-  />
-);
+
+      <FlatList
+        data={allNotifications}
+        renderItem={renderItem}
+        keyExtractor={(item) => item.id.toString()}
+        contentContainerStyle={{ paddingBottom: 20 }}
+        ListEmptyComponent={() => (
+          <View style={styles.emptyContainer}>
+            <MaterialIcons name="notifications-off" size={40} color="#ccc" />
+            <Text style={styles.emptyText}>Acune notifications</Text>
+          </View>
+        )}
+      />
+    </View>
+  );
 };
 
 const styles = StyleSheet.create({

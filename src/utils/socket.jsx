@@ -18,17 +18,23 @@ export const initSocket = (token: string): Socket => {
       auth: { token },
       transports: ['websocket'],
       autoConnect: true,
-      forceNew: true
+      forceNew: true,
     };
 
-    socket = io(process.env.EXPO_PUBLIC_API_URL || '', options);
-    
+    // ✅ update the global socket, don’t shadow it
+    socket = io('https://api.sf-e.ca', options);
+
     socket.on('connect', () => {
-      console.log('Socket connected');
+       console.log("✅ Socket connected:", socket.id);
+       console.log(" Auth sent:", socket.io.opts.auth);
     });
 
-    socket.on('disconnect', () => {
-      console.log('Socket disconnected');
+    socket.on('connect_error', (error) => {
+      console.error('Socket connection error:', error.message, error);
+    });
+
+    socket.on('disconnect', (reason) => {
+      console.warn(' Socket disconnected:', reason);
     });
   }
   return socket;

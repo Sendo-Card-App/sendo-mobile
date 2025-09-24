@@ -6,8 +6,9 @@ import {
   Image,
   TouchableOpacity,
   ScrollView,
+  StatusBar
 } from "react-native";
-import { Ionicons, Feather } from "@expo/vector-icons";
+import { Ionicons, Feather, AntDesign } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
 
@@ -19,6 +20,7 @@ const CreateShare = ({ navigation }) => {
 
   return (
     <View style={{ flex: 1, backgroundColor: "#fff" }}>
+      <StatusBar backgroundColor="#7ddd7d" barStyle="light-content" />
       {/* Header */}
       <View
         style={{
@@ -32,7 +34,7 @@ const CreateShare = ({ navigation }) => {
         }}
       >
         <TouchableOpacity onPress={() => navigation.navigate("MainTabs")}>
-          <Ionicons name="arrow-back" size={24} color="black" />
+           <AntDesign name="left" size={24} color="white" />
         </TouchableOpacity>
         <Text style={{ fontSize: 18, fontWeight: "bold", color: "black" }}>
           {t("createShare.title")}

@@ -6,6 +6,7 @@ import {
 import Loader from "./Loader";
 import Toast from 'react-native-toast-message';
 import { useTranslation } from 'react-i18next';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 
 const AddSecondPhoneModal = ({
   visible,
@@ -21,62 +22,76 @@ const AddSecondPhoneModal = ({
   const { t } = useTranslation();
   const [localLoading, setLocalLoading] = useState(false);
   const [countries, setCountries] = useState([]);
+  const [filteredCountries, setFilteredCountries] = useState([]);
   const [selectedCountry, setSelectedCountry] = useState(null);
   const [showCountryPicker, setShowCountryPicker] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchCountries();
   }, []);
 
-  const fetchCountries = async () => {
-  try {
-    const res = await fetch('https://restcountries.com/v3.1/all?fields=name,idd,flags,cca2');
-    if (!res.ok) {
-      throw new Error(`HTTP error! status: ${res.status}`);
+  useEffect(() => {
+    if (searchQuery) {
+      const filtered = countries.filter(country => 
+        country.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        country.code.includes(searchQuery)
+      );
+      setFilteredCountries(filtered);
+    } else {
+      setFilteredCountries(countries);
     }
+  }, [searchQuery, countries]);
 
-    const data = await res.json();
+  const fetchCountries = async () => {
+    try {
+      const res = await fetch('https://restcountries.com/v3.1/all?fields=name,idd,flags,cca2');
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
 
-    const countriesList = data
-      .map(c => {
-        const name = c?.name?.common;
-        const root = c?.idd?.root || '';
-        const suffixes = c?.idd?.suffixes || [];
-        let code = suffixes.length > 0 ? `${root}${suffixes[0]}` : root;
+      const data = await res.json();
 
-        if (!name || !code) return null;
+      const countriesList = data
+        .map(c => {
+          const name = c?.name?.common;
+          const root = c?.idd?.root || '';
+          const suffixes = c?.idd?.suffixes || [];
+          let code = suffixes.length > 0 ? `${root}${suffixes[0]}` : root;
 
-        if (!code.startsWith('+')) {
-          code = '+' + code;
-        }
+          if (!name || !code) return null;
 
-        const flag = c?.flags?.png || c?.flags?.svg || null;
-        const isoCode = c?.cca2 || null;
+          if (!code.startsWith('+')) {
+            code = '+' + code;
+          }
 
-        return { name, code, flag, isoCode };
-      })
-      .filter(Boolean)
-      .sort((a, b) => a.name.localeCompare(b.name));
+          const flag = c?.flags?.png || c?.flags?.svg || null;
+          const isoCode = c?.cca2 || null;
 
-    setCountries(countriesList);
+          return { name, code, flag, isoCode };
+        })
+        .filter(Boolean)
+        .sort((a, b) => a.name.localeCompare(b.name));
 
-    // 🔽 Set default country to Cameroon (CM)
-    const defaultCameroon = countriesList.find(c => c.isoCode === 'CM');
-    setSelectedCountry(defaultCameroon || countriesList[0]);
+      setCountries(countriesList);
+      setFilteredCountries(countriesList);
 
-  } catch (error) {
-    console.log("Error fetching countries:", error);
-    Toast.show({ type: 'error', text1: 'Failed to load countries' });
-  }
-};
+      // 🔽 Set default country to Cameroon (CM)
+      const defaultCameroon = countriesList.find(c => c.isoCode === 'CM');
+      setSelectedCountry(defaultCameroon || countriesList[0]);
 
+    } catch (error) {
+      console.log("Error fetching countries:", error);
+      Toast.show({ type: 'error', text1: 'Failed to load countries' });
+    }
+  };
 
   const handleSendOtp = async () => {
     if (!phone) return;
     const fullPhoneNumber = `${selectedCountry.code}${phone}`;
     setLocalLoading(true);
     try {
-      await onSendOtp({ phone: fullPhoneNumber });
+      await onSendOtp(fullPhoneNumber);
       setOtpSent(true);
     } catch (err) {
       console.error(err);
@@ -97,6 +112,11 @@ const AddSecondPhoneModal = ({
     } finally {
       setLocalLoading(false);
     }
+  };
+
+  const handleCloseCountryPicker = () => {
+    setShowCountryPicker(false);
+    setSearchQuery('');
   };
 
   return (
@@ -238,7 +258,7 @@ const AddSecondPhoneModal = ({
         visible={showCountryPicker}
         transparent
         animationType="slide"
-        onRequestClose={() => setShowCountryPicker(false)}
+        onRequestClose={handleCloseCountryPicker}
       >
         <View style={{ flex: 1, justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.5)' }}>
           <View style={{
@@ -248,58 +268,86 @@ const AddSecondPhoneModal = ({
             borderRadius: 10,
             maxHeight: '70%'
           }}>
-            <Text style={{
-              fontSize: 18,
-              marginBottom: 15,
-              fontWeight: 'bold',
-              textAlign: 'center'
+            {/* Header with back button and title */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 15 }}>
+              <TouchableOpacity 
+                onPress={handleCloseCountryPicker}
+                style={{ marginRight: 10 }}
+              >
+                <Icon name="arrow-back" size={24} color="#000" />
+              </TouchableOpacity>
+              <Text style={{
+                fontSize: 18,
+                fontWeight: 'bold',
+                flex: 1,
+                textAlign: 'center'
+              }}>
+                {t('addSecondPhone.selectCountry')}
+              </Text>
+            </View>
+
+            {/* Search bar */}
+            <View style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              backgroundColor: '#f0f0f0',
+              borderRadius: 10,
+              paddingHorizontal: 10,
+              marginBottom: 15
             }}>
-              {t('addSecondPhone.selectCountry')}
-            </Text>
+              <Icon name="search" size={20} color="#666" />
+              <TextInput
+                placeholder={t('addSecondPhone.searchPlaceholder')}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                style={{
+                  flex: 1,
+                  paddingVertical: 10,
+                  paddingHorizontal: 10,
+                  fontSize: 16
+                }}
+              />
+              {searchQuery.length > 0 && (
+                <TouchableOpacity onPress={() => setSearchQuery('')}>
+                  <Icon name="close" size={20} color="#666" />
+                </TouchableOpacity>
+              )}
+            </View>
 
             <ScrollView>
-              {countries.map((country) => (
-                <TouchableOpacity
-                  key={`${country.code}-${country.name}`}
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    paddingVertical: 12,
-                    paddingHorizontal: 10,
-                    borderBottomWidth: 1,
-                    borderBottomColor: '#f0f0f0'
-                  }}
-                  onPress={() => {
-                    setSelectedCountry(country);
-                    setShowCountryPicker(false);
-                  }}
-                >
-                  {country.flag && (
-                    <Image
-                      source={{ uri: country.flag }}
-                      style={{ width: 30, height: 20, marginRight: 10 }}
-                    />
-                  )}
-                  <Text style={{ flex: 1 }}>{country.name}</Text>
-                  <Text>{country.code}</Text>
-                </TouchableOpacity>
-              ))}
+              {filteredCountries.length > 0 ? (
+                filteredCountries.map((country) => (
+                  <TouchableOpacity
+                    key={`${country.code}-${country.name}`}
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      paddingVertical: 12,
+                      paddingHorizontal: 10,
+                      borderBottomWidth: 1,
+                      borderBottomColor: '#f0f0f0'
+                    }}
+                    onPress={() => {
+                      setSelectedCountry(country);
+                      handleCloseCountryPicker();
+                    }}
+                  >
+                    {country.flag && (
+                      <Image
+                        source={{ uri: country.flag }}
+                        style={{ width: 30, height: 20, marginRight: 10 }}
+                      />
+                    )}
+                    <Text style={{ flex: 1 }}>{country.name}</Text>
+                    <Text>{country.code}</Text>
+                  </TouchableOpacity>
+                ))
+              ) : (
+                <Text style={{ textAlign: 'center', padding: 20, color: '#666' }}>
+                  {t('addSecondPhone.noCountriesFound')}
+                </Text>
+              )}
             </ScrollView>
-
-            <TouchableOpacity
-              onPress={() => setShowCountryPicker(false)}
-              style={{
-                backgroundColor: '#f0f0f0',
-                padding: 12,
-                borderRadius: 30,
-                alignItems: 'center',
-                marginTop: 15
-              }}
-            >
-              <Text style={{ fontWeight: 'bold' }}>
-                {t('addSecondPhone.countryPickerCancel')}
-              </Text>
-            </TouchableOpacity>
           </View>
         </View>
       </Modal>

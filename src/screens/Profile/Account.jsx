@@ -7,25 +7,19 @@ import {
   Platform,
   TextInput,
   TouchableOpacity,
-  SafeAreaView,
   StatusBar,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { AntDesign, EvilIcons, Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
 import Avatar from "../../images/Avatar.png";
 import AddSecondPhoneModal from '../../components/AddSecondPhoneModal'; 
 import KeyboardAvoidinWrapper from "../../components/KeyboardAvoidinWrapper";
-import { 
-  sendPushNotification,
-  sendPushTokenToBackend,
-  registerForPushNotificationsAsync
-} from '../../services/notificationService';
 import {
   useGetUserProfileQuery,
+   useGetProfilePictureQuery,
   useUpdateProfileMutation,
-  useSendOtpMutation,
-  useVerifyOtpMutation,
   useAddSecondPhoneMutation,
   useSendSecondPhoneOtpMutation,
   useVerifySecondPhoneOtpMutation,
@@ -38,7 +32,7 @@ import { useTranslation } from 'react-i18next';
 import OtpVerificationModal from "../../components/OtpVerificationModal";
 import { useSendNotificationMutation } from "../../services/Notification/notificationApi";
 import { TypesNotification } from "../../utils/constants";
-import { getFCMToken } from "../../services/Notification/firebaseNotifications";
+
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
@@ -46,7 +40,20 @@ const Account = () => {
   const navigation = useNavigation();
     const { t } = useTranslation();
 
-  const { data: userProfile, isLoading, error, refetch } = useGetUserProfileQuery();
+  const { data: userProfile, isLoading, error, refetch } = useGetUserProfileQuery(
+    undefined, // first argument is usually the query parameter; use `undefined` if none
+    {
+      pollingInterval: 1000, // Refetch every 1 second
+    }
+  );
+
+  const userId = userProfile?.data?.id;
+
+  const { data: profilePicture, isLoading: isPictureLoading } = useGetProfilePictureQuery(
+    userId, // pass userId here
+    { pollingInterval: 1000 }
+  );
+  //console.log(profilePicture)
  
   const [updateProfile, { isLoading: isUpdating }] = useUpdateProfileMutation();
   const [
@@ -85,19 +92,7 @@ const [
   const [isSecondPhone, setIsSecondPhone] = useState(false);
   const [sendNotification] = useSendNotificationMutation();
   const [sendProfilePicture] = useSendProfilePictureMutation();
-  const handleSendNotification = async () => {
-    try {
-      const notificationPayload = {
-        token: await registerForPushNotificationsAsync(),
-        title: 'Informations de compte modifiées',
-        body: 'Les informations de votre compte ont été modifiées avec succès.',
-        type: TypesNotification.SUCCESS_MODIFY_ACCOUNT_INFORMATIONS
-      };
-      await sendNotification(notificationPayload).unwrap();
-    } catch (err) {
-      console.error('Erreur lors de l’envoi:', err);
-    }
-  };
+
   useFocusEffect(
     useCallback(() => {
       refetch(); // force une requête au backend
@@ -126,68 +121,62 @@ const [
     
 
 const handleSave = async () => {
-  try {
-    const requiredFields = ['firstname', 'lastname', 'phone', 'email'];
-    const missingFields = requiredFields.filter(field => !formData[field]);
+    try {
+      const requiredFields = ['firstname', 'lastname', 'phone', 'email'];
+      const missingFields = requiredFields.filter(field => !formData[field]);
 
-    if (missingFields.length > 0) {
+      if (missingFields.length > 0) {
+        Toast.show({
+          type: "error",
+          text1: "Missing information",
+          text2: `Please fill in: ${missingFields.join(', ')}`,
+        });
+        return;
+      }
+
+      // Step 1: Send profile fields
+      await updateProfile({
+        userId: userProfile.data.id,
+        firstname: formData.firstname,
+        lastname: formData.lastname,
+        phone: formData.phone,
+        email: formData.email,
+        profession: formData.profession || '',
+        region: formData.region || '',
+        city: formData.city || '',
+        district: formData.district || '',
+      }).unwrap();
+
+      // Step 2: If a new picture is selected
+      if (formData.picture && formData.picture.uri && formData.picture.uri !== originalData.picture?.uri) {
+        const imageData = new FormData();
+        imageData.append('picture', {
+          uri: formData.picture.uri,
+          name: formData.picture.name || `profile_${Date.now()}.png`,
+          type: formData.picture.type || 'image/png',
+        });
+
+        await sendProfilePicture(imageData).unwrap();
+      }
+
+      Toast.show({
+        type: "success",
+        text1: "Profile updated",
+        text2: "Your changes have been saved",
+      });
+
+      await refetch();
+      setIsEditing(false);
+
+    } catch (error) {
+      console.error("Update error:", error);
       Toast.show({
         type: "error",
-        text1: "Missing information",
-        text2: `Please fill in: ${missingFields.join(', ')}`,
+        text1: "Update failed",
+        text2: error?.message || error?.data?.message || "Please try again",
       });
-      return;
     }
-
-    // Step 1: Send profile fields (text only)
-    const profileResponse = await updateProfile({
-      userId: userProfile.data.id,
-      firstname: formData.firstname,
-      lastname: formData.lastname,
-      phone: formData.phone,
-      email: formData.email,
-      profession: formData.profession || '',
-      region: formData.region || '',
-      city: formData.city || '',
-      district: formData.district || '',
-    }).unwrap();
-
-    // Step 2: If a new picture is selected, send it separately
-    if (
-      formData.picture &&
-      formData.picture.uri &&
-      formData.picture.uri !== originalData.picture?.uri
-    ) {
-      const imageData = new FormData();
-      imageData.append('picture', {
-        uri: formData.picture.uri,
-        name: formData.picture.name || `profile_${Date.now()}.png`,
-        type: formData.picture.type || 'image/png',
-      });
-
-      await sendProfilePicture(imageData).unwrap();
-    }
-
-    // Success Toast
-    Toast.show({
-      type: "success",
-      text1: "Profile updated",
-      text2: "Your changes have been saved",
-    });
-
-    await handleSendNotification();
-    await refetch();
-    setIsEditing(false);
-
-  } catch (error) {
-    console.error("Update error:", error);
-    Toast.show({
-      type: "error",
-      text1: "Update failed",
-      text2: error?.message || error?.data?.message || "Please try again",
-    });
-  }
-};
+  };
 
   
   const pickImage = async () => {
@@ -305,14 +294,22 @@ const handleSave = async () => {
     setShowSecondPhoneModal(true);
   };
 
-  const handleSendSecondPhoneOtp = async (phone) => {
+const handleSendSecondPhoneOtp = async (phone) => {
   try {
+    // Log what you're about to send
+    console.log("📤 Sending request to add second phone:", { phone });
+
     // First check if the phone can be added
-    await addSecondPhone({ phone }).unwrap();
-    
+    const addResponse = await addSecondPhone({ phone }).unwrap();
+    console.log("✅ Add second phone response:", addResponse);
+
+    // Log again before sending OTP
+    console.log("📤 Sending request to send OTP:", { phone });
+
     // Then send OTP to the phone
-    await sendSecondPhoneOtp({ phone }).unwrap();
-    
+    const otpResponse = await sendSecondPhoneOtp({ phone }).unwrap();
+    console.log("✅ OTP send response:", otpResponse);
+
     setSecondPhoneNumber(phone);
     Toast.show({
       type: 'success',
@@ -320,120 +317,80 @@ const handleSave = async () => {
       text2: `OTP sent to ${phone}`,
     });
   } catch (err) {
-    console.error('OTP send error:', err);
+    console.error(" OTP send error (full):", JSON.stringify(err, null, 2));
     Toast.show({
       type: 'error',
       text1: 'Error',
-      text2: err?.data?.message || 'Failed to send OTP',
+      text2: err?.data?.message || "Failed to send OTP",
     });
     throw err;
   }
 };
 
+
 const handleVerifySecondPhoneOtp = async ({ phone, code }) => {
   try {
     // Verify the OTP
     const response = await verifySecondPhoneOtp({ phone, code }).unwrap();
-    
-    // Determine which success notification to show based on the response
-    const isNewAddition = response?.isNewAddition || false;
-    
-    // Prepare success notification
-    const notificationContent = {
-      title: isNewAddition 
-        ? "Second Phone Number Added" 
-        : "Phone Verification Successful",
-      body: isNewAddition
-        ? `Your second phone number ${phone} has been successfully added to your account`
-        : `Your second phone number ${phone} has been verified`,
-      type: isNewAddition 
-        ? "SUCCESS_ADD_SECOND_NUMBER" 
-        : "SUCCESS_VERIFY_SECOND_NUMBER"
-    };
 
-    try {
-      // Try remote notification first
-      let pushToken = await getStoredPushToken();
-      if (!pushToken) {
-        pushToken = await registerForPushNotificationsAsync();
-      }
-      
-      if (pushToken) {
-        await sendPushTokenToBackend(
-          pushToken,
-          notificationContent.title,
-          notificationContent.body,
-          notificationContent.type,
-          { 
-            phoneNumber: phone,
-            timestamp: new Date().toISOString() 
-          }
-        );
-      }
-    } catch (notificationError) {
-      console.warn("Remote notification failed:", notificationError);
-      // Fallback to local notification
-      await sendPushNotification(
-        notificationContent.title,
-        notificationContent.body,
-        {
-          data: {
-            type: notificationContent.type,
-            phoneNumber: phone
-          }
-        }
-      );
-    }
+    // Determine which success message to show based on the response
+    const isNewAddition = response?.isNewAddition || false;
 
     // Show toast with appropriate message
     Toast.show({
       type: 'success',
       text1: 'Success',
       text2: isNewAddition
-        ? 'Second phone number added successfully'
-        : 'Second phone number verified successfully',
+        ? `Second phone number ${phone} added successfully`
+        : `Second phone number ${phone} verified successfully`,
     });
-    
+
     // Refresh user data
     await refetch();
-    
+
   } catch (err) {
-    // Error notification
-    const errorNotification = {
-      title: "Verification Failed",
-      body: err?.data?.message || 'Failed to verify phone number',
-      type: "VERIFICATION_ERROR",
-      data: {
-        phoneNumber: phone,
-        errorCode: err?.data?.code || 'UNKNOWN_ERROR'
-      }
-    };
-    
-    try {
-      await sendPushNotification(
-        errorNotification.title,
-        errorNotification.body,
-        {
-          data: errorNotification.data
-        }
-      );
-    } catch (pushError) {
-      console.error('Failed to send error notification:', pushError);
-    }
-    
     console.error('Verification error:', err);
+
+    // Show error toast
     Toast.show({
       type: 'error',
       text1: 'Error',
       text2: err?.data?.message || 'Failed to verify OTP',
     });
+
     throw err;
   }
 };
 
+
   return (
     <SafeAreaView className="flex-1 bg-[#181e25]">
-      <StatusBar style="light" backgroundColor="#fffff" />
+      <StatusBar backgroundColor="#7ddd7d" barStyle="light-content" />
+      <View 
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: 24,
+          paddingHorizontal: 20,
+          paddingVertical: 15,
+           paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 40,
+          backgroundColor: '#7ddd7d',
+        }}
+      >
+        {/* Back Button */}
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 40, alignItems: "flex-start" }}>
+          <AntDesign name="left" size={24} color="white" />
+        </TouchableOpacity>
+
+        {/* Centered Title */}
+        <Text className="text-white text-2xl font-bold text-center" style={{ flex: 1 }}>
+          {t('screens.account')}
+        </Text>
+
+       
+      </View>
+
        {/* Floating Home Button */}
         <TouchableOpacity 
           onPress={() => navigation.navigate('MainTabs')}
@@ -452,16 +409,18 @@ const handleVerifySecondPhoneOtp = async ({ phone, code }) => {
           </View>
 
           <View className="items-center mb-8">
-            <Image
-                source={
-                    formData.picture?.uri 
-                      ? { uri: formData.picture.uri }
-                      : userProfile?.data?.picture
-                        ? { uri: userProfile.data.picture }
-                        : require('../../images/Avatar.png')
-                  }
-                className="w-32 h-32 rounded-full border-4 border-[#7ddd7d]"
-              />
+           <Image
+              source={
+                formData.picture?.uri
+                  ? { uri: formData.picture.uri } // newly selected picture
+                  : profilePicture?.data?.link
+                    ? { uri: `${profilePicture.data.link}?t=${userProfile?.data?.updatedAt}` } // API returned picture
+                    : require('../../images/Avatar.png')
+              }
+              className="w-32 h-32 rounded-full border-4 border-[#7ddd7d]"
+            />
+
+
             {isEditing && (
               <TouchableOpacity
                 className="absolute bottom-0 right-0 bg-[#7ddd7d] rounded-full p-2"
@@ -517,12 +476,6 @@ const handleVerifySecondPhoneOtp = async ({ phone, code }) => {
                         <Text className="flex-1 text-lg bg-white rounded-xl p-3">
                           {userProfile.data.secondPhoneNumber.phone}
                         </Text>
-                        <TouchableOpacity 
-                          className="ml-2 p-2 bg-red-500 rounded-lg"
-                          onPress={() => {/* Add remove functionality here */}}
-                        >
-                          <Text className="text-white">{t('account.remove')}</Text>
-                        </TouchableOpacity>
                       </View>
                     </View>
                   ) : (

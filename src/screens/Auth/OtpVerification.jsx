@@ -3,10 +3,10 @@ import {
   View,
   Text,
   Modal,
-  SafeAreaView,
   TouchableOpacity,
   Image,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { OtpInput } from "react-native-otp-entry";
 import KeyboardAvoidinWrapper from "../../components/KeyboardAvoidinWrapper";
 import { useDispatch } from "react-redux";
@@ -249,7 +249,7 @@ const OtpVerification = ({ route, onClose, onResend }) => {
       <Modal animationType="slide" transparent visible={true} onRequestClose={onClose}>
         <View className="flex-1 bg-[#181e25] bg-opacity-50 justify-center items-center">
           <TouchableOpacity className="absolute z-10 top-5 left-5" onPress={handleBack}>
-            <AntDesign name="arrowleft" size={24} color="white" />
+            <AntDesign name="left" size={24} color="white" />
           </TouchableOpacity>
           <View className="w-9/12 bg-white p-6 rounded-xl items-center">
             <Text className="mb-4 text-gray-600">Code sent to {phone}</Text>
@@ -266,7 +266,7 @@ const OtpVerification = ({ route, onClose, onResend }) => {
   return (
     <SafeAreaView className="flex-1 bg-[#181e25] justify-center">
       <TouchableOpacity className="absolute z-10 top-20 left-5" onPress={handleBack}>
-        <AntDesign name="arrowleft" size={24} color="white" />
+        <AntDesign name="left" size={24} color="white" />
       </TouchableOpacity>
       {renderOtpScreen()}
     </SafeAreaView>

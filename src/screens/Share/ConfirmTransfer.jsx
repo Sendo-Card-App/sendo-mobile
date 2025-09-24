@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   View,
   Text,
@@ -28,23 +28,30 @@ const ConfirmationScreen = () => {
   const route = useRoute();
   const { t } = useTranslation();
   const { 
-  totalAmount, 
-  description, 
-  limitDate, 
-  includeSelf, 
-  methodCalculatingShare, 
-  participants, 
-  userFullName 
-} = route.params;
-  console.log(participants)
-  console.log(userFullName)
-
+    totalAmount, 
+    description, 
+    limitDate, 
+    includeSelf, 
+    methodCalculatingShare, 
+    participants, 
+    userFullName 
+  } = route.params;
+  
   const [createSharedExpense, { isLoading }] = useCreateSharedExpenseMutation();
   const [reason, setReason] = useState(route.params.description || "");
+  const [isProcessing, setIsProcessing] = useState(false);
+  const requestInProgress = useRef(false);
 
 const handleConfirm = async () => {
+  // Prevent multiple clicks
+  if (isProcessing || requestInProgress.current) {
+    return;
+  }
+
+  setIsProcessing(true);
+  requestInProgress.current = true;
+
   try {
-    
     const payload = {
       totalAmount: route.params.totalAmount,
       description: reason,
@@ -58,68 +65,26 @@ const handleConfirm = async () => {
         }),
       })),
     };
-  
+
+    //console.log("Sending payload:", JSON.stringify(payload, null, 2));
 
     const response = await createSharedExpense(payload).unwrap();
 
-    const notificationContent = {
-      title: "Dépense Partagée Créée",
-      body: `Une nouvelle dépense de ${route.params.totalAmount} FCFA a été créée.`,
-      type: "SHARED_EXPENSE_CREATED",
-    };
+    // console.log(
+    //   "Response from createSharedExpense:",
+    //   JSON.stringify(response, null, 2)
+    // );
 
-    try {
-      let pushToken = await getStoredPushToken();
-      if (!pushToken) {
-        pushToken = await registerForPushNotificationsAsync();
-      }
-
-      if (pushToken) {
-        await sendPushTokenToBackend(
-          pushToken,
-          notificationContent.title,
-          notificationContent.body,
-          notificationContent.type,
-          {
-            amount: route.params.totalAmount,
-            description: reason,
-            limitDate: route.params.limitDate,
-            timestamp: new Date().toISOString(),
-          }
-        );
-      }
-    } catch (notificationError) {
-      await sendPushNotification(
-        notificationContent.title,
-        notificationContent.body,
-        {
-          data: {
-            type: notificationContent.type,
-            amount: route.params.totalAmount,
-            description: reason,
-          },
-        }
-      );
-    }
-
+    //  Navigate directly to success screen
     navigation.navigate("SuccessSharing", {
       transactionDetails: "La dépense partagée a été créée avec succès.",
     });
-
   } catch (error) {
-    const isECONNRESET =
-      error?.data?.errors?.some((e) =>
-        typeof e === "string" && e.includes("ECONNRESET")
-      );
+    // console.log(
+    //   " Error during shared expense creation:",
+    //   JSON.stringify(error, null, 2)
+    // );
 
-    if (isECONNRESET) {
-      navigation.navigate("SuccessSharing", {
-        transactionDetails: "La dépense partagée a été créée avec succès.",
-      });
-      return;
-    }
-
-    console.log(" Error during shared expense creation:", error);
     Toast.show({
       type: "error",
       text1: "Erreur",
@@ -127,8 +92,12 @@ const handleConfirm = async () => {
         error?.data?.message ||
         "Échec de la création de la dépense partagée",
     });
+  } finally {
+    setIsProcessing(false);
+    requestInProgress.current = false;
   }
 };
+
 
 
 
@@ -141,21 +110,32 @@ const handleConfirm = async () => {
       </View>
 
       <View className="border-b border-dashed border-white flex-row justify-between py-4 mt-20 items-center mx-5 pt-5">
-       <TouchableOpacity
+        <TouchableOpacity
           hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
           onPress={() => {
-            console.log("Pressed back button");
-            navigation.goBack();
+            if (!isProcessing) {
+              console.log("Pressed back button");
+              navigation.goBack();
+            }
           }}
-       >
-          <AntDesign name="arrowleft" size={24} color="white" />
+        >
+          <AntDesign name="left" size={24} color="white" />
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => navigation.openDrawer()}>
-          <Ionicons name="menu-outline" size={24} color="white" />
+        <TouchableOpacity 
+          onPress={() => !isProcessing && navigation.openDrawer()}
+          disabled={isProcessing}
+        >
+          <Ionicons 
+            name="menu-outline" 
+            size={24} 
+            color={isProcessing ? "gray" : "white"} 
+          />
         </TouchableOpacity>
       </View>
-       <View className="border border-dashed border-gray-300 " />
+      
+      <View className="border border-dashed border-gray-300 " />
+      
       <Text className="text-xl font-bold text-center text-green-600 mb-3">
         {t("confirmation.title")}
       </Text>
@@ -173,7 +153,11 @@ const handleConfirm = async () => {
               <Text className="text-lg font-bold text-orange-500">
                 {route.params.totalAmount.toLocaleString()} XAF
               </Text>
-              <Ionicons name="create-outline" size={20} color="#555" />
+              <Ionicons 
+                name="create-outline" 
+                size={20} 
+                color={isProcessing ? "#ccc" : "#555"} 
+              />
             </View>
           </View>
 
@@ -187,11 +171,12 @@ const handleConfirm = async () => {
                 value={reason}
                 onChangeText={setReason}
                 placeholder={t("confirmation.reasonPlaceholder")}
+                editable={!isProcessing}
               />
               <Ionicons
                 name="create-outline"
                 size={20}
-                color="#555"
+                color={isProcessing ? "#ccc" : "#555"}
                 style={{ marginLeft: 10 }}
               />
             </View>
@@ -205,7 +190,11 @@ const handleConfirm = async () => {
               <Text className="text-base text-black">
                 {new Date(route.params.limitDate).toLocaleDateString()}
               </Text>
-              <Ionicons name="create-outline" size={20} color="#555" />
+              <Ionicons 
+                name="create-outline" 
+                size={20} 
+                color={isProcessing ? "#ccc" : "#555"} 
+              />
             </View>
           </View>
 
@@ -228,22 +217,22 @@ const handleConfirm = async () => {
                 ) : null}
               </View>
             ))}
-
           </View>
 
-          <TouchableOpacity
-            onPress={handleConfirm}
-            disabled={isLoading}
-            className="bg-[#A7F39B] py-4 rounded-xl items-center mt-2"
-          >
-            {isLoading ? (
-              <Loader color="green" />
-            ) : (
-              <Text className="text-black text-lg font-bold">
-                {t("confirmation.confirmButton")}
-              </Text>
-            )}
-          </TouchableOpacity>
+        <TouchableOpacity
+          onPress={handleConfirm}
+          disabled={isProcessing}
+          className="bg-[#A7F39B] py-4 rounded-xl items-center mt-2"
+        >
+          {isProcessing ? (
+            <Loader color="green" />
+          ) : (
+            <Text className="text-black text-lg font-bold">
+              {t("confirmation.confirmButton")}
+            </Text>
+          )}
+        </TouchableOpacity>
+
         </View>
       </ScrollView>
     </View>

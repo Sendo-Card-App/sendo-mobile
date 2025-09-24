@@ -70,7 +70,7 @@ const CreateRequest = ({ navigation }) => {
           }}
         >
           <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back" size={24} color="#fff" />
+            <AntDesign name="left" size={24} color="white" />
           </TouchableOpacity>
           <TouchableOpacity onPress={() => navigation.openDrawer()}>
             <Ionicons name="menu-outline" size={26} color="#fff" />
@@ -96,7 +96,8 @@ const CreateRequest = ({ navigation }) => {
         </View>
          <View className="border border-dashed border-gray-300" />
          
-          <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 10 , color:'#7ddd7d', marginTop:30,}}>
+          <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 10 , color:'#7ddd7d', marginTop:30, padding: 10,            // inner spacing
+            textAlign: "center", }}>
             {t("createRequest.create_request")}
           </Text>
 

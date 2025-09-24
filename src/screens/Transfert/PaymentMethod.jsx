@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
-  FlatList,
   Image,
   StatusBar,
-  StyleSheet
+  StyleSheet,
+  Pressable
 } from 'react-native';
 import { AntDesign, MaterialIcons } from '@expo/vector-icons';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -19,8 +19,6 @@ import om from '../../images/om.png';
 import mtn from '../../images/mtn.png';
 
 const PaymentMethod = () => {
-  const [selectedBank, setSelectedBank] = useState('');
-  const [dropdownVisible, setDropdownVisible] = useState(false);
   const navigation = useNavigation();
   const route = useRoute();
   const { t } = useTranslation();
@@ -37,18 +35,7 @@ const PaymentMethod = () => {
     cadRealTimeValue
   } = route.params;
 
-  const banks = [
-    { id: '2', name: 'Orange Money', logo: om, provider: 'Orange Money' },
-    { id: '3', name: 'MTN Mobile Money', logo: mtn, provider: 'MTN Mobile Money' },
-  ];
-
-  const toggleDropdown = () => {
-    setDropdownVisible(!dropdownVisible);
-  };
-
-  const selectBank = (bank) => {
-    setSelectedBank(bank.name);
-    setDropdownVisible(false);
+  const handleSelect = (provider) => {
     navigation.navigate('Address', {
       contact,
       amount,
@@ -59,7 +46,7 @@ const PaymentMethod = () => {
       toCurrency,
       countryName,
       cadRealTimeValue,
-      provider: bank.provider,
+      provider,
     });
   };
 
@@ -70,7 +57,7 @@ const PaymentMethod = () => {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <AntDesign name="arrowleft" size={24} color="#000" />
+          <AntDesign name="left" size={24} color="#000" />
         </TouchableOpacity>
         <Image source={button} style={styles.buttonLogo} resizeMode="contain" />
         <Image source={HomeImage} style={styles.homeImage} resizeMode="contain" />
@@ -86,29 +73,16 @@ const PaymentMethod = () => {
       <View style={styles.divider} />
       <Text style={styles.title}>{t('paymentMethodScreen.title')}</Text>
 
-      {/* Dropdown */}
-      <TouchableOpacity style={styles.dropdownTrigger} onPress={toggleDropdown}>
-        <Text style={{ color: selectedBank ? '#000' : '#888' }}>
-          {selectedBank || t('paymentMethodScreen.choosePayment')}
-        </Text>
-      </TouchableOpacity>
+      {/* Pressables */}
+      <Pressable style={styles.card} onPress={() => handleSelect('Orange Money')}>
+        <Image source={om} style={styles.logo} />
+        <Text style={styles.bankName}>Orange Money</Text>
+      </Pressable>
 
-      {dropdownVisible && (
-        <View style={styles.dropdownList}>
-          <FlatList
-            data={banks}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <TouchableOpacity style={styles.dropdownItem} onPress={() => selectBank(item)}>
-                <View style={styles.logoContainer}>
-                  <Image source={item.logo} style={styles.logo} />
-                </View>
-                <Text style={styles.bankName}>{item.name}</Text>
-              </TouchableOpacity>
-            )}
-          />
-        </View>
-      )}
+      <Pressable style={styles.card} onPress={() => handleSelect('MTN Mobile Money')}>
+        <Image source={mtn} style={styles.logo} />
+        <Text style={styles.bankName}>MTN Mobile Money</Text>
+      </Pressable>
 
       {/* Footer */}
       <View style={styles.footer}>
@@ -150,52 +124,29 @@ const styles = StyleSheet.create({
   title: {
     color: '#000',
     fontSize: 22,
-    marginBottom: 10,
+    marginBottom: 20,
     marginLeft: 10,
     fontWeight: 'bold',
   },
-  dropdownTrigger: {
-    borderWidth: 1,
-    borderColor: '#7ddd7d',
-    padding: 15,
-    borderRadius: 8,
-    backgroundColor: '#fff',
-    marginTop: 10,
-  },
-  dropdownList: {
-    marginTop: 5,
-    borderRadius: 8,
-    backgroundColor: '#fff',
-    padding: 10,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-  },
-  dropdownItem: {
+  card: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 10,
-  },
-  logoContainer: {
-    width: 40,
-    height: 40,
     backgroundColor: '#fff',
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 10,
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: '#7ddd7d',
+    borderRadius: 12,
+    padding: 15,
+    marginBottom: 15,
   },
   logo: {
-    width: 25,
-    height: 25,
+    width: 40,
+    height: 40,
     resizeMode: 'contain',
+    marginRight: 15,
   },
   bankName: {
     fontSize: 16,
+    fontWeight: '600',
     color: '#000',
   },
   footer: {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TouchableOpacity, FlatList, Dimensions } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { View, Text, TouchableOpacity, FlatList, Dimensions, StatusBar } from "react-native";
+import { Ionicons, AntDesign } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -13,7 +13,9 @@ const ServiceScreen = () => {
 
   const numColumns = 2;
   const spacing = 20;
-  const itemSize = (screenWidth - spacing * (numColumns + 1)) / numColumns;
+   const itemSize = (screenWidth - spacing * (numColumns + 2)) / numColumns;
+    // pour 2 colonnes => (screenWidth - 4 * spacing) / 2
+
 
   useEffect(() => {
     const onChange = ({ window }) => {
@@ -89,6 +91,7 @@ const ServiceScreen = () => {
 
   return (
     <View className="flex-1 bg-white">
+       <StatusBar backgroundColor="#7ddd7d" barStyle="light-content" />
       {/* Header */}
       <View
         style={{
@@ -102,11 +105,11 @@ const ServiceScreen = () => {
         }}
       >
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color="black" />
+         <AntDesign name="left" size={24} color="white" />
         </TouchableOpacity>
         <Text className="text-2xl font-bold text-white">{t("home.services")}</Text>
         <TouchableOpacity onPress={() => navigation.openDrawer()}>
-          <Ionicons name="menu-outline" size={24} color="black" />
+          <Ionicons name="menu-outline" size={24} color="white" />
         </TouchableOpacity>
       </View>
 

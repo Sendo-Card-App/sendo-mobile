@@ -1,21 +1,24 @@
 import { View, Text, Image, TouchableOpacity } from "react-native";
-import { useFocusEffect } from '@react-navigation/native';
-import React, { useEffect,useCallback, useState } from "react";
+import { useFocusEffect } from "@react-navigation/native";
+import React, { useCallback, useState } from "react";
 import TopLogo from "../../images/TopLogo.png";
 import Loader from "../../components/Loader";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, AntDesign } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 import VerifyImage from "../../images/VerifyImage.png";
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from "react-i18next";
 import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
 
 const VerifyIdentity = ({ navigation }) => {
   const { t } = useTranslation();
   const [loadingDocuments, setLoadingDocuments] = useState(false);
-  const [showVerifiedMessage, setShowVerifiedMessage] = useState(false);
-  const { data: userProfile, isLoading: isProfileLoading, refetch } = useGetUserProfileQuery();
-   
-  //console.log(userProfile)
+   const { data: userProfile, isProfileLoading, refetch } = useGetUserProfileQuery(
+      undefined,
+      {
+        pollingInterval: 1000, // Refetch every 1 second
+      }
+    );
+    //console.log('User Profile:', JSON.stringify(userProfile, null, 2));
 
 useFocusEffect(
   useCallback(() => {
@@ -27,19 +30,16 @@ useFocusEffect(
       try {
         const result = await refetch();
         const profile = result?.data?.data;
-        const documents = profile?.kycDocuments;
+        const documents = profile?.kycDocuments || [];
 
-        if (
-          Array.isArray(documents) &&
-          documents.length > 0 &&
-          documents.some(doc => doc && Object.keys(doc).length === 4)
-        ) {
+        if (documents.length > 0) {
           navigation.navigate("KYCValidation", { documents });
+          return;
         }
       } catch (error) {
         console.warn("Failed to refetch KYC data", error);
       } finally {
-        if (isActive) setLoadingDocuments(false); 
+        if (isActive) setLoadingDocuments(false);
       }
     };
 
@@ -48,24 +48,22 @@ useFocusEffect(
     return () => {
       isActive = false;
     };
-  }, [])
+  }, [refetch, navigation])
 );
 
 
+
   const handleNextPress = () => {
-  navigation.navigate("KycResume");
-};
+    navigation.navigate("KycResume");
+  };
 
-
- if (isProfileLoading || loadingDocuments) {
-  return (
-    <View className="bg-transparent flex-1 items-center justify-center">
-      <Loader size="large" color="green" />
-    </View>
-  );
-}
-
-
+  if (isProfileLoading || loadingDocuments) {
+    return (
+      <View className="bg-transparent flex-1 items-center justify-center">
+        <Loader size="large" color="green" />
+      </View>
+    );
+  }
 
   return (
     <View className="bg-[#181e25] flex-1 pt-0 relative">
@@ -87,15 +85,14 @@ useFocusEffect(
       {/* Title */}
       <View className="border border-dashed border-gray-300 my-1" />
       <Text className="text-center text-white text-2xl my-3">
-        {t('verifyIdentity.title')}
+        {t("verifyIdentity.title")}
       </Text>
 
       {/* Main Content */}
       <View className="flex-1 gap-6 py-3 bg-white px-8 rounded-t-3xl">
-
         <View className="my-5">
           <Text className="text-center text-gray-800 text-sm font-bold">
-            {t('verifyIdentity.heading')}
+            {t("verifyIdentity.heading")}
           </Text>
         </View>
 
@@ -106,30 +103,30 @@ useFocusEffect(
         />
 
         <Text className="text-center text-gray-400 text-xs mt-10">
-          {t('verifyIdentity.description')}
+          {t("verifyIdentity.description")}
           <Text className="font-extrabold underline">
-            {t('verifyIdentity.blogLink')}
+            {t("verifyIdentity.blogLink")}
           </Text>
         </Text>
 
-        {/* Only show button if user is not verified */}
-       
+        {/* Show button only if no documents at all */}
+        {(!userProfile?.data?.kycDocuments || userProfile?.data?.kycDocuments.length === 0) && (
           <TouchableOpacity
             className="mt-auto py-3 rounded-full mb-8 bg-[#7ddd7d]"
             onPress={handleNextPress}
           >
             <Text className="text-xl text-center font-bold">
-              {t('verifyIdentity.nextButton')}
+              {t("verifyIdentity.nextButton")}
             </Text>
           </TouchableOpacity>
-      
+        )}
       </View>
 
       {/* Footer */}
       <View className="py-4 flex-row justify-center items-center gap-2">
         <Ionicons name="shield-checkmark" size={18} color="orange" />
         <Text className="text-sm text-white">
-          {t('verifyIdentity.securityNotice')}
+          {t("verifyIdentity.securityNotice")}
         </Text>
       </View>
 

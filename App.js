@@ -1,10 +1,13 @@
 import "./global.css";
 import { ThemeProvider } from './src/constants/ThemeContext';
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState,useRef } from "react";
+import { AppState } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
+import { useCallback } from "react";
 import { Colors } from './src/constants/colors'; // Adjust the path as needed
 import { useNavigation, useIsFocused  } from "@react-navigation/native";
 
-import { StyleSheet, View, Text, TouchableOpacity,Platform,Dimensions,ActivityIndicator  } from "react-native";
+import { StyleSheet, View, Text, TouchableOpacity,Platform,Dimensions,ActivityIndicator, StatusBar   } from "react-native";
 import { Provider } from "react-redux";
 import { store } from "./src/store/store";
 import Toast from "react-native-toast-message";
@@ -20,7 +23,6 @@ import { Ionicons, AntDesign,FontAwesome,FontAwesome5   } from "@expo/vector-ico
 
 import * as Notifications from "expo-notifications";
 import { registerForPushNotificationsAsync } from "./src/services/notificationService";
-import app from "./src/configs/firebaseConfig";
  
 import { useGetUserProfileQuery } from "./src/services/Auth/authAPI";
 import CustomTabBar from './src/components/CustomTabBar';
@@ -74,6 +76,7 @@ import TransactionHistory from "./src/screens/VirtualCard/TransactionHistory";
 import OnboardingCard from "./src/screens/VirtualCard/OnboardingCard";
 import VerifyIdentity from "./src/screens/VirtualCard/VerifyIdentity";
 import KYCValidation from "./src/screens/VirtualCard/KYCValidation";
+import HistoryCard from "./src/screens/VirtualCard/HistoryCard"
 import ManageVirtualCard from "./src/screens/VirtualCard/ManageVirtualCard";
 import TransactionDetails from "./src/screens/VirtualCard/TransactionDetails";
 import KycResume from "./src/screens/VirtualCard/KycResume";
@@ -142,6 +145,7 @@ import TermsAndConditions from "./src/screens/Tontine/TermsAndConditions";
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
 const Tab = createBottomTabNavigator();
+const navigationRef = React.createRef();
 
 const headerHeight = Platform.select({
   ios: 60,
@@ -150,82 +154,106 @@ const headerHeight = Platform.select({
 const screenWidth = Dimensions.get('window').width;
 
 // Tab Navigator
-function MainTabs() {
-  const { t } = useTranslation();
-  const navigation = useNavigation();
-  const { data: userProfile, isLoading: isProfileLoading } = useGetUserProfileQuery();
+// Tab Navigator
+  function MainTabs() {
+    const { t } = useTranslation();
+    const navigation = useNavigation();
+    const { data: userProfile, isLoading: isProfileLoading } = useGetUserProfileQuery(
+      undefined,
+      {
+        pollingInterval: 1000, // refresh every 1s
+      }
+    );
 
-  return (
-    <Tab.Navigator
-      tabBar={(props) => <CustomTabBar {...props} />}
-      screenOptions={({ route }) => ({
-        headerShown: false,
-        tabBarButton: (props) => <TouchableOpacity {...props} />,
-      })}
-    >
-      <Tab.Screen
-        name="HomeTab"
-        component={Home}
-        options={{
-          title: t('tabs.home'),
-          unmountOnBlur: true,
-        }}
-      />
-      <Tab.Screen
-        name="TransferTab"
-        component={History}
-        options={{
-          title: t('tabs.history'),
-          unmountOnBlur: true,
-        }}
-      />
-      <Tab.Screen
-        name="BeneficiaryTab"
-        component={BeneficiaryScreen}
-        options={{
-          title: '',
-          unmountOnBlur: true,
-        }}
-      />
-      <Tab.Screen 
-        name="ManageVirtualCardTab" 
-        component={ManageVirtualCardWrapper} 
-        options={{ 
-          title: t('tabs.cards'),
-          unmountOnBlur: true 
-        }}
-      />
-      <Tab.Screen
-        name="SettingsTab"
-        component={Settings}
-        options={{
-          title: t('tabs.settings'),
-          unmountOnBlur: true,
-        }}
-      />
-    </Tab.Navigator>
-  );
-}
+    return (
+      <Tab.Navigator
+        tabBar={(props) => <CustomTabBar {...props} />}
+        screenOptions={({ route }) => ({
+          headerShown: false,
+          tabBarButton: (props) => <TouchableOpacity {...props} />,
+        })}
+      >
+        <Tab.Screen
+          name="HomeTab"
+          component={Home}
+          options={{
+            title: t('tabs.home'),
+            unmountOnBlur: true,
+          }}
+        />
+
+        <Tab.Screen
+          name="TransferTab"
+          component={History}
+          options={{
+            title: t('tabs.history'),
+            unmountOnBlur: true,
+          }}
+        />
+
+        {/*  Only show BeneficiaryTab if user is from Canada */}
+        {userProfile?.data?.country === "Canada" && (
+          <Tab.Screen
+            name="BeneficiaryTab"
+            component={BeneficiaryScreen}
+            options={{
+              title: '',
+              unmountOnBlur: true,
+            }}
+          />
+        )}
+
+
+      {userProfile?.data?.country === "Cameroon" && (
+        <Tab.Screen
+          name="ManageVirtualCardTab"
+          component={ManageVirtualCardWrapper}
+          options={{
+            title: t('tabs.cards'),
+            unmountOnBlur: true,
+          }}
+        />
+         )}
+
+        <Tab.Screen
+          name="SettingsTab"
+          component={Settings}
+          options={{
+            title: t('tabs.settings'),
+            unmountOnBlur: true,
+          }}
+        />
+      </Tab.Navigator>
+    );
+  }
+
+
 function ManageVirtualCardWrapper() {
   const { t } = useTranslation();
-  const { data: userProfile, isLoading: isProfileLoading } = useGetUserProfileQuery();
-  const navigation = useNavigation();
+  const { data: userProfile, isLoading: isProfileLoading, refetch } = useGetUserProfileQuery();
 
-  useEffect(() => {
-    if (!isProfileLoading) {
-      const virtualCard = userProfile?.data?.virtualCard;
-      const isCardMissingOrEmpty =
-        !virtualCard || (typeof virtualCard === 'object' && Object.keys(virtualCard).length === 0);
-      const status = virtualCard?.status;
+ useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, [])
+  );
 
-      if (isCardMissingOrEmpty || (status !== 'ACTIVE' && status !== 'PRE_ACTIVE')) {
-        navigation.navigate('OnboardingCard');
-      }
-    }
-  }, [userProfile, isProfileLoading, navigation]);
+  if (isProfileLoading) {
+    return <ActivityIndicator size="large" color={Colors.primary} />;
+  }
 
-  // If checks pass, render the actual ManageVirtualCard component
+  const virtualCard = userProfile?.data?.virtualCard;
+  const isCardMissingOrEmpty =
+    !virtualCard || (typeof virtualCard === 'object' && Object.keys(virtualCard).length === 0);
+  const status = virtualCard?.status;
+
+  // Render OnboardingCard conditionally instead of navigating
+  if (isCardMissingOrEmpty || (status !== 'ACTIVE' && status !== 'PRE_ACTIVE' && status !== 'FROZEN' && status !== 'BLOCKED' && status !== 'SUPENDED')) {
+    return <OnboardingCard />;
+  }
+
   return <ManageVirtualCard />;
+
 }
 
 
@@ -255,10 +283,11 @@ function MainStack() {
       <Stack.Navigator
         screenOptions={({ navigation }) => ({
           headerShown: true,
-          statusBarTranslucent: false,              // ← obligatoire
+          statusBarTranslucent: true,              // ← obligatoire
           headerStyle: {
             backgroundColor: Colors.primary,
-            height: Platform.select({ ios: 60, android: 80 }), 
+            height: Platform.OS === "ios" ? 60 : 80,
+            paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
             elevation: 0,
             shadowOpacity: 0,
           },
@@ -273,7 +302,7 @@ function MainStack() {
             <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 12 }}>
               {Platform.OS === 'ios'
                 ? <Text style={{ fontSize: 24, color: Colors.text }}>{'< '}</Text>
-                : <AntDesign name="arrowleft" size={20} color={Colors.text} />}
+                : <AntDesign name="left" size={20} color={Colors.text} />}
             </TouchableOpacity>
           ),
         })}
@@ -282,24 +311,24 @@ function MainStack() {
       <Stack.Screen 
         name="Account" 
         component={Account} 
-        options={{ headerTitle: t('screens.account') }} 
+       options={{ headerShown: false }}
       />
       <Stack.Screen 
         name="NiuRequest" 
         component={NiuRequest} 
-        options={{ headerTitle: t('screens.niuRequest') }} 
+         options={{ headerShown: false }}
       />
       <Stack.Screen name="BeneficiaryScreen" component={BeneficiaryScreen} options={{ headerShown: false }} />
       <Stack.Screen name="BeneficiarySelection" component={BeneficiarySelection} options={{ headerShown: false }} />
       <Stack.Screen 
         name="AboutUs" 
         component={AboutUs} 
-        options={{ headerTitle: t('screens.aboutUs') }} 
+        options={{ headerShown: false }} 
       />
       <Stack.Screen 
         name="ChangePassword" 
         component={ChangePassword} 
-        options={{ headerTitle: t('screens.changePassword') }} 
+        options={{ headerShown: false }}
       />
       <Stack.Screen name="BeneficiaryDetails" component={BeneficiaryDetails} options={{ headerShown: false }} />
       <Stack.Screen name="PaymentMethod" component={PaymentMethod} options={{ headerShown: false }} />
@@ -314,14 +343,14 @@ function MainStack() {
       <Stack.Screen 
         name="SelectMethod" 
         component={SelectMethod} 
-        options={{ headerTitle: t('screens.selectMethod') }} 
+       options={{ headerShown: false }}
       />
-      <Stack.Screen name="BankDepositRecharge" component={BankDepositRecharge} options={{ headerTitle: t('screens.bankDeposit') }}/>
-      <Stack.Screen name="PaymentSimulator" component={PaymentSimulator} options={{ headerTitle: t('screens.paymentSimulator') }} />
-      <Stack.Screen name="MethodType" component={MethodType} options={{ headerTitle: t('screens.selectMethod') }} />
-      <Stack.Screen name="WalletTransfer" component={WalletTransfer} options={{ headerTitle: t('screens.walletTransfer') }} />
-      <Stack.Screen name="AddContact" component={AddContact} options={{ headerTitle: t('screens.addContact') }} />
-      <Stack.Screen name="AddFavorite" component={AddFavorite} options={{ headerTitle: t('screens.addFavorite') }} />
+      <Stack.Screen name="BankDepositRecharge" component={BankDepositRecharge} options={{ headerShown: false }} />
+      <Stack.Screen name="PaymentSimulator" component={PaymentSimulator}options={{ headerShown: false }} />
+      <Stack.Screen name="MethodType" component={MethodType} options={{ headerShown: false }} />
+      <Stack.Screen name="WalletTransfer" component={WalletTransfer} options={{ headerShown: false }} />
+      <Stack.Screen name="AddContact" component={AddContact} options={{ headerShown: false }} />
+      <Stack.Screen name="AddFavorite" component={AddFavorite} options={{ headerShown: false }}/>
       <Stack.Screen name="WalletRecharge" component={WalletRecharge} options={{ headerShown: false }} />
       <Stack.Screen name="WalletWithdrawal" component={WalletWithdrawal} options={{ headerShown: false }} />
       <Stack.Screen name="WalletConfirm" component={WalletConfirm} options={{ headerShown: false }} />
@@ -331,14 +360,14 @@ function MainStack() {
       <Stack.Screen name="Confirme" component={Confirme} options={{ headerShown: false }} />
       <Stack.Screen name="TransactionHistory" component={TransactionHistory} options={{ headerShown: false }} />
       <Stack.Screen name="Success" component={Success} options={{ headerShown: false }} />
-      <Stack.Screen name="Support" component={Support} options={{ headerTitle: t('screens.support') }}/>
-      <Stack.Screen name="ChatScreen" component={ChatScreen} options={{ headerTitle: t('screens.chat') }} />
-      <Stack.Screen name="Settings" component={Settings} options={{ headerTitle: t('screens.setting') }}/>
+      <Stack.Screen name="Support" component={Support}  options={{ headerShown: false }}/>
+      <Stack.Screen name="ChatScreen" component={ChatScreen} options={{ headerShown: false }}/>
+      <Stack.Screen name="Settings" component={Settings} options={{ headerShown: false }}/>
       <Stack.Screen name="Payment" component={Payment} options={{ headerTitle: t('screens.payment') }} />
-      <Stack.Screen name="History" component={History} options={{ headerTitle: t('screens.history') }} />
-      <Stack.Screen name="Receipt" component={Receipt} options={{ headerTitle: t('screens.receipt') }}/>
-      <Stack.Screen name="NotificationComponent" component={NotificationComponent} options={{ headerTitle: t('screens.notification') }} />
-      <Stack.Screen name="CreateVirtualCard" component={CreateVirtualCard}options={{ headerTitle: t('screens.createCard') }} />
+      <Stack.Screen name="History" component={History} options={{ headerShown: false }} />
+      <Stack.Screen name="Receipt" component={Receipt} options={{ headerShown: false }} />
+      <Stack.Screen name="NotificationComponent" component={NotificationComponent} options={{ headerShown: false }} />
+      <Stack.Screen name="CreateVirtualCard" component={CreateVirtualCard}  options={{ headerShown: false }} />
       <Stack.Screen name="VerifyIdentity" component={VerifyIdentity} options={{ headerShown: false }} />
       <Stack.Screen name="ManageVirtualCard" component={ManageVirtualCard} options={{ headerShown: false }} />
       <Stack.Screen name="TransactionDetails" component={TransactionDetails} options={{ headerShown: false }} />
@@ -367,8 +396,9 @@ function MainStack() {
       <Stack.Screen name="ConfirmTransfer" component={ConfirmTransfer} options={{ headerShown: false }} />
       <Stack.Screen name="Historique" component={Historique} options={{ headerShown: false }} />
       <Stack.Screen name="BuySharing" component={BuySharing} options={{ headerShown: false }} />
-      <Stack.Screen name="DetailScreen" component={DetailScreen } options={{ headerShown: false }} />
-      <Stack.Screen name="DemandDetailScreen" component={DemandDetailScreen } options={{ headerShown: false }} />
+      <Stack.Screen name="DetailScreen" component={DetailScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="DemandDetailScreen" component={DemandDetailScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="HistoryCard" component={HistoryCard} options={{ headerShown: false }} />
       
       <Stack.Screen name="AddRecipient" component={AddRecipient } options={{ headerShown: false }} />
       <Stack.Screen name="CreateRequest" component={CreateRequest } options={{ headerShown: false }} />
@@ -437,11 +467,31 @@ function DrawerNavigator() {
 }
 
 export default function App() {
+   const appState = useRef(AppState.currentState);
+
   useEffect(() => {
-    registerForPushNotificationsAsync().then((token) => {
-      console.log("Expo Push Token:", token);
-    });
+    (async () => {
+      await registerForPushNotificationsAsync();
+    })();
   }, []);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", nextAppState => {
+      if (
+        appState.current.match(/inactive|background/) &&
+        nextAppState === "active"
+      ) {
+        //  When app comes back, force PIN screen
+        if (navigationRef.current) {
+          navigationRef.current.navigate("PinCode");
+        }
+      }
+      appState.current = nextAppState;
+    });
+
+    return () => subscription.remove();
+  }, []);
+
 
   return (
     <Provider store={store}>

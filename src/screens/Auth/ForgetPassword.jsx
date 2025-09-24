@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, SafeAreaView, StatusBar, Image, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StatusBar, Image, ScrollView } from 'react-native';
+import { SafeAreaView } from "react-native-safe-area-context";
 import { AntDesign } from '@expo/vector-icons';
 import { useNavigation } from "@react-navigation/native";
 import Loader from "../../components/Loader";
@@ -61,7 +62,7 @@ const ForgetPassword = () => {
         className="absolute top-20 left-5"
         onPress={() => navigation.goBack()}
       >
-        <AntDesign name="arrowleft" size={24} color="white" />
+        <AntDesign name="left" size={24} color="white" />
       </TouchableOpacity>
 
       <Image

@@ -1,254 +1,335 @@
-import React, { useState, useEffect } from "react";
-import {
-  SafeAreaView,
-  View,
-  Text,
-  FlatList,
-  ActivityIndicator,
-  TouchableOpacity,
+import React from "react";
+import { 
+  StatusBar, 
+  View, 
+  Text, 
+  ScrollView, 
+  TouchableOpacity, 
+  Alert
 } from "react-native";
-import Ionicons from "@expo/vector-icons/Ionicons";
-import {
-  useGetVirtualCardsQuery,
-  useGetVirtualCardDetailsQuery,
-  useFreezeCardMutation,
-  useUnfreezeCardMutation,
-  useGetCardTransactionsQuery,
-} from "../../services/Card/cardApi";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons, AntDesign } from "@expo/vector-icons";
+import { useNavigation, useRoute } from "@react-navigation/native";
+import moment from "moment";
+import * as Print from "expo-print";
+import * as Sharing from "expo-sharing";
+import * as FileSystem from 'expo-file-system';
+import { Asset } from 'expo-asset';
+import { useTranslation } from "react-i18next";
 
-export default function TransactionHistory({ navigation }) {
-  // Fetch all cards
-  const { data: cards, isLoading: isCardsLoading } = useGetVirtualCardsQuery();
-  console.log("Cards Data:", JSON.stringify(cards, null, 2));
-  // Manage selected card state
-  const [selectedCardId, setSelectedCardId] = useState(null);
+const VirtualCardRechargeDetails = () => {
+  const navigation = useNavigation();
+  const route = useRoute();
+  const { transaction } = route.params;
+  //console.log(transaction)
+  const { t } = useTranslation();
 
-  // Fetch selected card details
-  const {
-    data: cardDetails,
-    isLoading: isDetailsLoading,
-    refetch: refetchCardDetails,
-  } = useGetVirtualCardDetailsQuery(selectedCardId, {
-    skip: !selectedCardId,
-  });
-
-  // Extract card data
-  const cardData = cardDetails?.data;
- console.log("Card Data:", JSON.stringify(cardData, null, 2));
-  // Fetch transactions for the selected card
-  const {
-    data: cardTransactions,
-    isLoading: isTransactionsLoading,
-    refetch: refetchTransactions,
-  } = useGetCardTransactionsQuery(cardData?.id, {
-    skip: !cardData?.id,
-  });
- console.log("Full response:", JSON.stringify(cardTransactions, null, 2));
-  // Freeze/unfreeze mutations
-  const [freezeCard] = useFreezeCardMutation();
-  const [unfreezeCard] = useUnfreezeCardMutation();
-
-  const isCardFrozen = cardData?.status === "FROZEN";
-  const rejectionAttempts = cardData?.paymentRejectNumber ?? 0;
-  const limit = 3;
-
-  // Automatically select the first card when cards data arrives
-  useEffect(() => {
-    if (cards?.data && cards.data.length > 0 && !selectedCardId) {
-      setSelectedCardId(cards.data[0].id);
-    }
-  }, [cards]);
-
-  // Render a single transaction
-  const renderTransactionItem = ({ item }) => (
-    <View
-      style={{
-        padding: 16,
-        borderBottomColor: "#e5e7eb",
-        borderBottomWidth: 1,
-        flexDirection: "row",
-        justifyContent: "space-between",
-      }}
-    >
-      <View style={{ flex: 1 }}>
-        <Text style={{ fontWeight: "600", color: "#111827" }}>
-          {item.description}
-        </Text>
-        <Text style={{ color: "#4b5563", fontSize: 12 }}>
-          {new Date(item.createdAt).toLocaleDateString()} - {item.status}
-        </Text>
-      </View>
-      <View style={{ justifyContent: "center" }}>
-        <Text
-          style={{
-            fontWeight: "700",
-            color: item.status === "FAILED" ? "#dc2626" : "#22c55e",
-          }}
-        >
-          {item.amount} {item.currency}
-        </Text>
-      </View>
-    </View>
-  );
-
-  if (isCardsLoading) {
+  if (!transaction) {
     return (
-      <SafeAreaView className="flex-1 justify-center items-center">
-        <ActivityIndicator size="large" color="#22c55e" />
+      <SafeAreaView className="flex-1 bg-white justify-center items-center">
+        <Text className="text-red-500">Détails de transaction non trouvés</Text>
+        <TouchableOpacity 
+          className="mt-4 px-4 py-2 bg-blue-500 rounded"
+          onPress={() => navigation.goBack()}
+        >
+          <Text className="text-white">Retour</Text>
+        </TouchableOpacity>
       </SafeAreaView>
     );
   }
 
+  const getLocalImageBase64 = async () => {
+    try {
+      // Chemin vers votre logo dans l'application
+      const logoPath = require('../../images/LogoSendo.png');
+      // Pour Expo, vous pouvez utiliser Asset.fromModule pour obtenir l'URI
+      const asset = Asset.fromModule(logoPath);
+      await asset.downloadAsync();
+      
+      // Lire le fichier et le convertir en base64
+      const base64 = await FileSystem.readAsStringAsync(asset.localUri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+      
+      return `data:image/png;base64,${base64}`;
+    } catch (error) {
+      console.error('Error loading local image:', error);
+      return null;
+    }
+  };
+
+  const formatDate = (dateString) => {
+    return moment(dateString).format('DD MMMM YYYY [à] HH:mm');
+  };
+
+  const formatAmount = (amount) => {
+    return amount?.toLocaleString('fr-FR') || '0';
+  };
+
+  const generateReceiptHTML = async () => {
+    const logoBase64 = await getLocalImageBase64();
+    const logoUrl = logoBase64 || "https://res.cloudinary.com/dviktmefh/image/upload/v1735143153/sendo-logo_aej8vq.png";
+    
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Reçu Sendo</title>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            line-height: 1.6;
+            color: #333;
+          }
+          .header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #7ddd7d;
+            padding-bottom: 10px;
+          }
+          .logo-container {
+            margin-bottom: 15px;
+          }
+          .logo {
+            width: 120px;
+            height: 120px;
+            object-fit: contain;
+          }
+          .title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 5px;
+          }
+          .subtitle {
+            font-size: 16px;
+            color: #7f8c8d;
+            margin-bottom: 10px;
+          }
+          .reference {
+            font-size: 14px;
+            color: #7f8c8d;
+          }
+          .section {
+            margin: 15px 0;
+            padding: 10px;
+            border: 1px solid #ecf0f1;
+            border-radius: 5px;
+          }
+          .section-title {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 16px;
+            border-bottom: 1px solid #ecf0f1;
+            padding-bottom: 5px;
+          }
+          .row {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+          }
+          .label {
+            font-weight: bold;
+            color: #0b0c0c;
+          }
+          .value {
+            color: #2c3e50;
+          }
+          .amount {
+            font-weight: bold;
+            color: #2c3e50;
+            font-size: 18px;
+          }
+          .footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 12px;
+            color: #95a5a6;
+            border-top: 1px solid #ecf0f1;
+            padding-top: 10px;
+          }
+          .status-completed {
+            color: #27ae60;
+            font-weight: bold;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="logo-container">
+            <img class="logo" src="${logoUrl}" alt="Sendo Logo">
+          </div>
+          <div class="subtitle">Reçu de recharge de carte</div>
+          <div class="reference">Référence: ${transaction.transactionId}</div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Informations de transaction</div>
+          <div class="row">
+            <span class="label">Date:</span>
+            <span class="value">${formatDate(transaction.createdAt)}</span>
+          </div>
+          <div class="row">
+            <span class="label">Statut:</span>
+            <span class="status-completed">${transaction.status}</span>
+          </div>
+          <div class="row">
+            <span class="label">Type:</span>
+            <span class="value">Recharge de carte virtuelle</span>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Détails de la carte</div>
+          <div class="row">
+            <span class="label">Nom sur la carte:</span>
+            <span class="value">${transaction.user?.firstname} ${transaction.user?.lastname}</span>
+          </div>
+          <div class="row">
+            <span class="label">Type d'opération:</span>
+            <span class="value">Dépôt sur carte Sendo</span>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Montants</div>
+          <div class="row">
+            <span class="label">Montant de la recharge:</span>
+            <span class="amount">${formatAmount(transaction.amount)} ${transaction.currency}</span>
+          </div>
+          <div class="row">
+            <span class="label">Frais de recharge:</span>
+            <span class="value">${formatAmount(transaction.sendoFees || 0)} ${transaction.currency}</span>
+          </div>
+          <div class="row">
+            <span class="label">Total:</span>
+            <span class="amount">${formatAmount(transaction.totalAmount)} ${transaction.currency}</span>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Détails supplémentaires</div>
+          <div class="row">
+            <span class="label">Rechargé le:</span>
+            <span class="value">${formatDate(transaction.createdAt)}</span>
+          </div>
+          <div class="row">
+            <span class="label">Référence:</span>
+            <span class="value">${transaction.transactionId}</span>
+          </div>
+        </div>
+
+        <div class="footer">
+          Ce reçu a été généré automatiquement le ${moment().format('DD/MM/YYYY HH:mm')}<br>
+          et peut être utilisé comme justificatif de transaction.
+        </div>
+      </body>
+      </html>
+    `;
+  };
+
+  const handleDownloadReceipt = async () => {
+    try {
+      const html = await generateReceiptHTML();
+      const { uri } = await Print.printToFileAsync({ html });
+      const newUri = `${FileSystem.documentDirectory}Reçu_Sendo_${transaction.transactionId}.pdf`;
+      await FileSystem.moveAsync({ from: uri, to: newUri });
+
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(newUri);
+      } else {
+        Alert.alert("Succès", "Reçu généré avec succès");
+      }
+    } catch (error) {
+      console.error("Error generating receipt:", error);
+      Alert.alert("Erreur", "Échec de génération du reçu. Veuillez réessayer.");
+    }
+  };
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "white" }}>
-      {/* Header */}
-      <SafeAreaView
-        style={{
-          backgroundColor: "#22c55e",
-          borderBottomLeftRadius: 20,
-          borderBottomRightRadius: 20,
-        }}
-      >
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
-            paddingHorizontal: 16,
-            paddingVertical: 12,
-            borderBottomColor: "#e5e7eb",
-            borderBottomWidth: 1,
-          }}
-        >
-          <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 4 }}>
-            <Ionicons name="arrow-back" size={24} color="#333" />
-          </TouchableOpacity>
-          <Text
-            style={{
-              fontSize: 20,
-              fontWeight: "bold",
-              color: "#333",
-              flex: 1,
-              textAlign: "center",
-            }}
-            numberOfLines={1}
-          >
-            {cardData?.cardName || "Ma Carte"}
-          </Text>
-          <TouchableOpacity onPress={() => navigation.openDrawer()} style={{ padding: 4 }}>
-            <Ionicons name="menu-outline" size={28} color="#333" />
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-
-      {/* Card selector */}
-      <View style={{ padding: 12 }}>
-        <Text style={{ marginBottom: 8, fontWeight: "600", fontSize: 16 }}>
-          Sélectionnez une carte:
-        </Text>
-        <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
-          {cards?.data?.map((card) => (
-            <TouchableOpacity
-              key={card.id}
-              onPress={() => setSelectedCardId(card.id)}
-              style={{
-                padding: 10,
-                marginRight: 10,
-                marginBottom: 10,
-                backgroundColor: card.id === selectedCardId ? "#22c55e" : "#e5e7eb",
-                borderRadius: 8,
-                minWidth: 120,
-              }}
-            >
-              <Text
-                style={{
-                  color: card.id === selectedCardId ? "white" : "#111827",
-                  fontWeight: "600",
-                }}
-                numberOfLines={1}
-              >
-                {card.cardName}
-              </Text>
-              <Text style={{ color: card.id === selectedCardId ? "white" : "#6b7280" }}>
-                **** **** **** {card.last4Digits}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+    <SafeAreaView className="flex-1 bg-white">
+      <StatusBar backgroundColor="#7ddd7d" barStyle="light-content" />
+      
+      <View className="flex-row items-center p-4" style={{ backgroundColor: "#7ddd7d" }}>
+        <TouchableOpacity onPress={() => navigation.goBack()} className="mr-2">
+         <AntDesign name="left" size={24} color="white" />
+        </TouchableOpacity>
+        <Text className="text-xl font-bold text-white">Détails de la transaction</Text>
       </View>
 
-      {/* Card info */}
-      {isDetailsLoading ? (
-        <ActivityIndicator style={{ marginTop: 20 }} size="large" color="#22c55e" />
-      ) : (
-        cardData && (
-          <View
-            style={{
-              padding: 16,
-              borderBottomColor: "#d1d5db",
-              borderBottomWidth: 1,
-            }}
-          >
-            <Text style={{ fontSize: 18, fontWeight: "700", marginBottom: 4 }}>
-              {cardData.cardName}
-            </Text>
-            <Text>Status: {cardData.status}</Text>
-            <Text>Last 4 digits: **** **** **** {cardData.last4Digits}</Text>
-            <Text>Expiration: {cardData.expirationDate}</Text>
-            <Text>
-              Transactions rejetées: {rejectionAttempts} / {limit}
-            </Text>
+      <ScrollView className="flex-1 p-4">
+        <View className="items-center my-4">
+          <View className="bg-[#7ddd7d] w-16 h-16 rounded-full justify-center items-center mb-2">
+            <Ionicons name="card" size={30} color="#fff" />
           </View>
-        )
-      )}
-
-      {/* Freeze/unfreeze button */}
-      {cardData && (
-        <View style={{ padding: 16, flexDirection: "row", justifyContent: "center" }}>
-          <TouchableOpacity
-            onPress={async () => {
-              try {
-                if (isCardFrozen) {
-                  await unfreezeCard(cardData.id).unwrap();
-                } else {
-                  await freezeCard(cardData.id).unwrap();
-                }
-                refetchCardDetails();
-              } catch (err) {
-                console.error("Error freezing/unfreezing card:", err);
-              }
-            }}
-            style={{
-              backgroundColor: isCardFrozen ? "#22c55e" : "#ef4444",
-              paddingHorizontal: 24,
-              paddingVertical: 12,
-              borderRadius: 24,
-            }}
-          >
-            <Text style={{ color: "white", fontWeight: "600" }}>
-              {isCardFrozen ? "Débloquer la carte" : "Geler la carte"}
-            </Text>
-          </TouchableOpacity>
+          <Text className="text-lg font-semibold text-gray-800">Recharge effectuée</Text>
+          <Text className="text-gray-500">Terminé le {formatDate(transaction.createdAt)}</Text>
         </View>
-      )}
 
-      {/* Transactions list */}
-      <View style={{ flex: 1 }}>
-        {isTransactionsLoading ? (
-          <ActivityIndicator size="large" color="#22c55e" style={{ marginTop: 20 }} />
-        ) : (
-          <FlatList
-            data={cardTransactions?.data?.items || []}
-            keyExtractor={(item) => item.id.toString()}
-            renderItem={renderTransactionItem}
-            ListEmptyComponent={
-              <Text style={{ textAlign: "center", marginTop: 20, color: "#6b7280" }}>
-                Aucun historique de transactions.
-              </Text>
-            }
-          />
-        )}
-      </View>
+        <View className="bg-white p-4 rounded-xl shadow-md border border-gray-100 mb-4">
+          <Text className="text-gray-800 font-semibold text-sm mb-2">
+            Recharge de carte virtuelle effectuée
+          </Text>
+          
+          <View className="mb-3">
+            <Text className="text-gray-600 text-sm">Nom sur la carte : {transaction.user?.firstname} {transaction.user?.lastname}</Text>
+          </View>
+          
+          <View className="mb-3">
+            <Text className="text-gray-600 text-sm">Type d'opération : Dépôt sur carte Sendo</Text>
+          </View>
+
+          <View className="border-t border-gray-100 pt-3 mt-3">
+            <Text className="text-green-600 font-semibold mb-2">Montant</Text>
+            <View className="flex-row justify-between mb-1">
+              <Text className="text-gray-600 text-sm">Frais de recharge :</Text>
+              <Text className="text-gray-600 text-sm">{formatAmount(transaction.sendoFees || 0)} {transaction.currency}</Text>
+            </View>
+            <View className="flex-row justify-between mb-1">
+              <Text className="text-gray-600 text-sm">Montant de la recharge :</Text>
+              <Text className="text-gray-600 text-sm">{formatAmount(transaction.amount)} {transaction.currency}</Text>
+            </View>
+            <View className="flex-row justify-between mt-2 pt-2 border-t border-gray-100">
+              <Text className="text-gray-800 font-semibold">Total :</Text>
+              <Text className="text-gray-800 font-semibold">{formatAmount(transaction.totalAmount)} {transaction.currency}</Text>
+            </View>
+          </View>
+
+          <View className="border-t border-gray-100 pt-3 mt-3">
+            <Text className="text-green-600 font-semibold mb-2">Détails du transfert</Text>
+            <View className="flex-row justify-between mb-1">
+              <Text className="text-gray-600 text-sm">Rechargé le :</Text>
+              <Text className="text-gray-600 text-sm">{formatDate(transaction.createdAt)}</Text>
+            </View>
+            <View className="flex-row justify-between">
+              <Text className="text-gray-600 text-sm">Référence :</Text>
+              <Text className="text-gray-600 text-sm">{transaction.transactionId}</Text>
+            </View>
+          </View>
+        </View>
+
+        <TouchableOpacity
+          onPress={handleDownloadReceipt}
+          className="py-3 rounded-lg items-center bg-[#7ddd7d] mb-4"
+        >
+          <Text className="text-white font-bold">TÉLÉCHARGER LE REÇU</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={() =>   navigation.navigate("HistoryCard")}
+          className="items-center py-3"
+        >
+          <Text className="text-green-500 font-semibold">
+            AFFICHER TOUS LES TRANSFERTS
+          </Text>
+        </TouchableOpacity>
+      </ScrollView>
     </SafeAreaView>
   );
-}
+};
+
+export default VirtualCardRechargeDetails;

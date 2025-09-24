@@ -10,7 +10,7 @@ import {
   Platform,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, AntDesign } from "@expo/vector-icons";
 import TopLogo from "../../images/TopLogo.png";
 import Toast from "react-native-toast-message";
 import { useTranslation } from "react-i18next";
@@ -59,7 +59,7 @@ const SelectRecipients = ({ navigation, route }) => {
 
   const handleNext = () => {
     const totalParticipants = selectedFriends.length + (includeSelf ? 1 : 0);
-     if (totalParticipants < 2) { 
+     if (totalParticipants < 1) { 
       Toast.show({
         type: "error",
         text1: t("selectRecipient.no_recipients_selected"),

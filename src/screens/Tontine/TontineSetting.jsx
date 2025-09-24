@@ -10,7 +10,7 @@ import {
   ScrollView,
 } from "react-native";
 import ButtomLogo1 from "../../images/ButtomLogo1.png";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, AntDesign } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
 
@@ -101,11 +101,10 @@ const getInfoForModal = (screen) => {
 
       {/* Header */}
       <View className="flex-row justify-between items-center px-4">
-        <Image
-          source={ButtomLogo1}
-          resizeMode="contain"
-          className="h-[40px] w-[120px]"
-        />
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+              <AntDesign name="left" size={24} color="white" />
+            </TouchableOpacity>
+       
         <TouchableOpacity onPress={() => navigation.openDrawer()}>
           <Ionicons name="menu-outline" size={28} color="white" />
         </TouchableOpacity>

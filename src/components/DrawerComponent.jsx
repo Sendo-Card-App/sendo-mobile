@@ -8,8 +8,9 @@ import {
   Platform,
   Image,
   RefreshControl,
-  SafeAreaView,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+
 import { useNavigation } from "@react-navigation/native";
 import {
   AntDesign,
@@ -22,7 +23,7 @@ import PinVerificationModal from './PinVerificationModal'; // Import your modal 
 import { useSelector, useDispatch } from 'react-redux';
 import { incrementAttempt, resetAttempts, lockPasscode } from '../features/Auth/passcodeSlice';
 import { useTranslation } from "react-i18next";
-import { useGetUserProfileQuery, useLogoutMutation } from "../services/Auth/authAPI";
+import { useGetUserProfileQuery, useLogoutMutation, useGetProfilePictureQuery } from "../services/Auth/authAPI";
 import Loader from "./Loader";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Share } from 'react-native';
@@ -45,12 +46,24 @@ const DrawerComponent = ({ navigation }) => {
   const isLocked = lockedUntil && new Date(lockedUntil) > new Date()
 
   const {
-    data: userProfile,
-    isLoading: isProfileFetching,
-    isLoading: isProfileLoading,
-    refetch: refetchProfile,
-  } = useGetUserProfileQuery();
-  //console.log("userProfile", userProfile);
+      data: userProfile,
+      isLoading: isProfileFetching,
+      isLoading: isProfileLoading,
+      refetch: refetchProfile,
+    } = useGetUserProfileQuery(
+      undefined, 
+    {
+      pollingInterval: 1000, // Refetch every 1 second
+    }
+  );
+
+  const userId = userProfile?.data?.id;
+  
+    const { data: profilePicture, isLoading: isPictureLoading } = useGetProfilePictureQuery(
+      userId, // pass userId here
+      { pollingInterval: 1000 }
+    );
+  
   const [logout, { isLoading: isLoggingOut }] = useLogoutMutation();
   const isLoading = isProfileLoading || isProfileFetching;
    
@@ -263,7 +276,7 @@ Utilise mon code lors de ton inscription !`;
     <View className="flex-row justify-between items-center py-4">
       <Loader/>
       <TouchableOpacity onPress={() => navigation.closeDrawer()}>
-        <AntDesign name="arrowleft" size={24} color="white" />
+        <AntDesign name="left" size={24} color="white" />
       </TouchableOpacity>
     </View>
   ) : (
@@ -272,42 +285,48 @@ Utilise mon code lors de ton inscription !`;
         <Text className="text-white font-bold text-xl">
         </Text>
         <TouchableOpacity onPress={() => navigation.closeDrawer()}>
-          <AntDesign name="arrowleft" size={24} color="white" />
+          <AntDesign name="left" size={24} color="white" />
         </TouchableOpacity>
       </View>
 
       <View className="mt-4 bg-white px-4 py-3 rounded-xl shadow-sm border border-gray-100">
         <View className="flex-row items-center justify-between">
           {/* 👤 Avatar */}
-          <View className="flex-row items-center">
-            {userProfile?.data?.kycDocuments?.find(doc => doc.type === "SELFIE") ? (
-              <Image
-                source={{ uri: userProfile.data.kycDocuments.find(doc => doc.type === "SELFIE").url }}
-                style={{ width: 50, height: 50, borderRadius: 25, marginRight: 10 }}
-              />
-            ) : (
-              <View
-                style={{
-                  width: 50,
-                  height: 50,
-                  borderRadius: 25,
-                  marginRight: 10,
-                  backgroundColor: '#E5E7EB',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                }}
-              >
-                <Ionicons name="person-circle-outline" size={30} color="#9CA3AF" />
-              </View>
-            )}
+         <View className="flex-row items-center">
+          {profilePicture?.data?.link ? (
+            <Image
+              source={{ uri: `${profilePicture.data.link}?t=${userProfile?.data?.updatedAt}` }}
+              style={{ width: 50, height: 50, borderRadius: 25, marginRight: 10 }}
+            />
+          ) : (
+            <View
+              style={{
+                width: 50,
+                height: 50,
+                borderRadius: 25,
+                marginRight: 10,
+                backgroundColor: '#E5E7EB',
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}
+            >
+              <Ionicons name="person-circle-outline" size={30} color="#9CA3AF" />
+            </View>
+          )}
 
-            <Text className="text-lg font-semibold text-gray-800">
-              {userProfile?.data?.firstname} {userProfile?.data?.lastname}
-              {userProfile?.data?.kycDocuments?.some(doc => doc.status === "APPROVED") && (
-                <Ionicons name="checkmark-circle" size={18} color="#10B981" style={{ marginLeft: 6 }} />
-              )}
-            </Text>
-          </View>
+          <Text className="text-lg font-semibold text-gray-800">
+            {userProfile?.data?.firstname} {userProfile?.data?.lastname}
+            {userProfile?.data?.kycDocuments?.some(doc => doc.status === "APPROVED") && (
+              <Ionicons
+                name="checkmark-circle"
+                size={18}
+                color="#10B981"
+                style={{ marginLeft: 6 }}
+              />
+            )}
+          </Text>
+        </View>
+
         </View>
 
         <View className="mt-2">
@@ -339,7 +358,7 @@ Utilise mon code lors de ton inscription !`;
 
       {/* Body */}
       <View className="flex-1 mx-8">
-        <View className="border-b border-gray-400 py-3">
+        {/* <View className="border-b border-gray-400 py-3">
           <Text className="font-bold text-gray-600">{t('drawer.bonus')}</Text>
           <Text className="text-xs text-gray-500 my-2">
             {t('drawer.bonus_description')}
@@ -353,7 +372,7 @@ Utilise mon code lors de ton inscription !`;
             </Text>
           </View>
           </TouchableOpacity>
-        </View>
+        </View> */}
 
         <ScrollView
           className="py-4"
@@ -370,7 +389,7 @@ Utilise mon code lors de ton inscription !`;
             className="flex-row gap-2 my-2 mb-5"
             onPress={() => navigation2.navigate("History")}
           >
-            <Ionicons name="document-text-outline" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
+            <Ionicons name="list-outline" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
             <View>
               <Text className="font-bold text-gray-500">{t('drawer.history')}</Text>
               <Text className="text-sm text-gray-500">
@@ -383,7 +402,7 @@ Utilise mon code lors de ton inscription !`;
             className="flex-row gap-2 my-2 mb-5"
             onPress={() => navigation2.navigate("Account")}
           >
-            <Feather name="user" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
+            <Ionicons name="person-outline" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
             <View>
               <Text className="font-bold text-gray-500">{t('drawer.account')}</Text>
               <Text className="text-sm text-gray-500">
@@ -397,7 +416,7 @@ Utilise mon code lors de ton inscription !`;
                       className="flex-row gap-2 my-2 mb-5"
                       onPress={() => navigation2.navigate("VerifyIdentity")}
                     >
-                      <Feather name="file-text" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
+                       <MaterialCommunityIcons name="fingerprint" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
                       <View>
                         <Text className="font-bold text-gray-500">{t('drawer.request')}</Text>
                         <Text className="text-sm text-gray-500">
@@ -409,7 +428,7 @@ Utilise mon code lors de ton inscription !`;
                       className="flex-row gap-2 my-2 mb-5"
                       onPress={() => navigation2.navigate("NiuRequest")}
                     >
-                      <Feather name="file-text" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
+                       <MaterialCommunityIcons name="file-document-outline" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
                       <View>
                         <Text className="font-bold text-gray-500">{t('drawer.request1')}</Text>
                         <Text className="text-sm text-gray-500">
@@ -421,7 +440,7 @@ Utilise mon code lors de ton inscription !`;
                   className="flex-row gap-2 my-2 items-center mb-5"
                     onPress={() => navigation2.navigate("PaymentSimulator")}
                     >
-                      <AntDesign name="calculator" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
+                       <Ionicons name="calculator-outline" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
                       <View>
                         <Text className="font-bold text-gray-500">{t('drawer.balance')}</Text>
                         <Text className="text-sm text-gray-500">
@@ -445,7 +464,7 @@ Utilise mon code lors de ton inscription !`;
             onPress={() => navigation2.navigate("AddFavorite")}
             className="flex-row gap-2 my-2 mb-5"
           >
-            <MaterialCommunityIcons name="heart" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
+            <MaterialCommunityIcons name="heart-outline" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
             <View>
               <Text className="font-bold text-gray-500">{t('drawer.favorite')}</Text>
             </View>
@@ -468,11 +487,7 @@ Utilise mon code lors de ton inscription !`;
                 className="flex-row gap-2 my-2 mb-5"
                 onPress={() => navigation2.navigate("WelcomeDemand")}
               >
-                <MaterialCommunityIcons
-                  name="hand-coin-outline" // ou "cash-send"
-                  size={Platform.OS === "ios" ? 32 : 24}
-                  color="gray"
-                />
+                 <MaterialCommunityIcons name="hand-coin" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
                 <View>
                   <Text className="font-bold text-gray-500">{t("drawer.demand")}</Text>
                 </View>
@@ -481,33 +496,29 @@ Utilise mon code lors de ton inscription !`;
               <TouchableOpacity
                 className="flex-row gap-2 my-2 mb-5 items-center"
                  onPress={() => navigation2.navigate("TontineList")}
-              >
-                <Feather
-                  name="users"
-                  size={Platform.OS === "ios" ? 28 : 22}
-                  color="gray" onPress={() => navigation2.navigate("Settings")}
-                />
+              >   
+               <MaterialCommunityIcons name="account-group" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
                 <View>
                   <Text className="font-bold text-gray-500">{t("drawer.tontine")}</Text>
                   <Text className="text-sm text-gray-500">{t('drawer.h2')}</Text>
                 </View>
               </TouchableOpacity>
-          <TouchableOpacity
+          {/* <TouchableOpacity
             className="flex-row gap-2 my-2 mb-5"
-           
+            onPress={() => navigation2.navigate("SettingsTab")}
           >
             <AntDesign name="setting" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
             <View>
               <Text className="font-bold text-gray-500">{t('drawer.settings')}</Text>
               <Text className="text-sm text-gray-500">{t('drawer.security')}</Text>
             </View>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
 
           <TouchableOpacity
             className="flex-row gap-2 my-2 mb-5"
             onPress={() => navigation2.navigate("Support")}
           >
-            <EvilIcons name="question" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
+            <Ionicons name="help-circle-outline" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
             <View>
               <Text className="font-bold text-gray-500">{t('drawer.support')}</Text>
               <Text className="text-sm text-gray-500">
@@ -520,7 +531,7 @@ Utilise mon code lors de ton inscription !`;
             className="flex-row gap-2 my-2 mb-5"
             onPress={() => navigation2.navigate("AboutUs")}
           >
-            <EvilIcons name="exclamation" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
+            <Ionicons name="information-circle-outline" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
             <View>
               <Text className="font-bold text-gray-500">{t('drawer.about_us')}</Text>
               <Text className="text-sm text-gray-500 pr-8">

@@ -8,12 +8,12 @@ import {
   TextInput,
   Image,
   TouchableOpacity,
-  SafeAreaView,
   StatusBar,
   Modal,
   FlatList,
   ActivityIndicator
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import KeyboardAvoidinWrapper from "../../components/KeyboardAvoidinWrapper";
 import { useTranslation } from "react-i18next";
@@ -36,52 +36,53 @@ const Log = () => {
   const [showPassword, setShowPassword] = useState(false);
 
   const [countries, setCountries] = useState([]);
+  const [filteredCountries, setFilteredCountries] = useState([]);
   const [fullPhoneNumber, setFullPhoneNumber] = useState(""); 
   const [countryModalVisible, setCountryModalVisible] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [selectedCountry, setSelectedCountry] = useState({
     name: 'Cameroon',
     code: '+237',
     flag: 'https://flagcdn.com/w40/cm.png'
   });
 
-const fetchCountries = async () => {
-  try {
-    const res = await fetch('https://restcountries.com/v3.1/all?fields=name,idd,flags');
+  const fetchCountries = async () => {
+    try {
+      const res = await fetch('https://restcountries.com/v3.1/all?fields=name,idd,flags');
 
-    if (!res.ok) {
-      throw new Error(`HTTP error! status: ${res.status}`);
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+
+      const data = await res.json();
+
+      const countriesList = data
+        .map(c => {
+          const name = c?.name?.common;
+          const root = c?.idd?.root || '';
+          const suffixes = c?.idd?.suffixes || [];
+          let code = suffixes.length > 0 ? `${root}${suffixes[0]}` : root;
+
+          if (!name || !code) return null;
+
+          if (!code.startsWith('+')) {
+            code = '+' + code;
+          }
+
+          const flag = c?.flags?.png || c?.flags?.svg || null;
+
+          return { name, code, flag };
+        })
+        .filter(Boolean)
+        .sort((a, b) => a.name.localeCompare(b.name));
+
+      setCountries(countriesList);
+      setFilteredCountries(countriesList); // Initialize filtered list
+    } catch (error) {
+      console.log("Error fetching countries:", error);
+      Toast.show({ type: 'error', text1: 'Failed to load countries' });
     }
-
-    const data = await res.json();
-
-    const countriesList = data
-      .map(c => {
-        const name = c?.name?.common;
-        const root = c?.idd?.root || '';
-        const suffixes = c?.idd?.suffixes || [];
-        let code = suffixes.length > 0 ? `${root}${suffixes[0]}` : root;
-
-        if (!name || !code) return null;
-
-        if (!code.startsWith('+')) {
-          code = '+' + code;
-        }
-
-        const flag = c?.flags?.png || c?.flags?.svg || null;
-
-        return { name, code, flag };
-      })
-      .filter(Boolean)
-      .sort((a, b) => a.name.localeCompare(b.name));
-
-    setCountries(countriesList);
-  } catch (error) {
-    console.log("Error fetching countries:", error);
-    Toast.show({ type: 'error', text1: 'Failed to load countries' });
-  }
-};
-
-
+  };
 
   useEffect(() => {
     fetchCountries();
@@ -92,6 +93,19 @@ const fetchCountries = async () => {
       setFullPhoneNumber(`${selectedCountry.code}${phone}`);
     }
   }, [phone, selectedCountry.code]);
+
+  // Filter countries based on search query
+  useEffect(() => {
+    if (searchQuery.trim() === "") {
+      setFilteredCountries(countries);
+    } else {
+      const filtered = countries.filter(country => 
+        country.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        country.code.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      setFilteredCountries(filtered);
+    }
+  }, [searchQuery, countries]);
 
   const handleLogin = async () => {
     if (!phone || !password) {
@@ -147,11 +161,15 @@ const fetchCountries = async () => {
       onPress={() => {
         setSelectedCountry(item);
         setCountryModalVisible(false);
+        setSearchQuery(""); // Clear search when country is selected
       }}
       className="flex-row items-center py-3 px-4 border-b border-gray-200"
     >
-      <Image source={{ uri: item.flag }} className="w-8 h-6 mr-3" />
-      <Text className="text-lg">{`${item.name} (${item.code})`}</Text>
+      <Image source={{ uri: item.flag }} className="w-8 h-6 mr-3" resizeMode="contain" />
+      <View>
+        <Text className="text-base font-medium">{item.name}</Text>
+        <Text className="text-sm text-gray-500">{item.code}</Text>
+      </View>
     </TouchableOpacity>
   );
 
@@ -163,7 +181,7 @@ const fetchCountries = async () => {
 
           <View className="absolute top-14 w-full px-6 flex-row justify-between z-10">
             <TouchableOpacity onPress={() => navigation.goBack()}>
-              <AntDesign name="arrowleft" size={24} color="white" />
+              <AntDesign name="left" size={24} color="white" />
             </TouchableOpacity>
 
             <TouchableOpacity onPress={() => setLanguageModalVisible(true)}>
@@ -214,7 +232,7 @@ const fetchCountries = async () => {
                 onPress={() => setCountryModalVisible(true)}
                 className="flex-row items-center bg-white py-3 px-4 rounded-l-2xl border-r border-gray-200"
               >
-                <Image source={{ uri: selectedCountry.flag }} className="w-8 h-6 mr-2" />
+                <Image source={{ uri: selectedCountry.flag }} className="w-8 h-6 mr-2" resizeMode="contain" />
                 <Text className="font-bold text-lg">{selectedCountry.code}</Text>
               </TouchableOpacity>
               
@@ -272,27 +290,64 @@ const fetchCountries = async () => {
           >
             <Text className="text-[#7ddd7d] font-medium">{t("signIn.signUp")}</Text>
           </TouchableOpacity>
-          {/*           
-          <TouchableOpacity 
-            onPress={handleGuestLogin}
-            className="mt-4"
-          >
-            <Text className="text-[#7ddd7d] underline">{t("signIn.guestUser")}</Text>
-          </TouchableOpacity> */}
 
           {/* Country Selection Modal */}
           <Modal visible={countryModalVisible} animationType="slide">
             <SafeAreaView className="flex-1 bg-white">
-              {countries.length === 0 ? (
+              {/* Header with back button and title */}
+              <View className="flex-row items-center px-4 py-3 border-b border-gray-200">
+                <TouchableOpacity 
+                  onPress={() => {
+                    setCountryModalVisible(false);
+                    setSearchQuery(""); // Clear search when closing
+                  }}
+                  className="p-2 mr-2"
+                >
+                  <AntDesign name="left" size={24} color="black" />
+                </TouchableOpacity>
+                <Text className="text-xl font-bold flex-1 text-center">
+                  {t("log.select_country")}
+                </Text>
+                <View style={{ width: 40 }} /> 
+              </View>
+
+              {/* Search Bar */}
+              <View className="px-4 py-3 border-b border-gray-200">
+                <View className="flex-row items-center bg-gray-100 rounded-lg px-3 py-2">
+                  <AntDesign name="search1" size={20} color="gray" />
+                  <TextInput
+                    placeholder={t("log.search_country")}
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                    className="flex-1 ml-2 text-base"
+                    autoFocus={true}
+                  />
+                  {searchQuery.length > 0 && (
+                    <TouchableOpacity onPress={() => setSearchQuery("")}>
+                      <AntDesign name="closecircle" size={18} color="gray" />
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </View>
+
+              {filteredCountries.length === 0 ? (
                 <View className="flex-1 justify-center items-center">
-                  <ActivityIndicator size="large" color="#7ddd7d" />
+                  {countries.length === 0 ? (
+                    <ActivityIndicator size="large" color="#7ddd7d" />
+                  ) : (
+                    <Text className="text-gray-500 text-lg">
+                      {t("log.no_countries_found")}
+                    </Text>
+                  )}
                 </View>
               ) : (
                 <FlatList
-                  data={countries}
+                  data={filteredCountries}
                   keyExtractor={(item, index) => index.toString()}
                   renderItem={renderCountry}
-                  contentContainerStyle={{ paddingVertical: 20 }}
+                  contentContainerStyle={{ paddingVertical: 10 }}
+                  initialNumToRender={20}
+                  windowSize={10}
                 />
               )}
             </SafeAreaView>

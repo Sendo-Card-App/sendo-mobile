@@ -5,10 +5,12 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
-  SafeAreaView,
   Image,
   StyleSheet,
+  Platform,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+
 import { AntDesign } from "@expo/vector-icons";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { MaterialIcons } from "@expo/vector-icons";
@@ -25,13 +27,22 @@ import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
 const BeneficiaryScreen = () => {
   const navigation = useNavigation();
   const { t } = useTranslation();
-  const { 
-    data: configData, 
+  const {
+    data: configData,
     isLoading: isConfigLoading,
     error: configError
-  } = useGetConfigQuery();
+  } = useGetConfigQuery(undefined, {
+    pollingInterval: 1000,
+  });
+
   const [showVerifiedMessage, setShowVerifiedMessage] = useState(false);
-  const { data: userProfile, isLoading: isProfileLoading } = useGetUserProfileQuery();
+  const { 
+    data: userProfile, 
+    isLoading: isProfileLoading 
+  } = useGetUserProfileQuery(undefined, {
+    pollingInterval: 1000,
+  });
+
   
   const getConfigValue = (name) => {
     const configItem = configData?.data?.find(item => item.name === name);
@@ -57,7 +68,7 @@ const BeneficiaryScreen = () => {
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
-            <AntDesign name="arrowleft" size={24} color="black" />
+            <AntDesign name="left" size={24} color="black" />
           </TouchableOpacity>
 
           <Image
@@ -91,11 +102,11 @@ const BeneficiaryScreen = () => {
         <Text style={styles.subtitle}>{t('chooseCountry')}</Text>
 
         {/* Search Input */}
-        <TextInput
+        {/* <TextInput
           style={styles.searchInput}
           placeholder={t('searchPlaceholder')}
           placeholderTextColor="#aaa"
-        />
+        /> */}
 
         {/* Country List */}
         <ScrollView style={styles.countryList}>
@@ -167,8 +178,8 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 15,
-    marginTop: 1,
+      paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+    
   },
   logo: {
     width: 100,

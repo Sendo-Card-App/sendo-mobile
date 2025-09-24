@@ -8,7 +8,7 @@ import {
   Modal,
   Pressable,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, AntDesign } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
 import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
@@ -41,7 +41,9 @@ const HistoryScreen = () => {
     data: sharedData,
     isLoading,
     isError,
-  } = useGetSharedExpensesQuery({ userId, page: 1, limit: 100 });
+  } = useGetSharedExpensesQuery({ userId, page: 1, limit: 100,
+      pollingInterval: 1000, // Refetch every 30 seconds
+   });
 
   const transactions = sharedData?.data || [];
 
@@ -141,7 +143,7 @@ const HistoryScreen = () => {
       {/* Header */}
       <View className="flex-row items-center justify-between px-5 pt-14 pb-4 bg-[#7ddd7d]">
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color="black" />
+          <AntDesign name="left" size={24} color="white" />
         </TouchableOpacity>
         <Text className="text-lg font-bold text-black">{t("historique.history")}</Text>
         <TouchableOpacity onPress={() => navigation.openDrawer()}>

@@ -66,6 +66,16 @@ export const kycApi = createApi({
         },
       }),
     }),
+
+      updateKycDocument: builder.mutation({
+        query: ({ publicId, formData }) => ({
+          url: `/kyc/${publicId}/admin`,
+          method: 'PUT',
+          body: formData,
+          // Don't set Content-Type header manually - let the browser set it
+          // with the correct boundary for multipart/form-data
+        }),
+      }),
     
     getKYCStatus: builder.query({
       query: () => KYC_ENDPOINTS.GET_STATUS,
@@ -85,5 +95,6 @@ export const {
   useGetUserRequestsQuery,
   useSendSelfieMutation,
   useNiuResquestMutation,
-  useUpdateProfileMutation 
+  useUpdateProfileMutation,
+  useUpdateKycDocumentMutation
 } = kycApi;

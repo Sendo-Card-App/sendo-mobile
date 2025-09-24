@@ -10,7 +10,7 @@ import React, { useEffect } from "react";
 import { StatusBar } from "expo-status-bar";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { FontAwesome6 } from "@expo/vector-icons";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, AntDesign } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
 import { useGetUserProfileQuery } from "../../services/Auth/authAPI";

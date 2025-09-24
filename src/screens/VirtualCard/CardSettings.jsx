@@ -10,7 +10,7 @@ import {
   ActivityIndicator ,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, AntDesign } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 import {
   useFreezeCardMutation,
@@ -29,15 +29,17 @@ import { useTranslation } from "react-i18next";
 const CardSettingsScreen = () => {
   const route = useRoute();
   const navigation = useNavigation();
-  const { cardName, cardId } = route.params;
-  console.log("CardSettingsScreen params:", cardId);
+  const { cardName, cardId, balanceData } = route.params;
+  //console.log("CardSettingsScreen params:", balanceData);
   const { t } = useTranslation();
+    const {
+      data: cardData,
+      refetch: refetchCardDetails,
+      isLoading,
+    } = useGetVirtualCardDetailsQuery(cardId, {
+      pollingInterval: 1000, // reload every 1 second
+    });
 
-  const {
-    data: cardData,
-    refetch: refetchCardDetails,
-    isLoading,
-  } = useGetVirtualCardDetailsQuery(cardId);
 
   const [freezeCard] = useFreezeCardMutation();
   const [unfreezeCard] = useUnfreezeCardMutation();
@@ -92,35 +94,39 @@ const CardSettingsScreen = () => {
 };
 
   const handleDeleteCard = () => {
-    Alert.alert(
-      t("deleteCardTitle"),
-      t("deleteCardConfirm"),
-      [
-        { text: t("cancel"), style: "cancel" },
-        {
-          text: t("delete"),
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await deleteCard(cardId).unwrap();
-              showModal("success", t("cardDeleted"));
-              navigation.goBack();
-            } catch (err) {
-             console.log("Delete card error:", JSON.stringify(err, null, 2));
+  if (!cardId) return showModal("error", t("cardIdMissing"));
 
-              let errorMessage = t("operationError");
-              if (err?.data?.message) {
-                errorMessage = err.data.message;
-              } else if (err?.error) {
-                errorMessage = err.error;
-              }
-              showModal("error", errorMessage);
+  Alert.alert(
+    t("deleteCardTitle"),
+    // Add dynamic balance info here 
+    `${t("deleteCardConfirm")}\n\n${t("amountToReturn", { amount: balanceData || 0 })}`,
+    [
+      { text: t("cancel"), style: "cancel" },
+      {
+        text: t("delete"),
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await deleteCard(cardId).unwrap();
+            showModal("success", t("cardDeleted"));
+            navigation.goBack();
+          } catch (err) {
+            console.log("Delete card error:", JSON.stringify(err, null, 2));
+
+            let errorMessage = t("operationError");
+            if (err?.data?.message) {
+              errorMessage = err.data.message;
+            } else if (err?.error) {
+              errorMessage = err.error;
             }
-          },
+            showModal("error", errorMessage);
+          }
         },
-      ]
-    );
-  };
+      },
+    ]
+  );
+};
+
 
   if (isLoading) {
     return (
@@ -136,7 +142,7 @@ const CardSettingsScreen = () => {
       <SafeAreaView className="bg-[#7ddd7d]   rounded-b-2xl">
         <View className="flex-row items-center justify-between px-4 py-3  border-b border-gray-200 rounded-b-2xl">
           <TouchableOpacity onPress={() => navigation.goBack()} className="p-1">
-            <Ionicons name="arrow-back" size={24} color="#333" />
+           <AntDesign name="left" size={24} color="white" />
           </TouchableOpacity>
           <Text className="text-2xl font-bold text-gray-800 text-center flex-1 -ml-5">
             {cardName || t("myCard")}
@@ -145,7 +151,7 @@ const CardSettingsScreen = () => {
             onPress={() => navigation.openDrawer()}
             className="p-1"
           >
-            <Ionicons name="menu-outline" size={28} color="#333" />
+            <Ionicons name="menu-outline" size={28} color="#fff" />
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -192,7 +198,7 @@ const CardSettingsScreen = () => {
           <Ionicons name="wallet-outline" size={22} color="#333" />
           <View className="ml-3">
             <Text className="text-base font-semibold text-gray-800">{t("cardLimit")}</Text>
-            <Text className="text-sm text-gray-600">{t("cardLimitDesc")}</Text>
+            {/* <Text className="text-sm text-gray-600">{t("cardLimitDesc")}</Text> */}
           </View>
         </TouchableOpacity>
       </View>
@@ -227,8 +233,7 @@ const CardSettingsScreen = () => {
         <View className="flex-1 justify-center items-center bg-transparent bg-opacity-40">
           <View className="bg-gray-200 rounded-2xl p-6 w-11/12 shadow-lg">
             <Text className="text-lg font-bold text-gray-800 mb-2">{t("limitDetailsTitle")}</Text>
-            <Text className="text-sm text-gray-700 mb-1">• {t("limitMaxTransaction")}</Text>
-            <Text className="text-sm text-gray-700 mb-1">• {t("limitMaxDaily")}</Text>
+            {/* <Text className="text-sm text-gray-700 mb-1">• {t("limitMaxTransaction")}</Text> */}
             <Text className="text-sm text-gray-700 mb-1">• {t("limitMaxMonthly")}</Text>
 
             <TouchableOpacity
@@ -241,7 +246,7 @@ const CardSettingsScreen = () => {
         </View>
       </Modal>
 
-      <StatusBar style="dark" />
+        <StatusBar backgroundColor="#7ddd7d" style="light" />
     </View>
   );
 };

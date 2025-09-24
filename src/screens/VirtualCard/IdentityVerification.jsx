@@ -43,7 +43,7 @@ const IdentityVerification = ({ navigation }) => {
           <Image source={TopLogo} className="h-36 w-40" resizeMode="contain" />
         </View>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <AntDesign name="arrowleft" size={24} color="white" />
+          <AntDesign name="left" size={24} color="white" />
         </TouchableOpacity>
         <TouchableOpacity onPress={() => navigation.openDrawer()} className="ml-auto">
           <Ionicons name="menu-outline" size={24} color="white" />

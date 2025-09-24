@@ -37,11 +37,13 @@ const Curency = () => {
     cadRealTimeValue
   } = route.params;
 
-  const {
-    data: configData,
-    isLoading: isConfigLoading,
-    error: configError
-  } = useGetConfigQuery();
+const {
+  data: configData,
+  isLoading: isConfigLoading,
+  error: configError
+} = useGetConfigQuery(undefined, {
+  pollingInterval: 1000, 
+});
 
   const getConfigValue = (name) => {
     const configItem = configData?.data?.find(item => item.name === name);
@@ -60,6 +62,7 @@ const Curency = () => {
   const isToCameroon = countryName === 'Cameroon';
   const TRANSFER_FEES = parseFloat(getConfigValue('TRANSFER_FEES'));
   const CAD_SENDO_VALUE = parseFloat(getConfigValue('CAD_SENDO_VALUE'));
+  const MIN_AMOUNT_TO_TRANSFER_FROM_CANADA = parseFloat(getConfigValue('MIN_AMOUNT_TO_TRANSFER_FROM_CANADA'));
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -101,7 +104,7 @@ const Curency = () => {
         setTotalAmount('');
         setError(null);
       }
-    }, 300);
+    }, 100);
 
     return () => clearTimeout(timer);
   }, [amount, cadRealTimeValue, TRANSFER_FEES]);
@@ -117,7 +120,8 @@ const Curency = () => {
       setShowMaxAmountAlert(true);
       return;
     }
-    if (isToCameroon && parseFloat(convertedAmount) < CAD_SENDO_VALUE) {
+    
+    if (isToCameroon && parseFloat(convertedAmount) < MIN_AMOUNT_TO_TRANSFER_FROM_CANADA) {
       setShowAlert(true);
       return;
     }
@@ -137,11 +141,11 @@ const Curency = () => {
 
   return (
     <View style={styles.container}>
-      <StatusBar backgroundColor="#F2F2F2" />
+      <StatusBar backgroundColor="#F2F2F2" barStyle="dark-content" />
 
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <AntDesign name="arrowleft" size={24} color="black" />
+          <AntDesign name="left" size={24} color="black" />
         </TouchableOpacity>
 
         <Image source={button} style={styles.logo} resizeMode="contain" />
@@ -201,17 +205,6 @@ const Curency = () => {
           </View>
         )}
 
-        {/* {convertedAmount && (
-          <View style={styles.totalContainer}>
-            <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>{t('total_to_send')} :</Text>
-              <Text style={styles.totalAmount}>
-                {totalAmount} {isToCameroon ? 'XAF' : 'CAD'}
-              </Text>
-            </View>
-          </View>
-        )} */}
-
         <View style={styles.divider} />
 
         <View style={styles.infoCard}>
@@ -244,39 +237,40 @@ const Curency = () => {
         </View>
       </ScrollView>
 
-      {/* Custom Alert Modal */}
+      {/* Minimum Amount Alert Modal */}
       <Modal transparent animationType="fade" visible={showAlert}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalText}>
-              Le montant minimum d'une transaction pour le Cameroun est de{' '}
-              <Text style={styles.boldText}>{CAD_SENDO_VALUE} XAF</Text>.
-              {'\n'}Veuillez ressayer avec un montant supérieur à{' '}
-              <Text style={styles.boldText}>{CAD_SENDO_VALUE} XAF</Text>.
+              {t('min_amount_alert_part1')}
+              <Text style={styles.boldText}>{MIN_AMOUNT_TO_TRANSFER_FROM_CANADA} XAF</Text>.
+              {'\n'}{t('min_amount_alert_part2')}
+              <Text style={styles.boldText}>{MIN_AMOUNT_TO_TRANSFER_FROM_CANADA} XAF</Text>.
             </Text>
             <TouchableOpacity
               onPress={() => setShowAlert(false)}
               style={styles.modalButton}
             >
-              <Text style={styles.modalButtonText}>OK</Text>
+              <Text style={styles.modalButtonText}>{t('ok')}</Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
 
+      {/* Maximum Amount Alert Modal */}
       <Modal transparent animationType="fade" visible={showMaxAmountAlert}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalText}>
-              Pour les transactions entre le Canada et le Cameroun, le montant maximum autorisé est de{' '}
+              {t('max_amount_alert_part1')}
               <Text style={styles.boldText}>500 000 XAF</Text>.
-              {'\n'}Merci de saisir un montant inférieur ou égal à cette limite.
+              {'\n'}{t('max_amount_alert_part2')}
             </Text>
             <TouchableOpacity
               onPress={() => setShowMaxAmountAlert(false)}
               style={styles.modalButton}
             >
-              <Text style={styles.modalButtonText}>OK</Text>
+              <Text style={styles.modalButtonText}>{t('ok')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -325,7 +319,8 @@ const styles = StyleSheet.create({
   },
   countryName: {
     color: 'black',
-    fontSize: 20
+    fontSize: 20,
+    fontWeight: 'bold'
   },
   conversionRateText: {
     color: 'black',
@@ -382,24 +377,35 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     flex: 1
   },
-  totalContainer: {
-    backgroundColor: '#333',
+  detailsContainer: {
+    backgroundColor: '#e8f5e8',
     borderRadius: 10,
     padding: 16,
     marginTop: 20,
     marginHorizontal: 20
   },
-  totalRow: {
+  detailRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between'
+    justifyContent: 'space-between',
+    marginBottom: 10
+  },
+  detailLabel: {
+    color: '#2e7d32',
+    fontSize: 14
+  },
+  detailValue: {
+    color: '#2e7d32',
+    fontSize: 14,
+    fontWeight: '500'
   },
   totalLabel: {
-    color: '#fff',
-    fontSize: 17
+    color: '#2e7d32',
+    fontSize: 16,
+    fontWeight: 'bold'
   },
   totalAmount: {
-    color: '#7ddd7d',
-    fontSize: 17,
+    color: '#2e7d32',
+    fontSize: 16,
     fontWeight: 'bold'
   },
   divider: {
@@ -418,13 +424,14 @@ const styles = StyleSheet.create({
   },
   infoCardTitle: {
     color: 'white',
-    fontSize: 14,
-    textAlign: 'center'
+    fontSize: 16,
+    textAlign: 'center',
+    fontWeight: 'bold'
   },
   infoCardSubtitle: {
     color: '#7ddd7d',
     marginTop: 10,
-    fontSize: 10,
+    fontSize: 12,
     textAlign: 'center'
   },
   paymentMethods: {
@@ -440,11 +447,19 @@ const styles = StyleSheet.create({
   nextButton: {
     backgroundColor: '#7ddd7d',
     borderRadius: 8,
-    paddingVertical: 12,
+    paddingVertical: 15,
     alignItems: 'center',
     width: 200,
     alignSelf: 'center',
-    marginTop: 50
+    marginTop: 50,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   disabledButton: {
     opacity: 0.5
@@ -483,7 +498,8 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     textAlign: 'center',
-    marginBottom: 15
+    marginBottom: 15,
+    lineHeight: 22
   },
   boldText: {
     fontWeight: 'bold'

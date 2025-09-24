@@ -7,7 +7,7 @@ import {
   ScrollView,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, AntDesign } from "@expo/vector-icons";
 import TopLogo from "../../images/TopLogo.png";
 import { useTranslation } from "react-i18next";
 import Toast from "react-native-toast-message";
@@ -23,7 +23,7 @@ import Loader from "../../components/Loader";
 const ConfirmInformation = ({ navigation, route }) => {
   const { t } = useTranslation();
   const initialParams = route.params || {};
- //console.log(initialParams)
+  //console.log(initialParams)
   const [amount, setAmount] = useState(initialParams.amount);
   const [description, setDescription] = useState(initialParams.description);
   const [deadline, setDeadline] = useState(initialParams.deadline);
@@ -110,7 +110,7 @@ const handleSubmit = async () => {
     }
 
     navigation.navigate("SuccessSharing", {
-      transactionDetails: "Votre demande de fond a été créée avec succès.",
+      transactionDetails: "Votre demande de fonds a été créée avec succès.",
     });
 
   } catch (error) {
@@ -155,7 +155,7 @@ const handleSubmit = async () => {
         }}
       >
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color="#fff" />
+          <AntDesign name="left" size={24} color="white" />
         </TouchableOpacity>
         <TouchableOpacity onPress={() => navigation.openDrawer()}>
           <Ionicons name="menu-outline" size={26} color="#fff" />
@@ -183,8 +183,11 @@ const handleSubmit = async () => {
             fontSize: 22,
             fontWeight: "bold",
             marginBottom: 2,
-            marginTop:20,
+            marginTop: 20,
             color: "#7ddd7d",
+                // rounded corners
+            padding: 10,            // inner spacing
+            textAlign: "center",    // optional: center text
           }}
         >
           {t("confirmDemand.confirm_information")}

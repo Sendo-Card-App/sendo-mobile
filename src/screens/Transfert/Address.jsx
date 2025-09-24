@@ -55,7 +55,6 @@ const Address = () => {
     phone: contact.phone || user?.phone || "",
     country: countryName,
     address: user?.address || "",
-    email: user?.email || "",
     description: "",
   });
 
@@ -64,7 +63,7 @@ const Address = () => {
   };
 
   const handleNext = () => {
-    const requiredFields = ["fullname", "phone", "email", "address"];
+    const requiredFields = ["fullname", "phone", "address"];
     const emptyFields = requiredFields.filter(
       (field) => !formData[field]?.trim()
     );
@@ -96,7 +95,7 @@ const Address = () => {
       <StatusBar style="light" />
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <AntDesign name="arrowleft" size={24} color={COLORS.text} />
+          <AntDesign name="left" size={24} color={COLORS.text} />
         </TouchableOpacity>
         <Image source={button} style={styles.logo} resizeMode="contain" />
         <Image source={HomeImage} style={styles.icon} resizeMode="contain" />
@@ -132,7 +131,7 @@ const Address = () => {
           />
         </View>
 
-        {["phone", "email", "address", "description"].map((field) => (
+        {["phone",  "address", "description"].map((field) => (
           <View key={field} style={styles.inputWrapper}>
             <Text style={styles.label}>
               {t(`addressScreen.fields.${field}`)}

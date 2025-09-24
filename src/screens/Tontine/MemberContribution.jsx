@@ -10,7 +10,7 @@ import {
   Modal,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, AntDesign } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
 import Loader from "../../components/Loader";
@@ -55,21 +55,28 @@ const MemberContribution = () => {
  
   const { data: balanceData } = useGetBalanceQuery(userId, {
     skip: !userId,
+      pollingInterval: 1000, // Refetch every 30 seconds
   });
   const balance = balanceData?.data.balance || 0;
-  const { data: history, refetch } = useGetTransactionHistoryQuery({ skip: !userId });
+  const { data: history, refetch } = useGetTransactionHistoryQuery({ skip: !userId,
+      pollingInterval: 1000, // Refetch every 30 seconds
+   });
 
   const { data: tours } = useGetToursDistributionQuery({ tontineId });
   const membre = tontine?.membres?.find((m) => m?.user?.id === userId);
   const membreId = membre?.id;
 
-   const { data: validatedCotisations, refetch: refetchCotisations } = useGetValidatedCotisationsQuery({ tontineId, membreId });
+   const { data: validatedCotisations, refetch: refetchCotisations } = useGetValidatedCotisationsQuery({ tontineId, membreId,
+      pollingInterval: 1000, // Refetch every 30 seconds
+    });
     //console.log(validatedCotisations)
    const {
   data: penaltiesResponse,
   refetch: refetchPenalties,
   isLoading: loadingPenalties,
-} = useGetMemberPenaltiesQuery({ tontineId, membreId });
+} = useGetMemberPenaltiesQuery({ tontineId, membreId,
+    pollingInterval: 1000, // Refetch every 30 seconds
+ });
    //console.log(penaltiesResponse)
      const {
          data: configData,
@@ -283,7 +290,7 @@ const MemberContribution = () => {
       <View className="bg-[#0E1111] p-4 rounded-b-3xl relative">
         <View className="flex-row justify-between items-center mb-4 mt-8 px-2">
           <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back" size={24} color="#fff" />
+             <AntDesign name="left" size={24} color="white" />
           </TouchableOpacity>
           <TouchableOpacity onPress={() => navigation.openDrawer()}>
             <Ionicons name="menu-outline" size={26} color="#fff" />

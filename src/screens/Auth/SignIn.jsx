@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { AntDesign } from "@expo/vector-icons";
+import { AntDesign, Ionicons } from "@expo/vector-icons";
 import {
   View,
   Text,
   TextInput,
   Image,
   TouchableOpacity,
-  SafeAreaView,
   StatusBar,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import KeyboardAvoidinWrapper from "../../components/KeyboardAvoidinWrapper";
 import { useDispatch } from "react-redux";
@@ -18,6 +18,7 @@ import {
   loginFailure,
 } from "../../features/Auth/authSlice";
 import { refreshAuthToken } from "../../utils/authUtils";
+import Communications from "react-native-communications"; 
 import { setIsNewUser } from '../../features/Auth/passcodeSlice';
 import { useLoginWithEmailMutation, useLoginWithPhoneMutation  } from "../../services/Auth/authAPI";
 import { useTranslation } from "react-i18next";
@@ -224,7 +225,7 @@ const SignIn = () => {
           className="absolute z-10 top-20 left-5"
           onPress={() => navigation.goBack()}
         >
-          <AntDesign name="arrowleft" size={24} color="white" />
+          <AntDesign name="left" size={24} color="white" />
         </TouchableOpacity>
 
         <Image
@@ -291,7 +292,7 @@ const SignIn = () => {
         style={{ position: "absolute", right: 15, top: 12 }}
       >
         <AntDesign
-          name={showPassword ? "eye" : "eyeo"}
+          name={showPassword ? "eye" : "eye"}
           size={24}
           color="gray"
         />
@@ -361,6 +362,32 @@ const SignIn = () => {
           <Text className="border-2 border-[#7ddd7d] rounded-3xl bg-[#181e25] text-[#7ddd7d] py-3 mt-2 px-24">
             {t("signIn.signUp")}
           </Text>
+        </TouchableOpacity>
+        {/* ✅ WhatsApp floating button */}
+        <TouchableOpacity
+          onPress={() => {
+            const phoneNumber = "+237640726036"; // Replace with your support WhatsApp number
+            const message = t("whatsapp.defaultMessage");
+            Communications.text(phoneNumber, message);
+          }}
+          style={{
+            position: "absolute",
+            bottom: 30,
+            right: 30,
+            backgroundColor: "#25D366",
+            width: 60,
+            height: 60,
+            borderRadius: 30,
+            justifyContent: "center",
+            alignItems: "center",
+            elevation: 5,
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.25,
+            shadowRadius: 3.84,
+          }}
+        >
+          <Ionicons name="logo-whatsapp" size={36} color="white" />
         </TouchableOpacity>
 
         {/* <TouchableOpacity  onPress={() => navigation.navigate("GuestLogin")}>
