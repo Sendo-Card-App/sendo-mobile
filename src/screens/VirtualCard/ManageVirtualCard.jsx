@@ -70,7 +70,7 @@ const ManageVirtualCard = () => {
     skip: !selectedCardId,
       pollingInterval: 1000, // Refetch every 30 seconds
   });
-   //console.log("cardDetails Status:", JSON.stringify(cardDetails, null, 2));
+  // console.log("cardDetails Status:", JSON.stringify(cardDetails, null, 2));
 
   const { data: unlockStatus, isLoading: isUnlockStatusLoading } = useGetUnlockStatusQuery(selectedCardId, {
     skip: !selectedCardId,

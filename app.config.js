@@ -36,7 +36,6 @@ module.exports = {
       },
       permissions: [
         "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO",
         "android.permission.INTERNET",
         "android.permission.READ_CONTACTS",
         "android.permission.WRITE_CONTACTS"
