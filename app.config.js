@@ -24,7 +24,7 @@ module.exports = {
       bundleIdentifier: "com.sfe.sendo2025",
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
-         NSNotificationsUsageDescription: "This app uses notifications to inform you about updates."
+        NSNotificationsUsageDescription: "This app uses notifications to inform you about updates."
       }
     },
     android: {
