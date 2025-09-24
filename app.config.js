@@ -12,7 +12,7 @@ module.exports = {
     version: "1.0.4",
     owner: "sfesendo",
     orientation: "portrait",
-    icon: "./assets/icon-sendo.png", 
+    icon: "./assets/icon-sendo.png",
     userInterfaceStyle: "light",
     newArchEnabled: true,
     splash: {
@@ -22,7 +22,6 @@ module.exports = {
     },
     ios: {
       supportsTablet: true,
-
       bundleIdentifier: "www.sendo.com",
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
@@ -31,7 +30,7 @@ module.exports = {
     },
     android: {
       adaptiveIcon: {
-        foregroundImage: "./assets/logo.png", 
+        foregroundImage: "./assets/logo.png",
         backgroundColor: "#181e25"
       },
       permissions: [
@@ -41,17 +40,17 @@ module.exports = {
         "android.permission.READ_CONTACTS",
         "android.permission.WRITE_CONTACTS"
       ],
-
-
+      blockedPermissions: [
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_MEDIA_VIDEO"
+      ],
       package: "www.sendo.com"
-
-
     },
     web: {
       favicon: "./assets/favicon.png"
     },
     plugins: [
-       "expo-notifications",
+      "expo-notifications",
       [
         "expo-camera",
         {
@@ -65,14 +64,19 @@ module.exports = {
         {
           contactsPermission: "Allow $(PRODUCT_NAME) to access your contacts"
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          photosPermission: ""
+        }
       ]
     ],
     extra: {
       eas: {
         apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL,
-       "projectId": "08a59933-10e3-45bc-b064-54b97ea7eca9"
+        projectId: "08a59933-10e3-45bc-b064-54b97ea7eca9"
       }
-    },
-    
+    }
   }
 };
