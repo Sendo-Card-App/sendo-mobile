@@ -241,7 +241,7 @@ const handleDownloadReceipt = async () => {
 
         <View className="bg-white p-4 rounded-xl shadow-md border border-gray-100 mb-4">
           <Text className="text-gray-800 font-semibold text-sm mb-2">
-            Recharge de carte virtuelle effectuée
+           Transaction de carte virtuelle réussie 
           </Text>
           
           <View className="mb-3">
@@ -255,11 +255,11 @@ const handleDownloadReceipt = async () => {
           <View className="border-t border-gray-100 pt-3 mt-3">
             <Text className="text-green-600 font-semibold mb-2">Montant</Text>
             <View className="flex-row justify-between mb-1">
-              <Text className="text-gray-600 text-sm">Frais de recharge :</Text>
+              <Text className="text-gray-600 text-sm">Frais de transaction :</Text>
               <Text className="text-gray-600 text-sm">{formatAmount(transaction.sendoFees || 0)} {transaction.currency}</Text>
             </View>
             <View className="flex-row justify-between mb-1">
-              <Text className="text-gray-600 text-sm">Montant de la recharge :</Text>
+              <Text className="text-gray-600 text-sm">Montant de la transaction :</Text>
               <Text className="text-gray-600 text-sm">{formatAmount(transaction.amount)} {transaction.currency}</Text>
             </View>
             <View className="flex-row justify-between mt-2 pt-2 border-t border-gray-100">
@@ -269,9 +269,9 @@ const handleDownloadReceipt = async () => {
           </View>
 
           <View className="border-t border-gray-100 pt-3 mt-3">
-            <Text className="text-green-600 font-semibold mb-2">Détails du transfert</Text>
+            <Text className="text-green-600 font-semibold mb-2">Détails de la transaction</Text>
             <View className="flex-row justify-between mb-1">
-              <Text className="text-gray-600 text-sm">Rechargé le :</Text>
+              <Text className="text-gray-600 text-sm">Payée le :</Text>
               <Text className="text-gray-600 text-sm">{formatDate(transaction.createdAt)}</Text>
             </View>
             <View className="flex-row justify-between">
@@ -293,7 +293,7 @@ const handleDownloadReceipt = async () => {
           className="items-center py-3"
         >
           <Text className="text-green-500 font-semibold">
-            AFFICHER TOUS LES TRANSFERTS
+            AFFICHER TOUS LES TRANSACTIONS
           </Text>
         </TouchableOpacity>
       </ScrollView>

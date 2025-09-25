@@ -565,7 +565,7 @@ const getLocalImageBase64 = async () => {
           {displayType === 'VIRTUAL_CARD_RECHARGE' ? (
             <>
               <Text className="text-gray-800 font-semibold text-sm mb-2">
-                Recharge de carte virtuelle effectuée
+                Transaction de carte virtuelle réussie 
               </Text>
               {transaction.card && (
                 <>
@@ -580,9 +580,6 @@ const getLocalImageBase64 = async () => {
                   </Text>
                 </>
               )}
-              <Text className="text-gray-600 text-sm">
-                Type d'opération : Recharge de carte Sendo
-              </Text>
             </>
           ) : displayType === 'NIU_PAYMENT' ? (
             <>
@@ -631,7 +628,7 @@ const getLocalImageBase64 = async () => {
             )) && (
               <>
 
-               {transaction.status === 'COMPLETED' && (
+               {transaction.type === 'WALLET_TO_WALLET' && (
 
                 <Text className="text-gray-800 font-semibold text-sm mb-2">
                   {isSender
@@ -697,8 +694,13 @@ const getLocalImageBase64 = async () => {
           <Text className="text-gray-600 text-sm mb-2">Total: {transaction.totalAmount} {transaction.currency}</Text>
 
           <Text className="text-green-600 font-semibold mt-2">Détails de la transaction</Text>
-          <Text className="text-gray-600 text-sm">Envoyé : {moment(transaction.createdAt).format('DD/MM/YYYY HH:mm')}</Text>
-          <Text className="text-gray-600 text-sm">Référence de la transaction : {transaction.transactionId}</Text>
+         <Text className="text-gray-600 text-sm">
+            {transaction.method === "VIRTUAL_CARD" 
+              ? `Payée le : ${moment(transaction.createdAt).format("DD/MM/YYYY HH:mm")}` 
+              : `Envoyé : ${moment(transaction.createdAt).format("DD/MM/YYYY HH:mm")}`
+            }
+          </Text>
+            <Text className="text-gray-600 text-sm">Référence de la transaction : {transaction.transactionId}</Text>
 
           <TouchableOpacity
             onPress={handleDownloadReceipt}
