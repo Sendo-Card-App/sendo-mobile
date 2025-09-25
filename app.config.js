@@ -25,7 +25,9 @@ module.exports = {
       bundleIdentifier: "www.sendo.com",
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
-        NSNotificationsUsageDescription: "This app uses notifications to inform you about updates."
+        NSNotificationsUsageDescription: "Cette application utilise les notifications pour vous informer des mises à jour et des nouvelles importantes.",
+        NSCameraUsageDescription: "Nous utilisons votre caméra pour scanner vos documents et permettre leur partage dans l'application.",
+        NSPhotoLibraryUsageDescription: "Nous accédons à votre galerie pour vous permettre de sélectionner des documents à partager dans l'application."
       }
     },
     android: {
@@ -54,21 +56,22 @@ module.exports = {
       [
         "expo-camera",
         {
-          cameraPermission: "Allow $(PRODUCT_NAME) to access your camera",
-          microphonePermission: "Allow $(PRODUCT_NAME) to access your microphone",
+          cameraPermission: "Nous utilisons votre caméra pour scanner vos documents et permettre leur partage dans l'application.",
+          microphonePermission: "Nous utilisons votre microphone pour enregistrer des notes audio si nécessaire.",
           recordAudioAndroid: true
         }
       ],
       [
         "expo-contacts",
         {
-          contactsPermission: "Allow $(PRODUCT_NAME) to access your contacts"
+          contactsPermission: "Nous accédons à vos contacts pour faciliter le partage de documents avec vos collaborateurs."
         }
       ],
       [
         "expo-image-picker",
         {
-          photosPermission: ""
+          photosPermission: "Nous accédons à votre galerie pour vous permettre de sélectionner des documents à partager dans l'application.",
+          cameraPermission: "Nous utilisons votre caméra pour prendre des photos de documents à partager."
         }
       ]
     ],

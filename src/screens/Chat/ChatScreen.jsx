@@ -335,34 +335,38 @@ const ChatScreen = ({ route, navigation }) => {
 
   const pickImage = async () => {
     try {
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        quality: 1,
-      });
+        // Use the Photo Picker API without requiring permanent permissions
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            allowsEditing: true,
+            quality: 1,
+            // Add these options to limit permission scope
+            allowsMultipleSelection: false, // Set to true if you need multiple images
+            selectionLimit: 1, // Limit to 1 image
+        });
 
-      if (!result.canceled && result.assets[0]) {
-        const compressed = await ImageManipulator.manipulateAsync(
-          result.assets[0].uri,
-          [],
-          { compress: 0.5, format: ImageManipulator.SaveFormat.JPEG }
-        );
+        if (!result.canceled && result.assets[0]) {
+            const compressed = await ImageManipulator.manipulateAsync(
+                result.assets[0].uri,
+                [],
+                { compress: 0.5, format: ImageManipulator.SaveFormat.JPEG }
+            );
 
-        setAttachments(prev => [...prev, {
-          uri: compressed.uri,
-          name: `image_${Date.now()}.jpg`,
-          type: 'image/jpeg'
-        }]);
-      }
+            setAttachments(prev => [...prev, {
+                uri: compressed.uri,
+                name: `image_${Date.now()}.jpg`,
+                type: 'image/jpeg'
+            }]);
+        }
     } catch (err) {
-      console.log('Image picker error:', err);
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: 'Failed to pick image',
-      });
+        console.log('Image picker error:', err);
+        Toast.show({
+            type: 'error',
+            text1: 'Error',
+            text2: 'Failed to pick image',
+        });
     }
-  };
+};
 
   const removeAttachment = (index: number) => {
     setAttachments(prev => prev.filter((_, i) => i !== index));
