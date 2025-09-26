@@ -45,78 +45,272 @@ const VirtualCardRechargeDetails = () => {
     return amount?.toLocaleString('fr-FR') || '0';
   };
 
+  // const generateReceiptHTML = () => {
+  //   return `
+  //     <!DOCTYPE html>
+  //     <html>
+  //     <head>
+  //       <meta charset="UTF-8">
+  //       <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  //       <title>Reçu Sendo</title>
+  //       <style>
+  //         body {
+  //           font-family: Arial, sans-serif;
+  //           padding: 20px;
+  //           line-height: 1.6;
+  //           color: #333;
+  //         }
+  //         .header {
+  //           text-align: center;
+  //           margin-bottom: 20px;
+  //           border-bottom: 2px solid #7ddd7d;
+  //           padding-bottom: 10px;
+  //         }
+  //         .title {
+  //           font-size: 24px;
+  //           font-weight: bold;
+  //           color: #2c3e50;
+  //           margin-bottom: 5px;
+  //         }
+  //         .subtitle {
+  //           font-size: 16px;
+  //           color: #7f8c8d;
+  //           margin-bottom: 10px;
+  //         }
+  //         .reference {
+  //           font-size: 14px;
+  //           color: #7f8c8d;
+  //         }
+  //         .section {
+  //           margin: 15px 0;
+  //           padding: 10px;
+  //           border: 1px solid #ecf0f1;
+  //           border-radius: 5px;
+  //         }
+  //         .section-title {
+  //           font-weight: bold;
+  //           color: #2c3e50;
+  //           margin-bottom: 10px;
+  //           font-size: 16px;
+  //           border-bottom: 1px solid #ecf0f1;
+  //           padding-bottom: 5px;
+  //         }
+  //         .row {
+  //           display: flex;
+  //           justify-content: space-between;
+  //           margin: 8px 0;
+  //         }
+  //         .label {
+  //           font-weight: bold;
+  //           color: #0b0c0c;
+  //         }
+  //         .value {
+  //           color: #2c3e50;
+  //         }
+  //         .amount {
+  //           font-weight: bold;
+  //           color: #2c3e50;
+  //           font-size: 18px;
+  //         }
+  //         .footer {
+  //           margin-top: 30px;
+  //           text-align: center;
+  //           font-size: 12px;
+  //           color: #000000ff;
+  //           border-top: 1px solid #ecf0f1;
+  //           padding-top: 10px;
+  //         }
+  //         .status-completed {
+  //           color: #27ae60;
+  //           font-weight: bold;
+  //         }
+  //       </style>
+  //     </head>
+  //     <body>
+  //       <div class="header">
+  //         <div class="title">SENDO</div>
+  //         <div class="subtitle">Reçu de recharge de carte</div>
+  //         <div class="reference">Référence: ${transaction.transactionId}</div>
+  //       </div>
+
+  //       <div class="section">
+  //         <div class="section-title">Informations de transaction</div>
+  //         <div class="row">
+  //           <span class="label">Date:</span>
+  //           <span class="value">${formatDate(transaction.createdAt)}</span>
+  //         </div>
+  //         <div class="row">
+  //           <span class="label">Statut:</span>
+  //           <span class="status-completed">${transaction.status}</span>
+  //         </div>
+  //         <div class="row">
+  //           <span class="label">Type:</span>
+  //           <span class="value">${transaction.description}</span>
+  //         </div>
+  //       </div>
+
+  //       <div class="section">
+  //         <div class="section-title">Détails de la carte</div>
+  //         <div class="row">
+  //           <span class="label">Nom sur la carte:</span>
+  //           <span class="value">${transaction.user?.firstname} ${transaction.user?.lastname}</span>
+  //         </div>
+  //         <div class="row">
+  //           <span class="label">Type d'opération:</span>
+  //           <span class="value">Dépôt sur carte Sendo</span>
+  //         </div>
+  //       </div>
+
+  //       <div class="section">
+  //         <div class="section-title">Montants</div>
+  //         <div class="row">
+  //           <span class="label">Montant de la recharge:</span>
+  //           <span class="amount">${formatAmount(transaction.amount)} ${transaction.currency}</span>
+  //         </div>
+  //         <div class="row">
+  //           <span class="label">Frais de recharge:</span>
+  //           <span class="value">${formatAmount(transaction.sendoFees || 0)} ${transaction.currency}</span>
+  //         </div>
+  //         <div class="row">
+  //           <span class="label">Total:</span>
+  //           <span class="amount">${formatAmount(transaction.totalAmount)} ${transaction.currency}</span>
+  //         </div>
+  //       </div>
+
+  //       <div class="section">
+  //         <div class="section-title">Détails supplémentaires</div>
+  //         <div class="row">
+  //           <span class="label">Rechargé le:</span>
+  //           <span class="value">${formatDate(transaction.createdAt)}</span>
+  //         </div>
+  //         <div class="row">
+  //           <span class="label">Référence:</span>
+  //           <span class="value">${transaction.transactionId}</span>
+  //         </div>
+  //       </div>
+
+  //       <div class="footer">
+  //         Ce reçu a été généré automatiquement le ${moment().format('DD/MM/YYYY HH:mm')}<br>
+  //         et peut être utilisé comme justificatif de transaction.
+  //       </div>
+  //     </body>
+  //     </html>
+  //   `;
+  // };
+
   const generateReceiptHTML = () => {
-    return `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Reçu Sendo</title>
-        <style>
-          body {
-            font-family: Arial, sans-serif;
-            padding: 20px;
-            line-height: 1.6;
-            color: #333;
-          }
-          .header {
-            text-align: center;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #7ddd7d;
-            padding-bottom: 10px;
-          }
-          .title {
-            font-size: 24px;
-            font-weight: bold;
-            color: #2c3e50;
-            margin-bottom: 5px;
-          }
-          .subtitle {
-            font-size: 16px;
-            color: #7f8c8d;
-            margin-bottom: 10px;
-          }
-          .reference {
-            font-size: 14px;
-            color: #7f8c8d;
-          }
-          .section {
-            margin: 15px 0;
-            padding: 10px;
-            border: 1px solid #ecf0f1;
-            border-radius: 5px;
-          }
-          .section-title {
-            font-weight: bold;
-            color: #2c3e50;
-            margin-bottom: 10px;
-            font-size: 16px;
-            border-bottom: 1px solid #ecf0f1;
-            padding-bottom: 5px;
-          }
-          .row {
-            display: flex;
-            justify-content: space-between;
-            margin: 8px 0;
-          }
-          .label {
-            font-weight: bold;
-            color: #0b0c0c;
-          }
-          .value {
-            color: #2c3e50;
-          }
-          .amount {
-            font-weight: bold;
-            color: #2c3e50;
-            font-size: 18px;
-          }
-          .footer {
+  // Extract last 4 digits from transaction ID for card display
+  const logoUrl = "https://res.cloudinary.com/dviktmefh/image/upload/v1758140850/WhatsApp_Image_2025-09-17_at_21.26.01_hjgtfa.jpg"
+  // Format date to match receipt format: "Sep 25, 2025, 9:50:27 AM"
+  const formatReceiptDate = (dateString) => {
+    return moment(dateString).format('MMM DD, YYYY, h:mm:ss A');
+  };
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Reçu Sendo</title>
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          padding: 20px;
+          line-height: 1.6;
+          color: #333;
+          max-width: 400px;
+          margin: 0 auto;
+        }
+        .header {
+          text-align: center;
+          margin-bottom: 20px;
+          border-bottom: 2px solid #000;
+          padding-bottom: 10px;
+        }
+        .company-name {
+          font-size: 18px;
+          font-weight: bold;
+          color: #000;
+          margin-bottom: 5px;
+        }
+        .receipt-number {
+          font-size: 14px;
+          color: #000;
+          margin-bottom: 10px;
+        }
+           .logo-container {
+          margin-bottom: 15px;
+        }
+        .logo {
+          width: 120px;
+          height: 120px;
+          object-fit: contain;
+        }
+        .payment-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-bottom: 20px;
+          border: 1px solid #000;
+        }
+        .payment-table th {
+          background-color: #f0f0f0;
+          padding: 8px;
+          text-align: left;
+          border-bottom: 1px solid #000;
+          font-weight: bold;
+        }
+        .payment-table td {
+          padding: 8px;
+          border-bottom: 1px solid #ddd;
+        }
+        .summary-section {
+          margin: 20px 0;
+        }
+        .summary-title {
+          font-weight: bold;
+          font-size: 16px;
+          margin-bottom: 10px;
+          border-bottom: 1px solid #000;
+          padding-bottom: 5px;
+        }
+        .summary-item {
+          display: flex;
+          justify-content: space-between;
+          margin: 5px 0;
+        }
+        .summary-total {
+          display: flex;
+          justify-content: space-between;
+          margin: 10px 0;
+          font-weight: bold;
+          border-top: 1px solid #000;
+          padding-top: 10px;
+        }
+        .currency-conversion {
+          margin: 15px 0;
+          padding: 10px;
+          background-color: #f9f9f9;
+          border-radius: 5px;
+          font-size: 14px;
+        }
+        .contact-info {
+          margin-top: 30px;
+          text-align: center;
+          font-size: 12px;
+          color: #161414ff;
+          border-top: 1px solid #ddd;
+          padding-top: 10px;
+        }
+        .divider {
+          border-top: 1px dashed #000;
+          margin: 15px 0;
+        }
+           .footer {
             margin-top: 30px;
             text-align: center;
             font-size: 12px;
-            color: #95a5a6;
+            color: #000000ff;
             border-top: 1px solid #ecf0f1;
             padding-top: 10px;
           }
@@ -124,79 +318,59 @@ const VirtualCardRechargeDetails = () => {
             color: #27ae60;
             font-weight: bold;
           }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <div class="title">SENDO</div>
-          <div class="subtitle">Reçu de recharge de carte</div>
-          <div class="reference">Référence: ${transaction.transactionId}</div>
+      </style>
+    </head>
+    <body>
+      <div class="header">
+       <div class="logo-container">
+          <img class="logo" src="${logoUrl}" alt="Sendo Logo">
         </div>
+        <div class="company-name">${transaction.description}</div>
+        <div class="receipt-number">Reçu #${transaction.transactionId}</div>
+      </div>
 
-        <div class="section">
-          <div class="section-title">Informations de transaction</div>
-          <div class="row">
-            <span class="label">Date:</span>
-            <span class="value">${formatDate(transaction.createdAt)}</span>
-          </div>
-          <div class="row">
-            <span class="label">Statut:</span>
-            <span class="status-completed">${transaction.status}</span>
-          </div>
-          <div class="row">
-            <span class="label">Type:</span>
-            <span class="value">${transaction.description}</span>
-          </div>
+      <table class="payment-table">
+        <tr>
+          <th>MONTANT PAYEE</th>
+          <th>PAYEE LE</th>
+          <th>METHODE DE PAIMENT</th>
+        </tr>
+        <tr>
+          <td>${formatAmount(transaction.amount)} ${transaction.currency}</td>
+          <td>${formatReceiptDate(transaction.createdAt)}</td>
+          <td><strong>VISA</strong> - ${transaction.card.last4Digits}</td>
+        </tr>
+      </table>
+
+      <div class="divider"></div>
+
+      <div class="summary-section">
+        <div class="summary-title">Resume</div>
+        
+        <div class="summary-item">
+          <span>Montant de la transaction:</span>
+          <span>${formatAmount(transaction.amount)} ${transaction.currency}</span>
         </div>
-
-        <div class="section">
-          <div class="section-title">Détails de la carte</div>
-          <div class="row">
-            <span class="label">Nom sur la carte:</span>
-            <span class="value">${transaction.user?.firstname} ${transaction.user?.lastname}</span>
-          </div>
-          <div class="row">
-            <span class="label">Type d'opération:</span>
-            <span class="value">Dépôt sur carte Sendo</span>
-          </div>
+        
+        <div class="summary-item">
+          <span>Frais de transaction:</span>
+          <span>${formatAmount(transaction.sendoFees || 0)} ${transaction.currency}</span>
         </div>
-
-        <div class="section">
-          <div class="section-title">Montants</div>
-          <div class="row">
-            <span class="label">Montant de la recharge:</span>
-            <span class="amount">${formatAmount(transaction.amount)} ${transaction.currency}</span>
-          </div>
-          <div class="row">
-            <span class="label">Frais de recharge:</span>
-            <span class="value">${formatAmount(transaction.sendoFees || 0)} ${transaction.currency}</span>
-          </div>
-          <div class="row">
-            <span class="label">Total:</span>
-            <span class="amount">${formatAmount(transaction.totalAmount)} ${transaction.currency}</span>
-          </div>
+        
+        <div class="summary-total">
+          <span>Total</span>
+          <span>${formatAmount(transaction.totalAmount)} ${transaction.currency}</span>
         </div>
-
-        <div class="section">
-          <div class="section-title">Détails supplémentaires</div>
-          <div class="row">
-            <span class="label">Rechargé le:</span>
-            <span class="value">${formatDate(transaction.createdAt)}</span>
-          </div>
-          <div class="row">
-            <span class="label">Référence:</span>
-            <span class="value">${transaction.transactionId}</span>
-          </div>
-        </div>
-
+      </div>
+      
         <div class="footer">
           Ce reçu a été généré automatiquement le ${moment().format('DD/MM/YYYY HH:mm')}<br>
           et peut être utilisé comme justificatif de transaction.
         </div>
-      </body>
-      </html>
-    `;
-  };
+    </body>
+    </html>
+  `;
+};
 
 const handleDownloadReceipt = async () => {
   try {
@@ -221,14 +395,15 @@ const handleDownloadReceipt = async () => {
 
   return (
     <SafeAreaView className="flex-1 bg-white">
-      <StatusBar backgroundColor="#7ddd7d" barStyle="light-content" />
-      
-      <View className="flex-row items-center p-4" style={{ backgroundColor: "#7ddd7d" }}>
-        <TouchableOpacity onPress={() => navigation.goBack()} className="mr-2">
-         <AntDesign name="left" size={24} color="white" />
-        </TouchableOpacity>
-        <Text className="text-xl font-bold text-white">Détails de la transaction</Text>
-      </View>
+          <SafeAreaView className="bg-[#7ddd7d]  rounded-b-2xl">
+            <StatusBar backgroundColor="#7ddd7d" barStyle="light-content" />
+            <View className="flex-row items-center p-4" style={{ backgroundColor: "#7ddd7d" }}>
+              <TouchableOpacity onPress={() => navigation.goBack()} className="mr-2">
+              <AntDesign name="left" size={24} color="white" />
+              </TouchableOpacity>
+              <Text className="text-xl font-bold text-white">Détails de la transaction</Text>
+            </View>
+        </SafeAreaView>
 
       <ScrollView className="flex-1 p-4">
         <View className="items-center my-4">
