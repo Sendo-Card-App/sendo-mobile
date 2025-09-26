@@ -164,6 +164,7 @@ const screenWidth = Dimensions.get('window').width;
         pollingInterval: 1000, // refresh every 1s
       }
     );
+    
 
     return (
       <Tab.Navigator
@@ -192,28 +193,28 @@ const screenWidth = Dimensions.get('window').width;
         />
 
         {/*  Only show BeneficiaryTab if user is from Canada */}
-        {userProfile?.data?.country === "Canada" && (
-          <Tab.Screen
-            name="BeneficiaryTab"
-            component={BeneficiaryScreen}
-            options={{
-              title: '',
-              unmountOnBlur: true,
-            }}
-          />
-        )}
+        {(userProfile?.data?.country === "Canada"  && (
+            <Tab.Screen
+              name="BeneficiaryTab"
+              component={BeneficiaryScreen}
+              options={{
+                title: '',
+                unmountOnBlur: true,
+              }}
+            />
+          )}
 
+          {(userProfile?.data?.country === "Cameroon"  && (
+            <Tab.Screen
+              name="ManageVirtualCardTab"
+              component={ManageVirtualCardWrapper}
+              options={{
+                title: t('tabs.cards'),
+                unmountOnBlur: true,
+              }}
+            />
+          )}
 
-      {userProfile?.data?.country === "Cameroon" && (
-        <Tab.Screen
-          name="ManageVirtualCardTab"
-          component={ManageVirtualCardWrapper}
-          options={{
-            title: t('tabs.cards'),
-            unmountOnBlur: true,
-          }}
-        />
-         )}
 
         <Tab.Screen
           name="SettingsTab"

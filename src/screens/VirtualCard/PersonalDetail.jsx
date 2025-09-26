@@ -24,7 +24,6 @@ const PersonalDetail = ({ navigation }) => {
   const personalDetails = useSelector(state => state.kyc.personalDetails);
 
   const [formData, setFormData] = useState({
-    country: personalDetails.country || '',
     region: personalDetails.region || '',
     city: personalDetails.city || '',
     cni: personalDetails.cni || '',
@@ -37,9 +36,9 @@ const PersonalDetail = ({ navigation }) => {
   };
 
   const handleSubmit = () => {
-    const { country, region, city, cni,  district, profession } = formData;
+    const { region, city, cni,  district, profession } = formData;
 
-    if (!country || !region || !city ||  !cni || !district || !profession) {
+    if (!region || !city ||  !cni || !district || !profession) {
       Alert.alert(t('personalDetail.errorTitle'), t('personalDetail.fillAllFields'));
       return;
     }

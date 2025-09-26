@@ -318,7 +318,7 @@ const getLocalImageBase64 = async () => {
           margin-top: 30px;
           text-align: center;
           font-size: 12px;
-          color: #95a5a6;
+          color: #000000ff;
           border-top: 1px solid #ecf0f1;
           padding-top: 10px;
         }
