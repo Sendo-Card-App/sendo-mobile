@@ -17,7 +17,7 @@ import * as LocalAuthentication from 'expo-local-authentication';
 import { useTranslation } from 'react-i18next';
 import { getStoredPushToken } from '../../services/notificationService';
 import { useGetTokenMutation, useCreateTokenMutation, useCheckPincodeMutation, useRefreshTokenMutation, } from '../../services/Auth/authAPI';
-
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const PinCode = ({ navigation, route }) => {
   const { t } = useTranslation();
@@ -61,6 +61,16 @@ const PinCode = ({ navigation, route }) => {
   const isSetup = route.params?.setup ?? !hasStoredPasscode;
   const isLocked = lockedUntil && new Date(lockedUntil) > new Date();
 
+  // 🔑 KEY FIX: Set PIN verification status when component mounts
+  useEffect(() => {
+    const setInitialPinStatus = async () => {
+      // When PinCode screen opens, mark PIN as not verified
+      await AsyncStorage.setItem('pinVerified', 'false');
+    };
+    
+    setInitialPinStatus();
+  }, []);
+
   useEffect(() => {
     const intervalId = setInterval(async () => {
       try {
@@ -73,6 +83,7 @@ const PinCode = ({ navigation, route }) => {
           setPasscodeExists(false);
         }
       } catch (error) {
+        console.error('Error checking passcode:', error);
       }
     }, 1000);
 
@@ -90,51 +101,50 @@ const PinCode = ({ navigation, route }) => {
     });
   };
 
-useEffect(() => {
-  const loadInitialData = async () => {
-    const data = await getData('@authData');
-    if (data) {
-      setAuthData(data);
+  useEffect(() => {
+    const loadInitialData = async () => {
+      const data = await getData('@authData');
+      if (data) {
+        setAuthData(data);
 
-      const refreshToken = data.accessToken;
-      const deviceId = data.deviceId;
+        const refreshToken = data.accessToken;
+        const deviceId = data.deviceId;
 
-      try {
-          
-        const result = await refreshTokenMutation({ refreshToken, deviceId }).unwrap();
-        console.log("🔄 Refresh response:", result);
+        try {
+          const result = await refreshTokenMutation({ refreshToken, deviceId }).unwrap();
+          console.log("🔄 Refresh response:", result);
 
-       if (result?.data?.accessToken) {
-          const newAuthData = {
-            ...data,
-            accessToken: result.data.accessToken,
-            deviceId: deviceId, 
-          };
+          if (result?.data?.accessToken) {
+            const newAuthData = {
+              ...data,
+              accessToken: result.data.accessToken,
+              deviceId: deviceId, 
+            };
 
-          await storeData('@authData', newAuthData);
-          setAuthData(newAuthData);
-        } else {
-          console.warn("Failed to refresh token:", result);
-}
-      } catch (err) {
-        console.log('refresh token  error:', JSON.stringify(err, null, 2));
+            await storeData('@authData', newAuthData);
+            setAuthData(newAuthData);
+          } else {
+            console.warn("Failed to refresh token:", result);
+          }
+        } catch (err) {
+          console.log('refresh token error:', JSON.stringify(err, null, 2));
+        }
       }
-    }
 
-    // Handle passcode logic (your existing code)
-    const savedPasscode =
-      userProfile?.data?.passcode || (await getData('@passcode'));
-    if (savedPasscode) {
-      setHasStoredPasscode(true);
-      dispatch(setPasscode(savedPasscode));
-    } else {
-      setHasStoredPasscode(false);
-      dispatch(clearPasscode());
-    }
-  };
+      // Handle passcode logic
+      const savedPasscode = userProfile?.data?.passcode || (await getData('@passcode'));
+      if (savedPasscode) {
+        setHasStoredPasscode(true);
+        dispatch(setPasscode(savedPasscode));
+      } else {
+        setHasStoredPasscode(false);
+        dispatch(clearPasscode());
+      }
+    };
 
-  loadInitialData();
-}, []);
+    loadInitialData();
+  }, []);
+
   // Check for biometric availability
   useEffect(() => {
     const checkBiometrics = async () => {
@@ -167,7 +177,8 @@ useEffect(() => {
 
   const [isAuthenticating, setIsAuthenticating] = useState(false);
 
-    const handleBiometricAuth = async () => {
+  // 🔑 KEY FIX: Update biometric auth to set PIN verification status
+  const handleBiometricAuth = async () => {
     if (isAuthenticating) return;
     setIsAuthenticating(true);
 
@@ -180,6 +191,9 @@ useEffect(() => {
 
       if (authResult.success) {
         dispatch(resetAttempts());
+
+        // ✅ Set PIN as verified
+        await AsyncStorage.setItem('pinVerified', 'true');
 
         // ✅ Récupérer le pincode stocké (si déjà défini)
         const storedPin = await getData('@passcode');
@@ -224,7 +238,6 @@ useEffect(() => {
     }
   };
 
-
   // Handle PIN input
   useEffect(() => {
     if (pin.length === 4) {
@@ -232,12 +245,13 @@ useEffect(() => {
     }
   }, [pin]);
    
-    useEffect(() => {
+  useEffect(() => {
     return () => {
       // Clear the pin when component unmounts
       setPin('');
     };
   }, []);
+
   const handlePress = (value) => {
     if (isLocked || isBlocked) return;
     setError(null);
@@ -251,124 +265,128 @@ useEffect(() => {
     }
   };
 
-   const handleComplete = async (enteredPin) => {
-  setIsLoading(true);
-  try {
-    const checkResponse = await checkPincode(enteredPin).unwrap();
-    console.log('Check Pincode Response:', checkResponse);
+  // 🔑 KEY FIX: Update handleComplete to set PIN verification status
+  const handleComplete = async (enteredPin) => {
+    setIsLoading(true);
+    try {
+      const checkResponse = await checkPincode(enteredPin).unwrap();
+      console.log('Check Pincode Response:', checkResponse);
 
-    // ✅ Pincode is correct
-    if (checkResponse.status === 200 && checkResponse.data?.pincode === true) {
-      dispatch(resetAttempts());
+      // ✅ Pincode is correct
+      if (checkResponse.status === 200 && checkResponse.data?.pincode === true) {
+        dispatch(resetAttempts());
 
-      // Save passcode in Redux + local storage
-      dispatch(setPasscode(enteredPin));
-      await storeData('@passcode', enteredPin);
+        // ✅ Set PIN as verified - CRITICAL FOR APPSTATE TO WORK
+        await AsyncStorage.setItem('pinVerified', 'true');
 
-      if (route.params?.onSuccess) {
-        // If WalletRecharge (or another screen) passed a callback
-        await route.params.onSuccess(enteredPin);
+        // Save passcode in Redux + local storage
+        dispatch(setPasscode(enteredPin));
+        await storeData('@passcode', enteredPin);
 
-        // Always return to previous screen after success
-        navigation.goBack();
-      } else if (route.params?.showBalance) {
-        // Special case: just show balance
-        navigation.goBack();
-      } else {
-        // Default flow → go to Main / Success
-        navigation.replace('Main', { screen: 'MainTabs' });
-      }
+        if (route.params?.onSuccess) {
+          // If WalletRecharge (or another screen) passed a callback
+          await route.params.onSuccess(enteredPin);
 
-      return;
-    }
-
-    //  Pincode incorrect
-    if (
-      checkResponse.status === 403 ||
-      (checkResponse.status === 200 && checkResponse.data?.pincode === false)
-    ) {
-      const newAttempts = attempts + 1;
-      dispatch(incrementAttempt());
-
-      if (newAttempts >= 3) {
-        setIsBlocked(true);
-        setShowContactSupportModal(true);
-
-        const errorMessage =
-          checkResponse.data?.message === 'Compte suspendu ou bloqué'
-            ? t('pin.accountSuspended')
-            : t('pin.accountBlocked');
-
-        setError(errorMessage);
-
-        // Lock for 5 minutes
-        const lockTime = new Date();
-        lockTime.setMinutes(lockTime.getMinutes() + 5);
-        dispatch(lockPasscode(lockTime.toISOString()));
-
-        // 🧹 Clear stored passcode + Redux state after 3 failed attempts
-        await removeData('@passcode');
-        dispatch(clearPasscode());
-      } else {
-        setError(t('pin.incorrectPin'));
-      }
-
-      setPin('');
-      return;
-    }
-
-    // ❗ Unexpected case
-    setError(t('pin.unexpectedError'));
-    setPin('');
-  } catch (error) {
-    console.log('pincode error:', JSON.stringify(error, null, 2));
-
-    // 🆕 No PIN yet → create one
-    if (error?.data?.message?.includes('Aucun pincode défini')) {
-      try {
-        const createResponse = await createPasscode({ passcode: enteredPin }).unwrap();
-
-        if (createResponse.status === 200) {
-          await storeData('@passcode', enteredPin);
-          dispatch(setPasscode(enteredPin));
-          dispatch(setIsNewUser(false));
-          navigation.navigate('Main');
+          // Always return to previous screen after success
+          navigation.goBack();
+        } else if (route.params?.showBalance) {
+          // Special case: just show balance
+          navigation.goBack();
         } else {
+          // Default flow → go to Main / Success
+          navigation.replace('Main', { screen: 'MainTabs' });
+        }
+
+        return;
+      }
+
+      // Pincode incorrect
+      if (
+        checkResponse.status === 403 ||
+        (checkResponse.status === 200 && checkResponse.data?.pincode === false)
+      ) {
+        const newAttempts = attempts + 1;
+        dispatch(incrementAttempt());
+
+        if (newAttempts >= 3) {
+          setIsBlocked(true);
+          setShowContactSupportModal(true);
+
+          const errorMessage =
+            checkResponse.data?.message === 'Compte suspendu ou bloqué'
+              ? t('pin.accountSuspended')
+              : t('pin.accountBlocked');
+
+          setError(errorMessage);
+
+          // Lock for 5 minutes
+          const lockTime = new Date();
+          lockTime.setMinutes(lockTime.getMinutes() + 5);
+          dispatch(lockPasscode(lockTime.toISOString()));
+
+          // Clear stored passcode + Redux state after 3 failed attempts
+          await removeData('@passcode');
+          dispatch(clearPasscode());
+        } else {
+          setError(t('pin.incorrectPin'));
+        }
+
+        setPin('');
+        return;
+      }
+
+      // Unexpected case
+      setError(t('pin.unexpectedError'));
+      setPin('');
+    } catch (error) {
+      console.log('pincode error:', JSON.stringify(error, null, 2));
+
+      // 🆕 No PIN yet → create one
+      if (error?.data?.message?.includes('Aucun pincode défini')) {
+        try {
+          const createResponse = await createPasscode({ passcode: enteredPin }).unwrap();
+
+          if (createResponse.status === 200) {
+            // ✅ Set PIN as verified when creating new PIN
+            await AsyncStorage.setItem('pinVerified', 'true');
+            
+            await storeData('@passcode', enteredPin);
+            dispatch(setPasscode(enteredPin));
+            dispatch(setIsNewUser(false));
+            navigation.navigate('Main');
+          } else {
+            setError(t('pin.validationError'));
+            setPin('');
+          }
+        } catch (createError) {
+          console.log('create pin error:', createError);
           setError(t('pin.validationError'));
           setPin('');
         }
-      } catch (createError) {
-        console.log('create pin error:', createError);
-        setError(t('pin.validationError'));
-        setPin('');
+        return;
       }
-      return;
+
+      if (error?.data?.message === 'Compte suspendu ou bloqué') {
+        setIsBlocked(true);
+        setShowContactSupportModal(true);
+        setError(t('pin.accountSuspended'));
+
+        // Clear stored passcode if account is suspended
+        await removeData('@passcode');
+        dispatch(clearPasscode());
+      } else {
+        showToast(
+          'error',
+          t('errors.title'),
+          error?.data?.message || t('errors.default')
+        );
+      }
+
+      setPin('');
+    } finally {
+      setIsLoading(false);
     }
-
-    if (error?.data?.message === 'Compte suspendu ou bloqué') {
-      setIsBlocked(true);
-      setShowContactSupportModal(true);
-      setError(t('pin.accountSuspended'));
-
-      // Clear stored passcode if account is suspended
-      await removeData('@passcode');
-      dispatch(clearPasscode());
-    } else {
-      showToast(
-        'error',
-        t('errors.title'),
-        error?.data?.message || t('errors.default')
-      );
-    }
-
-    setPin('');
-  } finally {
-    setIsLoading(false);
-  }
-};
-
-
-
+  };
 
   const renderDots = () => (
     <View style={{ flexDirection: 'row', justifyContent: 'center', marginVertical: 20 }}>
@@ -529,10 +547,11 @@ useEffect(() => {
           </View>
         )}
       </View>
-       {/* Floating WhatsApp Button */}
+      
+      {/* Floating WhatsApp Button */}
       <TouchableOpacity 
         onPress={() => {
-          const phoneNumber = '+237640726036'; // Replace with your support WhatsApp number
+          const phoneNumber = '+237640726036';
           const message = t('whatsapp.defaultMessage');
           Communications.text(phoneNumber, message);
         }}

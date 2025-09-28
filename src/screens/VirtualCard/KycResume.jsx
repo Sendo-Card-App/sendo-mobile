@@ -25,22 +25,6 @@ const KycResume = ({ navigation }) => {
   const { t } = useTranslation();
   const { data: userProfile, isLoading: isProfileLoading, error: profileError } = useGetUserProfileQuery();
 
-   useEffect(() => {
-    const unsubscribe = navigation.addListener('beforeRemove', (e) => {
-      if (isSubmitting) {
-        e.preventDefault();
-        Toast.show({
-          type: 'info',
-          text1: 'Veuillez patienter',
-          text2: 'Soumission en cours...',
-        });
-      }
-    });
-
-    return unsubscribe;
-  }, [navigation, isSubmitting]);
-
-
   const Data = [
     { id: "1", name: t('kyc_resume.personal_details'), route: "PersonalDetail", 
       completed: !!personalDetails.profession && !!personalDetails.region && !!personalDetails.city && !!personalDetails.district },
