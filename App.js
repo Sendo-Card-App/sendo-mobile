@@ -536,7 +536,7 @@ export default function App() {
         setIsAppReady(true);
         
         // Hide loader after everything is ready
-        setLoaderMessage("Chargement terminé");
+       
         setTimeout(() => {
           setShowLoader(false);
         }, 500);
