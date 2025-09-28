@@ -226,7 +226,7 @@ const screenWidth = Dimensions.get('window').width;
           component={Home}
           options={{
             title: t('tabs.home'),
-           // unmountOnBlur: true,
+           unmountOnBlur: true,
           }}
         />
 
@@ -235,7 +235,7 @@ const screenWidth = Dimensions.get('window').width;
           component={History}
           options={{
             title: t('tabs.history'),
-            // unmountOnBlur: true,
+            unmountOnBlur: true,
           }}
         />
 
@@ -246,7 +246,7 @@ const screenWidth = Dimensions.get('window').width;
               component={BeneficiaryScreen}
               options={{
                 title: '',
-                // unmountOnBlur: true,
+                unmountOnBlur: true,
               }}
             />
           ))}
@@ -257,7 +257,7 @@ const screenWidth = Dimensions.get('window').width;
               component={ManageVirtualCardWrapper}
               options={{
                 title: t('tabs.cards'),
-                // unmountOnBlur: true,
+                unmountOnBlur: true,
               }}
             />
           ))}
@@ -268,7 +268,7 @@ const screenWidth = Dimensions.get('window').width;
           component={Settings}
           options={{
             title: t('tabs.settings'),
-            // unmountOnBlur: true,
+             unmountOnBlur: true,
           }}
         />
       </Tab.Navigator>
@@ -518,7 +518,7 @@ function DrawerNavigator() {
 export default function App() {
   const appState = useRef(AppState.currentState);
   const [showLoader, setShowLoader] = useState(true); // Start with loader visible
-  const [loaderMessage, setLoaderMessage] = useState("Chargement de l'application...");
+  const [loaderMessage, setLoaderMessage] = useState("");
   const [isAppReady, setIsAppReady] = useState(false);
 
   // Show loader immediately when app starts
@@ -527,7 +527,7 @@ export default function App() {
     
     const initializeApp = async () => {
       try {
-        setLoaderMessage("Initialisation de l'application...");
+      
         
         // Initialize app components
         await registerForPushNotificationsAsync();
