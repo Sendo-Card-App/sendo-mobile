@@ -193,7 +193,7 @@ const screenWidth = Dimensions.get('window').width;
         />
 
         {/*  Only show BeneficiaryTab if user is from Canada */}
-        {(userProfile?.data?.country === "Canada"  && (
+        {(userProfile?.data?.country === "Canada")  && (
             <Tab.Screen
               name="BeneficiaryTab"
               component={BeneficiaryScreen}
@@ -204,7 +204,7 @@ const screenWidth = Dimensions.get('window').width;
             />
           )}
 
-          {(userProfile?.data?.country === "Cameroon"  && (
+          {(userProfile?.data?.country === "Cameroon")  && (
             <Tab.Screen
               name="ManageVirtualCardTab"
               component={ManageVirtualCardWrapper}
