@@ -180,13 +180,14 @@ const getLocalImageBase64 = async () => {
 
 
   const handleDownloadReceipt = async () => {
-  if (transaction.status !== 'COMPLETED') {
+  if (transaction.status !== 'COMPLETED' && transaction.status !== 'FAILED') {
     Alert.alert(
       "Reçu indisponible",
-      "Le reçu est uniquement disponible pour les transactions réussies"
+      "Le reçu est uniquement disponible pour les transactions réussies ou échouées"
     );
     return;
   }
+
 
   setIsGenerating(true);
   try {
@@ -702,19 +703,28 @@ const getLocalImageBase64 = async () => {
           </Text>
             <Text className="text-gray-600 text-sm">Référence de la transaction : {transaction.transactionId}</Text>
 
-          <TouchableOpacity
+         <TouchableOpacity
             onPress={handleDownloadReceipt}
-            disabled={isGenerating || transaction.status !== 'COMPLETED'}
-            className={`py-3 mt-4 rounded-lg items-center ${transaction.status !== 'COMPLETED' ? 'bg-gray-300' : 'bg-[#7ddd7d]'}`}
+            disabled={isGenerating || (transaction.status !== 'COMPLETED' && transaction.status !== 'FAILED')}
+            className={`py-3 mt-4 rounded-lg items-center ${
+              transaction.status === 'COMPLETED' || transaction.status === 'FAILED'
+                ? 'bg-[#7ddd7d]'
+                : 'bg-gray-300'
+            }`}
           >
             {isGenerating ? (
               <Loader color="white" />
             ) : (
               <Text className="text-white font-bold">
-                {transaction.status === 'COMPLETED' ? 'TÉLÉCHARGER LE REÇU' : 'REÇU INDISPONIBLE'}
+                {transaction.status === 'COMPLETED'
+                  ? 'TÉLÉCHARGER LE REÇU'
+                  : transaction.status === 'FAILED'
+                  ? 'TÉLÉCHARGER LE REÇU (ÉCHEC)'
+                  : 'REÇU INDISPONIBLE'}
               </Text>
             )}
           </TouchableOpacity>
+
         </View>
 
         <TouchableOpacity

@@ -258,7 +258,7 @@ const BeneficiarySelection = ({ route }) => {
 
         {/* Search Bar */}
         <View style={styles.searchContainer}>
-          <AntDesign name="search1" size={18} color="#aaa" />
+          <AntDesign name="search" size={18} color="#aaa" />
           <TextInput
             style={styles.searchInput}
             placeholder={t('search')}

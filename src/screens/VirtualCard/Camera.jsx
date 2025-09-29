@@ -113,7 +113,7 @@ const handleSubmit = () => {
         style={{ height: height / 1.8 }}
       >
         {!permission ? (
-          <AntDesign name="loading1" size={24} color="black" />
+          <AntDesign name="loading" size={24} color="black" />
         ) : !permission.granted ? (
           <View className="flex-1 justify-center items-center">
             <Text className="mb-4">
