@@ -150,7 +150,7 @@ function CustomTabBar({ state, descriptors, navigation }) {
 const styles = StyleSheet.create({
   tabContainer: {
     flexDirection: 'row',
-    height: Platform.OS === 'ios' ? 85 : 70,
+    height: Platform.OS === 'ios' ? 85 : 95,
     borderTopWidth: 0.5,
     borderTopColor: Colors.border,
     justifyContent: 'space-around',
