@@ -1,50 +1,49 @@
 import React, { useEffect, useRef } from 'react';
-import { getData } from '../../services/storage';
+import { View, Text, Image, StyleSheet, Animated, Easing, Dimensions } from 'react-native';
+import { getData } from "../../services/storage";
 import { useDispatch } from 'react-redux';
 import { loginSuccess } from '../../features/Auth/authSlice';
-import { View, Text, Image, StyleSheet, Animated, Easing, Dimensions } from 'react-native';
-import LogoSendo from '../../images/LogoSendo.png';
-import WorldMap from '../../images/WorldMap.png';
-import Loader from "../../components/Loader"
 
 const { width, height } = Dimensions.get('window');
+
+// Use require for images
+const LogoSendo = require('../../images/logo2.png');
+const WorldMap = require('../../images/WorldMap.png');
 
 const SplashScreen = ({ navigation }) => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
-  const slideAnim = useRef(new Animated.Value(50)).current;
   const mapScaleAnim = useRef(new Animated.Value(1)).current;
-   const dispatch = useDispatch();
-  const [loading, setLoading] = React.useState(true);
+  const progressAnim = useRef(new Animated.Value(0)).current;
+  const dispatch = useDispatch();
 
-
-  const dotAnims = Array.from({ length: 5 }, () => useRef(new Animated.Value(0)).current); 
-  // 5 dots (you can add more)
-  
-   useEffect(() => {
-       const checkAuthData = async () => {
-         try {
-           const authData = await getData('@authData');
-           if (authData?.accessToken) {
-             dispatch(loginSuccess(authData));
-             navigation.replace("PinCode");
-           } else {
-             navigation.replace("SignIn");
-           }
-         } catch (error) {
-           console.log("Error checking auth data:", error);
-           navigation.replace("SignIn");
-         } finally {
-           setLoading(false); // stop loader once done
-         }
-       };
-     
-       checkAuthData();
-     }, [])
-  
-  
   useEffect(() => {
+    const checkAuthAndNavigate = async () => {
+      try {
+        // Check if user data exists in storage
+        const authData = await getData('@authData');
+        console.log('Auth data found:', !!authData);
+        
+        if (authData?.accessToken) {
+          // User is authenticated - dispatch login success and navigate to PinCode
+          dispatch(loginSuccess(authData));
+          console.log('Navigating to PinCode');
+          navigation.replace('PinCode');
+        } else {
+          // No auth data - navigate to SignIn
+          console.log('Navigating to SignIn');
+          navigation.replace('SignIn');
+        }
+      } catch (error) {
+        console.log('Error checking auth data:', error);
+        // If there's an error, default to SignIn
+        navigation.replace('SignIn');
+      }
+    };
+
+    // Start animations
     Animated.parallel([
+      // Logo fade and scale
       Animated.timing(fadeAnim, {
         toValue: 1,
         duration: 1000,
@@ -56,167 +55,112 @@ const SplashScreen = ({ navigation }) => {
         easing: Easing.elastic(1),
         useNativeDriver: true,
       }),
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 800,
-        easing: Easing.out(Easing.exp),
-        useNativeDriver: true,
+      // Progress bar animation (3 seconds)
+      Animated.timing(progressAnim, {
+        toValue: 1,
+        duration: 3000,
+        easing: Easing.linear,
+        useNativeDriver: false,
       }),
     ]).start();
 
+    // Map breathing animation
     Animated.loop(
       Animated.sequence([
         Animated.timing(mapScaleAnim, {
           toValue: 1.1,
-          duration: 8000,
+          duration: 4000,
           easing: Easing.linear,
           useNativeDriver: true,
         }),
         Animated.timing(mapScaleAnim, {
           toValue: 1,
-          duration: 8000,
+          duration: 4000,
           easing: Easing.linear,
           useNativeDriver: true,
         }),
       ])
     ).start();
 
-    // Animate dots (fade in/out)
-    dotAnims.forEach((anim, index) => {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(anim, {
-            toValue: 1,
-            duration: 2000 + index * 500,
-            easing: Easing.linear,
-            useNativeDriver: true,
-          }),
-          Animated.timing(anim, {
-            toValue: 0,
-            duration: 2000 + index * 500,
-            easing: Easing.linear,
-            useNativeDriver: true,
-          }),
-        ])
-      ).start();
-    });
-
+    // Check authentication and navigate after 3 seconds (when progress bar completes)
     const timer = setTimeout(() => {
-      navigation.replace('SignIn'); // Navigate to SignIn screen after 5 seconds
-    }, 5000);
+      checkAuthAndNavigate();
+    }, 3000);
 
-    return () => clearTimeout(timer);
-  }, []);
+    return () => {
+      console.log('SplashScreen unmounted');
+      clearTimeout(timer);
+    };
+  }, [navigation, fadeAnim, scaleAnim, mapScaleAnim, progressAnim, dispatch]);
 
-  if (loading) return <Loader />;
-
+  // Interpolate the progress bar width
+  const progressWidth = progressAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0%', '100%'],
+  });
 
   return (
     <View style={styles.container}>
-
-      {/* World Map */}
+      {/* World Map Background with animation */}
       <Animated.Image
         source={WorldMap}
         style={[
           styles.mapBackground,
           {
             transform: [{ scale: mapScaleAnim }],
-            opacity: 0.2,
           }
         ]}
         resizeMode="cover"
+        onError={(error) => console.log('WorldMap load error:', error.nativeEvent.error)}
       />
-
-      {/* Green Dots */}
-      {dotAnims.map((anim, index) => (
-        <Animated.View
-          key={index}
-          style={[
-            styles.dot,
-            {
-              opacity: anim,
-              top: dotPositions[index].top,
-              left: dotPositions[index].left,
-            }
-          ]}
-        />
-      ))}
-
-      {/* Logo */}
-      <Animated.View style={[
-        styles.logoContainer,
-        {
-          opacity: fadeAnim,
-          transform: [
-            { scale: scaleAnim },
-            { translateY: slideAnim }
-          ]
-        }
-      ]}>
+      
+      {/* Logo with fade and scale animation */}
+      <Animated.View 
+        style={[
+          styles.logoContainer,
+          {
+            opacity: fadeAnim,
+            transform: [{ scale: scaleAnim }]
+          }
+        ]}
+      >
         <Image
           source={LogoSendo}
           style={styles.logo}
           resizeMode="contain"
+          onError={(error) => console.log('LogoSendo load error:', error.nativeEvent.error)}
         />
       </Animated.View>
 
-      {/* Text */}
-      <Animated.View style={[styles.textContainer, { opacity: fadeAnim }]}>
-        <Text style={styles.subtitle}>Service de transfert d'argent</Text>
-
-        <Animated.View style={[styles.divider, {
-          width: fadeAnim.interpolate({
-            inputRange: [0, 1],
-            outputRange: ['0%', '60%']
-          })
-        }]} />
-
-        <Animated.Text style={[
-          styles.footer,
-          {
-            opacity: fadeAnim,
-            transform: [{
-              translateY: fadeAnim.interpolate({
-                inputRange: [0, 1],
-                outputRange: [20, 0]
-              })
-            }]
-          }
-        ]}>
-          Sendo propulsé par Service Financiers Étudiants
-        </Animated.Text>
+      {/* Footer text with fade animation */}
+      <Animated.View style={[styles.footer, { opacity: fadeAnim }]}>
+        <Text style={styles.footerText}>
+          Service de transfert d'argent
+        </Text>
+        
+        {/* Progress Bar Container */}
+        <View style={styles.progressBarContainer}>
+          <Animated.View 
+            style={[
+              styles.progressBar,
+              {
+                width: progressWidth,
+              }
+            ]} 
+          />
+        </View>
+        
+        <Text style={styles.footerSubtext}>
+          Propulsé par Service Financiers Étudiants
+        </Text>
       </Animated.View>
 
-      {/* Background Circles */}
-      <Animated.View style={[
-        styles.circle1,
-        {
-          opacity: fadeAnim.interpolate({
-            inputRange: [0, 1],
-            outputRange: [0, 0.1]
-          })
-        }
-      ]} />
-      <Animated.View style={[
-        styles.circle2,
-        {
-          opacity: fadeAnim.interpolate({
-            inputRange: [0, 1],
-            outputRange: [0, 0.05]
-          })
-        }
-      ]} />
+      {/* Decorative circles */}
+      <View style={styles.circle1} />
+      <View style={styles.circle2} />
     </View>
   );
 };
-
-const dotPositions = [
-  { top: height * 0.4, left: width * 0.5 },
-  { top: height * 0.5, left: width * 0.5 },
-  { top: height * 0.4, left: width * 0.8 },
-  { top: height * 0.5, left: width * 0.3 },
-  { top: height * 0.4, left: width * 0.2 },
-]; // Random nice positions
 
 const styles = StyleSheet.create({
   container: {
@@ -228,64 +172,71 @@ const styles = StyleSheet.create({
   },
   mapBackground: {
     position: 'absolute',
-    width: width * 1,
-    
-  },
-  dot: {
-    position: 'absolute',
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#7ddd7d',
-    zIndex: 2,
+    width: width * 1.3,
+    height: height * 1.3,
+    opacity: 0.15,
   },
   logoContainer: {
-    marginBottom: 30,
+    alignItems: 'center',
+    marginBottom: 50,
     zIndex: 10,
   },
   logo: {
-    width: 120,
-    height: 120,
-  },
-  textContainer: {
-    alignItems: 'center',
-    zIndex: 10,
-  },
-  subtitle: {
-    color: 'white',
-    fontSize: 18,
-    marginBottom: 400,
-  },
-  divider: {
-    height: 2,
-    backgroundColor: '#7ddd7d',
-    marginVertical: 20,
+    width: 220,
+    height: 220,
+    marginBottom: 15,
   },
   footer: {
-    color: 'rgba(255,255,255,0.7)',
-    fontSize: 14,
+    position: 'absolute',
+    bottom: 60,
+    alignItems: 'center',
+    width: '100%',
+    zIndex: 10,
+  },
+  footerText: {
+    color: 'white',
+    fontSize: 16,
+    marginBottom: 20,
     textAlign: 'center',
-    marginTop: 20,
+    fontWeight: '500',
+  },
+  progressBarContainer: {
+    width: '60%',
+    height: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 2,
+    marginBottom: 15,
+    overflow: 'hidden',
+  },
+  progressBar: {
+    height: '100%',
+    backgroundColor: '#7ddd7d',
+    borderRadius: 2,
+  },
+  footerSubtext: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 12,
+    textAlign: 'center',
   },
   circle1: {
+    position: 'absolute',
+    width: 250,
+    height: 250,
+    borderRadius: 125,
+    backgroundColor: '#7ddd7d',
+    top: -80,
+    left: -80,
+    opacity: 0.08,
+  },
+  circle2: {
     position: 'absolute',
     width: 300,
     height: 300,
     borderRadius: 150,
     backgroundColor: '#7ddd7d',
-    top: -100,
-    left: -100,
-    zIndex: 0,
-  },
-  circle2: {
-    position: 'absolute',
-    width: 400,
-    height: 400,
-    borderRadius: 200,
-    backgroundColor: '#7ddd7d',
-    bottom: -150,
-    right: -100,
-    zIndex: 0,
+    bottom: -120,
+    right: -80,
+    opacity: 0.05,
   },
 });
 

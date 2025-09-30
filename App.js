@@ -5,10 +5,9 @@ import { AppState } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback } from "react";
 import { Colors } from './src/constants/colors'; // Adjust the path as needed
-import { useNavigation, useIsFocused } from "@react-navigation/native";
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import { useNavigation, useIsFocused  } from "@react-navigation/native";
 
-import { StyleSheet, View, Text, TouchableOpacity,Platform,Dimensions,ActivityIndicator, StatusBar, Image   } from "react-native";
+import { StyleSheet, View, Text, TouchableOpacity,Platform,Dimensions,ActivityIndicator, StatusBar   } from "react-native";
 import { Provider } from "react-redux";
 import { store } from "./src/store/store";
 import Toast from "react-native-toast-message";
@@ -19,7 +18,7 @@ import { NavigationContainer } from "@react-navigation/native";
 import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createDrawerNavigator } from "@react-navigation/drawer";
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";;
 import { Ionicons, AntDesign,FontAwesome,FontAwesome5   } from "@expo/vector-icons";
 
 import * as Notifications from "expo-notifications";
@@ -154,54 +153,8 @@ const headerHeight = Platform.select({
 });
 const screenWidth = Dimensions.get('window').width;
 
- const AppLoader = ({ message = "Chargement..." }) => (
-  <View style={{
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: Colors.primary, // You can use your app's primary color
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 9999,
-  }}>
-    <View style={{
-      backgroundColor: 'white',
-      padding: 30,
-      borderRadius: 20,
-      alignItems: 'center',
-      elevation: 10,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.3,
-      shadowRadius: 8,
-      minWidth: 200,
-    }}>
-      {/* You can add your app logo here */}
-      <Image
-        source={require('./src/images/LogoSendo.png')} // Your app logo
-        style={{
-          width: 80,
-          height: 80,
-          marginBottom: 20,
-        }}
-      />
-      <ActivityIndicator size="large" color={Colors.primary} />
-      <Text style={{ 
-        marginTop: 15, 
-        color: Colors.primary, 
-        fontSize: 16,
-        fontWeight: '600',
-        textAlign: 'center'
-      }}>
-        {message}
-      </Text>
-    </View>
-  </View>
-);
-
-
+// Tab Navigator
+// Tab Navigator
   function MainTabs() {
     const { t } = useTranslation();
     const navigation = useNavigation();
@@ -226,7 +179,7 @@ const screenWidth = Dimensions.get('window').width;
           component={Home}
           options={{
             title: t('tabs.home'),
-           unmountOnBlur: true,
+            unmountOnBlur: true,
           }}
         />
 
@@ -268,7 +221,7 @@ const screenWidth = Dimensions.get('window').width;
           component={Settings}
           options={{
             title: t('tabs.settings'),
-             unmountOnBlur: true,
+            unmountOnBlur: true,
           }}
         />
       </Tab.Navigator>
@@ -309,7 +262,10 @@ function ManageVirtualCardWrapper() {
 // Stack Navigator for auth screens
 function AuthStack() {
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator 
+      screenOptions={{ headerShown: false }}
+      initialRouteName="Welcome" // Explicitly set initial route
+    >
       <Stack.Screen name="Welcome" component={WelcomeScreen} />
       <Stack.Screen name="SignIn" component={SignIn} />
       <Stack.Screen name="PinCode" component={PinCode} />
@@ -492,7 +448,10 @@ function MainStack() {
 // Root Navigator to switch between Auth and Main stacks
 function RootNavigator() {
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator 
+      screenOptions={{ headerShown: false }}
+      initialRouteName="Auth" // Set Auth as initial route
+    >
       <Stack.Screen name="Auth" component={AuthStack} /> 
       <Stack.Screen name="Main" component={MainStack} />
     </Stack.Navigator>
@@ -500,108 +459,28 @@ function RootNavigator() {
 }
 
 // Drawer Navigator
-function DrawerNavigator() {
-  return (
-    <>
-      <Drawer.Navigator drawerContent={(props) => <DrawerComponent {...props} />}>
+  function DrawerNavigator() {
+    return (
+      <Drawer.Navigator 
+        drawerContent={(props) => <DrawerComponent {...props} />}
+        screenOptions={{ headerShown: false }}
+      >
         <Drawer.Screen 
-          name="MainStack" 
+          name="RootNavigator" 
           component={RootNavigator} 
           options={{ headerShown: false }} 
         />
       </Drawer.Navigator>
-    </>
-  );
-}
+    );
+  }
 
-// In your App.js
 export default function App() {
   const appState = useRef(AppState.currentState);
-  const [showLoader, setShowLoader] = useState(true); // Start with loader visible
-  const [loaderMessage, setLoaderMessage] = useState("");
-  const [isAppReady, setIsAppReady] = useState(false);
-
-  // Show loader immediately when app starts
-  useEffect(() => {
-    console.log('App starting - showing loader immediately');
-    
-    const initializeApp = async () => {
-      try {
-      
-        
-        // Initialize app components
-        await registerForPushNotificationsAsync();
-        await AsyncStorage.setItem('pinVerified', 'false');
-       
-        setIsAppReady(true);
-        
-        // Hide loader after everything is ready
-       
-        setTimeout(() => {
-          setShowLoader(false);
-        }, 500);
-        
-      } catch (error) {
-        console.error('Error initializing app:', error);
-        // Even if there's an error, hide loader after a while
-        setTimeout(() => {
-          setShowLoader(false);
-        }, 2000);
-      }
-    };
-
-    initializeApp();
-  }, []);
 
   useEffect(() => {
-    const handleAppStateChange = async (nextAppState) => {
-      console.log('AppState changed:', appState.current, '->', nextAppState);
-      
-      if (
-        appState.current.match(/inactive|background/) &&
-        nextAppState === 'active'
-      ) {
-        // App is coming to foreground - Show loader
-        setShowLoader(true);
-        
-        console.log('App coming to foreground, checking PIN verification...');
-        
-        const pinVerified = await AsyncStorage.getItem('pinVerified');
-        console.log('PIN verified status:', pinVerified);
-        
-        if (pinVerified !== 'true') {
-          console.log('PIN not verified, navigating to PinCode...');
-          
-          setTimeout(() => {
-            if (navigationRef.current) {
-              navigationRef.current.navigate('Auth', { screen: 'PinCode' });
-              // Hide loader after navigation is complete
-              setTimeout(() => setShowLoader(false), 600);
-            } else {
-              setShowLoader(false);
-            }
-          }, 100);
-        } else {
-          console.log('PIN already verified, staying on current screen');
-          await AsyncStorage.setItem('pinVerified', 'false');
-          setShowLoader(false);
-        }
-      } else if (nextAppState.match(/inactive|background/)) {
-        // App is going to background
-        console.log('App going to background, resetting PIN verification...');
-        await AsyncStorage.setItem('pinVerified', 'false');
-        setShowLoader(false);
-      }
-      
-      appState.current = nextAppState;
-    };
-
-    const subscription = AppState.addEventListener('change', handleAppStateChange);
-
-    return () => {
-      subscription.remove();
-      setShowLoader(false);
-    };
+    (async () => {
+      await registerForPushNotificationsAsync();
+    })();
   }, []);
 
   return (
@@ -610,12 +489,9 @@ export default function App() {
         <ThemeProvider>
           <>
             <NavigationContainer ref={navigationRef}>
-              <DrawerNavigator />
+              <DrawerNavigator /> 
             </NavigationContainer>
-            <Toast />
-            
-            {/* Global Loader - shows immediately when app starts */}
-            {showLoader && <AppLoader message={loaderMessage} />}
+            <Toast /> 
           </>
         </ThemeProvider>
       </NetworkProvider>
