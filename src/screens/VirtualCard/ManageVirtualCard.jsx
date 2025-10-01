@@ -836,13 +836,11 @@ const handleCardDetailsRequest = async (isReadOnly) => {
             </View>
           )}
 
-          {/* Transactions */}
+         {/* Transactions */}
           <View className="mt-2 mb-2">
             <View className="flex-row justify-between items-center mb-2">
               <Text className="font-bold text-gray-700">{t('manageVirtualCard.history')}</Text>
-              <TouchableOpacity  onPress={() =>
-                    navigation.navigate("HistoryCard")
-                  }>
+              <TouchableOpacity onPress={() => navigation.navigate("HistoryCard")}>
                 <Text className="font-bold text-gray-700">voir tout</Text>
               </TouchableOpacity>
             </View>
@@ -850,7 +848,12 @@ const handleCardDetailsRequest = async (isReadOnly) => {
             {isTransactionsLoading ? (
               <ActivityIndicator size="small" color="#7ddd7d" />
             ) : (
-              <FlatList
+              <ScrollView 
+                style={{ maxHeight: 400 }} // You can adjust this height as needed
+                showsVerticalScrollIndicator={true}
+                nestedScrollEnabled={true}
+              >
+                <FlatList
                   data={cardTransactions?.data?.transactions?.items || []}
                   renderItem={({ item }) => <TransactionItem item={item} navigation={navigation} />}
                   keyExtractor={(item) => item.transactionId || item.id.toString()}
@@ -863,7 +866,7 @@ const handleCardDetailsRequest = async (isReadOnly) => {
                   scrollEnabled={false}
                   nestedScrollEnabled={true}
                 />
-
+              </ScrollView>
             )}
           </View>
         </View>

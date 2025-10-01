@@ -602,42 +602,43 @@ const HomeScreen = () => {
         visible={showKycModal}
         onRequestClose={() => setShowKycModal(false)}
       >
-        <View
-          style={{
-            flex: 1,
-            justifyContent: 'center',
-            alignItems: 'center',
-            backgroundColor: 'rgba(0,0,0,0.5)',
-          }}
-        >
-          <View
-            style={{
-              width: '80%',
-              backgroundColor: 'white',
-              borderRadius: 10,
-              padding: 20,
-              alignItems: 'center',
-            }}
-          >
-            <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 15 }}>
-              {t('kycModal.title')}
-            </Text>
-            <Text style={{ fontSize: 16, textAlign: 'center', marginBottom: 20 }}>
+         <View className="flex-1 justify-center items-center bg-black/50 px-6">
+          <View className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-xl">
+            <View className="items-center mb-4">
+              <View className="w-16 h-16 bg-yellow-100 rounded-full justify-center items-center mb-3">
+                <Ionicons name="shield-checkmark-outline" size={32} color="#F59E0B" />
+              </View>
+              <Text className="text-gray-900 text-xl font-bold text-center">
+                {t('kycModal.title')}
+              </Text>
+            </View>
+            
+            <Text className="text-gray-600 text-center text-base leading-6 mb-6">
               {t('kycModal.message')}
             </Text>
-            <Pressable
-              style={{
-                backgroundColor: '#7ddd7d',
-                paddingVertical: 10,
-                paddingHorizontal: 20,
-                borderRadius: 10,
-              }}
-              onPress={() => setShowKycModal(false)}
-            >
-              <Text style={{ color: '#fff', fontWeight: 'bold' }}>
-                {t('kycModal.okButton')}
-              </Text>
-            </Pressable>
+            
+            <View className="flex-row gap-3">
+              <Pressable
+                className="flex-1 bg-gray-100 py-4 rounded-2xl"
+                onPress={() => setShowKycModal(false)}
+              >
+                <Text className="text-gray-700 font-semibold text-center">
+                  {t('kycModal.laterButton') || "Later"}
+                </Text>
+              </Pressable>
+              
+              <Pressable
+                className="flex-1 bg-green-500 py-4 rounded-2xl shadow-sm"
+                onPress={() => {
+                  setShowKycModal(false);
+                  navigation.navigate("VerifyIdentity"); // ✅ works now
+                }}
+              >
+                <Text className="text-white font-semibold text-center">
+                  {t('kycModal.verifyButton') || "Verify Now"}
+                </Text>
+              </Pressable>
+            </View>
           </View>
         </View>
       </Modal>

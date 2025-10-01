@@ -6,6 +6,8 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useCallback } from "react";
 import { Colors } from './src/constants/colors'; // Adjust the path as needed
 import { useNavigation, useIsFocused  } from "@react-navigation/native";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 
 import { StyleSheet, View, Text, TouchableOpacity,Platform,Dimensions,ActivityIndicator, StatusBar   } from "react-native";
 import { Provider } from "react-redux";
@@ -146,6 +148,8 @@ const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
 const Tab = createBottomTabNavigator();
 const navigationRef = React.createRef();
+
+const AUTH_STATE_KEY = 'user_auth_state';
 
 const headerHeight = Platform.select({
   ios: 60,
@@ -474,13 +478,50 @@ function RootNavigator() {
     );
   }
 
+  function SplashRedirector() {
+    const navigation = useNavigation();
+
+    useEffect(() => {
+      // Navigate to Welcome screen when this component mounts
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Auth', params: { screen: 'Welcome' } }],
+      });
+    }, [navigation]);
+  }
+
 export default function App() {
   const appState = useRef(AppState.currentState);
+  const [showSplash, setShowSplash] = useState(false);
 
   useEffect(() => {
     (async () => {
       await registerForPushNotificationsAsync();
     })();
+
+    // Handle app state changes
+    const handleAppStateChange = (nextAppState) => {
+      console.log('App state changed:', appState.current, '->', nextAppState);
+      
+      if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
+        // App came to foreground from background - show splash/welcome
+        console.log('App came to foreground, showing splash process');
+        setShowSplash(true);
+        
+        // Reset after a short delay to allow navigation to happen
+        setTimeout(() => {
+          setShowSplash(false);
+        }, 10);
+      }
+      
+      appState.current = nextAppState;
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+
+    return () => {
+      subscription.remove();
+    };
   }, []);
 
   return (
@@ -489,7 +530,12 @@ export default function App() {
         <ThemeProvider>
           <>
             <NavigationContainer ref={navigationRef}>
-              <DrawerNavigator /> 
+              {showSplash ? (
+                // Show a temporary splash screen that navigates to Welcome
+                <SplashRedirector />
+              ) : (
+                <DrawerNavigator />
+              )}
             </NavigationContainer>
             <Toast /> 
           </>
@@ -498,5 +544,6 @@ export default function App() {
     </Provider>
   );
 }
+
 
 

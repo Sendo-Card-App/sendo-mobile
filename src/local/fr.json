@@ -1512,7 +1512,9 @@
     "noPubs": "Aucune publicite",
     "recentTransactions": "Transactions récentes",
     "noTransactions": "Aucune transaction trouvée"
+    
   },
+  
   "kyc": {
     "my_kyc": "Mes KYC",
     "id_proof": "CNI (ou passeport ou permis de conduire)",
@@ -1679,9 +1681,10 @@
   "transfer_confirmation_message": "Êtes-vous sûr de vouloir transférer {{amount}} {{currency}} à {{name}} ?",
   "confirm": "Confirmer",
   "kycModal": {
-    "title": "KYC Requis",
-    "message": "Documents KYC manquants. Veuillez soumettre vos KYC pour commencer à utiliser l'application.",
-    "okButton": "OK"
+    "title": "Vérifiez votre identité",
+    "message": "Pour des raisons de sécurité, veuillez vérifier votre identité (KYC) afin de continuer à utiliser tous les services.",
+    "laterButton": "Plus tard",
+    "verifyButton": "Vérifier maintenant"
   },
     "cardHistory": "Historique de la carte",
   "loadingHistory": "Chargement de l’historique de la carte...",

@@ -1683,10 +1683,11 @@
    "confirm_transfer": "Confirm Transfer",
   "transfer_confirmation_message": "Are you sure you want to transfer {{amount}} {{currency}} to {{name}}?",
   "confirm": "Confirm",
-   "kycModal": {
-    "title": "KYC Required",
-    "message": "Missing KYC documents. Please submit your KYC to start using the app.",
-    "okButton": "OK"
+  "kycModal": {
+    "title": "Verify Your Identity",
+    "message": "For security, please verify your identity (KYC) to continue using all services.",
+    "laterButton": "Later",
+    "verifyButton": "Verify Now"
   },
    "cardHistory": "Card History",
   "loadingHistory": "Loading card history...",
