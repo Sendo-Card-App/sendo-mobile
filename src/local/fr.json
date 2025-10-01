@@ -1488,6 +1488,17 @@
     "monthly": "Mensuel",
     "unknownAdmin": "Admin inconnu"
   },
+   "serviceScreen": {
+    "welcome": "Choisissez un service pour commencer",
+    "subtitle": "Tous vos besoins financiers au même endroit",
+    "security": "Tous les services sont sécurisés et cryptés",
+    "support": "Support",
+    "supportDesc": "Obtenez de l'aide et de l'assistance",
+    "shareDesc": "Partagez de l'argent avec des amis",
+    "fundDesc": "Demandez des fonds à vos contacts",
+    "tontineDesc": "Rejoignez des groupes d'épargne",
+    "billsDesc": "Payez vos factures facilement"
+  },
  "terms": {
     "title": "Conditions Générales",
     "intro": "Veuillez lire attentivement les conditions suivantes avant d'utiliser nos services.",

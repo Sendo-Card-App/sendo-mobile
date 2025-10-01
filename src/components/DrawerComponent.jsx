@@ -385,7 +385,7 @@ Utilise mon code lors de ton inscription !`;
           }
         >
 
-          <TouchableOpacity
+          {/* <TouchableOpacity
             className="flex-row gap-2 my-2 mb-5"
             onPress={() => navigation2.navigate("History")}
           >
@@ -396,7 +396,7 @@ Utilise mon code lors de ton inscription !`;
                {t('drawer.transactionHistory')}
               </Text>
             </View>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
 
           <TouchableOpacity
             className="flex-row gap-2 my-2 mb-5"
