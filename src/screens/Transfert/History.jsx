@@ -178,7 +178,7 @@ const FilterModal = ({ visible, onClose, filters, setFilters, applyFilters }) =>
   ];
 
   const statuses = [
-    { label: t('history1.success'), value: 'COMPLETED' },
+    { label: t('history1.completed'), value: 'COMPLETED' },
     { label: t('history1.failed'), value: 'FAILED' },
     { label: t('history1.pending'), value: 'PENDING' },
     { label: t('history1.blocked'), value: 'BLOCKED' }
