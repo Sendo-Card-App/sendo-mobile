@@ -20,6 +20,7 @@ import { useDispatch } from "react-redux";
 import KycTab from "../../components/KycTab";
 import { setNiuDocument } from "../../features/Kyc/kycReducer";
 import { useTranslation } from "react-i18next";
+import { useAppState } from '../../context/AppStateContext'; // Import the hook
 
 const NIU = ({ navigation }) => {
   const { t } = useTranslation();
@@ -30,6 +31,7 @@ const NIU = ({ navigation }) => {
   const [taxIdNumber, setTaxIdNumber] = useState("");
   const [currentStep, setCurrentStep] = useState(1);
   const [isFormValid, setIsFormValid] = useState(false);
+  const { setIsPickingDocument } = useAppState(); // Get the setter function
 
   const isValidTaxId = (value) => /^[A-Za-z0-9]{14}$/.test(value.trim());
 
@@ -63,13 +65,19 @@ const NIU = ({ navigation }) => {
     }
 
     try {
+      // 🚨 Set picking state to true BEFORE opening picker
+      setIsPickingDocument(true);
+      
       const result = await DocumentPicker.getDocumentAsync({
         type: ["application/pdf", "image/*"],
         copyToCacheDirectory: true,
         multiple: false,
       });
 
-      if (!result?.assets?.length) return;
+      if (!result?.assets?.length) {
+        setIsPickingDocument(false);
+        return;
+      }
 
       const file = result.assets[0];
       const fileInfo = await FileSystem.getInfoAsync(file.uri);
@@ -77,6 +85,7 @@ const NIU = ({ navigation }) => {
 
       if (fileSizeMB > 5) {
         Alert.alert(t("niu.fileTooLarge"), t("niu.documentSizeLimit"));
+        setIsPickingDocument(false);
         return;
       }
 
@@ -87,8 +96,14 @@ const NIU = ({ navigation }) => {
         mimeType: file.mimeType || "application/octet-stream",
       });
       setCurrentStep(2);
+      
+      // 🚨 Reset picking state after successful selection
+      setIsPickingDocument(false);
+      
     } catch (error) {
       console.error("Document selection error:", error);
+      // 🚨 Reset picking state on error too
+      setIsPickingDocument(false);
       Alert.alert(t("niu.error"), error.message || t("niu.documentSelectionError"));
     }
   };
@@ -231,7 +246,7 @@ const NIU = ({ navigation }) => {
         />
       </View>
 
-      <View className="w-[89%] mx-auto px-8 mt-4">
+      <View className="w-[89%] mx-auto px-8">
         <Text className="text-gray-400 my-1">{t("niu.description")}</Text>
         <Text className="text-gray-400 text-xs mt-2 italic">
           {t("niu.supportedFormats")}

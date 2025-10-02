@@ -9,6 +9,7 @@ import { useNavigation, useIsFocused  } from "@react-navigation/native";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
+
 import { StyleSheet, View, Text, TouchableOpacity,Platform,Dimensions,ActivityIndicator, StatusBar   } from "react-native";
 import { Provider } from "react-redux";
 import { store } from "./src/store/store";
@@ -28,6 +29,12 @@ import { registerForPushNotificationsAsync } from "./src/services/notificationSe
  
 import { useGetUserProfileQuery } from "./src/services/Auth/authAPI";
 import CustomTabBar from './src/components/CustomTabBar';
+
+// Import AppStateProvider first
+import { AppStateProvider, useAppState } from './src/context/AppStateContext';
+
+
+
 // Screens & Components
 import Home from "./src/screens/Home/Home";
 import ServiceScreen from "./src/screens/Home/ServiceScreen";
@@ -478,37 +485,42 @@ function RootNavigator() {
     );
   }
 
-  function SplashRedirector() {
-    const navigation = useNavigation();
+ function SplashRedirector() {
+  const navigation = useNavigation();
 
-    useEffect(() => {
-      // Navigate to Welcome screen when this component mounts
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'Auth', params: { screen: 'Welcome' } }],
-      });
-    }, [navigation]);
-  }
+  useEffect(() => {
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'Auth', params: { screen: 'Welcome' } }],
+    });
+  }, [navigation]);
+}
 
-export default function App() {
+// Create a wrapper component that uses the hook
+function AppContent() {
   const appState = useRef(AppState.currentState);
   const [showSplash, setShowSplash] = useState(false);
+  const { isPickingDocument } = useAppState(); // This will work now
 
   useEffect(() => {
     (async () => {
       await registerForPushNotificationsAsync();
     })();
 
-    // Handle app state changes
     const handleAppStateChange = (nextAppState) => {
       console.log('App state changed:', appState.current, '->', nextAppState);
       
+      // 🚫 DON'T show splash if user is picking a document
+      if (isPickingDocument) {
+        console.log('Ignoring app state change - document picker active');
+        appState.current = nextAppState;
+        return;
+      }
+      
       if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
-        // App came to foreground from background - show splash/welcome
         console.log('App came to foreground, showing splash process');
         setShowSplash(true);
         
-        // Reset after a short delay to allow navigation to happen
         setTimeout(() => {
           setShowSplash(false);
         }, 10);
@@ -522,28 +534,34 @@ export default function App() {
     return () => {
       subscription.remove();
     };
-  }, []);
+  }, [isPickingDocument]);
 
+  return (
+    <>
+      <NavigationContainer ref={navigationRef}>
+        {showSplash ? (
+          <SplashRedirector />
+        ) : (
+          <DrawerNavigator />
+        )}
+      </NavigationContainer>
+      <Toast /> 
+    </>
+  );
+}
+
+export default function App() {
   return (
     <Provider store={store}>
       <NetworkProvider>
         <ThemeProvider>
-          <>
-            <NavigationContainer ref={navigationRef}>
-              {showSplash ? (
-                // Show a temporary splash screen that navigates to Welcome
-                <SplashRedirector />
-              ) : (
-                <DrawerNavigator />
-              )}
-            </NavigationContainer>
-            <Toast /> 
-          </>
+          <AppStateProvider>
+            <AppContent />
+          </AppStateProvider>
         </ThemeProvider>
       </NetworkProvider>
     </Provider>
   );
 }
-
 
 

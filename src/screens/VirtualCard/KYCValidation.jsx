@@ -16,6 +16,7 @@ import { useTranslation } from "react-i18next";
 import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
 import { useUpdateKycDocumentMutation } from "../../services/Kyc/kycApi"; 
+import { useAppState } from '../../context/AppStateContext'; // Import the hook
 
 // Define camera types locally as fallback
 const CameraType = {
@@ -48,6 +49,7 @@ const KYCValidation = () => {
   
   // Use the RTK Query mutation hook
   const [updateKycDocument] = useUpdateKycDocumentMutation();
+  const { setIsPickingDocument } = useAppState(); // Get the setter function
 
   useEffect(() => {
     (async () => {
@@ -108,6 +110,9 @@ const KYCValidation = () => {
 
   const takePicture = async () => {
     try {
+      // 🚨 Set picking state to true BEFORE opening camera
+      setIsPickingDocument(true);
+      
       const result = await ImagePicker.launchCameraAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
@@ -119,14 +124,23 @@ const KYCValidation = () => {
         await uploadDocument(result.assets[0].uri, selectedDocument.publicId);
         setCameraModalVisible(false);
       }
+      
+      // 🚨 Reset picking state after camera operation
+      setIsPickingDocument(false);
+      
     } catch (error) {
       console.error("Error taking picture:", error);
+      // 🚨 Reset picking state on error too
+      setIsPickingDocument(false);
       Alert.alert("Error", "Failed to take picture");
     }
   };
 
   const pickImage = async () => {
     try {
+      // 🚨 Set picking state to true BEFORE opening image picker
+      setIsPickingDocument(true);
+      
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
@@ -137,14 +151,23 @@ const KYCValidation = () => {
       if (!result.canceled) {
         await uploadDocument(result.assets[0].uri, selectedDocument.publicId);
       }
+      
+      // 🚨 Reset picking state after selection
+      setIsPickingDocument(false);
+      
     } catch (error) {
       console.error("Error picking image:", error);
+      // 🚨 Reset picking state on error too
+      setIsPickingDocument(false);
       Alert.alert("Error", "Failed to pick image");
     }
   };
 
   const pickDocument = async () => {
     try {
+      // 🚨 Set picking state to true BEFORE opening document picker
+      setIsPickingDocument(true);
+      
       const result = await DocumentPicker.getDocumentAsync({
         type: "application/pdf",
       });
@@ -152,62 +175,68 @@ const KYCValidation = () => {
       if (result.type === "success") {
         await uploadDocument(result.uri, selectedDocument.publicId);
       }
+      
+      // 🚨 Reset picking state after selection
+      setIsPickingDocument(false);
+      
     } catch (error) {
       console.error("Error picking document:", error);
+      // 🚨 Reset picking state on error too
+      setIsPickingDocument(false);
       Alert.alert("Error", "Failed to pick document");
     }
   };
 
-      const uploadDocument = async (uri, publicId) => {
-      setUploading(true);
+  const uploadDocument = async (uri, publicId) => {
+    setUploading(true);
+    
+    try {
+      // Create FormData object
+      const formData = new FormData();
       
-      try {
-        // Create FormData object
-        const formData = new FormData();
-        
-        // For iOS, we need to modify the URI
-        const fileUri = Platform.OS === "ios" ? uri.replace("file://", "") : uri;
-        
-        // Determine file type and name
-        let fileName = `document_${Date.now()}`;
-        let fileType = "image/jpeg";
-        
-        // Check if it's a PDF
-        if (uri.toLowerCase().endsWith('.pdf')) {
-          fileType = 'application/pdf';
-          fileName += '.pdf';
-        } else {
-          fileName += '.jpg';
-        }
-        
-        // Append the file to FormData
-        formData.append("document", {
-          uri: fileUri,
-          name: fileName,
-          type: fileType,
-        });
-
-        // Encode the publicId for URL (replace slashes with %2F)
-        const encodedPublicId = encodeURIComponent(publicId);
-
-        // Use the RTK Query mutation to update the document
-        const response = await updateKycDocument({
-          publicId: encodedPublicId,
-          formData
-        }).unwrap();
-        console.log(response)
-
-        if (response) {
-          Alert.alert("Success", "Document uploaded successfully");
-          navigation.goBack();
-        }
-      } catch (error) {
-        console.error("Error uploading document:", error);
-        Alert.alert("Error", "Failed to upload document");
-      } finally {
-        setUploading(false);
+      // For iOS, we need to modify the URI
+      const fileUri = Platform.OS === "ios" ? uri.replace("file://", "") : uri;
+      
+      // Determine file type and name
+      let fileName = `document_${Date.now()}`;
+      let fileType = "image/jpeg";
+      
+      // Check if it's a PDF
+      if (uri.toLowerCase().endsWith('.pdf')) {
+        fileType = 'application/pdf';
+        fileName += '.pdf';
+      } else {
+        fileName += '.jpg';
       }
-    };
+      
+      // Append the file to FormData
+      formData.append("document", {
+        uri: fileUri,
+        name: fileName,
+        type: fileType,
+      });
+
+      // Encode the publicId for URL (replace slashes with %2F)
+      const encodedPublicId = encodeURIComponent(publicId);
+
+      // Use the RTK Query mutation to update the document
+      const response = await updateKycDocument({
+        publicId: encodedPublicId,
+        formData
+      }).unwrap();
+      console.log(response)
+
+      if (response) {
+        Alert.alert("Success", "Document uploaded successfully");
+        navigation.goBack();
+      }
+    } catch (error) {
+      console.error("Error uploading document:", error);
+      Alert.alert("Error", "Failed to upload document");
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleResubmit = (item) => {
     setSelectedDocument(item);

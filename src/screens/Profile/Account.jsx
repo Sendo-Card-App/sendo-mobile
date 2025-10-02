@@ -35,6 +35,8 @@ import { useTranslation } from 'react-i18next';
 import OtpVerificationModal from "../../components/OtpVerificationModal";
 import { useSendNotificationMutation } from "../../services/Notification/notificationApi";
 import { TypesNotification } from "../../utils/constants";
+import { useAppState } from '../../context/AppStateContext'; // Import the hook
+
 
 const { width, height } = Dimensions.get('window');
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -42,6 +44,7 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const Account = () => {
   const navigation = useNavigation();
   const { t } = useTranslation();
+   const { setIsPickingDocument } = useAppState();
 
   // Animation refs
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -230,6 +233,9 @@ const Account = () => {
 
   const pickImage = async () => {
     try {
+      // 🚨 Set picking state to true BEFORE opening image picker
+      setIsPickingDocument(true);
+      
       const [libraryPermission, cameraPermission] = await Promise.all([
         ImagePicker.requestMediaLibraryPermissionsAsync(),
         ImagePicker.requestCameraPermissionsAsync()
@@ -241,6 +247,7 @@ const Account = () => {
           text1: "Permission required",
           text2: "Please enable camera and gallery access in settings",
         });
+        setIsPickingDocument(false);
         return;
       }
 
@@ -251,7 +258,10 @@ const Account = () => {
         quality: 0.8,
       });
 
-      if (result.canceled) return;
+      if (result.canceled) {
+        setIsPickingDocument(false);
+        return;
+      }
 
       const selectedImage = result.assets[0];
       
@@ -263,6 +273,7 @@ const Account = () => {
           text1: "File too large",
           text2: "Please select an image smaller than 5MB",
         });
+        setIsPickingDocument(false);
         return;
       }
 
@@ -283,6 +294,9 @@ const Account = () => {
 
       animateProfileImage();
 
+      // 🚨 Reset picking state after successful selection
+      setIsPickingDocument(false);
+
       Toast.show({
         type: "success",
         text1: "Image selected",
@@ -291,6 +305,8 @@ const Account = () => {
 
     } catch (error) {
       console.error("Image picker error:", error);
+      // 🚨 Reset picking state on error too
+      setIsPickingDocument(false);
       Toast.show({
         type: "error",
         text1: "Error",
