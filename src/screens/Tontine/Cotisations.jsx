@@ -592,7 +592,7 @@ const Cotisations = () => {
 
         {/* FIXED: Rotation Order Tab with proper ScrollView for any number of people */}
         {activeTab === "rotationOrder" && (
-          <View className="flex-1 mt-2">
+          <View className="flex-1">
             <Text className="text-black mb-2 text-sm">
               {Array.isArray(tontine?.toursDeDistribution) &&
               tontine.toursDeDistribution.length > 0
@@ -600,62 +600,62 @@ const Cotisations = () => {
                 : t("cotisations.dragToReorder")}
             </Text>
 
-            <View className="flex-1">
-              <ScrollView 
-                showsVerticalScrollIndicator={true}
-                contentContainerStyle={{ paddingBottom: 20 }}
-              >
-                <DraggableFlatList
-                  data={ordreList}
-                  onDragEnd={({ data }) => setOrdreList(data)}
-                  keyExtractor={(item) => item.key}
-                  scrollEnabled={false} // Disable internal scrolling since we're using ScrollView
-                  contentContainerStyle={{ paddingBottom: 10 }}
-                  renderItem={({ item, drag, isActive }) => (
-                    <ScaleDecorator>
-                      <TouchableOpacity
-                        onLongPress={drag}
-                        disabled={isActive}
-                        className={`flex-row items-center justify-between bg-gray-100 rounded-lg px-4 py-4 mb-2 ${
-                          isActive ? "opacity-50" : ""
-                        }`}
-                      >
-                        <View className="flex-row items-center space-x-3">
-                          <Ionicons name="reorder-three" size={24} color="#888" />
-                          <Text className="text-black font-semibold text-base">
-                            {item.label}
-                          </Text>
-                        </View>
-                        <View className="bg-gray-200 rounded-full px-4 py-1">
-                          <Text className="text-black font-bold text-sm">{item.order}</Text>
-                        </View>
-                      </TouchableOpacity>
-                    </ScaleDecorator>
-                  )}
-                />
-              </ScrollView>
+            {/* Draggable list with bottom padding for the fixed button */}
+            <View className="flex-1 mb-16">
+              <DraggableFlatList
+                data={ordreList}
+                onDragEnd={({ data }) => setOrdreList(data)}
+                keyExtractor={(item) => item.key}
+                contentContainerStyle={{ 
+                  paddingBottom: 20,
+                  flexGrow: 1 
+                }}
+                renderItem={({ item, drag, isActive }) => (
+                  <ScaleDecorator>
+                    <TouchableOpacity
+                      onLongPress={drag}
+                      disabled={isActive}
+                      className={`flex-row items-center justify-between bg-gray-100 rounded-lg px-4 py-4 mb-2 mx-1 ${
+                        isActive ? "opacity-50" : ""
+                      }`}
+                    >
+                      <View className="flex-row items-center space-x-3">
+                        <Ionicons name="reorder-three" size={24} color="#888" />
+                        <Text className="text-black font-semibold text-base">
+                          {item.label}
+                        </Text>
+                      </View>
+                      <View className="bg-gray-200 rounded-full px-4 py-1">
+                        <Text className="text-black font-bold text-sm">{item.order}</Text>
+                      </View>
+                    </TouchableOpacity>
+                  </ScaleDecorator>
+                )}
+              />
             </View>
 
+            {/* Fixed button that's always visible and accessible */}
             {!isRotationSaved &&
             Array.isArray(tontine?.toursDeDistribution) &&
             tontine.toursDeDistribution.length === 0 && (
-              <TouchableOpacity
-                className="bg-green-500 py-3 mt-4 rounded-full items-center flex-row justify-center"
-                onPress={handleSaveOrdreRotation}
-                disabled={loading}
-              >
-                {loading ? (
-                  <Loader color="#fff" />
-                ) : (
-                  <Text className="text-white font-semibold text-base">
-                    {t("actions.saveOrder")}
-                  </Text>
-                )}
-              </TouchableOpacity>
+              <View className="absolute bottom-10 left-4 right-4">
+                <TouchableOpacity
+                  className="bg-green-500 py-4 rounded-full items-center flex-row justify-center"
+                  onPress={handleSaveOrdreRotation}
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <Loader color="#fff" />
+                  ) : (
+                    <Text className="text-white font-semibold text-base">
+                      {t("actions.saveOrder")}
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              </View>
             )}
           </View>
         )}
-
         {activeTab === "history" && (
           <>
             {isLoadingValidated ? (
