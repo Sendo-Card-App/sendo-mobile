@@ -172,88 +172,107 @@ const AddFavorite = () => {
   };
 
   // Fixed synchronization function
-  const fetchAndSyncContacts = async () => {
-    try {
-      const hasPermission = await requestContactsPermission();
-      if (!hasPermission) {
-        setStatus('permission-denied');
-        return;
-      }
+ const fetchAndSyncContacts = async () => {
+  try {
+    const hasPermission = await requestContactsPermission();
+    if (!hasPermission) {
+      setStatus('permission-denied');
+      return;
+    }
 
-      setStatus('loading');
-      setIsSyncing(true);
-      setSyncProgress(0);
-      
-      // Get all contacts from device
-      const { data } = await Contacts.getContactsAsync({
-        fields: [Contacts.Fields.Name, Contacts.Fields.PhoneNumbers],
-      });
-      
-      // Process contacts to match backend format
-      const contactsToSync = processContactsForBackend(data);
-      console.log('Processed contacts for sync count:', contactsToSync.length);
-      
-      // Process in smaller batches for production
-      const batchSize = 100; // Reduced from 700 for better performance
-      let successfulSyncs = 0;
-      let failedSyncs = 0;
-      
-      for (let i = 0; i < contactsToSync.length; i += batchSize) {
-        const progress = Math.round((i / contactsToSync.length) * 100);
-        setSyncProgress(progress);
-        
-        const batch = contactsToSync.slice(i, i + batchSize);
-        
-        // Ensure batch contains only serializable data
-        const serializableBatch = batch.map(contact => ({
-          name: String(contact.name || ''),
-          phone: String(contact.phone || '')
-        }));
-        
-        const payload = { 
-          contacts: serializableBatch,
-          userId: String(userId)
-        };
-        
-        try {
-          const response = await synchronizeContacts(payload).unwrap();
-          successfulSyncs += batch.length;
-          console.log(`Batch ${Math.floor(i/batchSize) + 1} sync successful`);
-        } catch (error) {
-          console.error(`Failed to sync batch starting at index ${i}`, error);
-          failedSyncs += batch.length;
-          
-          // Continue with next batches even if one fails
-          continue;
-        }
-      }
-      
-      setSyncProgress(100);
-      
-      // Refresh the synchronized contacts list
-      await refetchContacts();
-      
+    setStatus('loading');
+    setIsSyncing(true);
+    setSyncProgress(0);
+    
+    // Get all contacts from device
+    const { data } = await Contacts.getContactsAsync({
+      fields: [Contacts.Fields.Name, Contacts.Fields.PhoneNumbers],
+    });
+    
+    if (!data || data.length === 0) {
       setStatus('ready');
       setIsSyncing(false);
       Toast.show({
-        type: 'success',
-        text1: 'Sync Complete',
-        text2: `Synced ${successfulSyncs}/${contactsToSync.length} contacts${failedSyncs > 0 ? ` (${failedSyncs} failed)` : ''}`
+        type: 'info',
+        text1: 'No Contacts',
+        text2: 'No contacts found on your device'
       });
-
-    } catch (error) {
-      console.error('Sync failed:', error);
-      setStatus('error');
-      setIsSyncing(false);
-      const errorMessage = handleSyncError(error);
-      Toast.show({
-        type: 'error',
-        text1: 'Sync Failed',
-        text2: errorMessage
-      });
+      return;
     }
-  };
+    
+    // Process contacts to match backend format
+    const contactsToSync = processContactsForBackend(data);
+    console.log('Processed contacts for sync count:', contactsToSync.length);
+    
+    if (contactsToSync.length === 0) {
+      setStatus('ready');
+      setIsSyncing(false);
+      Toast.show({
+        type: 'info',
+        text1: 'No Valid Contacts',
+        text2: 'No valid phone numbers found in your contacts'
+      });
+      return;
+    }
+    
+    // Process in smaller batches for production
+    const batchSize = 50;
+    let successfulSyncs = 0;
+    let failedSyncs = 0;
+    
+    for (let i = 0; i < contactsToSync.length; i += batchSize) {
+      const progress = Math.round((i / contactsToSync.length) * 100);
+      setSyncProgress(progress);
+      
+      const batch = contactsToSync.slice(i, i + batchSize);
+      
+      // Ensure batch contains only serializable data
+      const serializableBatch = batch.map(contact => ({
+        name: String(contact.name || 'Unknown'),
+        phone: String(contact.phone || '')
+      }));
+      
+      try {
+        // Send only the contacts array as payload (no userId wrapper)
+       const response = await synchronizeContacts(serializableBatch).unwrap();
 
+        successfulSyncs += batch.length;
+        console.log(`Batch ${Math.floor(i/batchSize) + 1} sync successful`);
+      } catch (error) {
+        console.error(`Failed to sync batch starting at index ${i}`, error);
+        failedSyncs += batch.length;
+        
+        // Continue with next batches even if one fails
+        continue;
+      }
+    }
+    
+    setSyncProgress(100);
+    
+    // Refresh the synchronized contacts list
+    await refetchContacts();
+    
+    setStatus('ready');
+    setIsSyncing(false);
+    
+    Toast.show({
+      type: successfulSyncs > 0 ? 'success' : 'error',
+      text1: successfulSyncs > 0 ? 'Sync Complete' : 'Sync Failed',
+      text2: `Synced ${successfulSyncs}/${contactsToSync.length} contacts${failedSyncs > 0 ? ` (${failedSyncs} failed)` : ''}`
+    });
+
+  } catch (error) {
+    console.error('Sync failed:', error);
+    setStatus('error');
+    setIsSyncing(false);
+    const errorMessage = handleSyncError(error);
+    Toast.show({
+      type: 'error',
+      text1: 'Sync Failed',
+      text2: errorMessage
+    });
+  }
+};
   // Filter contacts based on search and favorites
   useEffect(() => {
     if (synchronizedContacts?.data?.length > 0) {

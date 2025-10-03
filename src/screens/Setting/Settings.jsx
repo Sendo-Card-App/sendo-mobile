@@ -20,6 +20,7 @@ import { AntDesign, Ionicons, MaterialIcons, FontAwesome, MaterialCommunityIcons
 import * as LocalAuthentication from 'expo-local-authentication';
 import * as Notifications from 'expo-notifications';
 import Loader from '../../components/Loader';
+import { useAppState } from '../../context/AppStateContext';
 
 const { width, height } = Dimensions.get('window');
 
@@ -31,6 +32,7 @@ const FLAGS = {
 
 const Settings = ({ navigation }) => {
   const { t, i18n } = useTranslation();
+  const { setIsPickingDocument } = useAppState(); // Ajout du contexte
   const [isBiometricsEnabled, setIsBiometricsEnabled] = useState(false);
   const [isNotificationsEnabled, setIsNotificationsEnabled] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState(i18n.language);
@@ -162,19 +164,26 @@ const Settings = ({ navigation }) => {
       showFeedback('error', t('biometric_not_available'));
       return;
     }
+    
     if (isBiometricsEnabled) {
       setIsBiometricsEnabled(false);
       showFeedback('success', t('biometrics_disabled'));
       return;
     }
+
     setLoading(true);
+    
     try {
+      // 🚨 IMPORTANT: Set picking state to true BEFORE biometric authentication
+      setIsPickingDocument(true);
+      
       const result = await LocalAuthentication.authenticateAsync({
         promptMessage: t('authenticate_to_enable_biometrics'),
         cancelLabel: t('cancel'),
         disableDeviceFallback: false,
         fallbackLabel: Platform.OS === 'ios' ? t('use_passcode') : undefined,
       });
+      
       if (result.success) {
         setIsBiometricsEnabled(true);
         showFeedback('success', t('biometrics_enabled'));
@@ -182,10 +191,15 @@ const Settings = ({ navigation }) => {
         showFeedback('error', t('authentication_failed'));
       }
     } catch (error) {
-      console.error(error);
+      console.error('Biometric authentication error:', error);
       showFeedback('error', t('biometric_error'));
     } finally {
+      // 🚨 IMPORTANT: Reset picking state after biometric operation
       setLoading(false);
+      // Small delay to ensure the state is properly reset
+      setTimeout(() => {
+        setIsPickingDocument(false);
+      }, 500);
     }
   };
 

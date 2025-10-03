@@ -7,6 +7,7 @@ import {
   Image,
   TouchableOpacity,
   StatusBar,
+  Linking
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
@@ -315,31 +316,32 @@ const SignIn = () => {
         </TouchableOpacity>
 
         {/* ✅ WhatsApp floating button */}
-        <TouchableOpacity
-          onPress={() => {
-            const phoneNumber = "+237640726036";
-            const message = t("whatsapp.defaultMessage");
-            Communications.text(phoneNumber, message);
-          }}
-          style={{
-            position: "absolute",
-            bottom: 30,
-            right: 30,
-            backgroundColor: "#25D366",
-            width: 60,
-            height: 60,
-            borderRadius: 30,
-            justifyContent: "center",
-            alignItems: "center",
-            elevation: 5,
-            shadowColor: "#000",
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.25,
-            shadowRadius: 3.84,
-          }}
-        >
-          <Ionicons name="logo-whatsapp" size={36} color="white" />
-        </TouchableOpacity>
+        <TouchableOpacity 
+                onPress={() => {
+                  const url = "https://wa.me/message/GYEAYFKV6T2SO1";
+                  Linking.openURL(url).catch(() => {
+                    Alert.alert('Erreur', 'Impossible d’ouvrir WhatsApp. Vérifiez qu’il est installé.');
+                  });
+                }}
+                style={{
+                  position: 'absolute',
+                  bottom: 30,
+                  right: 30,
+                  backgroundColor: '#25D366',
+                  width: 60,
+                  height: 60,
+                  borderRadius: 30,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  elevation: 5,
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.25,
+                  shadowRadius: 3.84,
+                }}
+              >
+                <Ionicons name="logo-whatsapp" size={36} color="white" />
+              </TouchableOpacity>
       </SafeAreaView>
     </KeyboardAvoidinWrapper>
   );

@@ -618,28 +618,35 @@ const HomeScreen = () => {
         <ScrollView showsVerticalScrollIndicator={false}>
           {history?.data?.transactions?.items?.map((item, index) => {
             const statusColor = getStatusColor(item.status);
-          const typeLabel = getTypeLabel(item.type, t);
+            const typeLabel = getTypeLabel(item.type, t);
             let displayLabel = typeLabel;
             let description = item.description;
 
             // Handle BANK_TRANSFER deposits with URL descriptions
-                if (item.type?.toUpperCase() === "DEPOSIT" && 
-                    item.method?.toUpperCase() === "BANK_TRANSFER" &&
-                    description && 
-                    (description.startsWith('http://') || description.startsWith('https://'))) {
-                  description = t("home.viewDocument"); // "Document de versement Bancaire"
-                }
+            if (item.type?.toUpperCase() === "DEPOSIT" && 
+                item.method?.toUpperCase() === "BANK_TRANSFER" &&
+                description && 
+                (description.startsWith('http://') || description.startsWith('https://'))) {
+              description = t("home.viewDocument");
+            }
 
-                // Handle TONTINE_PAYMENT descriptions to remove # and numbers
-                if (item.type?.toUpperCase() === "TONTINE_PAYMENT") {
-                  if (description) {
-                    description = description.replace(/#\d+/, "").trim();
-                  }
-                }
+            // Handle TONTINE_PAYMENT descriptions to remove # and numbers
+            if (item.type?.toUpperCase() === "TONTINE_PAYMENT") {
+              if (description) {
+                description = description.replace(/#\d+/, "").trim();
+              }
+            }
 
-              const iconSource = getMethodIcon(item);
+            const iconSource = getMethodIcon(item);
+
+            // CORRECTION: Déterminer quel montant afficher
+            const displayAmount = 
+              item.type === 'PAYMENT' || item.type === 'TONTINE_PAYMENT' 
+                ? item.totalAmount 
+                : item.amount;
 
             const readableDescription = getTypeLabel(item.type, t);
+            
             return (
               <TouchableOpacity
                 key={index}
@@ -652,10 +659,11 @@ const HomeScreen = () => {
                 <Image source={iconSource} className="w-10 h-10 mr-3 rounded-full" resizeMode="contain" />
                 <View className="flex-1">
                   <Text className="text-black font-semibold">
-                       {description}
+                    {description}
                   </Text>
                   <Text className="text-black text-sm">
-                    {item.totalAmount?.toLocaleString()} {item.currency}
+                    {/* AFFICHAGE CORRIGÉ: Utiliser displayAmount */}
+                    {displayAmount?.toLocaleString()} {item.currency}
                   </Text>
                 </View>
                 <Text className={`text-xs font-semibold ${statusColor}`}>
@@ -702,7 +710,7 @@ const HomeScreen = () => {
                 className="flex-1 bg-green-500 py-4 rounded-2xl shadow-sm"
                 onPress={() => {
                   setShowKycModal(false);
-                  navigation.navigate("VerifyIdentity"); // ✅ works now
+                  navigation.navigate("VerifyIdentity");
                 }}
               >
                 <Text className="text-white font-semibold text-center">

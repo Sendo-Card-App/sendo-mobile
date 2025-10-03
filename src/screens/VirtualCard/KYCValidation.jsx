@@ -44,8 +44,7 @@ const KYCValidation = () => {
   const [cameraType, setCameraType] = useState(CameraType.back);
   const [selectedDocument, setSelectedDocument] = useState(null);
   const [uploading, setUploading] = useState(false);
-  const [hasCameraPermission, setHasCameraPermission] = useState(null);
-  const [cameraAvailable, setCameraAvailable] = useState(false);
+  const [cameraAvailable, setCameraAvailable] = useState(true);
   
   const [updateKycDocument] = useUpdateKycDocumentMutation();
   const { setIsPickingDocument } = useAppState();
@@ -68,32 +67,27 @@ const KYCValidation = () => {
     return () => backHandler.remove();
   }, [visibleImages, cameraModalVisible]);
 
-  // Check permissions and camera availability
+  // Check camera availability (removed permission check)
   useEffect(() => {
     let isMounted = true;
 
-    const checkPermissions = async () => {
+    const checkCameraAvailability = async () => {
       try {
-        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        // Simple check to see if camera is generally available
+        // Since permissions are handled in app.json, we assume camera is available
         if (isMounted) {
-          setHasCameraPermission(status === 'granted');
-          
-          // Check camera availability by trying to get camera types
-          // This is a workaround since isCameraAvailableAsync might not be available
-          const cameraTypes = await ImagePicker.getCameraPermissionsAsync();
-          setCameraAvailable(!!cameraTypes);
+          setCameraAvailable(true);
         }
       } catch (error) {
-        console.error("Camera check error:", error);
+        console.error("Camera availability check error:", error);
         if (isMounted) {
           // Assume camera is available if we can't check
-          // This is safer than assuming it's not available
           setCameraAvailable(true);
         }
       }
     };
 
-    checkPermissions();
+    checkCameraAvailability();
 
     return () => {
       isMounted = false;
@@ -283,14 +277,7 @@ const KYCValidation = () => {
     setSelectedDocument(item);
     
     if (item.id === "SELFIE") {
-      if (hasCameraPermission === false) {
-        Alert.alert(
-          "Camera Permission Required", 
-          "Camera permission is required for selfie verification. Please enable camera permissions in your device settings."
-        );
-        return;
-      }
-      // For selfie, we'll try to use the camera and handle errors gracefully
+      // For selfie, directly open camera (permissions handled by app.json)
       setCameraModalVisible(true);
     } else if (item.id === "ADDRESS_PROOF") {
       Alert.alert(
@@ -299,13 +286,7 @@ const KYCValidation = () => {
         [
           {
             text: "Take Photo",
-            onPress: () => {
-              if (hasCameraPermission === false) {
-                Alert.alert("Camera Permission Required", "Camera permission is required");
-                return;
-              }
-              setCameraModalVisible(true);
-            },
+            onPress: () => setCameraModalVisible(true),
           },
           {
             text: "Upload Image",
@@ -328,13 +309,7 @@ const KYCValidation = () => {
         [
           {
             text: "Take Photo",
-            onPress: () => {
-              if (hasCameraPermission === false) {
-                Alert.alert("Camera Permission Required", "Camera permission is required");
-                return;
-              }
-              setCameraModalVisible(true);
-            },
+            onPress: () => setCameraModalVisible(true),
           },
           {
             text: "Upload Image",
@@ -421,15 +396,6 @@ const KYCValidation = () => {
       </Modal>
     );
   };
-
-  if (hasCameraPermission === null) {
-    return (
-      <View className="flex-1 justify-center items-center bg-white">
-        <Loader size="large" />
-        <Text className="mt-4 text-gray-600">Checking permissions...</Text>
-      </View>
-    );
-  }
 
   return (
     <View className="flex-1 bg-[#7ddd7d]">
