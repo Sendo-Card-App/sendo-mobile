@@ -314,8 +314,19 @@ Utilise mon code lors de ton inscription !`;
             </View>
           )}
 
-          <Text className="text-lg font-semibold text-gray-800">
-            {userProfile?.data?.firstname} {userProfile?.data?.lastname}
+          <View style={{ flexDirection: "row", alignItems: "center", flexWrap: "wrap", flexShrink: 1 }}>
+            <Text
+              style={{
+                fontSize: 16,
+                fontWeight: "600",
+                color: "#1F2937", // gray-800
+                flexShrink: 1,
+                flexWrap: "wrap"
+              }}
+            >
+              {userProfile?.data?.firstname} {userProfile?.data?.lastname}
+            </Text>
+
             {userProfile?.data?.kycDocuments?.some(doc => doc.status === "APPROVED") && (
               <Ionicons
                 name="checkmark-circle"
@@ -324,9 +335,8 @@ Utilise mon code lors de ton inscription !`;
                 style={{ marginLeft: 6 }}
               />
             )}
-          </Text>
+          </View>
         </View>
-
         </View>
 
         <View className="mt-2">
@@ -385,7 +395,7 @@ Utilise mon code lors de ton inscription !`;
           }
         >
 
-          <TouchableOpacity
+          {/* <TouchableOpacity
             className="flex-row gap-2 my-2 mb-5"
             onPress={() => navigation2.navigate("History")}
           >
@@ -396,7 +406,7 @@ Utilise mon code lors de ton inscription !`;
                {t('drawer.transactionHistory')}
               </Text>
             </View>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
 
           <TouchableOpacity
             className="flex-row gap-2 my-2 mb-5"

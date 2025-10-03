@@ -211,7 +211,7 @@ if (isSubmitting || !isKYCComplete) {
     }
 
   } catch (error) {
-    //console.error('KYC submission error:', JSON.stringify(error ?? {}, null, 2));
+    console.error('KYC submission error:', JSON.stringify(error ?? {}, null, 2));
     Toast.show({
       type: 'error',
       text1: 'Oups, une erreur est survenue',

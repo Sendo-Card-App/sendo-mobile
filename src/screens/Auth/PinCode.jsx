@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import { StatusBar, Platform, View, Text, ScrollView, TouchableOpacity, Image, TextInput , Alert } from 'react-native';
+import { StatusBar, Platform, View, Text, ScrollView, TouchableOpacity, Image, TextInput , Alert, Linking } from 'react-native';
 import { SafeAreaView } from "react-native-safe-area-context";
 import Modal from 'react-native-modal';
 import { useCreatePasscodeMutation } from '../../services/Auth/authAPI';
@@ -338,54 +338,71 @@ const PinCode = ({ navigation, route }) => {
       // Unexpected case
       setError(t('pin.unexpectedError'));
       setPin('');
-    } catch (error) {
-      console.log('pincode error:', JSON.stringify(error, null, 2));
+   } catch (error) {
+  console.log('pincode error:', JSON.stringify(error, null, 2));
 
-      // 🆕 No PIN yet → create one
-      if (error?.data?.message?.includes('Aucun pincode défini')) {
-        try {
-          const createResponse = await createPasscode({ passcode: enteredPin }).unwrap();
+  // 🆕 No PIN yet → create one
+  if (error?.data?.message?.includes('Aucun pincode défini')) {
+    try {
+      const createResponse = await createPasscode({ passcode: enteredPin }).unwrap();
 
-          if (createResponse.status === 200) {
-            // ✅ Set PIN as verified when creating new PIN
-            await AsyncStorage.setItem('pinVerified', 'true');
-            
-            await storeData('@passcode', enteredPin);
-            dispatch(setPasscode(enteredPin));
-            dispatch(setIsNewUser(false));
-            navigation.navigate('Main');
-          } else {
-            setError(t('pin.validationError'));
-            setPin('');
-          }
-        } catch (createError) {
-          console.log('create pin error:', createError);
-          setError(t('pin.validationError'));
-          setPin('');
-        }
-        return;
-      }
+      if (createResponse.status === 200) {
+        // ✅ Set PIN as verified when creating new PIN
+        await AsyncStorage.setItem('pinVerified', 'true');
 
-      if (error?.data?.message === 'Compte suspendu ou bloqué') {
-        setIsBlocked(true);
-        setShowContactSupportModal(true);
-        setError(t('pin.accountSuspended'));
-
-        // Clear stored passcode if account is suspended
-        await removeData('@passcode');
-        dispatch(clearPasscode());
+        await storeData('@passcode', enteredPin);
+        dispatch(setPasscode(enteredPin));
+        dispatch(setIsNewUser(false));
+        navigation.navigate('Main');
       } else {
-        showToast(
-          'error',
-          t('errors.title'),
-          error?.data?.message || t('errors.default')
-        );
+        setError(t('pin.validationError'));
+        setPin('');
       }
-
+    } catch (createError) {
+      console.log('create pin error:', createError);
+      setError(t('pin.validationError'));
       setPin('');
-    } finally {
-      setIsLoading(false);
     }
+    return;
+  }
+
+  // 🆕 Handle "Compte suspendu"
+  if (error?.data?.message === 'Compte suspendu ou bloqué') {
+    setIsBlocked(true);
+    setShowContactSupportModal(true);
+    setError(t('pin.accountSuspended'));
+
+    // Clear stored passcode if account is suspended
+    await removeData('@passcode');
+    dispatch(clearPasscode());
+    return;
+  }
+
+  // 🆕 Handle "Session invalide"
+  if (error?.data?.message?.includes('Session invalide')) {
+    await removeData('@passcode');
+    dispatch(clearPasscode());
+    await AsyncStorage.removeItem('pinVerified');
+
+    // redirect to SignIn screen
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'SignIn' }],
+    });
+    return;
+  }
+
+  // Default error
+  showToast(
+    'error',
+    t('errors.title'),
+    error?.data?.message || t('errors.default')
+  );
+
+  setPin('');
+} finally {
+  setIsLoading(false);
+}
   };
 
   const renderDots = () => (
@@ -551,9 +568,10 @@ const PinCode = ({ navigation, route }) => {
       {/* Floating WhatsApp Button */}
       <TouchableOpacity 
         onPress={() => {
-          const phoneNumber = '+237640726036';
-          const message = t('whatsapp.defaultMessage');
-          Communications.text(phoneNumber, message);
+          const url = "https://wa.me/message/GYEAYFKV6T2SO1";
+          Linking.openURL(url).catch(() => {
+            Alert.alert('Erreur', 'Impossible d’ouvrir WhatsApp. Vérifiez qu’il est installé.');
+          });
         }}
         style={{
           position: 'absolute',
@@ -574,6 +592,7 @@ const PinCode = ({ navigation, route }) => {
       >
         <Ionicons name="logo-whatsapp" size={36} color="white" />
       </TouchableOpacity>
+
 
       {/* Contact Support Modal */}
       <Modal 
@@ -602,8 +621,15 @@ const PinCode = ({ navigation, route }) => {
             {t('pin.contactSupportMessage')}
           </Text>
           
-          <TouchableOpacity
-            onPress={() => setShowContactSupportModal(false)}
+         <TouchableOpacity
+            onPress={() => {
+              setShowContactSupportModal(false);
+              const url = "https://wa.me/message/GYEAYFKV6T2SO1";
+              
+              Linking.openURL(url).catch(() => {
+                Alert.alert('Erreur', 'Impossible d’ouvrir WhatsApp. Vérifiez qu’il est installé.');
+              });
+            }}
             style={{
               backgroundColor: '#7ddd7d',
               padding: 15,
@@ -615,6 +641,7 @@ const PinCode = ({ navigation, route }) => {
               {t('common.ok')}
             </Text>
           </TouchableOpacity>
+
         </View>
       </Modal>
     </SafeAreaView>

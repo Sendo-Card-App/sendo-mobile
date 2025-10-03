@@ -31,7 +31,13 @@ const isSmallScreen = width < 375;
 
 const HistoryCard = ({ transaction, user, onPress }) => {
   const { t } = useTranslation();
-  //console.log(transaction)
+  
+  // CORRECTION: Déterminer quel montant afficher
+  const displayAmount = 
+    transaction.type === 'PAYMENT' || transaction.type === 'TONTINE_PAYMENT' 
+      ? transaction.totalAmount 
+      : transaction.amount;
+
   const getStatusColor = (status) => {
     switch(status?.toUpperCase()) {
       case 'COMPLETED': return 'text-green-600';
@@ -47,53 +53,50 @@ const HistoryCard = ({ transaction, user, onPress }) => {
       case 'DEPOSIT': return t('history1.deposit');
       case 'WITHDRAWAL': return t('history1.withdraw');
       case 'TRANSFER': return t('history1.transfer');
-       case 'SHARED_PAYMENT': return t('history1.share');
-       case 'WALLET_TO_WALLET': return t('history1.wallet');
-        case 'VIEW_CARD_DETAILS': return t('history1.cardView');
-       case 'TONTINE_PAYMENT': return t('history1.tontine');
-        case 'FUND_REQUEST_PAYMENT': return t('history1.fund');
-        case 'PAYMENT': return t('history1.payment');
+      case 'SHARED_PAYMENT': return t('history1.share');
+      case 'WALLET_TO_WALLET': return t('history1.wallet');
+      case 'VIEW_CARD_DETAILS': return t('history1.cardView');
+      case 'TONTINE_PAYMENT': return t('history1.tontine');
+      case 'FUND_REQUEST_PAYMENT': return t('history1.fund');
+      case 'PAYMENT': return t('history1.payment');
       default: return type;
     }
   };
 
-const getMethodIcon = () => {
-  const method = transaction.method?.toUpperCase() || '';
-  const provider = transaction.provider;
+  const getMethodIcon = () => {
+    const method = transaction.method?.toUpperCase() || '';
+    const provider = transaction.provider;
 
-  switch (method) {
-    case 'MOBILE_MONEY':
-      if (provider === 'ORANGE_MONEY' || provider?.toLowerCase() === 'orange') {
-        return require('../../images/om.png');
-      } else if (provider === 'MTN_MONEY') {
-        return require('../../images/mtn.png');
-      } else if (provider === 'WALLET_PAYMENT') {
-        return require('../../images/wallet.jpeg');
-      } else {
-        return require('../../images/transaction.png');
-      }
+    switch (method) {
+      case 'MOBILE_MONEY':
+        if (provider === 'ORANGE_MONEY' || provider?.toLowerCase() === 'orange') {
+          return require('../../images/om.png');
+        } else if (provider === 'MTN_MONEY') {
+          return require('../../images/mtn.png');
+        } else if (provider === 'WALLET_PAYMENT') {
+          return require('../../images/wallet.jpeg');
+        } else {
+          return require('../../images/transaction.png');
+        }
 
+      case 'WALLET':
+        if (provider === 'CMORANGEOM') {
+          return require('../../images/om.png');
+        } else if (provider === 'MTNMOMO') {
+          return require('../../images/mtn.png');
+        } else {
+          return require('../../images/wallet.jpeg');
+        }
 
-    case 'WALLET':
-      if (provider === 'CMORANGEOM') {
-        return require('../../images/om.png');
-      } else if (provider === 'MTNMOMO') {
-        return require('../../images/mtn.png');
-      } else {
-        return require('../../images/wallet.jpeg');
-      }
+      case 'VIRTUAL_CARD':
+        return require('../../images/virtual.png');
+      case 'BANK_TRANSFER':
+        return require('../../images/ecobank.jpeg');
 
-    case 'VIRTUAL_CARD':
-       return require('../../images/virtual.png');
-    case 'BANK_TRANSFER':
-      return require('../../images/ecobank.jpeg');
-
-    default:
-      return require('../../images/tontine.jpeg'); // fallback if method is null or unknown
-  }
-};
-
-
+      default:
+        return require('../../images/tontine.jpeg');
+    }
+  };
 
   return (
     <TouchableOpacity 
@@ -119,8 +122,9 @@ const getMethodIcon = () => {
         </View>
       </View>
       <View className="flex-row justify-between items-center pt-2">
+        {/* CORRECTION: Utiliser displayAmount au lieu de transaction.amount */}
         <Text className="text-gray-600 text-lg font-bold">
-          {transaction.amount?.toLocaleString()} {transaction.currency}
+          {displayAmount?.toLocaleString()} {transaction.currency}
         </Text>
         <View className="items-end">
           <Text className="text-gray-600 text-sm">
@@ -129,9 +133,9 @@ const getMethodIcon = () => {
               'N/A'
             }
           </Text>
-         <Text className={`text-sm font-bold ${getStatusColor(transaction.status)}`}>
-          {t(`history1.${transaction.status?.toLowerCase()}`)}
-        </Text>
+          <Text className={`text-sm font-bold ${getStatusColor(transaction.status)}`}>
+            {t(`history1.${transaction.status?.toLowerCase()}`)}
+          </Text>
         </View>
       </View>
     </TouchableOpacity>
@@ -178,7 +182,7 @@ const FilterModal = ({ visible, onClose, filters, setFilters, applyFilters }) =>
   ];
 
   const statuses = [
-    { label: t('history1.success'), value: 'COMPLETED' },
+    { label: t('history1.completed'), value: 'COMPLETED' },
     { label: t('history1.failed'), value: 'FAILED' },
     { label: t('history1.pending'), value: 'PENDING' },
     { label: t('history1.blocked'), value: 'BLOCKED' }
@@ -313,7 +317,7 @@ const FilterModal = ({ visible, onClose, filters, setFilters, applyFilters }) =>
             </View>
           </ScrollView>
 
-<View className="flex-row justify-between">
+          <View className="flex-row justify-between">
             <TouchableOpacity 
               className="px-4 py-3 bg-gray-200 rounded-full flex-1 mr-2"
               onPress={() => {
@@ -424,15 +428,15 @@ const History = () => {
     { 
       userId,
       ...appliedFilters,
-        pollingInterval: 10000, // Refetch every 30 seconds
+      pollingInterval: 10000,
     },
-    { skip: !userId,
-        pollingInterval: 10000, // Refetch every 30 seconds
-     }
+    { 
+      skip: !userId,
+      pollingInterval: 10000,
+    }
   );
-    //console.log('Transaction History Data:', JSON.stringify(data, null, 2));
 
-    if (!userId) {
+  if (!userId) {
     return (
       <View className="flex-1 bg-white" style={{ paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 40 }}>
         {/* Header with back button */}
@@ -455,54 +459,52 @@ const History = () => {
     );
   }
 
-const applyFilters = () => {
-  const params = {
-    page: 1,
-    limit: 10,
-    ...(filters.method && { method: filters.method }),
-    ...(filters.type && { type: filters.type }),
-    ...(filters.status && { status: filters.status }),
-  };
-  
-  if (filters.dateRange) {
-    switch(filters.dateRange) {
-      case 'today':
-        params.startDate = moment().startOf('day').utc().format();
-        params.endDate = moment().endOf('day').utc().format();
-        break;
-      case 'week':
-        params.startDate = moment().startOf('week').utc().format();
-        params.endDate = moment().endOf('week').utc().format();
-        break;
-      case 'month':
-        params.startDate = moment().startOf('month').utc().format();
-        params.endDate = moment().endOf('month').utc().format();
-        break;
-      case 'custom':
-        if (filters.startDate) {
-          params.startDate = moment(filters.startDate).startOf('day').utc().format();
-        }
-        if (filters.endDate) {
-          params.endDate = moment(filters.endDate).endOf('day').utc().format();
-        }
-        break;
+  const applyFilters = () => {
+    const params = {
+      page: 1,
+      limit: 10,
+      ...(filters.method && { method: filters.method }),
+      ...(filters.type && { type: filters.type }),
+      ...(filters.status && { status: filters.status }),
+    };
+    
+    if (filters.dateRange) {
+      switch(filters.dateRange) {
+        case 'today':
+          params.startDate = moment().startOf('day').utc().format();
+          params.endDate = moment().endOf('day').utc().format();
+          break;
+        case 'week':
+          params.startDate = moment().startOf('week').utc().format();
+          params.endDate = moment().endOf('week').utc().format();
+          break;
+        case 'month':
+          params.startDate = moment().startOf('month').utc().format();
+          params.endDate = moment().endOf('month').utc().format();
+          break;
+        case 'custom':
+          if (filters.startDate) {
+            params.startDate = moment(filters.startDate).startOf('day').utc().format();
+          }
+          if (filters.endDate) {
+            params.endDate = moment(filters.endDate).endOf('day').utc().format();
+          }
+          break;
+      }
+    } else {
+      params.startDate = moment().startOf('day').utc().format();
+      params.endDate = moment().endOf('day').utc().format();
     }
-  } else {
-    params.startDate = moment().startOf('day').utc().format();
-    params.endDate = moment().endOf('day').utc().format();
-  }
-  
-  setCurrentPage(1);
-  setAppliedFilters(params);
-};
-
+    
+    setCurrentPage(1);
+    setAppliedFilters(params);
+  };
 
   useEffect(() => {
-  if (filters.dateRange && filters.dateRange !== 'custom') {
-    applyFilters();
-  }
-}, [filters.dateRange]);
-
+    if (filters.dateRange && filters.dateRange !== 'custom') {
+      applyFilters();
+    }
+  }, [filters.dateRange]);
 
   const handleNextPage = () => {
     const newPage = currentPage + 1;
@@ -522,12 +524,13 @@ const applyFilters = () => {
 
   useFocusEffect(
     useCallback(() => {
-      refetch(); // force une requête au backend
+      refetch();
     }, [])
   );
- if (isLoading && currentPage === 1) {
-  return (
-     <View className="flex-1 bg-white" style={{ paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 40 }}>
+
+  if (isLoading && currentPage === 1) {
+    return (
+      <View className="flex-1 bg-white" style={{ paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 40 }}>
         {/* Header with back button */}
         <View className="flex-row items-center justify-between p-4">
           <TouchableOpacity onPress={() => navigation.goBack()} className="p-2">
@@ -545,11 +548,10 @@ const applyFilters = () => {
           showsVerticalScrollIndicator={false}
         />
       </View>
-  );
-}
+    );
+  }
 
   if (isError) {
-   
     return (
       <View className="flex-1 justify-center items-center bg-white" style={{ paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 40 }}>
         {/* Header with back button */}
@@ -567,7 +569,6 @@ const applyFilters = () => {
   }
 
   const transactions = data?.data?.transactions?.items || [];
-  //console.log(transactions)
   const userData = data?.data?.user || {};
   const pagination = data?.data?.transactions || { page: 1, totalItems: 0, totalPages: 1 };
 
@@ -577,27 +578,26 @@ const applyFilters = () => {
 
   return (
     <View className="flex-1 bg-white">
-    <View
-      className="bg-white px-5 flex-row items-center justify-between"
-      style={{ paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 40 }}
-    >
-      {/* Title */}
-      <Text className="text-xl font-bold text-gray-800">
-        {isShowingToday ? t('history1.todayTransactions') : t('history1.title')}
-      </Text>
-
-      {/* Filter Button */}
-      <TouchableOpacity
-        className="flex-row items-center px-4 py-2 border rounded-full border-[#7ddd7d] bg-white shadow-sm"
-        onPress={() => setShowFilterModal(true)}
+      <View
+        className="bg-white px-5 flex-row items-center justify-between"
+        style={{ paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 40 }}
       >
-        <Text className="text-[#7ddd7d] font-medium mr-2">
-          {t('history1.filter')}
+        {/* Title */}
+        <Text className="text-xl font-bold text-gray-800">
+          {isShowingToday ? t('history1.todayTransactions') : t('history1.title')}
         </Text>
-        <MaterialIcons name="filter-list" size={18} color="#7ddd7d" />
-      </TouchableOpacity>
-    </View>
 
+        {/* Filter Button */}
+        <TouchableOpacity
+          className="flex-row items-center px-4 py-2 border rounded-full border-[#7ddd7d] bg-white shadow-sm"
+          onPress={() => setShowFilterModal(true)}
+        >
+          <Text className="text-[#7ddd7d] font-medium mr-2">
+            {t('history1.filter')}
+          </Text>
+          <MaterialIcons name="filter-list" size={18} color="#7ddd7d" />
+        </TouchableOpacity>
+      </View>
 
       <SkeletonLoader
         isLoading={isLoading}

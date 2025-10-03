@@ -1683,10 +1683,22 @@
    "confirm_transfer": "Confirm Transfer",
   "transfer_confirmation_message": "Are you sure you want to transfer {{amount}} {{currency}} to {{name}}?",
   "confirm": "Confirm",
-   "kycModal": {
-    "title": "KYC Required",
-    "message": "Missing KYC documents. Please submit your KYC to start using the app.",
-    "okButton": "OK"
+  "kycModal": {
+    "title": "Verify Your Identity",
+    "message": "For security, please verify your identity (KYC) to continue using all services.",
+    "laterButton": "Later",
+    "verifyButton": "Verify Now"
+  },
+   "serviceScreen": {
+    "welcome": "Choose a service to get started",
+    "subtitle": "All your financial needs in one place",
+    "security": "All services are secure and encrypted",
+    "support": "Support",
+    "supportDesc": "Get help and assistance",
+    "shareDesc": "Share money with friends",
+    "fundDesc": "Request funds from contacts",
+    "tontineDesc": "Join savings groups",
+    "billsDesc": "Pay your bills easily"
   },
    "cardHistory": "Card History",
   "loadingHistory": "Loading card history...",

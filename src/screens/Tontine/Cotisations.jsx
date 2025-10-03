@@ -36,7 +36,6 @@ const Cotisations = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { tontineId, tontine } = route.params;
-  //console.log(tontine)
   
   const [activeTab, setActiveTab] = useState("contributions");
   const [loading, setLoading] = useState(false);
@@ -46,14 +45,14 @@ const Cotisations = () => {
   const [showMissingContributorsModal, setShowMissingContributorsModal] = useState(false);
   const [missingContributors, setMissingContributors] = useState("");
   const [isRotationSaved, setIsRotationSaved] = useState(false);
+  
   const STATUS_OPTIONS = [
-  { key: "ACTIVE", en: "Active", fr: "Active" },
-  { key: "SUSPENDED", en: "Suspended", fr: "Suspendre" },
-  { key: "CLOSED", en: "Closed", fr: "Fermé" },
-];
+    { key: "ACTIVE", en: "Active", fr: "Active" },
+    { key: "SUSPENDED", en: "Suspended", fr: "Suspendre" },
+    { key: "CLOSED", en: "Closed", fr: "Fermé" },
+  ];
 
-// Example: current language
-  const currentLang = "fr"; // or "en"
+  const currentLang = "fr";
   const memberId = tontine?.membres?.[0]?.id;
 
   const [setTontineOrder] = useSetTontineOrderMutation();
@@ -66,18 +65,20 @@ const Cotisations = () => {
     isLoading,
     isError,
     refetch: refetchCotisations,
-  } = useGetCotisationsQuery({ tontineId, memberId }, { skip: !memberId,
-      pollingInterval: 1000,
-   });
+  } = useGetCotisationsQuery({ tontineId, memberId }, { 
+    skip: !memberId,
+    pollingInterval: 1000,
+  });
 
   const {
     data: cotisation,
     isLoading: isLoadingValidated,
     isError: isErrorValidated,
     refetch: refetchValidated,
-  } = useGetValidatedCotisationsQuery({ tontineId, memberId }, { skip: !memberId,
-      pollingInterval: 1000,
-   });
+  } = useGetValidatedCotisationsQuery({ tontineId, memberId }, { 
+    skip: !memberId,
+    pollingInterval: 1000,
+  });
 
   const initialOrdreList = tontine?.membres?.map((membre, i) => ({
     key: membre.id.toString(),
@@ -88,10 +89,10 @@ const Cotisations = () => {
   const [ordreList, setOrdreList] = useState(initialOrdreList);
   
   const {
-      data: configData,
-      isLoading: isConfigLoading,
-      error: configError
-    } = useGetConfigQuery();
+    data: configData,
+    isLoading: isConfigLoading,
+    error: configError
+  } = useGetConfigQuery();
   
   const getConfigValue = (name) => {
     const configItem = configData?.data?.find(item => item.name === name);
@@ -130,39 +131,32 @@ const Cotisations = () => {
     return tours;
   }, [cotisation]);
 
-  // Inside your component
-    const tourIds = [...new Set(cotisation?.data?.map(item => item.tourDistributionId))] || [];
-    const tourIdMap = tourIds.reduce((acc, id, index) => {
-      acc[id] = index + 1; // map 15 -> 1, 16 -> 2, etc.
-      return acc;
-    }, {});
+  const tourIds = [...new Set(cotisation?.data?.map(item => item.tourDistributionId))] || [];
+  const tourIdMap = tourIds.reduce((acc, id, index) => {
+    acc[id] = index + 1;
+    return acc;
+  }, {});
 
+  const calculateDistributionAmount = (tourId) => {
+    if (!cotisation?.data) return 0;
 
-// Calculate distribution amount based on total contributions for a tour
-const calculateDistributionAmount = (tourId) => {
-  if (!cotisation?.data) return 0;
+    const contributionsForTour = cotisation.data.filter(
+      (c) => c.tourDistributionId === tourId && c.statutPaiement === "VALIDATED"
+    );
 
-  // Filter contributions for the selected tour
-  const contributionsForTour = cotisation.data.filter(
-    (c) => c.tourDistributionId === tourId && c.statutPaiement === "VALIDATED"
-  );
+    const totalAmount = contributionsForTour.reduce(
+      (sum, c) => sum + parseFloat(c.montant),
+      0
+    );
 
-  // Sum the contribution amounts
-  const totalAmount = contributionsForTour.reduce(
-    (sum, c) => sum + parseFloat(c.montant),
-    0
-  );
+    const feesAmount = (totalAmount * TONTINE_FEES_DISTRIBUTION) / 100;
+    const netAmount = totalAmount - feesAmount;
 
-  // Apply fees
-  const feesAmount = (totalAmount * TONTINE_FEES_DISTRIBUTION) / 100;
-  const netAmount = totalAmount - feesAmount;
+    return netAmount;
+  };
 
-  return netAmount;
-};
-
-// Example: calculate for the first tour in the cotisation data
-const nextTourId = cotisation?.data?.[0]?.tourDistributionId;
-const distributionAmount = nextTourId ? calculateDistributionAmount(nextTourId) : 0;
+  const nextTourId = cotisation?.data?.[0]?.tourDistributionId;
+  const distributionAmount = nextTourId ? calculateDistributionAmount(nextTourId) : 0;
 
   useFocusEffect(
     useCallback(() => {
@@ -186,30 +180,29 @@ const distributionAmount = nextTourId ? calculateDistributionAmount(nextTourId) 
     }
   };
 
-const handleSaveOrdreRotation = async () => {
-  setLoading(true);
-  try {
-    const ordreRotation = ordreList.map((item) => parseInt(item.key));
-    await setTontineOrder({ tontineId, ordreRotation }).unwrap();
+  const handleSaveOrdreRotation = async () => {
+    setLoading(true);
+    try {
+      const ordreRotation = ordreList.map((item) => parseInt(item.key));
+      await setTontineOrder({ tontineId, ordreRotation }).unwrap();
 
-    Toast.show({
-      type: "success",
-      text1: "Success",
-      text2: "Rotation order updated successfully",
-    });
+      Toast.show({
+        type: "success",
+        text1: "Success",
+        text2: "Rotation order updated successfully",
+      });
 
-    // Mark rotation as saved to hide the button
-    setIsRotationSaved(true);
-  } catch (error) {
-    Toast.show({
-      type: "error",
-      text1: "Error",
-      text2: error?.data?.message || "An error occurred",
-    });
-  } finally {
-    setLoading(false);
-  }
-};
+      setIsRotationSaved(true);
+    } catch (error) {
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: error?.data?.message || "An error occurred",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleDistribute = async () => {
     try {
@@ -332,52 +325,50 @@ const handleSaveOrdreRotation = async () => {
             <Text className="text-black font-semibold">{tontine.montant}</Text>
           </View>
 
-    <View className="flex-row mt-2 justify-between">
-      {STATUS_OPTIONS.filter(
-        (status) => !(tontine.etat === "ACTIVE" && status.key === "ACTIVE")
-      ).map((status) => (
-        <TouchableOpacity
-          key={status.key}
-          disabled={tontine.etat === status.key || loading}
-          className={`py-2 px-4 rounded-full items-center ${
-            tontine.etat === status.key ? "bg-gray-400" : "bg-yellow-500"
-          }`}
-          onPress={async () => {
-            if (tontine.etat === status.key) return;
-            try {
-              setLoading(true);
-              await changeTontineStatus({ tontineId, status: status.key }).unwrap();
-              Toast.show({
-                type: "success",
-                text1: currentLang === "fr" ? "Succès" : "Success",
-                text2:
-                  currentLang === "fr"
-                    ? `Le statut est passé à ${status.fr}`
-                    : `Status changed to ${status.en}`,
-              });
-            } catch (error) {
-              Toast.show({
-                type: "error",
-                text1: currentLang === "fr" ? "Erreur" : "Error",
-                text2:
-                  error?.data?.message ||
-                  (currentLang === "fr"
-                    ? "Échec du changement de statut"
-                    : "Failed to change status"),
-              });
-            } finally {
-              setLoading(false);
-            }
-          }}
-        >
-          <Text className="text-black font-bold">
-            {currentLang === "fr" ? status.fr : status.en}
-          </Text>
-        </TouchableOpacity>
-      ))}
-    </View>
-
-
+          <View className="flex-row mt-2 justify-between">
+            {STATUS_OPTIONS.filter(
+              (status) => !(tontine.etat === "ACTIVE" && status.key === "ACTIVE")
+            ).map((status) => (
+              <TouchableOpacity
+                key={status.key}
+                disabled={tontine.etat === status.key || loading}
+                className={`py-2 px-4 rounded-full items-center ${
+                  tontine.etat === status.key ? "bg-gray-400" : "bg-yellow-500"
+                }`}
+                onPress={async () => {
+                  if (tontine.etat === status.key) return;
+                  try {
+                    setLoading(true);
+                    await changeTontineStatus({ tontineId, status: status.key }).unwrap();
+                    Toast.show({
+                      type: "success",
+                      text1: currentLang === "fr" ? "Succès" : "Success",
+                      text2:
+                        currentLang === "fr"
+                          ? `Le statut est passé à ${status.fr}`
+                          : `Status changed to ${status.en}`,
+                    });
+                  } catch (error) {
+                    Toast.show({
+                      type: "error",
+                      text1: currentLang === "fr" ? "Erreur" : "Error",
+                      text2:
+                        error?.data?.message ||
+                        (currentLang === "fr"
+                          ? "Échec du changement de statut"
+                          : "Failed to change status"),
+                    });
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+              >
+                <Text className="text-black font-bold">
+                  {currentLang === "fr" ? status.fr : status.en}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
 
           {tontine.etat !== "CLOSED" && (
             <TouchableOpacity
@@ -501,7 +492,7 @@ const handleSaveOrdreRotation = async () => {
                 {t("cotisations.noContributions")}
               </Text>
             ) : (
-              <ScrollView className="mt-4">
+              <ScrollView className="mt-4" showsVerticalScrollIndicator={true}>
                 {tourIds.map((tourId, idx) => {
                   const tourData = contributionsByTour[tourId];
                   const nextTourId = tourIds[idx + 1];
@@ -552,36 +543,36 @@ const handleSaveOrdreRotation = async () => {
                               <Text className="text-orange-500 font-medium text-sm mr-2">
                                 {item.statutPaiement}
                               </Text>
-                               <TouchableOpacity
-                                  className={`bg-green-400 rounded-full px-3 py-1 flex-row items-center justify-center ${isLoading ? "opacity-50" : ""}`}
-                                  disabled={isLoading}
-                                  onPress={() => {
-                                    setIsLoadingRelance(true);
-                                    relanceCotisation(item.id)
-                                      .unwrap()
-                                      .then(() => {
-                                        Toast.show({
-                                          type: "success",
-                                          text1: "Success",
-                                          text2: "Reminder sent successfully",
-                                        });
-                                      })
-                                      .catch((error) => {
-                                        Toast.show({
-                                          type: "error",
-                                          text1: "Error",
-                                          text2: error?.data?.message || "Failed to send reminder",
-                                        });
-                                      })
-                                      .finally(() => setIsLoadingRelance(false));
-                                  }}
-                                >
-                                  {isLoadingRelance ? ( 
-                                    <Loader size="small" color="#fff" /> 
-                                  ) : (
-                                    <Text className="text-white text-xs font-semibold">{t("actions.remind")}</Text>
-                                  )}
-                                </TouchableOpacity>
+                              <TouchableOpacity
+                                className={`bg-green-400 rounded-full px-3 py-1 flex-row items-center justify-center ${isLoading ? "opacity-50" : ""}`}
+                                disabled={isLoading}
+                                onPress={() => {
+                                  setIsLoadingRelance(true);
+                                  relanceCotisation(item.id)
+                                    .unwrap()
+                                    .then(() => {
+                                      Toast.show({
+                                        type: "success",
+                                        text1: "Success",
+                                        text2: "Reminder sent successfully",
+                                      });
+                                    })
+                                    .catch((error) => {
+                                      Toast.show({
+                                        type: "error",
+                                        text1: "Error",
+                                        text2: error?.data?.message || "Failed to send reminder",
+                                      });
+                                    })
+                                    .finally(() => setIsLoadingRelance(false));
+                                }}
+                              >
+                                {isLoadingRelance ? ( 
+                                  <Loader size="small" color="#fff" /> 
+                                ) : (
+                                  <Text className="text-white text-xs font-semibold">{t("actions.remind")}</Text>
+                                )}
+                              </TouchableOpacity>
                             </View>
                           )}
                         </View>
@@ -594,75 +585,78 @@ const handleSaveOrdreRotation = async () => {
                     </View>
                   );
                 })}
-
               </ScrollView>
             )}
           </>
         )}
 
-        {/* Rest of the component remains the same */}
+        {/* FIXED: Rotation Order Tab with proper ScrollView for any number of people */}
         {activeTab === "rotationOrder" && (
-          <ScrollView
-            contentContainerStyle={{ paddingBottom: 24 }}
-            showsVerticalScrollIndicator={false}
-          >
-            <Text className="text-black mt-2 mb-2 text-sm">
+          <View className="flex-1">
+            <Text className="text-black mb-2 text-sm">
               {Array.isArray(tontine?.toursDeDistribution) &&
               tontine.toursDeDistribution.length > 0
                 ? t("cotisations.alreadyDefined")
                 : t("cotisations.dragToReorder")}
             </Text>
 
-            <DraggableFlatList
-              data={ordreList}
-              onDragEnd={({ data }) => setOrdreList(data)}
-              keyExtractor={(item) => item.key}
-              scrollEnabled={false}
-              renderItem={({ item, drag, isActive }) => (
-                <ScaleDecorator>
-                  <TouchableOpacity
-                    onLongPress={drag}
-                    disabled={isActive}
-                    className={`flex-row items-center justify-between bg-gray-100 rounded-lg px-4 py-4 mb-2 ${
-                      isActive ? "opacity-50" : ""
-                    }`}
-                  >
-                    <View className="flex-row items-center space-x-3">
-                      <Ionicons name="reorder-three" size={24} color="#888" />
-                      <Text className="text-black font-semibold text-base">
-                        {item.label}
-                      </Text>
-                    </View>
-                    <View className="bg-gray-200 rounded-full px-4 py-1">
-                      <Text className="text-black font-bold text-sm">{item.order}</Text>
-                    </View>
-                  </TouchableOpacity>
-                </ScaleDecorator>
-              )}
-            />
+            {/* Draggable list with bottom padding for the fixed button */}
+            <View className="flex-1 mb-16">
+              <DraggableFlatList
+                data={ordreList}
+                onDragEnd={({ data }) => setOrdreList(data)}
+                keyExtractor={(item) => item.key}
+                contentContainerStyle={{ 
+                  paddingBottom: 20,
+                  flexGrow: 1 
+                }}
+                renderItem={({ item, drag, isActive }) => (
+                  <ScaleDecorator>
+                    <TouchableOpacity
+                      onLongPress={drag}
+                      disabled={isActive}
+                      className={`flex-row items-center justify-between bg-gray-100 rounded-lg px-4 py-4 mb-2 mx-1 ${
+                        isActive ? "opacity-50" : ""
+                      }`}
+                    >
+                      <View className="flex-row items-center space-x-3">
+                        <Ionicons name="reorder-three" size={24} color="#888" />
+                        <Text className="text-black font-semibold text-base">
+                          {item.label}
+                        </Text>
+                      </View>
+                      <View className="bg-gray-200 rounded-full px-4 py-1">
+                        <Text className="text-black font-bold text-sm">{item.order}</Text>
+                      </View>
+                    </TouchableOpacity>
+                  </ScaleDecorator>
+                )}
+              />
+            </View>
 
+            {/* Fixed button that's always visible and accessible */}
             {!isRotationSaved &&
             Array.isArray(tontine?.toursDeDistribution) &&
             tontine.toursDeDistribution.length === 0 && (
-              <TouchableOpacity
-                className="bg-green-500 py-3 mt-4 rounded-full items-center flex-row justify-center"
-                onPress={handleSaveOrdreRotation}
-                disabled={loading}
-              >
-                {loading ? (
-                  <Loader color="#fff" />
-                ) : (
-                  <Text className="text-white font-semibold text-base">
-                    {t("actions.saveOrder")}
-                  </Text>
-                )}
-              </TouchableOpacity>
-          )}
-
-          </ScrollView>
+              <View className="absolute bottom-10 left-4 right-4">
+                <TouchableOpacity
+                  className="bg-green-500 py-4 rounded-full items-center flex-row justify-center"
+                  onPress={handleSaveOrdreRotation}
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <Loader color="#fff" />
+                  ) : (
+                    <Text className="text-white font-semibold text-base">
+                      {t("actions.saveOrder")}
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
         )}
-
-       {activeTab === "history" && (
+        {activeTab === "history" && (
           <>
             {isLoadingValidated ? (
               <Text className="text-center text-gray-500 mt-4">{t("loading")}</Text>
@@ -675,7 +669,7 @@ const handleSaveOrdreRotation = async () => {
                 {t("cotisations.noValidatedContributions")}
               </Text>
             ) : (
-              <ScrollView className="mt-4">
+              <ScrollView className="mt-4" showsVerticalScrollIndicator={true}>
                 {cotisation.data
                   .filter(item => item.statutPaiement === "VALIDATED")
                   .map((item, idx) => (
@@ -706,7 +700,6 @@ const handleSaveOrdreRotation = async () => {
             )}
           </>
         )}
-
       </View>
       
       {showMissingContributorsModal && (

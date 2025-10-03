@@ -87,27 +87,35 @@ function CustomTabBar({ state, descriptors, navigation }) {
         // Default icon and label logic
         let iconName;
         let label;
-        switch (route.name) {
-          case 'HomeTab':
-            iconName = isFocused ? 'home' : 'home-outline';
-            label = t('tabs.home');
-            break;
-          case 'TransferTab':
-            iconName = isFocused ? 'swap-horizontal' : 'swap-horizontal-outline';
-            label = t('tabs.history');
-            break;
-          case 'ManageVirtualCardTab':
-            iconName = isFocused ? 'card' : 'card-outline';
-            label = t('tabs.cards');
-            break;
-          case 'SettingsTab':
-            iconName = isFocused ? 'settings' : 'settings-outline';
-            label = t('tabs.settings');
-            break;
-          default:
-            iconName = 'help-outline';
-            label = '';
-        }
+       switch (route.name) {
+        case 'HomeTab':
+          iconName = isFocused ? 'grid' : 'grid-outline'; // Better for dashboard/home view
+          // Alternatives: 'speedometer', 'pie-chart', 'dashboard'
+          label = t('tabs.home');
+          break;
+          
+        case 'TransferTab':
+          iconName = isFocused ? 'repeat' : 'repeat-outline'; // Better represents transactions/transfers
+          // Alternatives: 'swap-vertical', 'sync', 'trending-up'
+          label = t('tabs.history');
+          break;
+          
+        case 'ManageVirtualCardTab':
+          iconName = isFocused ? 'wallet' : 'wallet-outline'; // More intuitive for cards/money management
+          // Alternatives: 'credit-card', 'card', 'cash'
+          label = t('tabs.cards');
+          break;
+          
+        case 'SettingsTab':
+          iconName = isFocused ? 'settings' : 'settings-outline'; // Better for user profile/settings
+          // Alternatives: 'cog', 'options', 'menu'
+          label = t('tabs.settings');
+          break;
+          
+        default:
+          iconName = 'help-circle-outline';
+          label = '';
+      }
 
         return (
           <TouchableOpacity

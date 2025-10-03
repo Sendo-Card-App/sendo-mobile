@@ -7,14 +7,13 @@ import {
   TextInput, 
   Alert, 
   Dimensions,
-  ScrollView,
+  ActivityIndicator,
   Platform,
   StatusBar,
 } from 'react-native';
 import * as Contacts from 'expo-contacts';
 import * as Linking from 'expo-linking';
 import { useNavigation } from '@react-navigation/native';
-import { Picker } from '@react-native-picker/picker';
 import { Ionicons, AntDesign, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useTranslation } from 'react-i18next';
 import Toast from 'react-native-toast-message';
@@ -26,8 +25,8 @@ import {
   useRemoveFavoriteMutation,
   useGetSynchronizedContactsQuery
 } from '../../services/Contact/contactsApi';
-import Loader from "../../components/Loader";
 import TransactionSkeleton from '../../components/TransactionSkeleton';
+import { useAppState } from '../../context/AppStateContext'; // Import the hook
 
 const { width, height } = Dimensions.get('window');
 
@@ -57,11 +56,33 @@ const formatPhoneNumber = (phoneNumber) => {
   return phoneNumber;
 };
 
+// Serialization helper
+const ensureSerializable = (data) => {
+  return JSON.parse(JSON.stringify(data));
+};
+
+// Error handler
+const handleSyncError = (error) => {
+  console.error('Sync error details:', error);
+  
+  if (error?.code === 'MINIFIED_ERROR_38') {
+    return 'Data synchronization error. Please try with fewer contacts.';
+  }
+  
+  if (error?.status === 413) {
+    return 'Too many contacts to sync at once. Please try again.';
+  }
+  
+  return error.data?.message || error.message || 'Sync failed. Please try again.';
+};
+
 const AddFavorite = () => {
   const { t } = useTranslation();
   const navigation = useNavigation();
   const { data: userProfile } = useGetUserProfileQuery();
   const userId = userProfile?.data.id;
+  const { setIsPickingDocument } = useAppState(); // Use the AppState context
+  
   // API hooks
   const [synchronizeContacts] = useSynchronizeContactsMutation();
   const [addFavorite, { isLoading: isAddingFavorite }] = useAddFavoriteMutation();
@@ -70,10 +91,11 @@ const AddFavorite = () => {
     data: favoritesResponse, 
     isLoading: isLoadingFavorites, 
     refetch: refetchFavorites 
-  } = useGetFavoritesQuery(userId, { skip: !userId ,
-      pollingInterval: 1000, // Refetch every 1 seconds
+  } = useGetFavoritesQuery(userId, { 
+    skip: !userId,
+    pollingInterval: 1000,
   });
-   //console.log('Favorites:', JSON.stringify(favoritesResponse, null, 2));
+
   const { 
     data: synchronizedContacts, 
     isLoading: isLoadingContacts,
@@ -82,17 +104,12 @@ const AddFavorite = () => {
 
   // State
   const [filteredContacts, setFilteredContacts] = useState([]);
-   const [currentlyAdding, setCurrentlyAdding] = useState(null);
-  const [selectedContact, setSelectedContact] = useState(null);
+  const [currentlyAdding, setCurrentlyAdding] = useState(null);
   const [status, setStatus] = useState('idle');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('contacts');
-  const [formData, setFormData] = useState({
-    name: '',
-    phoneNumber: '',
-    receptionMethod: 'Orange Money',
-    country: 'Cameroun'
-  });
+  const [syncProgress, setSyncProgress] = useState(0);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   // Request contacts permission
   const requestContactsPermission = async () => {
@@ -125,7 +142,7 @@ const AddFavorite = () => {
   const processContactsForBackend = (rawContacts) => {
     const contactsToSync = [];
     const sanitizeName = (name) => {
-      return (name || '').replace(/[^\x00-\x7F]/g, '').trim() || 'Unknown';
+      return String(name || '').replace(/[^\x00-\x7F]/g, '').trim() || 'Unknown';
     };
 
     for (const contact of rawContacts) {
@@ -153,115 +170,170 @@ const AddFavorite = () => {
       }
     }
 
-    return contactsToSync;
+    return ensureSerializable(contactsToSync);
   };
 
-  // Fetch and sync contacts
+  // Fixed synchronization function
   const fetchAndSyncContacts = async () => {
     try {
+      // Set app state to indicate we're syncing contacts
+      setIsPickingDocument(true);
+      
       const hasPermission = await requestContactsPermission();
       if (!hasPermission) {
         setStatus('permission-denied');
+        setIsPickingDocument(false);
         return;
       }
 
       setStatus('loading');
+      setIsSyncing(true);
+      setSyncProgress(0);
       
       // Get all contacts from device
       const { data } = await Contacts.getContactsAsync({
         fields: [Contacts.Fields.Name, Contacts.Fields.PhoneNumbers],
       });
       
+      if (!data || data.length === 0) {
+        setStatus('ready');
+        setIsSyncing(false);
+        setIsPickingDocument(false);
+        Toast.show({
+          type: 'info',
+          text1: 'No Contacts',
+          text2: 'No contacts found on your device'
+        });
+        return;
+      }
+      
       // Process contacts to match backend format
       const contactsToSync = processContactsForBackend(data);
-      console.log('Processed contacts for sync:', JSON.stringify(contactsToSync, null, 2));
+      console.log('Processed contacts for sync count:', contactsToSync.length);
       
-      // Process in batches
-      const batchSize = 700;
+      if (contactsToSync.length === 0) {
+        setStatus('ready');
+        setIsSyncing(false);
+        setIsPickingDocument(false);
+        Toast.show({
+          type: 'info',
+          text1: 'No Valid Contacts',
+          text2: 'No valid phone numbers found in your contacts'
+        });
+        return;
+      }
+      
+      // Process in smaller batches for production
+      const batchSize = 50;
       let successfulSyncs = 0;
+      let failedSyncs = 0;
       
       for (let i = 0; i < contactsToSync.length; i += batchSize) {
+        const progress = Math.round((i / contactsToSync.length) * 100);
+        setSyncProgress(progress);
+        
         const batch = contactsToSync.slice(i, i + batchSize);
-        const payload = { contacts: batch };
+        
+        // Ensure batch contains only serializable data
+        const serializableBatch = batch.map(contact => ({
+          name: String(contact.name || 'Unknown'),
+          phone: String(contact.phone || '')
+        }));
         
         try {
-          const response = await synchronizeContacts(payload).unwrap();
+          // Send only the contacts array as payload (no userId wrapper)
+          const response = await synchronizeContacts(serializableBatch).unwrap();
           successfulSyncs += batch.length;
-          console.log('Batch sync successful', response);
+          console.log(`Batch ${Math.floor(i/batchSize) + 1} sync successful`);
         } catch (error) {
           console.error(`Failed to sync batch starting at index ${i}`, error);
+          failedSyncs += batch.length;
+          
+          // Continue with next batches even if one fails
+          continue;
         }
       }
+      
+      setSyncProgress(100);
       
       // Refresh the synchronized contacts list
       await refetchContacts();
       
       setStatus('ready');
+      setIsSyncing(false);
+      setIsPickingDocument(false); // Reset app state
+      
       Toast.show({
-        type: 'success',
-        text1: 'Sync Complete',
-        text2: `Synced ${successfulSyncs}/${contactsToSync.length} contacts`
+        type: successfulSyncs > 0 ? 'success' : 'error',
+        text1: successfulSyncs > 0 ? 'Sync Complete' : 'Sync Failed',
+        text2: `Synced ${successfulSyncs}/${contactsToSync.length} contacts${failedSyncs > 0 ? ` (${failedSyncs} failed)` : ''}`
       });
 
     } catch (error) {
       console.error('Sync failed:', error);
       setStatus('error');
+      setIsSyncing(false);
+      setIsPickingDocument(false); // Reset app state even on error
+      const errorMessage = handleSyncError(error);
       Toast.show({
         type: 'error',
         text1: 'Sync Failed',
-        text2: error.message || 'Unknown error'
+        text2: errorMessage
       });
     }
   };
 
   // Filter contacts based on search and favorites
   useEffect(() => {
-  if (synchronizedContacts?.data?.length > 0) {
-    // First deduplicate by phone number
-    const uniqueContacts = [];
-    const seenPhones = new Set();
-    
-    for (const contact of synchronizedContacts.data) {
-      const formattedPhone = formatPhoneNumber(contact.phone);
-      if (!seenPhones.has(formattedPhone)) {
-        seenPhones.add(formattedPhone);
-        uniqueContacts.push(contact);
+    if (synchronizedContacts?.data?.length > 0) {
+      // First deduplicate by phone number
+      const uniqueContacts = [];
+      const seenPhones = new Set();
+      
+      for (const contact of synchronizedContacts.data) {
+        const formattedPhone = formatPhoneNumber(contact.phone);
+        if (!seenPhones.has(formattedPhone)) {
+          seenPhones.add(formattedPhone);
+          uniqueContacts.push(contact);
+        }
       }
+      
+      // Then filter out favorites and apply search
+      let result = [...uniqueContacts];
+      
+      if (favoritesResponse?.data?.length > 0) {
+        const favoritePhones = favoritesResponse.data.map(fav => 
+          formatPhoneNumber(fav.phone)
+        );
+        result = result.filter(
+          contact => !favoritePhones.includes(formatPhoneNumber(contact.phone))
+        );
+      }
+      
+      if (searchQuery) {
+        result = result.filter(contact => 
+          contact.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          contact.phone?.includes(searchQuery)
+        );
+      }
+      
+      setFilteredContacts(result);
+    } else {
+      setFilteredContacts([]);
     }
+  }, [synchronizedContacts, favoritesResponse, searchQuery]);
+
+  const handleAddFavorite = async (contact) => {
+    if (currentlyAdding) return; // Prevent multiple clicks
     
-    // Then filter out favorites and apply search
-    let result = [...uniqueContacts];
-    
-    if (favoritesResponse?.data?.length > 0) {
-      const favoritePhones = favoritesResponse.data.map(fav => 
-        formatPhoneNumber(fav.phone)
-      );
-      result = result.filter(
-        contact => !favoritePhones.includes(formatPhoneNumber(contact.phone))
-      );
-    }
-    
-    if (searchQuery) {
-      result = result.filter(contact => 
-        contact.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        contact.phone?.includes(searchQuery)
-      );
-    }
-    
-    setFilteredContacts(result);
-  } else {
-    setFilteredContacts([]);
-  }
-}, [synchronizedContacts, favoritesResponse, searchQuery]);
-  
-  const handleAddFavorite = (contact) => {
-    addFavorite({
-      userId,
-      phone: formatPhoneNumber(contact.phone),
-      name: contact.name
-    })
-    .unwrap()
-    .then(() => {
+    setCurrentlyAdding(contact.phone);
+    try {
+      await addFavorite({
+        userId,
+        phone: formatPhoneNumber(contact.phone),
+        name: contact.name
+      }).unwrap();
+      
       Toast.show({
         type: 'success',
         text1: 'Success',
@@ -269,15 +341,34 @@ const AddFavorite = () => {
       });
       refetchContacts();
       refetchFavorites();
-    })
-    .catch(error => {
-      console.log('Favorites:', JSON.stringify(error, null, 2));
+    } catch (error) {
+      console.log('Add favorite error:', error);
       Toast.show({
         type: 'error',
         text1: 'Error',
         text2: error.data?.message || 'Failed to add favorite'
       });
-    });
+    } finally {
+      setCurrentlyAdding(null);
+    }
+  };
+
+  const handleRemoveFavorite = async (phone) => {
+    try {
+      await removeFavorite({ userId, phone }).unwrap();
+      Toast.show({
+        type: 'success',
+        text1: 'Success',
+        text2: 'Contact removed from favorites'
+      });
+      refetchFavorites();
+    } catch (error) {
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: error.data?.message || 'Failed to remove favorite'
+      });
+    }
   };
 
   // Render contact list item with heart icon
@@ -324,14 +415,14 @@ const AddFavorite = () => {
         </View>
         <TouchableOpacity
           onPress={() => handleAddFavorite(item)}
-          disabled={isAdding}
+          disabled={isAdding || isSyncing}
           style={{ padding: 8 }}
         >
           {isAdding ? (
             <ActivityIndicator size="small" color="#f44336" />
           ) : (
             <MaterialCommunityIcons 
-              name="heart" 
+              name="heart-outline" 
               size={24} 
               color="#f44336" 
             />
@@ -343,45 +434,99 @@ const AddFavorite = () => {
 
   // Render favorite item
   const renderFavoriteItem = ({ item }) => (
-    <View className="p-4 border-b border-gray-200 flex-row items-center min-h-16 bg-white">
-      <View className="flex-1">
-        <Text className="font-bold text-base text-gray-800">
+    <View style={{ 
+      padding: 16, 
+      borderBottomWidth: 1, 
+      borderBottomColor: '#eee',
+      flexDirection: 'row', 
+      alignItems: 'center', 
+      backgroundColor: 'white',
+      minHeight: 64
+    }}>
+      <View style={{ flex: 1 }}>
+        <Text style={{ fontWeight: 'bold', fontSize: 16, color: '#333' }}>
           {item.name || item.phone}
         </Text>
-        <Text className="text-gray-600 text-sm mt-1">
+        <Text style={{ color: '#666', fontSize: 14, marginTop: 4 }}>
           {formatPhoneNumber(item.phone)}
         </Text>
       </View>
       <TouchableOpacity
-        onPress={() => removeFavorite({ userId, phone: item.phone })}
-        className="p-2"
+        onPress={() => handleRemoveFavorite(item.phone)}
+        style={{ padding: 8 }}
       >
         <MaterialCommunityIcons 
-          name="delete" 
-          size={width * 0.06} 
+          name="delete-outline" 
+          size={24} 
           color="#f44336" 
         />
       </TouchableOpacity>
     </View>
   );
 
+  // Sync progress component
+  const SyncProgress = () => (
+    <View style={{ padding: 16, backgroundColor: '#f8f9fa', alignItems: 'center' }}>
+      <Text style={{ color: '#666', marginBottom: 8 }}>
+        Syncing contacts... {syncProgress}%
+      </Text>
+      <View style={{ 
+        height: 4, 
+        backgroundColor: '#e9ecef', 
+        borderRadius: 2, 
+        width: '100%',
+        overflow: 'hidden'
+      }}>
+        <View style={{ 
+          height: '100%', 
+          backgroundColor: '#28a745', 
+          width: `${syncProgress}%`,
+          borderRadius: 2
+        }} />
+      </View>
+    </View>
+  );
+
   // Permission denied view
   if (status === 'permission-denied') {
     return (
-      <View className="flex-1 justify-center items-center p-8 bg-white">
+      <View style={{ 
+        flex: 1, 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        padding: 32, 
+        backgroundColor: 'white' 
+      }}>
         <MaterialCommunityIcons 
           name="alert-circle-outline" 
           size={width * 0.15} 
           color="#f44336" 
         />
-        <Text className="text-center mb-4 text-lg text-gray-600">
+        <Text style={{ 
+          textAlign: 'center', 
+          marginBottom: 16, 
+          fontSize: 18, 
+          color: '#666',
+          marginTop: 16
+        }}>
           {t('contacts.permissionMessage')}
         </Text>
         <TouchableOpacity 
-          className="bg-green-500 px-4 py-3 rounded-lg w-48 items-center"
+          style={{ 
+            backgroundColor: '#28a745', 
+            paddingHorizontal: 16,
+            paddingVertical: 12,
+            borderRadius: 8,
+            width: 192,
+            alignItems: 'center'
+          }}
           onPress={() => Linking.openSettings()}
         >
-          <Text className="text-white text-base font-semibold">
+          <Text style={{ 
+            color: 'white', 
+            fontSize: 16, 
+            fontWeight: '600' 
+          }}>
             {t('contacts.openSettings')}
           </Text>
         </TouchableOpacity>
@@ -391,34 +536,88 @@ const AddFavorite = () => {
 
   // Loading state
   if (isLoadingContacts || isLoadingFavorites) {
-   return (
-     <FlatList
+    return (
+      <View style={{ flex: 1, backgroundColor: 'white' }}>
+        <StatusBar backgroundColor="#7ddd7d" barStyle="light-content" />
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            backgroundColor: '#7ddd7d',
+            paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 40,
+            paddingBottom: 15,
+            paddingHorizontal: 15,
+          }}
+        >
+          <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 40 }}>
+            <AntDesign name="left" size={24} color="white" />
+          </TouchableOpacity>
+
+          <Text style={{ 
+              color: '#fff', 
+              fontSize: 20, 
+              fontWeight: 'bold', 
+              flex: 1, 
+              textAlign: 'center' 
+          }}>
+            {t('screens.addFavorite')}
+          </Text>
+
+          <View style={{ width: 40 }} />
+        </View>
+        <FlatList
           data={[1, 2, 3, 4, 5]}
           keyExtractor={(item) => item.toString()}
           renderItem={() => <TransactionSkeleton />}
           contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 20 }}
           showsVerticalScrollIndicator={false}
         />
-  );
+      </View>
+    );
   }
 
   // Empty state for contacts
-  if (activeTab === 'contacts' && !filteredContacts.length) {
+  if (activeTab === 'contacts' && !filteredContacts.length && !isSyncing) {
     return (
-      <View className="flex-1 justify-center items-center p-8 bg-white">
+      <View style={{ 
+        flex: 1, 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        padding: 32, 
+        backgroundColor: 'white' 
+      }}>
         <MaterialCommunityIcons 
           name="account-search" 
           size={width * 0.15} 
           color="#999" 
         />
-        <Text className="text-center mt-4 text-lg text-gray-600">
+        <Text style={{ 
+          textAlign: 'center', 
+          marginTop: 16, 
+          fontSize: 18, 
+          color: '#666' 
+        }}>
           {t('contacts.noContacts')}
         </Text>
         <TouchableOpacity 
-          className="bg-green-500 px-4 py-3 rounded-lg w-48 items-center mt-4"
+          style={{ 
+            backgroundColor: '#28a745', 
+            paddingHorizontal: 16,
+            paddingVertical: 12,
+            borderRadius: 8,
+            width: 192,
+            alignItems: 'center',
+            marginTop: 16
+          }}
           onPress={fetchAndSyncContacts}
+          disabled={isSyncing}
         >
-          <Text className="text-white text-base font-semibold">
+          <Text style={{ 
+            color: 'white', 
+            fontSize: 16, 
+            fontWeight: '600' 
+          }}>
             {t('contacts.syncNow')}
           </Text>
         </TouchableOpacity>
@@ -427,8 +626,8 @@ const AddFavorite = () => {
   }
 
   return (
-    <View className="flex-1 bg-white">
-       <StatusBar backgroundColor="#7ddd7d" barStyle="light-content" />
+    <View style={{ flex: 1, backgroundColor: 'white' }}>
+      <StatusBar backgroundColor="#7ddd7d" barStyle="light-content" />
       <View
         style={{
           flexDirection: 'row',
@@ -457,48 +656,90 @@ const AddFavorite = () => {
         <View style={{ width: 40 }} />
       </View>
 
+      {/* Sync Progress */}
+      {isSyncing && <SyncProgress />}
+
       {/* Tab navigation */}
-      <View className="flex-row border-b border-gray-200">
+      <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: '#e5e5e5' }}>
         <TouchableOpacity 
-          className={`flex-1 py-4 items-center ${activeTab === 'contacts' ? 'border-b-2 border-green-500' : ''}`}
+          style={{ 
+            flex: 1, 
+            paddingVertical: 16, 
+            alignItems: 'center',
+            borderBottomWidth: activeTab === 'contacts' ? 2 : 0,
+            borderBottomColor: activeTab === 'contacts' ? '#28a745' : 'transparent'
+          }}
           onPress={() => setActiveTab('contacts')}
         >
-          <Text className={`text-base font-semibold ${activeTab === 'contacts' ? 'text-green-500' : 'text-gray-500'}`}>
+          <Text style={{ 
+            fontSize: 16, 
+            fontWeight: '600', 
+            color: activeTab === 'contacts' ? '#28a745' : '#666' 
+          }}>
             {t('contacts.contact')}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity 
-          className={`flex-1 py-4 items-center ${activeTab === 'favorites' ? 'border-b-2 border-green-500' : ''}`}
+          style={{ 
+            flex: 1, 
+            paddingVertical: 16, 
+            alignItems: 'center',
+            borderBottomWidth: activeTab === 'favorites' ? 2 : 0,
+            borderBottomColor: activeTab === 'favorites' ? '#28a745' : 'transparent'
+          }}
           onPress={() => {
             setActiveTab('favorites');
             refetchFavorites();
           }}
         >
-          <Text className={`text-base font-semibold ${activeTab === 'favorites' ? 'text-green-500' : 'text-gray-500'}`}>
-           {t('contacts.favorites')} ({favoritesResponse?.length || 0})
+          <Text style={{ 
+            fontSize: 16, 
+            fontWeight: '600', 
+            color: activeTab === 'favorites' ? '#28a745' : '#666' 
+          }}>
+            {t('contacts.favorites')} ({favoritesResponse?.data?.length || 0})
           </Text>
         </TouchableOpacity>
       </View>
 
       {/* Search bar */}
-      <View className="p-4 bg-gray-100 border-b border-gray-200">
-        <View className="flex-row items-center">
+      <View style={{ padding: 16, backgroundColor: '#f8f9fa', borderBottomWidth: 1, borderBottomColor: '#e5e5e5' }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <TextInput
-            className="flex-1 h-14 border border-gray-300 px-4 rounded-lg text-base bg-white"
+            style={{ 
+              flex: 1, 
+              height: 56, 
+              borderWidth: 1, 
+              borderColor: '#dee2e6', 
+              paddingHorizontal: 16, 
+              borderRadius: 8, 
+              fontSize: 16, 
+              backgroundColor: 'white'
+            }}
             placeholder={t('contacts.searchPlaceholder')}
             placeholderTextColor="#999"
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
           <TouchableOpacity 
-            className="ml-2 bg-green-500 p-3 rounded-lg"
+            style={{ 
+              marginLeft: 8, 
+              backgroundColor: '#28a745', 
+              padding: 12, 
+              borderRadius: 8 
+            }}
             onPress={fetchAndSyncContacts}
+            disabled={isSyncing}
           >
-            <MaterialCommunityIcons 
-              name="sync" 
-              size={24} 
-              color="white" 
-            />
+            {isSyncing ? (
+              <ActivityIndicator size="small" color="white" />
+            ) : (
+              <MaterialCommunityIcons 
+                name="sync" 
+                size={24} 
+                color="white" 
+              />
+            )}
           </TouchableOpacity>
         </View>
       </View>
@@ -509,23 +750,32 @@ const AddFavorite = () => {
           data={filteredContacts}
           keyExtractor={(item) => item.phone}
           renderItem={renderContactItem}
-          contentContainerStyle={{ paddingBottom: width * 0.05 }}
+          contentContainerStyle={{ paddingBottom: 20 }}
           refreshing={isLoadingContacts}
           onRefresh={refetchContacts}
+          ListEmptyComponent={
+            isSyncing ? null : (
+              <View style={{ alignItems: 'center', padding: 32, justifyContent: 'center' }}>
+                <Text style={{ fontSize: 16, color: '#666' }}>
+                  {t('contacts.noContactsFound')}
+                </Text>
+              </View>
+            )
+          }
         />
       )}
 
       {/* Favorites list */}
       {activeTab === 'favorites' && (
         <FlatList
-          data={favoritesResponse || []}
+          data={favoritesResponse?.data || []}
           keyExtractor={(item) => item.phone}
           renderItem={renderFavoriteItem}
-          contentContainerStyle={{ paddingBottom: width * 0.05 }}
+          contentContainerStyle={{ paddingBottom: 20 }}
           ListEmptyComponent={
-            <View className="items-center p-8 justify-center">
-              <Text className="text-base text-gray-600">
-               {t('contacts.noFavorites')}
+            <View style={{ alignItems: 'center', padding: 32, justifyContent: 'center' }}>
+              <Text style={{ fontSize: 16, color: '#666' }}>
+                {t('contacts.noFavorites')}
               </Text>
             </View>
           }

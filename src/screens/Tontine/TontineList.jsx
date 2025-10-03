@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   Image,
   TextInput,
+  RefreshControl,
 } from "react-native";
 import { Ionicons, AntDesign } from "@expo/vector-icons";
 import { useSelector } from "react-redux";
@@ -31,41 +32,107 @@ export default function TontineListScreen({ navigation }) {
   const [expandedInvitations, setExpandedInvitations] = useState({});
   const [showCodeModal, setShowCodeModal] = useState(false);
   const [rejectLoading, setRejectLoading] = useState(false);
-   const [acceptLoading, setAcceptLoading] = useState(false);
+  const [acceptLoading, setAcceptLoading] = useState(false);
   const [invitationCode, setInvitationCode] = useState("");
   const [currentItem, setCurrentItem] = useState(null);
+  
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [refreshing, setRefreshing] = useState(false);
+  const [hasMoreData, setHasMoreData] = useState(true);
+
   const user = useSelector((state) => state.auth.user);
 
   const { data: userProfile, isLoading: profileLoading, refetch: refetchProfile } = useGetUserProfileQuery();
   const userId = userProfile?.data?.id;
    
-  const { data, isLoading, isError, refetch: refetchTontines } = useGetTontinesQuery(userId, {
-    skip: !userId,
-      pollingInterval: 1000, // Refetch every 30 seconds
-  });
+  const { 
+    data, 
+    isLoading, 
+    isError, 
+    error,
+    refetch: refetchTontines 
+  } = useGetTontinesQuery(
+    { userId, page: currentPage, limit: 25 },
+    {
+      skip: !userId,
+    }
+  );
 
   const [accessOrRejectTontine] = useAccessOrRejectTontineMutation();
 
+  // Process tontines data with pagination - FIXED
+  const tontines = data?.data?.items || [];
+  const paginationInfo = data?.data || {};
+
+  // Filter tontines based on selected tab
+  const myTontines = tontines.filter((t) => {
+    const myMembership = t.membres?.find((m) => m.user?.id === userId);
+    return myMembership && myMembership.etat !== "PENDING";
+  });
+
+  const invitationTontines = tontines.filter((t) => {
+    const myMembership = t.membres?.find((m) => m.user?.id === userId);
+    return myMembership && myMembership.etat === "PENDING";
+  });
+
+  // Reset pagination when tab changes or component focuses
   useFocusEffect(
     useCallback(() => {
       if (userId) {
+        resetPagination();
         refetchProfile();
         refetchTontines();
       }
-    }, [userId])
+    }, [userId, selectedTab])
   );
 
-  const tontines = data?.data?.items || [];
-   //console.log("Full response:", JSON.stringify(tontines, null, 2));
-    const myTontines = tontines.filter((t) => {
-      const myMembership = t.membres.find((m) => m.user?.id === userId);
-      return myMembership && myMembership.etat !== "PENDING";
-    });
+  // Reset pagination function
+  const resetPagination = () => {
+    setCurrentPage(1);
+    setHasMoreData(true);
+  };
 
-    const invitationTontines = tontines.filter((t) => {
-      const myMembership = t.membres.find((m) => m.user?.id === userId);
-      return myMembership && myMembership.etat === "PENDING";
-    });
+  // Handle tab change
+  const handleTabChange = (tab) => {
+    setSelectedTab(tab);
+    resetPagination();
+  };
+
+  // Update hasMoreData when data changes - FIXED
+  React.useEffect(() => {
+    if (paginationInfo) {
+      const hasNextPage = paginationInfo.page < paginationInfo.totalPages;
+      setHasMoreData(hasNextPage);
+    }
+  }, [paginationInfo]);
+
+  // Pull to refresh
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    resetPagination();
+    try {
+      await refetchTontines();
+      await refetchProfile();
+    } catch (error) {
+      console.error("Refresh error:", error);
+      Toast.show({
+        type: 'error',
+        text1: 'Erreur',
+        text2: 'Impossible de rafraîchir les données',
+      });
+    } finally {
+      setRefreshing(false);
+    }
+  }, [userId]);
+
+  // Load more data - FIXED
+  const loadMoreData = () => {
+    if (!isLoading && hasMoreData && paginationInfo.page < paginationInfo.totalPages) {
+      const nextPage = currentPage + 1;
+      setCurrentPage(nextPage);
+    }
+  };
 
   const ROLE_LABELS = {
     ADMIN: t("role_ADMIN"),
@@ -74,122 +141,126 @@ export default function TontineListScreen({ navigation }) {
     PRESIDENT: t("role_PRESIDENT"),
   };
 
-const handleJoin = async (item) => {
-  const hasAcceptedTerms = await AsyncStorage.getItem('hasAcceptedTontineTerms');
+  const handleJoin = async (item) => {
+    const hasAcceptedTerms = await AsyncStorage.getItem('hasAcceptedTontineTerms');
 
-  if (!hasAcceptedTerms) {
-   
-    navigation.navigate("TermsAndConditions", {
-      onAccept: async () => {
-        await AsyncStorage.setItem('hasAcceptedTontineTerms', 'true');
-        setCurrentItem(item);
-        setShowCodeModal(true);
-      }
-    });
-    return;
-  }
+    if (!hasAcceptedTerms) {
+      navigation.navigate("TermsAndConditions", {
+        onAccept: async () => {
+          await AsyncStorage.setItem('hasAcceptedTontineTerms', 'true');
+          setCurrentItem(item);
+          setShowCodeModal(true);
+        }
+      });
+      return;
+    }
 
- 
-  setCurrentItem(item);
-  setShowCodeModal(true);
-};
+    setCurrentItem(item);
+    setShowCodeModal(true);
+  };
 
- const submitJoin = async () => {
-  if (!currentItem) return;
-  
-  setAcceptLoading(true); 
-  
-  const membre = currentItem.membres.find((m) => m.user?.id === userId);
-  const membreId = membre?.id;
-  console.log(membreId)
+  const submitJoin = async () => {
+    if (!currentItem) return;
+    
+    setAcceptLoading(true); 
+    
+    const membre = currentItem.membres.find((m) => m.user?.id === userId);
+    const membreId = membre?.id;
 
-  if (!membreId) {
-    Toast.show({
-      type: 'error',
-      text1: 'Erreur',
-      text2: 'Impossible de trouver votre identifiant de membre.',
-      position: 'bottom',
-    });
-    setAcceptLoading(false);
-    return;
-  }
+    if (!membreId) {
+      Toast.show({
+        type: 'error',
+        text1: 'Erreur',
+        text2: 'Impossible de trouver votre identifiant de membre.',
+        position: 'bottom',
+      });
+      setAcceptLoading(false);
+      return;
+    }
 
-  if (!invitationCode) {
-    Toast.show({
-      type: 'error',
-      text1: 'Erreur',
-      text2: 'Veuillez entrer un code d\'invitation.',
-      position: 'bottom',
-    });
-    setAcceptLoading(false);
-    return;
-  }
+    if (!invitationCode) {
+      Toast.show({
+        type: 'error',
+        text1: 'Erreur',
+        text2: 'Veuillez entrer un code d\'invitation.',
+        position: 'bottom',
+      });
+      setAcceptLoading(false);
+      return;
+    }
 
     const payload = {
-    invitationCode: invitationCode,
-    membreId,
-    type: "JOIN",
+      invitationCode: invitationCode,
+      membreId,
+      type: "JOIN",
+    };
+    
+    try {
+      await accessOrRejectTontine(payload).unwrap();
+      Toast.show({
+        type: 'success',
+        text1: 'Succès',
+        text2: 'Vous avez rejoint la tontine.',
+        position: 'top',
+      });
+      setShowCodeModal(false);
+      setInvitationCode("");
+      // Refresh data after joining
+      resetPagination();
+      refetchTontines();
+    } catch (error) {
+      console.log("API Error:", error);
+      Toast.show({
+        type: 'error',
+        text1: 'Erreur',
+        text2: error.data?.message || 'Échec de l\'opération. Vérifiez le code.',
+        position: 'top',
+      });
+    } finally {
+      setAcceptLoading(false);
+    }
   };
-  try {
-    await accessOrRejectTontine(payload).unwrap();
-    Toast.show({
-      type: 'success',
-      text1: 'Succès',
-      text2: 'Vous avez rejoint la tontine.',
-      position: 'top',
-    });
-    setShowCodeModal(false);
-    setInvitationCode("");
-  } catch (error) {
-    console.log("API Error:", error);
-    Toast.show({
-      type: 'error',
-      text1: 'Erreur',
-      text2: error.data?.message || 'Échec de l\'opération. Vérifiez le code.',
-      position: 'top',
-    });
-  } finally {
-    setAcceptLoading(false);
-  }
-};
 
-const handleReject = async (item) => {
-  setRejectLoading(true);
-  const membre = item.membres.find((m) => m.user?.id === userId);
-  const membreId = membre?.id;
+  const handleReject = async (item) => {
+    setRejectLoading(true);
+    const membre = item.membres.find((m) => m.user?.id === userId);
+    const membreId = membre?.id;
 
-  if (!membreId) {
-    Toast.show({
-      type: 'error',
-      text1: 'Erreur',
-      text2: 'Impossible de trouver votre identifiant de membre.',
-    });
-    setRejectLoading(false);
-    return;
-  }
+    if (!membreId) {
+      Toast.show({
+        type: 'error',
+        text1: 'Erreur',
+        text2: 'Impossible de trouver votre identifiant de membre.',
+      });
+      setRejectLoading(false);
+      return;
+    }
 
-   try {
+    try {
       await accessOrRejectTontine({
         membreId,
         type: "REJECT",
       }).unwrap();
-    
-    Toast.show({
-      type: 'success',
-      text1: 'Succès',
-      text2: 'Invitation rejetée',
-    });
-  } catch (error) {
-    console.log("Full response:", JSON.stringify(error, null, 2));
-    Toast.show({
-      type: 'error',
-      text1: 'Erreur',
-      text2: error.data?.message || 'Impossible de rejeter l\'invitation.',
-    });
-  } finally {
-    setRejectLoading(false);
-  }
-};
+      
+      Toast.show({
+        type: 'success',
+        text1: 'Succès',
+        text2: 'Invitation rejetée',
+      });
+      // Refresh data after rejection
+      resetPagination();
+      refetchTontines();
+    } catch (error) {
+      console.log("Full response:", JSON.stringify(error, null, 2));
+      Toast.show({
+        type: 'error',
+        text1: 'Erreur',
+        text2: error.data?.message || 'Impossible de rejeter l\'invitation.',
+      });
+    } finally {
+      setRejectLoading(false);
+    }
+  };
 
   const formatFrequence = (f) => {
     switch (f) {
@@ -278,9 +349,9 @@ const handleReject = async (item) => {
             <Text className="text-sm font-bold">{t("tontine_frequency")}: <Text className="font-normal">{formatFrequence(item.frequence)}</Text></Text>
             <Text className="text-sm font-bold">{t("tontine_amount")}: <Text className="font-normal">{item.montant} FCFA</Text></Text>
 
-           <TouchableOpacity
+            <TouchableOpacity
               className="bg-green-400 py-3 rounded-full items-center mt-4"
-               onPress={() => handleJoin(item)}
+              onPress={() => handleJoin(item)}
               disabled={acceptLoading}
             >
               {acceptLoading ? (
@@ -290,7 +361,7 @@ const handleReject = async (item) => {
               )}
             </TouchableOpacity>
 
-           <TouchableOpacity 
+            <TouchableOpacity 
               className={`border border-red-400 py-3 rounded-full items-center mt-3 ${rejectLoading ? 'opacity-70' : ''}`} 
               onPress={() => handleReject(item)}
               disabled={rejectLoading}
@@ -306,6 +377,40 @@ const handleReject = async (item) => {
       </View>
     );
   };
+
+  // Footer component for loading more - FIXED
+  const renderFooter = () => {
+    if (!hasMoreData && (myTontines.length > 0 || invitationTontines.length > 0)) {
+      return (
+        <View className="py-4 items-center">
+          <Text className="text-gray-500 text-sm">
+            {selectedTab === "mesTontines" ? "Toutes vos tontines sont chargées" : "Toutes les invitations sont chargées"}
+          </Text>
+        </View>
+      );
+    }
+    
+    if (isLoading && currentPage > 1) {
+      return (
+        <View className="py-4 items-center">
+          <ActivityIndicator size="small" color="green" />
+          <Text className="text-gray-500 text-sm mt-2">Chargement...</Text>
+        </View>
+      );
+    }
+    
+    return null;
+  };
+
+  // Empty component
+  const renderEmptyComponent = () => (
+    <View className="flex-1 justify-center items-center py-10">
+      <Ionicons name="people-outline" size={60} color="#9CA3AF" />
+      <Text className="text-gray-500 text-lg mt-4 text-center">
+        {selectedTab === "mesTontines" ? t("no_tontine") : t("no_invitation")}
+      </Text>
+    </View>
+  );
 
   return (
     <View className="flex-1 bg-gray-100">
@@ -330,7 +435,7 @@ const handleReject = async (item) => {
           >
             <TouchableOpacity 
               activeOpacity={1}
-              onPress={() => {}} // Empty function to prevent click-through
+              onPress={() => {}}
             >
               <View className="bg-white p-6 rounded-lg w-80">
                 <Text className="text-lg font-bold mb-4">Code d'invitation</Text>
@@ -395,9 +500,9 @@ const handleReject = async (item) => {
         </TouchableOpacity>
       </View>
 
-       <View className="flex-row justify-around mt-6 border-b border-gray-200">
+      <View className="flex-row justify-around mt-6 border-b border-gray-200">
         <TouchableOpacity
-          onPress={() => setSelectedTab("mesTontines")}
+          onPress={() => handleTabChange("mesTontines")}
           className={`pb-2 ${selectedTab === "mesTontines" ? "border-b-2 border-green-500" : ""}`}
         >
           <Text className={`text-sm font-semibold ${selectedTab === "mesTontines" ? "text-green-600" : "text-gray-500"}`}>
@@ -405,7 +510,7 @@ const handleReject = async (item) => {
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          onPress={() => setSelectedTab("invitations")}
+          onPress={() => handleTabChange("invitations")}
           className={`pb-2 ${selectedTab === "invitations" ? "border-b-2 border-green-500" : ""}`}
         >
           <Text className={`text-sm font-semibold ${selectedTab === "invitations" ? "text-green-600" : "text-gray-500"}`}>
@@ -415,32 +520,52 @@ const handleReject = async (item) => {
       </View>
 
       <View className="flex-1 px-4 mt-4">
-        {isLoading || profileLoading ? (
-          <ActivityIndicator size="large" color="green" className="mt-6" />
+        {isLoading && currentPage === 1 ? (
+          <View className="flex-1 justify-center items-center">
+            <ActivityIndicator size="large" color="green" />
+            <Text className="text-gray-500 mt-4">Chargement de vos tontines...</Text>
+          </View>
         ) : isError ? (
-          <Text className="text-center text-red-500 mt-4">Une erreur est survenue.</Text>
-        ) : selectedTab === "mesTontines" ? (
-          myTontines.length === 0 ? (
-            <Text className="text-center mt-4 text-gray-500">{t("no_tontine")}</Text>
-          ) : (
-            <FlatList
-              data={myTontines}
-              keyExtractor={(item) => item.id.toString()}
-              renderItem={renderTontineItem}
-              contentContainerStyle={{ paddingBottom: 16 }}
-            />
-          )
+          <View className="flex-1 justify-center items-center">
+            <Ionicons name="alert-circle-outline" size={60} color="#EF4444" />
+            <Text className="text-red-500 mt-4 text-center">Une erreur est survenue lors du chargement.</Text>
+            <Text className="text-gray-500 text-sm mt-2 text-center">
+              {error?.data?.message || "Veuillez réessayer"}
+            </Text>
+            <TouchableOpacity 
+              className="bg-green-500 px-6 py-3 rounded-full mt-4"
+              onPress={() => {
+                resetPagination();
+                refetchTontines();
+              }}
+            >
+              <Text className="text-white font-semibold">Réessayer</Text>
+            </TouchableOpacity>
+          </View>
         ) : (
-          invitationTontines.length === 0 ? (
-            <Text className="text-center mt-4 text-gray-500">{t("no_invitation")}</Text>
-          ) : (
-            <FlatList
-              data={invitationTontines}
-              keyExtractor={(item) => item.id.toString()}
-              renderItem={renderInvitationItem}
-              contentContainerStyle={{ paddingBottom: 16 }}
-            />
-          )
+          <FlatList
+            data={selectedTab === "mesTontines" ? myTontines : invitationTontines}
+            keyExtractor={(item) => item.id.toString()}
+            renderItem={selectedTab === "mesTontines" ? renderTontineItem : renderInvitationItem}
+            contentContainerStyle={{ 
+              paddingBottom: 16,
+              flexGrow: 1,
+              minHeight: tontines.length === 0 ? 400 : undefined
+            }}
+            ListEmptyComponent={renderEmptyComponent}
+            ListFooterComponent={renderFooter}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                colors={['green']}
+                tintColor={'green'}
+              />
+            }
+            onEndReached={loadMoreData}
+            onEndReachedThreshold={0.3}
+            showsVerticalScrollIndicator={false}
+          />
         )}
       </View>
     </View>

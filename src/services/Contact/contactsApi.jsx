@@ -1,4 +1,4 @@
-// services/Contacts/contactsApi.js
+// services/Contact/contactsApi.js
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
 export const contactsApi = createApi({
@@ -8,21 +8,23 @@ export const contactsApi = createApi({
     prepareHeaders: (headers, { getState }) => {
       const token = getState().auth.accessToken;
       if (token) headers.set('Authorization', `Bearer ${token}`);
+      headers.set('Content-Type', 'application/json');
       return headers;
     },
   }),
   tagTypes: ['Contacts', 'Favorites'],
   
   endpoints: (builder) => ({
-   // services/Contact/contactsApi.js
-synchronizeContacts: builder.mutation({
-  query: (payload) => ({
-    url: '/contacts/synchronize',
-    method: 'POST',
-    body:  payload , 
-  }),
-  invalidatesTags: ['Contacts'],
-}),
+   synchronizeContacts: builder.mutation({
+      query: (contacts) => ({
+        url: '/contacts/synchronize',
+        method: 'POST',
+        body: { contacts }, // wrap inside { contacts: [...] }
+      }),
+      invalidatesTags: ['Contacts'],
+    }),
+
+    
     getSynchronizedContacts: builder.query({
       query: (userId) => `/contacts/users/${userId}`,
       providesTags: ['Contacts'],
@@ -46,17 +48,16 @@ synchronizeContacts: builder.mutation({
       invalidatesTags: ['Favorites'],
     }),
     
-   getFavorites: builder.query({
-  query: (userId) => `/contacts/users/${userId}/favorites`,
-  transformResponse: (response) => {
-    // Ensure we always return an array
-    if (!response) return [];
-    if (Array.isArray(response)) return response;
-    if (response.data && Array.isArray(response.data)) return response.data;
-    return [];
-  },
-  providesTags: ['Favorites'],
-}),
+    getFavorites: builder.query({
+      query: (userId) => `/contacts/users/${userId}/favorites`,
+      transformResponse: (response) => {
+        if (!response) return [];
+        if (Array.isArray(response)) return response;
+        if (response.data && Array.isArray(response.data)) return response.data;
+        return [];
+      },
+      providesTags: ['Favorites'],
+    }),
   }),
 });
 
