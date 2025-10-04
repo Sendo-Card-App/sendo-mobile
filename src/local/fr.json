@@ -567,6 +567,9 @@
   "kyc_resume": {
     "identity_verification": "Vérification de l'identité",
     "kyc_summary": "Résumé de votre KYC",
+     "progress": "Progression de vérification",
+    "steps_remaining": "{{count}} étape(s) restante(s)",
+    "all_steps_complete": "Toutes les étapes terminées ! Prêt à soumettre",
     "completion_hint": "Complétez toutes les étapes pour finaliser votre vérification",
     "personal_details": "Détails personnels",
     "selfie": "Selfie",
@@ -710,6 +713,7 @@
     "setupPin": "Définissez votre code PIN",
     "enterPin": "Entrez votre code PIN",
     "incorrectPin": "Code PIN incorrect",
+     "contactSupport": "Contacter le Support",
     "accountLocked": "Compte bloqué",
     "tooManyAttempts": "Trop de tentatives. Veuillez vous reconnecter.",
     "validationError": "Erreur de validation",

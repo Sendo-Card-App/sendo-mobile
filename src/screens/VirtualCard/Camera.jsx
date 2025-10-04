@@ -5,7 +5,8 @@ import { AntDesign, Feather, Ionicons } from "@expo/vector-icons";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { useTranslation } from 'react-i18next';
 import { useDispatch } from "react-redux";
-import { setIdentityDocumentFront, setIdentityDocumentBack,setSelfie,setNiuDocument,setAddressProof } from "../../features/Kyc/kycReducer";
+import { setIdentityDocumentFront, setIdentityDocumentBack, setSelfie, setNiuDocument, setAddressProof } from "../../features/Kyc/kycReducer";
+import { useAppState } from '../../context/AppStateContext'; // Import the hook
 
 const Camera = ({ navigation, route }) => {
   const [permission, requestPermission] = useCameraPermissions();
@@ -17,6 +18,9 @@ const Camera = ({ navigation, route }) => {
   const dispatch = useDispatch();
   const { purpose, onCapture, returnTo, sid } = route.params || {};
   const { t } = useTranslation();
+  
+  // Use the AppState context
+  const { setIsPickingDocument } = useAppState();
 
   const takePicture = async () => {
     if (cameraRef.current) {
@@ -26,47 +30,59 @@ const Camera = ({ navigation, route }) => {
     }
   };
 
-const handleSubmit = () => {
-  if (picture) {
-    const file = {
-      uri: picture.uri,
-      type: 'image/jpeg',
-      name: `${purpose}_${new Date().toISOString()}.jpg`
-    };
+  const handleSubmit = () => {
+    if (picture) {
+      const file = {
+        uri: picture.uri,
+        type: 'image/jpeg',
+        name: `${purpose}_${new Date().toISOString()}.jpg`
+      };
 
-    switch (purpose) {
-      case 'id_front':
-        dispatch(setIdentityDocumentFront(file));
-        break;
-      case 'id_back':
-        dispatch(setIdentityDocumentBack(file));
-        break;
-      case 'selfie':
-        dispatch(setSelfie(file));
-        break;
-      case 'address_proof':
-        dispatch(setAddressProof(file));
-        break;
-      case 'niu':
-        dispatch(setNiuDocument({
-          document: file,
-          taxIdNumber: sid?.trim() || ''
-        }));
-        break;
-      default:
-        console.warn(`Unknown purpose: ${purpose}`);
+      switch (purpose) {
+        case 'id_front':
+          dispatch(setIdentityDocumentFront(file));
+          break;
+        case 'id_back':
+          dispatch(setIdentityDocumentBack(file));
+          break;
+        case 'selfie':
+          dispatch(setSelfie(file));
+          break;
+        case 'address_proof':
+          dispatch(setAddressProof(file));
+          break;
+        case 'niu':
+          dispatch(setNiuDocument({
+            document: file,
+            taxIdNumber: sid?.trim() || ''
+          }));
+          break;
+        default:
+          console.warn(`Unknown purpose: ${purpose}`);
+      }
+
+      // Reset the document picking state when submitting
+      setIsPickingDocument(false);
+
+      if (['selfie', 'niu', 'address_proof'].includes(purpose)) {
+        navigation.navigate("KycResume");
+      } else {
+        navigation.goBack();
+      }
     }
+  };
 
-    if (['selfie', 'niu', 'address_proof'].includes(purpose)) {
-      navigation.navigate("KycResume");
-    } else {
-      navigation.goBack();
-    }
-  }
-};
+  const handleCancel = () => {
+    // Reset the document picking state when canceling
+    setIsPickingDocument(false);
+    setPicture(null);
+  };
 
-
-
+  const handleGoBack = () => {
+    // Reset the document picking state when going back
+    setIsPickingDocument(false);
+    navigation.goBack();
+  };
 
   const getTitle = () => {
     switch (purpose) {
@@ -74,7 +90,7 @@ const handleSubmit = () => {
         return t('camera.selfie_guide');
       case 'niu':
         return t('camera.niu_guide');
-         case 'id_front':
+      case 'id_front':
         return t('camera.id_front_guide');
       case 'id_back':
         return t('camera.id_back_guide');
@@ -97,7 +113,7 @@ const handleSubmit = () => {
     <View className="bg-[#181e25] flex-1 py-11 px-5">
       {/* the top navigation with a back arrow */}
       <View className="py-4">
-        <TouchableOpacity onPress={() => navigation.goBack()}>
+        <TouchableOpacity onPress={handleGoBack}>
           <AntDesign name="left" size={24} color="white" />
         </TouchableOpacity>
       </View>
@@ -179,7 +195,7 @@ const handleSubmit = () => {
         <View className="mt-auto flex-row items-center justify-between mx-4">
           <TouchableOpacity
             className="items-center justify-center"
-            onPress={() => setPicture(null)}
+            onPress={handleCancel}
           >
             <Feather name="x" size={45} color="red" />
             <Text className="text-white">{t('camera.cancel')}</Text>

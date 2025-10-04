@@ -93,12 +93,6 @@ const AddressConfirm = ({ navigation }) => {
         })
       );
 
-      Toast.show({
-        type: "success",
-        text1: t("success"),
-        text2: t("addressConfirm.confirmed"),
-      });
-
       navigation.navigate("KycResume");
     } catch (error) {
       console.error("Confirmation error:", error);

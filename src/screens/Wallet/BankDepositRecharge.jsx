@@ -87,6 +87,10 @@ const handleSubmit = async () => {
         />
 
         {/* File Upload */}
+        <Text style={{ marginBottom: 10, color: '#666', fontSize: 14, textAlign: 'center' }}>
+          Veuillez téléverser le bordereau de versement bancaire
+        </Text>
+        
         <TouchableOpacity onPress={pickFile} style={{ padding: 15, borderWidth: 1, borderColor: '#ddd', borderRadius: 10, marginBottom: 10, alignItems: 'center', backgroundColor: '#f5f5f5' }}>
           <Text>{file ? file.name : t('bank_deposit.choose_file')}</Text>
         </TouchableOpacity>

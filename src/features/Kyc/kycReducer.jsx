@@ -1,4 +1,3 @@
-
 // src/features/Kyc/kycSlice.js
 import { createSlice } from '@reduxjs/toolkit';
 
@@ -13,6 +12,7 @@ const DOCUMENT_TYPES = {
 const IDENTITY_TYPES = {
   DRIVERS_LICENSE: 'drivers_license',
   PASSPORT: 'passport',
+  CNI: 'cni' // Added missing CNI type
 };
 
 const initialState = {
@@ -21,17 +21,19 @@ const initialState = {
     region: '',
     city: '',
     district: '',
+    cni: '', // Added missing CNI field
   },
   selfie: null,
   identityDocument: {
-    type: IDENTITY_TYPES.DRIVERS_LICENSE, // default to CNI
+    type: IDENTITY_TYPES.DRIVERS_LICENSE,
     front: null,
     back: null,
   },
   niuDocument: null,
   addressProof: null,
-  submissionStatus: 'idle', // 'idle' | 'loading' | 'succeeded' | 'failed'
-  error: null
+  submissionStatus: 'idle',
+  error: null,
+  lastSubmissionError: null // Track submission errors
 };
 
 const kycSlice = createSlice({
@@ -51,6 +53,9 @@ const kycSlice = createSlice({
     setIdentityDocumentType(state, action) {
       if (Object.values(IDENTITY_TYPES).includes(action.payload)) {
         state.identityDocument.type = action.payload;
+        // Reset documents when type changes
+        state.identityDocument.front = null;
+        state.identityDocument.back = null;
       }
     },
     setIdentityDocumentFront(state, action) {
@@ -107,9 +112,26 @@ const kycSlice = createSlice({
     },
     setSubmissionStatus(state, action) {
       state.submissionStatus = action.payload;
+      if (action.payload === 'failed') {
+        state.lastSubmissionError = state.error;
+      } else if (action.payload === 'idle') {
+        state.lastSubmissionError = null;
+      }
     },
     setSubmissionError(state, action) {
       state.error = action.payload;
+    },
+    // Enhanced reset for failed submissions
+    resetFailedSubmission(state) {
+      // Only reset uploaded status to allow re-upload
+      if (state.selfie) state.selfie.uploaded = false;
+      if (state.identityDocument.front) state.identityDocument.front.uploaded = false;
+      if (state.identityDocument.back) state.identityDocument.back.uploaded = false;
+      if (state.niuDocument) state.niuDocument.uploaded = false;
+      if (state.addressProof) state.addressProof.uploaded = false;
+      
+      state.submissionStatus = 'idle';
+      state.error = null;
     },
     resetKYC(state) {
       Object.assign(state, initialState);
@@ -137,25 +159,32 @@ export const selectPendingDocuments = (state) =>
   selectAllDocuments(state).filter(doc => !doc.uploaded);
 
 export const selectIsKYCComplete = (state) => {
-  const { identityDocument } = state.kyc;
+  const { personalDetails, selfie, identityDocument, niuDocument, addressProof } = state.kyc;
   const { type, front, back } = identityDocument;
 
-  const hasSelfie = !!state.kyc.selfie;
-  const hasNIU = !!state.kyc.niuDocument;
-  const hasAddressProof = !!state.kyc.addressProof;
+  // Check personal details
+  const hasPersonalDetails = !!personalDetails.profession && 
+                            !!personalDetails.region && 
+                            !!personalDetails.city && 
+                            !!personalDetails.district &&
+                            !!personalDetails.cni;
+
+  const hasSelfie = !!selfie;
+  const hasNIU = !!niuDocument;
+  const hasAddressProof = !!addressProof;
   const hasIDFront = !!front;
 
-  let hasIDBack = true; // par défaut
-
+  let hasIDBack = true;
   if (type === IDENTITY_TYPES.CNI || type === IDENTITY_TYPES.DRIVERS_LICENSE) {
     hasIDBack = !!back;
   }
 
   const isIDComplete = hasIDFront && hasIDBack;
 
-  return hasSelfie && isIDComplete && hasNIU && hasAddressProof;
+  return hasPersonalDetails && hasSelfie && isIDComplete && hasNIU && hasAddressProof;
 };
 
+export const selectSubmissionError = (state) => state.kyc.lastSubmissionError;
 
 export const {
   updatePersonalDetails,
@@ -168,6 +197,7 @@ export const {
   markDocumentAsUploaded,
   setSubmissionStatus,
   setSubmissionError,
+  resetFailedSubmission,
   resetKYC,
 } = kycSlice.actions;
 

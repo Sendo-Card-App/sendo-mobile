@@ -170,16 +170,21 @@ const PinCode = ({ navigation, route }) => {
 
   // Auto-trigger biometric auth when component mounts if enabled
   useEffect(() => {
-    if (biometricEnabled && biometricAvailable && !isSetup && !isLocked) {
+    if (biometricEnabled && biometricAvailable && !isSetup && !isLocked && !isBlocked) {
       handleBiometricAuth();
     }
-  }, [biometricEnabled, biometricAvailable, isSetup, isLocked]);
+  }, [biometricEnabled, biometricAvailable, isSetup, isLocked, isBlocked]);
 
   const [isAuthenticating, setIsAuthenticating] = useState(false);
 
   // 🔑 KEY FIX: Update biometric auth to set PIN verification status
   const handleBiometricAuth = async () => {
-    if (isAuthenticating) return;
+    // COMPLETELY BLOCK biometric auth if account is blocked
+    if (isAuthenticating || isBlocked) {
+      console.log('Biometric auth blocked: Account is suspended/blocked');
+      return;
+    }
+    
     setIsAuthenticating(true);
 
     try {
@@ -240,7 +245,7 @@ const PinCode = ({ navigation, route }) => {
 
   // Handle PIN input
   useEffect(() => {
-    if (pin.length === 4) {
+    if (pin.length === 4 && !isBlocked) {
       handleComplete(pin);
     }
   }, [pin]);
@@ -267,6 +272,8 @@ const PinCode = ({ navigation, route }) => {
 
   // 🔑 KEY FIX: Update handleComplete to set PIN verification status
   const handleComplete = async (enteredPin) => {
+    if (isBlocked) return;
+    
     setIsLoading(true);
     try {
       const checkResponse = await checkPincode(enteredPin).unwrap();
@@ -438,6 +445,109 @@ const PinCode = ({ navigation, route }) => {
     [biometricAvailable ? 'biometric' : '', '0', 'del'],
   ];
 
+  // Block all interactions when account is blocked/suspended
+  if (isBlocked) {
+    return (
+      <SafeAreaView style={{ 
+        flex: 1, 
+        backgroundColor: '#fff', 
+        paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+        justifyContent: 'center',
+        alignItems: 'center'
+      }}>
+        {/* Blocked/Suspended Screen */}
+        <View style={{ 
+          flex: 1, 
+          justifyContent: 'center', 
+          alignItems: 'center',
+          padding: 20 
+        }}>
+          <Image
+            source={require('../../images/LogoSendo.png')}
+            style={{
+              width: 100,
+              height: 100,
+              marginBottom: 30,
+            }}
+          />
+
+          <Text style={{ 
+            fontSize: 24, 
+            fontWeight: 'bold', 
+            color: '#FF3B30',
+            textAlign: 'center',
+            marginBottom: 10
+          }}>
+            {t('pin.accountBlockedTitle')}
+          </Text>
+          
+          <Text style={{ 
+            fontSize: 16, 
+            color: '#666',
+            textAlign: 'center',
+            marginBottom: 30,
+            lineHeight: 22
+          }}>
+            {error || t('pin.contactSupportMessage')}
+          </Text>
+
+          {/* Only show the contact support button */}
+          <TouchableOpacity
+            onPress={() => {
+              const url = "https://wa.me/message/GYEAYFKV6T2SO1";
+              Linking.openURL(url).catch(() => {
+                Alert.alert('Erreur', 'Impossible d\'ouvrir WhatsApp. Vérifiez qu\'il est installé.');
+              });
+            }}
+            style={{
+              backgroundColor: '#7ddd7d',
+              padding: 15,
+              borderRadius: 8,
+              alignItems: 'center',
+              minWidth: 200
+            }}
+          >
+            <Text style={{ 
+              color: 'white', 
+              fontWeight: 'bold',
+              fontSize: 16 
+            }}>
+              {t('pin.contactSupport')}
+            </Text>
+          </TouchableOpacity>
+
+          {/* Floating WhatsApp Button (still accessible) */}
+          <TouchableOpacity 
+            onPress={() => {
+              const url = "https://wa.me/message/GYEAYFKV6T2SO1";
+              Linking.openURL(url).catch(() => {
+                Alert.alert('Erreur', 'Impossible d\'ouvrir WhatsApp. Vérifiez qu\'il est installé.');
+              });
+            }}
+            style={{
+              position: 'absolute',
+              bottom: 30,
+              right: 30,
+              backgroundColor: '#25D366',
+              width: 60,
+              height: 60,
+              borderRadius: 30,
+              justifyContent: 'center',
+              alignItems: 'center',
+              elevation: 5,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.25,
+              shadowRadius: 3.84,
+            }}
+          >
+            <Ionicons name="logo-whatsapp" size={36} color="white" />
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff', paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 }}>
       {isLoading && (
@@ -481,12 +591,12 @@ const PinCode = ({ navigation, route }) => {
             <Text style={{ color: 'red', marginTop: 10 }}>{error}</Text>
           )}
           
-          {(isLocked || isBlocked) && (
+          {isLocked && (
             <View style={{ alignItems: 'center' }}>
               <Text style={{ color: 'red', marginTop: 10 }}>
-                {isBlocked ? t('pin.accountBlocked') : t('pin.accountLocked')}
+                {t('pin.accountLocked')}
               </Text>
-              {biometricAvailable && !isBlocked && (
+              {biometricAvailable && (
                 <TouchableOpacity
                   onPress={handleBiometricAuth}
                   activeOpacity={0.7}
@@ -507,7 +617,7 @@ const PinCode = ({ navigation, route }) => {
           )}
         </View>
 
-        {!(isLocked || isBlocked) && (
+        {!isLocked && (
           <View style={{ alignItems: 'center' }}>
             {keypad.map((row, rowIndex) => (
               <View key={rowIndex} style={{ flexDirection: 'row', marginVertical: 10, marginTop: 15, }}>
@@ -570,7 +680,7 @@ const PinCode = ({ navigation, route }) => {
         onPress={() => {
           const url = "https://wa.me/message/GYEAYFKV6T2SO1";
           Linking.openURL(url).catch(() => {
-            Alert.alert('Erreur', 'Impossible d’ouvrir WhatsApp. Vérifiez qu’il est installé.');
+            Alert.alert('Erreur', 'Impossible d\'ouvrir WhatsApp. Vérifiez qu\'il est installé.');
           });
         }}
         style={{
@@ -593,12 +703,12 @@ const PinCode = ({ navigation, route }) => {
         <Ionicons name="logo-whatsapp" size={36} color="white" />
       </TouchableOpacity>
 
-
       {/* Contact Support Modal */}
       <Modal 
         isVisible={showContactSupportModal} 
         backdropOpacity={0.5}
-        onBackdropPress={() => setShowContactSupportModal(false)}
+        onBackdropPress={() => !isBlocked && setShowContactSupportModal(false)}
+        backdropColor={isBlocked ? 'rgba(0,0,0,0.8)' : 'rgba(0,0,0,0.5)'}
       >
         <View style={{ 
           backgroundColor: 'white', 
@@ -621,13 +731,13 @@ const PinCode = ({ navigation, route }) => {
             {t('pin.contactSupportMessage')}
           </Text>
           
-         <TouchableOpacity
+          <TouchableOpacity
             onPress={() => {
               setShowContactSupportModal(false);
               const url = "https://wa.me/message/GYEAYFKV6T2SO1";
               
               Linking.openURL(url).catch(() => {
-                Alert.alert('Erreur', 'Impossible d’ouvrir WhatsApp. Vérifiez qu’il est installé.');
+                Alert.alert('Erreur', 'Impossible d\'ouvrir WhatsApp. Vérifiez qu\'il est installé.');
               });
             }}
             style={{
