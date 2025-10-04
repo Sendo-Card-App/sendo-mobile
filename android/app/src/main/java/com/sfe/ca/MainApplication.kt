@@ -1,4 +1,4 @@
-package www.sendo.com
+package com.sfe.ca
 
 import android.app.Application
 import android.content.res.Configuration

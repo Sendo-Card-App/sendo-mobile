@@ -249,7 +249,7 @@ const screenWidth = Dimensions.get('window').width;
                 unmountOnBlur: true,
               }}
             />
-          ))}
+          )}
 
           {(userProfile?.data?.country === "Cameroon")  && (
             <Tab.Screen
@@ -260,7 +260,7 @@ const screenWidth = Dimensions.get('window').width;
                 unmountOnBlur: true,
               }}
             />
-          ))}
+          )}
 
 
         <Tab.Screen

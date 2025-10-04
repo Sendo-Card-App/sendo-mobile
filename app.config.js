@@ -9,7 +9,7 @@ module.exports = {
   expo: {
     name: "Sendo",
     slug: "sendo",
-    version: "1.0.5",
+    version: "1.1.0",
     owner: "sfesendo",
     orientation: "portrait",
     icon: "./assets/icon-sendo.png",
@@ -22,7 +22,7 @@ module.exports = {
     },
     ios: {
       supportsTablet: true,
-      bundleIdentifier: "www.sendo.com",
+      bundleIdentifier: "com.sfe.ca",
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
         NSNotificationsUsageDescription: "Cette application utilise les notifications pour vous informer des mises à jour et des nouvelles importantes.",
@@ -46,7 +46,7 @@ module.exports = {
         "android.permission.READ_MEDIA_IMAGES",
         "android.permission.READ_MEDIA_VIDEO"
       ],
-      package: "www.sendo.com"
+      package: "com.sfe.ca"
     },
     web: {
       favicon: "./assets/favicon.png"

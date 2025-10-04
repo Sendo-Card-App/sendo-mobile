@@ -19,7 +19,7 @@
     <key>CFBundlePackageType</key>
     <string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
     <key>CFBundleShortVersionString</key>
-    <string>1.0.5</string>
+    <string>1.1.0</string>
     <key>CFBundleSignature</key>
     <string>????</string>
     <key>CFBundleURLTypes</key>
@@ -27,7 +27,7 @@
       <dict>
         <key>CFBundleURLSchemes</key>
         <array>
-          <string>www.sendo.com</string>
+          <string>com.sfe.ca</string>
         </array>
       </dict>
       <dict>
@@ -53,17 +53,17 @@
       <true/>
     </dict>
     <key>NSCameraUsageDescription</key>
-    <string>Allow $(PRODUCT_NAME) to access your camera</string>
+    <string>Nous utilisons votre caméra pour scanner vos documents et permettre leur partage dans l'application.</string>
     <key>NSContactsUsageDescription</key>
-    <string>Allow $(PRODUCT_NAME) to access your contacts</string>
+    <string>Nous accédons à vos contacts pour faciliter le partage de documents avec vos collaborateurs.</string>
     <key>NSFaceIDUsageDescription</key>
     <string>Allow $(PRODUCT_NAME) to use Face ID</string>
     <key>NSMicrophoneUsageDescription</key>
-    <string>Allow $(PRODUCT_NAME) to access your microphone</string>
+    <string>Nous utilisons votre microphone pour enregistrer des notes audio si nécessaire.</string>
     <key>NSNotificationsUsageDescription</key>
-    <string>This app uses notifications to inform you about updates.</string>
+    <string>Cette application utilise les notifications pour vous informer des mises à jour et des nouvelles importantes.</string>
     <key>NSPhotoLibraryUsageDescription</key>
-    <string>Allow $(PRODUCT_NAME) to access your photos</string>
+    <string>Nous accédons à votre galerie pour vous permettre de sélectionner des documents à partager dans l'application.</string>
     <key>RCTNewArchEnabled</key>
     <true/>
     <key>UILaunchStoryboardName</key>
