@@ -10,7 +10,9 @@ import {
   ScrollView,
   BackHandler,
   Dimensions, 
-  Platform
+  Platform,
+  Animated,
+  Easing
 } from "react-native";
 import { Modal, Pressable } from 'react-native';
 import { Ionicons, AntDesign } from "@expo/vector-icons";
@@ -45,6 +47,12 @@ const HomeScreen = () => {
   const [createToken] = useCreateTokenMutation();
   const [showKycModal, setShowKycModal] = useState(false);
   const [kycCheckInterval, setKycCheckInterval] = useState(null);
+
+   const fadeAnim = useState(new Animated.Value(0))[0];
+  const slideAnim = useState(new Animated.Value(50))[0];
+  const scaleAnim = useState(new Animated.Value(0.9))[0];
+  const balancePulseAnim = useState(new Animated.Value(1))[0];
+
 
   // Fetch user profile and enable refetch
   const {
@@ -92,6 +100,44 @@ const HomeScreen = () => {
 
   // Count unread notifications where `readed` is false
   const unreadCount = notifications.filter(notification => !notification.readed).length;
+
+   // Start animations when component mounts
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 600,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(scaleAnim, {
+        toValue: 1,
+        duration: 700,
+        useNativeDriver: true,
+      })
+    ]).start();
+
+    // Balance pulse animation
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(balancePulseAnim, {
+          toValue: 1.03,
+          duration: 1500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(balancePulseAnim, {
+          toValue: 1,
+          duration: 1500,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, []);
 
   useEffect(() => {
     const checkAndUpdateToken = async () => {
@@ -400,7 +446,7 @@ const HomeScreen = () => {
           </View>
 
           {/* Boutons actions */}
-          <View className="flex-row mt-3 gap-4">
+          <View className="flex-row mt-1 gap-4">
             <TouchableOpacity
               onPress={() => navigation.navigate("SelectMethod")}
               className="bg-white px-3 py-2 rounded-full flex-row items-center flex-1 justify-center"
@@ -424,98 +470,126 @@ const HomeScreen = () => {
         </View>
       </View>
 
-      {/* Action buttons */}
-      <View className="mb-4">
-        <View className="flex-row justify-between items-center mb-2">
-          <Text className="text-black font-bold text-base">
-            {t("home.services")} 
-          </Text>
-          <TouchableOpacity onPress={() => navigation.navigate("ServiceScreen")}>
-            <Text style={{ color: '#000', fontSize: 14, textDecorationLine: 'underline' }}>
-              {t("home.seeAll")}
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Action buttons row */}
-        <View className="flex-row justify-between">
-          {[
-             // Conditionally render virtualCard only for Cameroon
-            ...(userProfile?.data?.country === "Cameroon"
-              ? [{ label: t("home.virtualCard"), icon: "card-outline", route: "OnboardingCard" }]
-              : []),
-            { label: t("home.friendsShare"), icon: "people-outline", route: "WelcomeShare" },
-            { label: t("home.fundRequest"), icon: "cash-outline", route: "WelcomeDemand" },
-            { label: t("home.etontine"), icon: "layers-outline" },
-          ].map((item, index) => (
-            <TouchableOpacity
-              key={index}
-              className="items-center w-[25%]"
-              onPress={() => {
-                if (item.label === t("home.etontine")) {
-                  hasAcceptedTerms
-                    ? navigation.navigate("TontineList")
-                    : navigation.navigate("TermsAndConditions");
-                } else {
-                  navigation.navigate(item.route);
-                }
-              }}
-            >
-              <View className="bg-[#F2F2F2] border border-white p-2 rounded-full mb-1">
-                <Ionicons name={item.icon} size={35} color="green" />
-              </View>
-              <Text className="text-[10px] text-black font-bold text-center">{item.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
-
-      {/* Section PUB with TopLogo background */}
-      <View className="mb-3">
-        {isLoadingPubs ? (
-          <Loader />
-        ) : pubs?.items?.filter(pub => pub.isActive).length > 0 ? (
-          <FlatList
-            ref={flatListRef}
-            data={pubs.items.filter(pub => pub.isActive)}
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            keyExtractor={(item) => item.id.toString()}
-            contentContainerStyle={{ paddingHorizontal: 20 }}
-            decelerationRate="fast"
-            snapToAlignment="start"
-            getItemLayout={(_, index) => ({
-              length: ITEM_WIDTH + 20, 
-              offset: index * (ITEM_WIDTH + 20),
-              index,
-            })}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                onPress={() => item.link && Linking.openURL(item.link)}
-                style={{
-                  width: ITEM_WIDTH,
-                  height: 120,
-                  borderRadius: 12,
-                  overflow: "hidden",
-                  marginRight: 20,
-                  backgroundColor: "#eee",
-                }}
+      {/* Services Section */}
+          <Animated.View 
+            style={{ transform: [{ translateY: slideAnim }], opacity: fadeAnim }}
+            className="mb-1"
+          >
+            <View className="flex-row justify-between items-center mb-1">
+              <Text className="text-gray-900 font-bold text-lg">
+                {t("home.services")} 
+              </Text>
+              <TouchableOpacity 
+                onPress={() => navigation.navigate("ServiceScreen")}
+                className="flex-row items-center"
               >
-                <Image
-                  source={{ uri: item.imageUrl }}
-                  style={{ width: "100%", height: "100%" }}
-                  resizeMode="cover"
-                />
+                <Text className="text-green-600 font-semibold text-sm mr-1">
+                  {t("home.seeAll")}
+                </Text>
+                <Ionicons name="chevron-forward" size={16} color="#16A34A" />
               </TouchableOpacity>
+            </View>
+
+            {/* Services grid */}
+            <View className="flex-row justify-between flex-wrap">
+              {[
+                ...(userProfile?.data?.country === "Cameroon"
+                  ? [{ label: t("home.virtualCard"), icon: "card-outline", route: "OnboardingCard" }]
+                  : []),
+                { label: t("home.friendsShare"), icon: "people-outline", route: "WelcomeShare" },
+                { label: t("home.fundRequest"), icon: "cash-outline", route: "WelcomeDemand" },
+                { label: t("home.etontine"), icon: "layers-outline" },
+              ].map((item, index) => (
+                <TouchableOpacity
+                  key={index}
+                  className="items-center w-1/4 mb-1"
+                  onPress={() => {
+                    if (item.label === t("home.etontine")) {
+                      hasAcceptedTerms
+                        ? navigation.navigate("TontineList")
+                        : navigation.navigate("TermsAndConditions");
+                    } else {
+                      navigation.navigate(item.route);
+                    }
+                  }}
+                >
+                  <View className="bg-white p-4 rounded-2xl mb-2 shadow-sm border border-gray-100">
+                    <Ionicons name={item.icon} size={28} color="#16A34A" />
+                  </View>
+                  <Text className="text-xs text-gray-700 font-medium text-center">{item.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </Animated.View>
+
+
+       {/* Ads Carousel */}
+          <Animated.View 
+            style={{ transform: [{ translateY: slideAnim }], opacity: fadeAnim }}
+            className="mb-1"
+          >
+            {isLoadingPubs ? (
+              <View className="h-32 bg-gray-200 rounded-2xl justify-center items-center">
+                <Loader />
+              </View>
+            ) : pubs?.items?.filter(pub => pub.isActive).length > 0 ? (
+              <View>
+                <FlatList
+                  ref={flatListRef}
+                  data={pubs.items.filter(pub => pub.isActive)}
+                  horizontal
+                  pagingEnabled
+                  showsHorizontalScrollIndicator={false}
+                  keyExtractor={(item) => item.id.toString()}
+                  contentContainerStyle={{ paddingHorizontal: 5 }}
+                  decelerationRate="fast"
+                  snapToAlignment="start"
+                  getItemLayout={(_, index) => ({
+                    length: ITEM_WIDTH + 10,
+                    offset: index * (ITEM_WIDTH + 10),
+                    index,
+                  })}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity
+                      onPress={() => item.link && Linking.openURL(item.link)}
+                      style={{
+                        width: ITEM_WIDTH,
+                        height: 140,
+                        borderRadius: 16,
+                        overflow: "hidden",
+                        marginRight: 10,
+                      }}
+                      className="shadow-sm"
+                    >
+                      <Image
+                        source={{ uri: item.imageUrl }}
+                        style={{ width: "100%", height: "100%" }}
+                        resizeMode="cover"
+                      />
+                    </TouchableOpacity>
+                  )}
+                />
+                {/* Indicators */}
+                <View className="flex-row justify-center mt-3">
+                  {pubs.items.filter(pub => pub.isActive).map((_, index) => (
+                    <View
+                      key={index}
+                      className={`h-2 w-2 rounded-full mx-1 ${
+                        index === currentIndex ? 'bg-green-500' : 'bg-gray-300'
+                      }`}
+                    />
+                  ))}
+                </View>
+              </View>
+            ) : (
+              <View className="h-32 bg-gray-100 rounded-2xl justify-center items-center">
+                <Ionicons name="megaphone-outline" size={32} color="#9CA3AF" />
+                <Text className="text-gray-500 text-sm mt-2">
+                  {t("home.noPubs")}
+                </Text>
+              </View>
             )}
-          />
-        ) : (
-          <Text className="text-gray-500 text-center">
-            {t("home.noPubs")}
-          </Text>
-        )}
-      </View>
+          </Animated.View>
 
       {/* Transactions récentes */}
       <View className="flex-row justify-between items-center mb-2">
@@ -544,31 +618,35 @@ const HomeScreen = () => {
         <ScrollView showsVerticalScrollIndicator={false}>
           {history?.data?.transactions?.items?.map((item, index) => {
             const statusColor = getStatusColor(item.status);
-          const typeLabel = getTypeLabel(item.type, t);
+            const typeLabel = getTypeLabel(item.type, t);
             let displayLabel = typeLabel;
             let description = item.description;
 
             // Handle BANK_TRANSFER deposits with URL descriptions
-                if (item.type?.toUpperCase() === "DEPOSIT" && 
-                    item.method?.toUpperCase() === "BANK_TRANSFER" &&
-                    description && 
-                    (description.startsWith('http://') || description.startsWith('https://'))) {
-                  description = t("home.viewDocument"); // "Document de versement Bancaire"
-                }
+            if (item.type?.toUpperCase() === "DEPOSIT" && 
+                item.method?.toUpperCase() === "BANK_TRANSFER" &&
+                description && 
+                (description.startsWith('http://') || description.startsWith('https://'))) {
+              description = t("home.viewDocument");
+            }
 
-                // Handle TONTINE_PAYMENT descriptions to remove # and numbers
-                if (item.type?.toUpperCase() === "TONTINE_PAYMENT") {
-                  if (description) {
-                    description = description.replace(/#\d+/, "").trim();
-                  }
-                }
+            // Handle TONTINE_PAYMENT descriptions to remove # and numbers
+            if (item.type?.toUpperCase() === "TONTINE_PAYMENT") {
+              if (description) {
+                description = description.replace(/#\d+/, "").trim();
+              }
+            }
 
-              const iconSource = getMethodIcon(item);
+            const iconSource = getMethodIcon(item);
+
+            // CORRECTION: Déterminer quel montant afficher
+            const displayAmount = 
+              item.type === 'PAYMENT' || item.type === 'TONTINE_PAYMENT' 
+                ? item.totalAmount 
+                : item.amount;
 
             const readableDescription = getTypeLabel(item.type, t);
-
-
-
+            
             return (
               <TouchableOpacity
                 key={index}
@@ -581,10 +659,11 @@ const HomeScreen = () => {
                 <Image source={iconSource} className="w-10 h-10 mr-3 rounded-full" resizeMode="contain" />
                 <View className="flex-1">
                   <Text className="text-black font-semibold">
-                       {description}
+                    {description}
                   </Text>
                   <Text className="text-black text-sm">
-                    {item.totalAmount?.toLocaleString()} {item.currency}
+                    {/* AFFICHAGE CORRIGÉ: Utiliser displayAmount */}
+                    {displayAmount?.toLocaleString()} {item.currency}
                   </Text>
                 </View>
                 <Text className={`text-xs font-semibold ${statusColor}`}>
@@ -602,42 +681,43 @@ const HomeScreen = () => {
         visible={showKycModal}
         onRequestClose={() => setShowKycModal(false)}
       >
-        <View
-          style={{
-            flex: 1,
-            justifyContent: 'center',
-            alignItems: 'center',
-            backgroundColor: 'rgba(0,0,0,0.5)',
-          }}
-        >
-          <View
-            style={{
-              width: '80%',
-              backgroundColor: 'white',
-              borderRadius: 10,
-              padding: 20,
-              alignItems: 'center',
-            }}
-          >
-            <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 15 }}>
-              {t('kycModal.title')}
-            </Text>
-            <Text style={{ fontSize: 16, textAlign: 'center', marginBottom: 20 }}>
+         <View className="flex-1 justify-center items-center bg-black/50 px-6">
+          <View className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-xl">
+            <View className="items-center mb-4">
+              <View className="w-16 h-16 bg-yellow-100 rounded-full justify-center items-center mb-3">
+                <Ionicons name="shield-checkmark-outline" size={32} color="#F59E0B" />
+              </View>
+              <Text className="text-gray-900 text-xl font-bold text-center">
+                {t('kycModal.title')}
+              </Text>
+            </View>
+            
+            <Text className="text-gray-600 text-center text-base leading-6 mb-6">
               {t('kycModal.message')}
             </Text>
-            <Pressable
-              style={{
-                backgroundColor: '#7ddd7d',
-                paddingVertical: 10,
-                paddingHorizontal: 20,
-                borderRadius: 10,
-              }}
-              onPress={() => setShowKycModal(false)}
-            >
-              <Text style={{ color: '#fff', fontWeight: 'bold' }}>
-                {t('kycModal.okButton')}
-              </Text>
-            </Pressable>
+            
+            <View className="flex-row gap-3">
+              <Pressable
+                className="flex-1 bg-gray-100 py-4 rounded-2xl"
+                onPress={() => setShowKycModal(false)}
+              >
+                <Text className="text-gray-700 font-semibold text-center">
+                  {t('kycModal.laterButton') || "Later"}
+                </Text>
+              </Pressable>
+              
+              <Pressable
+                className="flex-1 bg-green-500 py-4 rounded-2xl shadow-sm"
+                onPress={() => {
+                  setShowKycModal(false);
+                  navigation.navigate("VerifyIdentity");
+                }}
+              >
+                <Text className="text-white font-semibold text-center">
+                  {t('kycModal.verifyButton') || "Verify Now"}
+                </Text>
+              </Pressable>
+            </View>
           </View>
         </View>
       </Modal>

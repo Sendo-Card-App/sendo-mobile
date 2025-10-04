@@ -35,6 +35,7 @@ import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
 import Loader from '../../components/Loader';
 import { getData} from "../../services/storage";
 import { initSocket, getSocket } from '../../utils/socket';
+import { useAppState } from '../../context/AppStateContext'; // Import the hook
 
 let typingTimeout: NodeJS.Timeout;
 
@@ -90,6 +91,7 @@ const ChatScreen = ({ route, navigation }) => {
   const [uploadAttachments] = useUploadAttachmentsMutation();
   const [keyboardOffset, setKeyboardOffset] = useState(0);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+  const { setIsPickingDocument } = useAppState(); // Get the setter function
 
   const { data: userProfile, isLoading: isProfileLoading } = useGetUserProfileQuery(undefined, {
     pollingInterval: 1000,
@@ -229,56 +231,6 @@ const ChatScreen = ({ route, navigation }) => {
     }
   }, [messagesResponse]);
 
-  // Handle socket events
-  // useEffect(() => {
-  //   const socket = getSocket();
-  //   if (!socket) return;
-
-  //   const handleNewMessage = (message: Message) => {
-  //     if (message.conversationId === selectedConversation?.id) {
-  //       setMessages(prev => [
-  //         ...prev.filter(msg => !msg.id.startsWith('temp-')),
-  //         message
-  //       ]);
-  //     }
-  //   };
-  //   socket.on('new_message', handleNewMessage);
-
-  //   const handleTyping = ({ conversationId }: { conversationId: string }) => {
-  //     if (conversationId === selectedConversation?.id) {
-  //       setTypingStatus(true);
-  //     }
-  //   };
-
-  //   const handleStopTyping = ({ conversationId }: { conversationId: string }) => {
-  //     if (conversationId === selectedConversation?.id) {
-  //       setTypingStatus(false);
-  //     }
-  //   };
-
-  //   socket.on('new_message', handleNewMessage);
-  //   socket.on('typing', handleTyping);
-  //   socket.on('stop_typing', handleStopTyping);
-
-  //   return () => {
-  //     socket.off('new_message', handleNewMessage);
-  //     socket.off('typing', handleTyping);
-  //     socket.off('stop_typing', handleStopTyping);
-  //   };
-  // }, [selectedConversation?.id]);
-
-  // const handleTyping = () => {
-  //   const socket = getSocket();
-  //   if (!socket || !selectedConversation?.id) return;
-
-  //   socket.emit('typing', { conversationId: selectedConversation.id });
-  //   clearTimeout(typingTimeout);
-
-  //   typingTimeout = setTimeout(() => {
-  //     socket.emit('stop_typing', { conversationId: selectedConversation.id });
-  //   }, 1000);
-  // };
-
   // Upload attachment to server
   const handleUploadAttachments = async (attachments: Attachment[]): Promise<string[]> => {
     try {
@@ -312,6 +264,9 @@ const ChatScreen = ({ route, navigation }) => {
 
   const pickDocument = async () => {
     try {
+      // 🚨 Set picking state to true BEFORE opening document picker
+      setIsPickingDocument(true);
+      
       const result = await DocumentPicker.getDocumentAsync({
         type: ['application/pdf', 'image/*'],
       });
@@ -323,8 +278,14 @@ const ChatScreen = ({ route, navigation }) => {
           type: result.assets[0].mimeType || 'application/octet-stream'
         }]);
       }
+      
+      // 🚨 Reset picking state after selection
+      setIsPickingDocument(false);
+      
     } catch (err) {
       console.log('Document picker error:', err);
+      // 🚨 Reset picking state on error too
+      setIsPickingDocument(false);
       Toast.show({
         type: 'error',
         text1: 'Error',
@@ -335,6 +296,9 @@ const ChatScreen = ({ route, navigation }) => {
 
   const pickImage = async () => {
     try {
+        // 🚨 Set picking state to true BEFORE opening image picker
+        setIsPickingDocument(true);
+        
         // Use the Photo Picker API without requiring permanent permissions
         const result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -358,15 +322,21 @@ const ChatScreen = ({ route, navigation }) => {
                 type: 'image/jpeg'
             }]);
         }
+        
+        // 🚨 Reset picking state after selection
+        setIsPickingDocument(false);
+        
     } catch (err) {
         console.log('Image picker error:', err);
+        // 🚨 Reset picking state on error too
+        setIsPickingDocument(false);
         Toast.show({
             type: 'error',
             text1: 'Error',
             text2: 'Failed to pick image',
         });
     }
-};
+  };
 
   const removeAttachment = (index: number) => {
     setAttachments(prev => prev.filter((_, i) => i !== index));

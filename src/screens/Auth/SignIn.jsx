@@ -7,6 +7,7 @@ import {
   Image,
   TouchableOpacity,
   StatusBar,
+  Linking
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
@@ -24,7 +25,7 @@ import { useLoginWithEmailMutation, useLoginWithPhoneMutation  } from "../../ser
 import { useTranslation } from "react-i18next";
 import Loader from "../../components/Loader";
 import Toast from "react-native-toast-message"; 
-import { storeData, getData  } from "../../services/storage"; // Import the storage utility
+import { storeData, getData  } from "../../services/storage";
 
 const SignIn = () => {
   const { t } = useTranslation();
@@ -37,89 +38,28 @@ const SignIn = () => {
   const [loginWithPhone] = useLoginWithPhoneMutation();
   const [refreshInterval, setRefreshInterval] = useState(null);
   const [emailError, setEmailError] = useState(false);
-  const [loading, setLoading] = React.useState(true);
   const [passwordError, setPasswordError] = useState(false);
   
- useEffect(() => {
-     const checkAuthData = async () => {
-       try {
-         const authData = await getData('@authData');
-         if (authData?.accessToken) {
-           dispatch(loginSuccess(authData));
-           navigation.replace("SignIn");
-         }
-       } catch (error) {
-         console.log("Error checking auth data:", error);
-         navigation.replace("SignIn");
-       } finally {
-         setLoading(false); // stop loader once done
-       }
-     };
-   
-     checkAuthData();
-   }, [])
-   
+  // Remove the loading state or set it to false initially
+  // const [loading, setLoading] = React.useState(true); // REMOVE THIS LINE
 
-   useEffect(() => {
-    const setupTokenRefresh = async () => {
-      // Clear any existing interval
-      if (refreshInterval) clearInterval(refreshInterval);
-
-      const authData = await getData('@authData');
-      if (authData?.refreshToken && authData?.deviceId) {
-        // Set up new interval to refresh token every 30 minutes
-        const interval = setInterval(async () => {
-          try {
-            const result = await loginWithPhone({
-              refreshToken: authData.refreshToken,
-              deviceId: authData.deviceId
-            }).unwrap();
-
-            if (result?.data?.accessToken) {
-              const newAuthData = {
-                ...authData,
-                accessToken: result.data.accessToken,
-                refreshToken: result.data.refreshToken || authData.refreshToken
-              };
-              
-              await storeData('@authData', newAuthData);
-              dispatch(loginSuccess(newAuthData));
-            }
-          } catch (error) {
-            console.log("Token refresh failed:", error);
-            clearInterval(interval);
-          }
-        }, 30 * 60 * 1000); // 30 minutes
-
-        setRefreshInterval(interval);
-      }
-    };
-
-    setupTokenRefresh();
-
-    return () => {
-      if (refreshInterval) clearInterval(refreshInterval);
-    };
-  }, []);
-
-  
   const handleSubmit = async () => {
     let hasError = false;
-  
+
     if (!email) {
       setEmailError(true);
       hasError = true;
     } else {
       setEmailError(false);
     }
-  
+
     if (!password) {
       setPasswordError(true);
       hasError = true;
     } else {
       setPasswordError(false);
     }
-  
+
     if (hasError) {
       Toast.show({
         type: 'error',
@@ -128,27 +68,28 @@ const SignIn = () => {
       });
       return;
     }
-  
+
     dispatch(loginStart({ email }));
-  
+
     try {
       // 1. Login with Email
       const response = await loginWithEmail({ email, password }).unwrap();
-  
+
       if (response?.status === 200 && response?.data?.accessToken) {
         const userData = response.data;
-  
-         const authData = {
+
+        const authData = {
           user: userData,
           accessToken: userData.accessToken,
-          refreshToken: userData.refreshToken, // Store refresh token
+          refreshToken: userData.refreshToken,
           deviceId: userData.deviceId,
           isGuest: false,
         };
         console.log(userData)
         await storeData('@authData', authData);
         dispatch(loginSuccess(authData)); 
-        dispatch(setIsNewUser(true)); // <-- THIS IS CRUCIAL
+        dispatch(setIsNewUser(true));
+        
         const interval = setInterval(async () => {
           try {
             const result = await loginWithPhone({
@@ -173,8 +114,8 @@ const SignIn = () => {
         }, 30 * 60 * 1000); // 30 minutes
 
         setRefreshInterval(interval);
-        navigation.navigate("PinCode", { setup: true }); 
-  
+        navigation.navigate("PinCode", { setup: true });
+
         Toast.show({
           type: 'success',
           text1: 'Login Successful',
@@ -185,9 +126,9 @@ const SignIn = () => {
       }
     } catch (err) {
       console.log("Login error:", err);
-  
+
       let errorMessage = "An error on the server.";
-  
+
       if (err?.status === 403) {
         errorMessage = "Account Not Verified.";
       } else if (err?.status === 500) {
@@ -199,9 +140,9 @@ const SignIn = () => {
       } else if (err?.data?.message) {
         errorMessage = err.data.message;
       }
-  
+
       dispatch(loginFailure(errorMessage));
-  
+
       Toast.show({
         type: 'error',
         text1: 'Login Failed',
@@ -209,13 +150,13 @@ const SignIn = () => {
       });
     }
   };
-  
-  
 
   const handleToggle = () => {
     navigation.navigate("Signup");
   };
-  if (loading) return <Loader />;
+
+  // Remove this loading check that was causing blank page
+  // if (loading) return <Loader />;
 
   return (
     <KeyboardAvoidinWrapper>
@@ -234,125 +175,135 @@ const SignIn = () => {
         />
 
         <View className="w-[80%] bg-gray-200 border-1 mt-3 pb-0 mx-auto rounded-3xl mb-2 px-5" style={{backgroundColor: '#e5e5e5'}}>
-  <View className="mt-5 mb-5">
-    <Text className="text-3xl font-bold flex-start">{t("signIn.title")}</Text>
-  </View>
+          <View className="mt-5 mb-5">
+            <Text className="text-3xl font-bold flex-start">{t("signIn.title")}</Text>
+          </View>
 
-  {/* Email Field with Label */}
-  <View className="mb-1">
-    <Text className="text-sm font-medium text-gray-700 mb-1 pl-3">{t("signIn.email")}</Text>
-    <TextInput
-      placeholder={t("signIn.emailPlaceholder") || "Enter your email address"}
-      onChangeText={setEmail}
-      value={email}
-      autoCapitalize="none"
-      keyboardType="email-address"
-      className="border-[#fff] bg-[#ffffff] rounded-3xl mb-3"
-      style={{
-        backgroundColor: '#fff',
-        borderRadius: 30,
-        paddingVertical: 14,
-        paddingHorizontal: 20,
-        fontSize: 16,
-        borderWidth: 1,
-        borderColor: '#ddd',
-         color: '#000' // Ensure text color is black for better contrast
-      }}
-    />
-  </View>
-  {emailError && (
-    <Text className="text-red-500 text-sm mb-2 pl-3">
-      Email is required
-    </Text>
-  )}
+          {/* Email Field with Label */}
+          <View className="mb-1">
+            <Text className="text-sm font-medium text-gray-700 mb-1 pl-3">{t("signIn.email")}</Text>
+            <TextInput
+              placeholder={t("signIn.emailPlaceholder") || "Enter your email address"}
+              onChangeText={setEmail}
+              value={email}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              className="border-[#fff] bg-[#ffffff] rounded-3xl mb-3"
+              style={{
+                backgroundColor: '#fff',
+                borderRadius: 30,
+                paddingVertical: 14,
+                paddingHorizontal: 20,
+                fontSize: 16,
+                borderWidth: 1,
+                borderColor: '#ddd',
+                color: '#000'
+              }}
+            />
+          </View>
+          {emailError && (
+            <Text className="text-red-500 text-sm mb-2 pl-3">
+              Email is required
+            </Text>
+          )}
 
-  {/* Password Field with Label */}
-  <View className="mb-1">
-    <Text className="text-sm font-medium text-gray-700 mb-1 pl-3">{t("signIn.password")}</Text>
-    <View className="relative">
-      <TextInput
-        placeholder={t("signIn.passwordPlaceholder") || "Enter your password"}
-        onChangeText={setPassword}
-        value={password}
-        secureTextEntry={!showPassword}
-        className="border-[#fff] bg-[#ffffff] rounded-3xl"
-        style={{
-          backgroundColor: '#fff',
-          borderRadius: 30,
-          paddingVertical: 14,
-          paddingHorizontal: 20,
-          fontSize: 16,
-          borderWidth: 1,
-          borderColor: '#ddd',
-           color: '#000' // Ensure text color is black for better contrast
-        }}
-      />
-      <TouchableOpacity
-        onPress={() => setShowPassword(!showPassword)}
-        style={{ position: "absolute", right: 15, top: 12 }}
-      >
-        <AntDesign
-          name={showPassword ? "eye" : "eye"}
-          size={24}
-          color="gray"
-        />
-      </TouchableOpacity>
-    </View>
-  </View>
-  {passwordError && (
-    <Text className="text-red-500 text-sm mb-2 pl-3">
-      Password is required
-    </Text>
-  )}
+          {/* Password Field with Label */}
+          <View className="mb-1">
+            <Text className="text-sm font-medium text-gray-700 mb-1 pl-3">{t("signIn.password")}</Text>
+            <View className="relative">
+              <TextInput
+                placeholder={t("signIn.passwordPlaceholder") || "Enter your password"}
+                onChangeText={setPassword}
+                value={password}
+                secureTextEntry={!showPassword}
+                className="border-[#fff] bg-[#ffffff] rounded-3xl"
+                style={{
+                  backgroundColor: '#fff',
+                  borderRadius: 30,
+                  paddingVertical: 14,
+                  paddingHorizontal: 20,
+                  fontSize: 16,
+                  borderWidth: 1,
+                  borderColor: '#ddd',
+                  color: '#000'
+                }}
+              />
+              <TouchableOpacity
+                onPress={() => setShowPassword(!showPassword)}
+                style={{ position: "absolute", right: 15, top: 12 }}
+              >
+                  <AntDesign
+                    name={showPassword ? "eye" : "eye"}
+                    size={24}
+                    color="gray"
+                  />
+              </TouchableOpacity>
+            </View>
+          </View>
+          {passwordError && (
+            <Text className="text-red-500 text-sm mb-2 pl-3">
+              Password is required
+            </Text>
+          )}
 
-  {/* Submit Button */}
-  <TouchableOpacity 
-    onPress={handleSubmit}
-    className="mt-6"
-  >
-    {isLoading ? (
-      <Loader />
-    ) : (
-      <View style={{
-        backgroundColor: '#7ddd7d',
-        borderRadius: 30,
-        paddingVertical: 16,
-        paddingHorizontal: 20,
-      }}>
-        <Text className="text-center font-bold text-white" style={{fontSize: 16}}>
-          {t("signIn.next")}
-        </Text>
-      </View>
-    )}
-  </TouchableOpacity>
+          {/* Submit Button */}
+          <TouchableOpacity 
+            onPress={handleSubmit}
+            className="mt-6"
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <View style={{
+                backgroundColor: '#7ddd7d',
+                borderRadius: 30,
+                paddingVertical: 16,
+                paddingHorizontal: 20,
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <Loader size="small" />
+              </View>
+            ) : (
+              <View style={{
+                backgroundColor: '#7ddd7d',
+                borderRadius: 30,
+                paddingVertical: 16,
+                paddingHorizontal: 20,
+              }}>
+                <Text className="text-center font-bold text-white" style={{fontSize: 16}}>
+                  {t("signIn.next")}
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
 
-  {/* Forgot Password Link */}
-  <TouchableOpacity 
-    onPress={() => navigation.navigate("ForgetPassword")}
-    className="mt-4"
-  >
-    <Text style={{ textAlign: "right", color: '#555', fontSize: 14 }}>
-      {t("signIn.forgotPassword")}
-    </Text>
-  </TouchableOpacity>
+          {/* Forgot Password Link */}
+          <TouchableOpacity 
+            onPress={() => navigation.navigate("ForgetPassword")}
+            className="mt-4"
+          >
+            <Text style={{ textAlign: "right", color: '#555', fontSize: 14 }}>
+              {t("signIn.forgotPassword")}
+            </Text>
+          </TouchableOpacity>
 
-  {/* Divider */}
-  <View className="flex-row items-center mt-5 mb-5">
-    <View className="flex-1 h-px bg-gray-300"></View>
-    <Text className="px-3 text-gray-500">{t("signIn.orSignInWith")}</Text>
-    <View className="flex-1 h-px bg-gray-300"></View>
-  </View>
+          {/* Divider */}
+          <View className="flex-row items-center mt-5 mb-5">
+            <View className="flex-1 h-px bg-gray-300"></View>
+            <Text className="px-3 text-gray-500">{t("signIn.orSignInWith")}</Text>
+            <View className="flex-1 h-px bg-gray-300"></View>
+          </View>
 
-  {/* OTP Login Option */}
-  <TouchableOpacity 
-    onPress={() => navigation.navigate("LogIn")}
-    className="mb-5"
-  >
-    <Text className="text-center text-blue-600 font-medium">
-      {t("signIn.otpLogin") || "Login with OTP"}
-    </Text>
-  </TouchableOpacity>
-</View>
+          {/* OTP Login Option */}
+          <TouchableOpacity 
+            onPress={() => navigation.navigate("LogIn")}
+            className="mb-5"
+          >
+            <Text className="text-center text-blue-600 font-medium">
+              {t("signIn.otpLogin") || "Login with OTP"}
+            </Text>
+          </TouchableOpacity>
+        </View>
 
         <Text className="text-center text-white mt-5">
           {t("signIn.dontHaveAccount")}
@@ -363,38 +314,34 @@ const SignIn = () => {
             {t("signIn.signUp")}
           </Text>
         </TouchableOpacity>
-        {/* ✅ WhatsApp floating button */}
-        <TouchableOpacity
-          onPress={() => {
-            const phoneNumber = "+237640726036"; // Replace with your support WhatsApp number
-            const message = t("whatsapp.defaultMessage");
-            Communications.text(phoneNumber, message);
-          }}
-          style={{
-            position: "absolute",
-            bottom: 30,
-            right: 30,
-            backgroundColor: "#25D366",
-            width: 60,
-            height: 60,
-            borderRadius: 30,
-            justifyContent: "center",
-            alignItems: "center",
-            elevation: 5,
-            shadowColor: "#000",
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.25,
-            shadowRadius: 3.84,
-          }}
-        >
-          <Ionicons name="logo-whatsapp" size={36} color="white" />
-        </TouchableOpacity>
 
-        {/* <TouchableOpacity  onPress={() => navigation.navigate("GuestLogin")}>
-          <Text className="text-[#7ddd7d] underline mt-2">
-            {t("signIn.guestUser")}
-          </Text>
-        </TouchableOpacity> */}
+        {/* ✅ WhatsApp floating button */}
+        <TouchableOpacity 
+                onPress={() => {
+                  const url = "https://wa.me/message/GYEAYFKV6T2SO1";
+                  Linking.openURL(url).catch(() => {
+                    Alert.alert('Erreur', 'Impossible d’ouvrir WhatsApp. Vérifiez qu’il est installé.');
+                  });
+                }}
+                style={{
+                  position: 'absolute',
+                  bottom: 30,
+                  right: 30,
+                  backgroundColor: '#25D366',
+                  width: 60,
+                  height: 60,
+                  borderRadius: 30,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  elevation: 5,
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.25,
+                  shadowRadius: 3.84,
+                }}
+              >
+                <Ionicons name="logo-whatsapp" size={36} color="white" />
+              </TouchableOpacity>
       </SafeAreaView>
     </KeyboardAvoidinWrapper>
   );

@@ -11,21 +11,29 @@ import KycTab from "../../components/KycTab";
 import { useDispatch } from "react-redux";
 import { setAddressProof } from "../../features/Kyc/kycReducer";
 import { useTranslation } from "react-i18next";
+import { useAppState } from '../../context/AppStateContext'; // Import the hook
 
 const AddressConfirm = ({ navigation }) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const [selectedDoc, setSelectedDoc] = useState(null);
+  const { setIsPickingDocument } = useAppState(); // Get the setter function
 
   const pickDocument = async () => {
     try {
+      // 🚨 Set picking state to true BEFORE opening picker
+      setIsPickingDocument(true);
+      
       const result = await DocumentPicker.getDocumentAsync({
         type: ["application/pdf", "image/*"],
         copyToCacheDirectory: true,
         multiple: false,
       });
 
-      if (!result?.assets?.length) return;
+      if (!result?.assets?.length) {
+        setIsPickingDocument(false);
+        return;
+      }
 
       const file = result.assets[0];
 
@@ -39,6 +47,7 @@ const AddressConfirm = ({ navigation }) => {
           text1: t("niu.fileTooLarge"),
           text2: t("niu.documentSizeLimit"),
         });
+        setIsPickingDocument(false);
         return;
       }
 
@@ -48,8 +57,14 @@ const AddressConfirm = ({ navigation }) => {
         mimeType: file.mimeType || "application/octet-stream",
         type: file.mimeType?.includes("image") ? "image" : "document",
       });
+      
+      // 🚨 Reset picking state after successful selection
+      setIsPickingDocument(false);
+      
     } catch (error) {
       console.error("Document selection error:", error);
+      // 🚨 Reset picking state on error too
+      setIsPickingDocument(false);
       Toast.show({
         type: "error",
         text1: t("niu.error"),
@@ -77,12 +92,6 @@ const AddressConfirm = ({ navigation }) => {
           mimeType: selectedDoc.mimeType,
         })
       );
-
-      Toast.show({
-        type: "success",
-        text1: t("success"),
-        text2: t("addressConfirm.confirmed"),
-      });
 
       navigation.navigate("KycResume");
     } catch (error) {

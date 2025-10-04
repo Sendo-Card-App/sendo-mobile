@@ -567,6 +567,9 @@
   "kyc_resume": {
     "identity_verification": "Vérification de l'identité",
     "kyc_summary": "Résumé de votre KYC",
+     "progress": "Progression de vérification",
+    "steps_remaining": "{{count}} étape(s) restante(s)",
+    "all_steps_complete": "Toutes les étapes terminées ! Prêt à soumettre",
     "completion_hint": "Complétez toutes les étapes pour finaliser votre vérification",
     "personal_details": "Détails personnels",
     "selfie": "Selfie",
@@ -617,7 +620,7 @@
     "amountInput": "Champ de saisie du montant",
     "invalidAmount": "Veuillez entrer un montant valide supérieur à 0.",
     "missingMatricule": "Informations du portefeuille manquantes. Veuillez réessayer plus tard.",
-    "rechargedSuccessfully": "La carte a été rechargée avec succès.",
+    "rechargedSuccessfully": "La recharge de la carte a été initié avec succès.",
     "withdrawnSuccessfully": "Le montant a été retiré avec succès.",
     "actionFailed": "Une erreur est survenue lors du traitement de la demande.",
     "selectRecharge": "Sélectionner l’option de recharge",
@@ -710,6 +713,7 @@
     "setupPin": "Définissez votre code PIN",
     "enterPin": "Entrez votre code PIN",
     "incorrectPin": "Code PIN incorrect",
+     "contactSupport": "Contacter le Support",
     "accountLocked": "Compte bloqué",
     "tooManyAttempts": "Trop de tentatives. Veuillez vous reconnecter.",
     "validationError": "Erreur de validation",
@@ -1488,6 +1492,17 @@
     "monthly": "Mensuel",
     "unknownAdmin": "Admin inconnu"
   },
+   "serviceScreen": {
+    "welcome": "Choisissez un service pour commencer",
+    "subtitle": "Tous vos besoins financiers au même endroit",
+    "security": "Tous les services sont sécurisés et cryptés",
+    "support": "Support",
+    "supportDesc": "Obtenez de l'aide et de l'assistance",
+    "shareDesc": "Partagez de l'argent avec des amis",
+    "fundDesc": "Demandez des fonds à vos contacts",
+    "tontineDesc": "Rejoignez des groupes d'épargne",
+    "billsDesc": "Payez vos factures facilement"
+  },
  "terms": {
     "title": "Conditions Générales",
     "intro": "Veuillez lire attentivement les conditions suivantes avant d'utiliser nos services.",
@@ -1512,7 +1527,9 @@
     "noPubs": "Aucune publicite",
     "recentTransactions": "Transactions récentes",
     "noTransactions": "Aucune transaction trouvée"
+    
   },
+  
   "kyc": {
     "my_kyc": "Mes KYC",
     "id_proof": "CNI (ou passeport ou permis de conduire)",
@@ -1679,9 +1696,10 @@
   "transfer_confirmation_message": "Êtes-vous sûr de vouloir transférer {{amount}} {{currency}} à {{name}} ?",
   "confirm": "Confirmer",
   "kycModal": {
-    "title": "KYC Requis",
-    "message": "Documents KYC manquants. Veuillez soumettre vos KYC pour commencer à utiliser l'application.",
-    "okButton": "OK"
+    "title": "Vérifiez votre identité",
+    "message": "Pour des raisons de sécurité, veuillez vérifier votre identité (KYC) afin de continuer à utiliser tous les services.",
+    "laterButton": "Plus tard",
+    "verifyButton": "Vérifier maintenant"
   },
     "cardHistory": "Historique de la carte",
   "loadingHistory": "Chargement de l’historique de la carte...",

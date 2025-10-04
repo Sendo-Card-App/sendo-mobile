@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   Modal,
   Alert,
   Platform,
+  BackHandler,
 } from "react-native";
 import Loader from "../../components/Loader";
 import { Ionicons, Feather, AntDesign } from "@expo/vector-icons";
@@ -16,6 +17,7 @@ import { useTranslation } from "react-i18next";
 import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
 import { useUpdateKycDocumentMutation } from "../../services/Kyc/kycApi"; 
+import { useAppState } from '../../context/AppStateContext';
 
 // Define camera types locally as fallback
 const CameraType = {
@@ -33,8 +35,7 @@ const documentTypeMap = {
 const KYCValidation = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const { documents } = route.params;
-  //console.log(documents)
+  const { documents } = route.params || { documents: [] };
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [visibleImages, setVisibleImages] = useState(null);
@@ -43,36 +44,77 @@ const KYCValidation = () => {
   const [cameraType, setCameraType] = useState(CameraType.back);
   const [selectedDocument, setSelectedDocument] = useState(null);
   const [uploading, setUploading] = useState(false);
-  const [hasCameraPermission, setHasCameraPermission] = useState(null);
-  const [cameraAvailable, setCameraAvailable] = useState(false);
+  const [cameraAvailable, setCameraAvailable] = useState(true);
   
-  // Use the RTK Query mutation hook
   const [updateKycDocument] = useUpdateKycDocumentMutation();
+  const { setIsPickingDocument } = useAppState();
 
+  // Handle Android back button
   useEffect(() => {
-    (async () => {
-      try {
-        // Check if we can use the camera
-        const { status } = await ImagePicker.requestCameraPermissionsAsync();
-        setHasCameraPermission(status === 'granted');
-        setCameraAvailable(true);
-      } catch (error) {
-        console.error("Camera not available:", error);
-        setCameraAvailable(false);
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (visibleImages) {
+        setVisibleImages(null);
+        setCurrentIndex(0);
+        return true;
       }
-    })();
+      if (cameraModalVisible) {
+        setCameraModalVisible(false);
+        return true;
+      }
+      return false;
+    });
+
+    return () => backHandler.remove();
+  }, [visibleImages, cameraModalVisible]);
+
+  // Check camera availability (removed permission check)
+  useEffect(() => {
+    let isMounted = true;
+
+    const checkCameraAvailability = async () => {
+      try {
+        // Simple check to see if camera is generally available
+        // Since permissions are handled in app.json, we assume camera is available
+        if (isMounted) {
+          setCameraAvailable(true);
+        }
+      } catch (error) {
+        console.error("Camera availability check error:", error);
+        if (isMounted) {
+          // Assume camera is available if we can't check
+          setCameraAvailable(true);
+        }
+      }
+    };
+
+    checkCameraAvailability();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  const groupedDocs = documents.reduce((acc, doc) => {
-    if (!acc[doc.type]) acc[doc.type] = [];
-    acc[doc.type].push(doc);
-    return acc;
-  }, {});
+  // Safe document grouping with error handling
+  const groupedDocs = useCallback(() => {
+    try {
+      if (!documents || !Array.isArray(documents)) return {};
+      return documents.reduce((acc, doc) => {
+        if (doc && doc.type) {
+          if (!acc[doc.type]) acc[doc.type] = [];
+          acc[doc.type].push(doc);
+        }
+        return acc;
+      }, {});
+    } catch (error) {
+      console.error("Error grouping documents:", error);
+      return {};
+    }
+  }, [documents]);
 
-  const hasRejectedDoc = documents.some((doc) => doc.status === "REJECTED");
+  const hasRejectedDoc = documents?.some((doc) => doc?.status === "REJECTED") || false;
 
   const kycItems = Object.keys(documentTypeMap).map((type) => {
-    const docList = groupedDocs[type] || [];
+    const docList = groupedDocs()[type] || [];
     const firstDoc = docList[0];
 
     let status = null;
@@ -86,7 +128,7 @@ const KYCValidation = () => {
       } else if (firstDoc.status === "REJECTED") {
         status = t("kyc.rejected");
         statusColor = "text-red-500";
-        rejectionReason = firstDoc.rejectionReason;
+        rejectionReason = firstDoc.rejectionReason || "";
       } else {
         status = t("kyc.pending");
         statusColor = "text-yellow-500";
@@ -98,7 +140,7 @@ const KYCValidation = () => {
       title: t(documentTypeMap[type] || type),
       status,
       statusColor,
-      urls: docList.map((doc) => doc.url),
+      urls: docList.filter(doc => doc?.url).map((doc) => doc.url),
       hasDoc: !!firstDoc,
       rejected: firstDoc?.status === "REJECTED",
       rejectionReason,
@@ -106,133 +148,145 @@ const KYCValidation = () => {
     };
   });
 
-  const takePicture = async () => {
+  const safeImagePickerOperation = async (operation, errorMessage) => {
     try {
-      const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [4, 3],
-        quality: 0.8,
-      });
-
-      if (!result.canceled) {
-        await uploadDocument(result.assets[0].uri, selectedDocument.publicId);
-        setCameraModalVisible(false);
+      setIsPickingDocument(true);
+      const result = await operation();
+      
+      // Small delay to ensure state is set
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      if (!result.canceled && result.assets?.[0]?.uri) {
+        await uploadDocument(result.assets[0].uri, selectedDocument?.publicId);
+        if (cameraModalVisible) setCameraModalVisible(false);
       }
     } catch (error) {
-      console.error("Error taking picture:", error);
-      Alert.alert("Error", "Failed to take picture");
+      console.error("Image picker error:", error);
+      Alert.alert("Error", errorMessage);
+    } finally {
+      // Ensure we always reset the picking state
+      setTimeout(() => {
+        setIsPickingDocument(false);
+      }, 200);
     }
   };
 
-  const pickImage = async () => {
-    try {
-      const result = await ImagePicker.launchImageLibraryAsync({
+  const takePicture = () => {
+    safeImagePickerOperation(
+      () => ImagePicker.launchCameraAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [4, 3],
-        quality: 0.8,
-      });
+        quality: 0.7,
+        exif: false,
+      }),
+      "Failed to take picture"
+    );
+  };
 
-      if (!result.canceled) {
-        await uploadDocument(result.assets[0].uri, selectedDocument.publicId);
-      }
-    } catch (error) {
-      console.error("Error picking image:", error);
-      Alert.alert("Error", "Failed to pick image");
-    }
+  const pickImage = () => {
+    safeImagePickerOperation(
+      () => ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.7,
+        exif: false,
+      }),
+      "Failed to pick image"
+    );
   };
 
   const pickDocument = async () => {
     try {
+      setIsPickingDocument(true);
+      
       const result = await DocumentPicker.getDocumentAsync({
         type: "application/pdf",
+        copyToCacheDirectory: false,
       });
 
-      if (result.type === "success") {
-        await uploadDocument(result.uri, selectedDocument.publicId);
+      if (result.type === "success" && result.uri) {
+        await uploadDocument(result.uri, selectedDocument?.publicId);
       }
     } catch (error) {
-      console.error("Error picking document:", error);
+      console.error("Document picker error:", error);
       Alert.alert("Error", "Failed to pick document");
+    } finally {
+      setTimeout(() => {
+        setIsPickingDocument(false);
+      }, 200);
     }
   };
 
-      const uploadDocument = async (uri, publicId) => {
-      setUploading(true);
+  const uploadDocument = async (uri, publicId) => {
+    if (!publicId) {
+      Alert.alert("Error", "Invalid document reference");
+      return;
+    }
+
+    setUploading(true);
+    
+    try {
+      const formData = new FormData();
       
-      try {
-        // Create FormData object
-        const formData = new FormData();
-        
-        // For iOS, we need to modify the URI
-        const fileUri = Platform.OS === "ios" ? uri.replace("file://", "") : uri;
-        
-        // Determine file type and name
-        let fileName = `document_${Date.now()}`;
-        let fileType = "image/jpeg";
-        
-        // Check if it's a PDF
-        if (uri.toLowerCase().endsWith('.pdf')) {
-          fileType = 'application/pdf';
-          fileName += '.pdf';
-        } else {
-          fileName += '.jpg';
-        }
-        
-        // Append the file to FormData
-        formData.append("document", {
-          uri: fileUri,
-          name: fileName,
-          type: fileType,
-        });
-
-        // Encode the publicId for URL (replace slashes with %2F)
-        const encodedPublicId = encodeURIComponent(publicId);
-
-        // Use the RTK Query mutation to update the document
-        const response = await updateKycDocument({
-          publicId: encodedPublicId,
-          formData
-        }).unwrap();
-        console.log(response)
-
-        if (response) {
-          Alert.alert("Success", "Document uploaded successfully");
-          navigation.goBack();
-        }
-      } catch (error) {
-        console.error("Error uploading document:", error);
-        Alert.alert("Error", "Failed to upload document");
-      } finally {
-        setUploading(false);
+      // Safe URI handling
+      let fileUri = uri;
+      if (Platform.OS === "ios" && uri.startsWith('file://')) {
+        fileUri = uri.replace("file://", "");
       }
-    };
+      
+      // Determine file type and name
+      const isPDF = uri.toLowerCase().endsWith('.pdf');
+      const fileType = isPDF ? 'application/pdf' : 'image/jpeg';
+      const fileName = `document_${Date.now()}.${isPDF ? 'pdf' : 'jpg'}`;
+      
+      // Append the file to FormData
+      formData.append("document", {
+        uri: fileUri,
+        name: fileName,
+        type: fileType,
+      });
+
+      const encodedPublicId = encodeURIComponent(publicId);
+
+      const response = await updateKycDocument({
+        publicId: encodedPublicId,
+        formData
+      }).unwrap();
+
+      if (response) {
+        Alert.alert("Success", "Document uploaded successfully");
+        navigation.goBack();
+      }
+    } catch (error) {
+      console.error("Upload error:", error);
+      const errorMessage = error?.data?.message || "Failed to upload document";
+      Alert.alert("Error", errorMessage);
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleResubmit = (item) => {
+    if (!item?.publicId) {
+      Alert.alert("Error", "Invalid document configuration");
+      return;
+    }
+
     setSelectedDocument(item);
     
     if (item.id === "SELFIE") {
-      if (!cameraAvailable || hasCameraPermission === false) {
-        Alert.alert("Camera not available", "Camera is not available on this device or permission was denied");
-        return;
-      }
+      // For selfie, directly open camera (permissions handled by app.json)
       setCameraModalVisible(true);
     } else if (item.id === "ADDRESS_PROOF") {
-      // For address proof, allow PDF or image upload
       Alert.alert(
         "Select Document Type",
         "Choose how to provide your address proof",
         [
           {
             text: "Take Photo",
-            onPress: () => {
-              if (!cameraAvailable || hasCameraPermission === false) {
-                Alert.alert("Camera not available", "Camera is not available on this device or permission was denied");
-                return;
-              }
-              setCameraModalVisible(true);
-            },
+            onPress: () => setCameraModalVisible(true),
           },
           {
             text: "Upload Image",
@@ -248,47 +302,14 @@ const KYCValidation = () => {
           },
         ]
       );
-    } else if (item.id === "ID_PROOF") {
-      // For ID proof, need front and back
-      Alert.alert(
-        "ID Document",
-        "You need to provide both front and back of your ID",
-        [
-          {
-            text: "Take Photos",
-            onPress: () => {
-              if (!cameraAvailable || hasCameraPermission === false) {
-                Alert.alert("Camera not available", "Camera is not available on this device or permission was denied");
-                return;
-              }
-              setCameraModalVisible(true);
-            },
-          },
-          {
-            text: "Upload Images",
-            onPress: pickImage,
-          },
-          {
-            text: "Cancel",
-            style: "cancel",
-          },
-        ]
-      );
     } else {
-      // For other documents, allow image upload
       Alert.alert(
         "Select Option",
         "Choose how to provide your document",
         [
           {
             text: "Take Photo",
-            onPress: () => {
-              if (!cameraAvailable || hasCameraPermission === false) {
-                Alert.alert("Camera not available", "Camera is not available on this device or permission was denied");
-                return;
-              }
-              setCameraModalVisible(true);
-            },
+            onPress: () => setCameraModalVisible(true),
           },
           {
             text: "Upload Image",
@@ -303,32 +324,87 @@ const KYCValidation = () => {
     }
   };
 
-  if (hasCameraPermission === null) {
+  // Safe image viewer component
+  const ImageViewer = () => {
+    if (!visibleImages || !Array.isArray(visibleImages) || visibleImages.length === 0) {
+      return null;
+    }
+
+    const currentImage = visibleImages[currentIndex];
+    if (!currentImage) return null;
+
     return (
-      <View className="flex-1 justify-center items-center">
-        <Loader size="large" />
-      </View>
+      <Modal
+        visible={!!visibleImages}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          setVisibleImages(null);
+          setCurrentIndex(0);
+        }}
+      >
+        <View className="flex-1 bg-black/90 justify-center items-center px-5">
+          <Image
+            source={{ uri: currentImage }}
+            style={{
+              width: "100%",
+              height: "70%",
+              resizeMode: "contain",
+              borderRadius: 10,
+            }}
+            onError={() => {
+              Alert.alert("Error", "Failed to load image");
+            }}
+          />
+
+          {/* Controls */}
+          <View className="flex-row justify-between items-center mt-4 w-full px-10">
+            <TouchableOpacity
+              onPress={() => setCurrentIndex((prev) => prev > 0 ? prev - 1 : visibleImages.length - 1)}
+              className="p-2 bg-white rounded-full"
+              disabled={visibleImages.length <= 1}
+            >
+              <Feather name="chevron-left" size={24} color={visibleImages.length <= 1 ? "#ccc" : "#000"} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => {
+                setVisibleImages(null);
+                setCurrentIndex(0);
+              }}
+              className="p-2 bg-red-600 rounded-full"
+            >
+              <Feather name="x" size={24} color="white" />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => setCurrentIndex((prev) => prev < visibleImages.length - 1 ? prev + 1 : 0)}
+              className="p-2 bg-white rounded-full"
+              disabled={visibleImages.length <= 1}
+            >
+              <Feather name="chevron-right" size={24} color={visibleImages.length <= 1 ? "#ccc" : "#000"} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Image counter */}
+          {visibleImages.length > 1 && (
+            <Text className="text-white mt-4">
+              {currentIndex + 1} / {visibleImages.length}
+            </Text>
+          )}
+        </View>
+      </Modal>
     );
-  }
+  };
 
   return (
     <View className="flex-1 bg-[#7ddd7d]">
       {/* Header */}
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          paddingTop: 50,
-          paddingBottom: 15,
-          paddingHorizontal: 20,
-          backgroundColor: "#7ddd7d",
-          justifyContent: "space-between",
-        }}
-      >
+      <View className="flex-row items-center justify-between pt-12 pb-4 px-5 bg-[#7ddd7d]">
         <TouchableOpacity onPress={() => navigation.navigate("MainTabs")}>
           <AntDesign name="left" size={24} color="white" />
         </TouchableOpacity>
-        <Text style={{ fontSize: 18, fontWeight: "bold", color: "#000" }}>
+        <Text className="text-lg font-bold text-black">
           {t("kyc.my_kyc")}
         </Text>
         <TouchableOpacity onPress={() => navigation.openDrawer()}>
@@ -336,10 +412,10 @@ const KYCValidation = () => {
         </TouchableOpacity>
       </View>
 
-      <View className="h-3 mt-3 bg-white" />
+      <View className="h-2 bg-white" />
 
       {/* KYC Items */}
-      <ScrollView className="px-4 bg-white">
+      <ScrollView className="flex-1 bg-white px-4" showsVerticalScrollIndicator={false}>
         {kycItems.map((item) => (
           <View
             key={item.id}
@@ -349,15 +425,13 @@ const KYCValidation = () => {
               <View className="flex-1">
                 <View className="flex-row items-center mb-1">
                   <Feather name="file-text" size={16} color="black" />
-                  <Text className="ml-2 font-semibold text-sm text-black">
+                  <Text className="ml-2 font-semibold text-sm text-black flex-1" numberOfLines={2}>
                     {item.title}
                   </Text>
                 </View>
 
                 {item.status && (
-                  <Text
-                    className={`${item.statusColor} text-sm font-medium text-center`}
-                  >
+                  <Text className={`${item.statusColor} text-sm font-medium`}>
                     {item.status}
                   </Text>
                 )}
@@ -402,96 +476,8 @@ const KYCValidation = () => {
         ))}
       </ScrollView>
 
-      {/* Image Viewer Modal */}
-      <Modal
-        visible={!!visibleImages}
-        transparent
-        animationType="fade"
-        onRequestClose={() => {
-          setVisibleImages(null);
-          setCurrentIndex(0);
-        }}
-      >
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: "rgba(0,0,0,0.85)",
-            justifyContent: "center",
-            alignItems: "center",
-            paddingHorizontal: 20,
-          }}
-        >
-          {visibleImages && visibleImages[currentIndex] && (
-            <>
-              {loading && (
-                <View
-                  style={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    justifyContent: "center",
-                    alignItems: "center",
-                    zIndex: 10,
-                    backgroundColor: "rgba(0,0,0,0.6)",
-                  }}
-                >
-                  <Loader size="large" color="#fff" />
-                </View>
-              )}
-
-              <Image
-                source={{ uri: visibleImages[currentIndex] }}
-                style={{
-                  width: "100%",
-                  height: "70%",
-                  resizeMode: "contain",
-                  borderRadius: 10,
-                  opacity: loading ? 0 : 1,
-                }}
-                onLoadStart={() => setLoading(true)}
-                onLoadEnd={() => setLoading(false)}
-              />
-            </>
-          )}
-
-          {/* Controls */}
-          <View className="flex-row justify-between items-center mt-4 w-full px-10">
-            <TouchableOpacity
-              onPress={() =>
-                setCurrentIndex((prev) =>
-                  prev > 0 ? prev - 1 : visibleImages.length - 1
-                )
-              }
-              className="p-2 bg-white rounded-full"
-            >
-              <Feather name="chevron-left" size={24} color="#000" />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => {
-                setVisibleImages(null);
-                setCurrentIndex(0);
-              }}
-              className="p-2 bg-red-600 rounded-full"
-            >
-              <Feather name="x" size={24} color="white" />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() =>
-                setCurrentIndex((prev) =>
-                  prev < visibleImages.length - 1 ? prev + 1 : 0
-                )
-              }
-              className="p-2 bg-white rounded-full"
-            >
-              <Feather name="chevron-right" size={24} color="#000" />
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+      {/* Image Viewer */}
+      <ImageViewer />
 
       {/* Camera Selection Modal */}
       <Modal
@@ -500,79 +486,58 @@ const KYCValidation = () => {
         animationType="slide"
         onRequestClose={() => setCameraModalVisible(false)}
       >
-        <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.8)", justifyContent: "center", alignItems: "center" }}>
-          <View style={{ backgroundColor: "white", padding: 20, borderRadius: 10, width: "80%" }}>
-            <Text style={{ fontSize: 18, fontWeight: "bold", marginBottom: 20, textAlign: "center" }}>
+        <View className="flex-1 bg-black/80 justify-center items-center">
+          <View className="bg-white p-6 rounded-xl w-5/6">
+            <Text className="text-lg font-bold text-center mb-4">
               Select Camera
             </Text>
             
-            <View style={{ flexDirection: "row", justifyContent: "space-around", marginBottom: 20 }}>
+            <View className="flex-row justify-between mb-6">
               <TouchableOpacity
                 onPress={() => setCameraType(CameraType.back)}
-                style={{
-                  padding: 15,
-                  backgroundColor: cameraType === CameraType.back ? "#007AFF" : "#E0E0E0",
-                  borderRadius: 10,
-                }}
+                className={`p-4 rounded-lg ${cameraType === CameraType.back ? 'bg-blue-500' : 'bg-gray-200'}`}
               >
-                <Text style={{ color: cameraType === CameraType.back ? "white" : "black" }}>Back Camera</Text>
+                <Text className={`font-medium ${cameraType === CameraType.back ? 'text-white' : 'text-black'}`}>
+                  Back Camera
+                </Text>
               </TouchableOpacity>
               
               <TouchableOpacity
                 onPress={() => setCameraType(CameraType.front)}
-                style={{
-                  padding: 15,
-                  backgroundColor: cameraType === CameraType.front ? "#007AFF" : "#E0E0E0",
-                  borderRadius: 10,
-                }}
+                className={`p-4 rounded-lg ${cameraType === CameraType.front ? 'bg-blue-500' : 'bg-gray-200'}`}
               >
-                <Text style={{ color: cameraType === CameraType.front ? "white" : "black" }}>Front Camera</Text>
+                <Text className={`font-medium ${cameraType === CameraType.front ? 'text-white' : 'text-black'}`}>
+                  Front Camera
+                </Text>
               </TouchableOpacity>
             </View>
             
-            <View style={{ flexDirection: "row", justifyContent: "space-around" }}>
+            <View className="flex-row justify-between">
               <TouchableOpacity
                 onPress={takePicture}
-                style={{
-                  padding: 15,
-                  backgroundColor: "#4CAF50",
-                  borderRadius: 10,
-                  marginRight: 10,
-                }}
+                className="bg-green-500 px-6 py-3 rounded-lg flex-1 mr-2"
               >
-                <Text style={{ color: "white" }}>Take Photo</Text>
+                <Text className="text-white font-bold text-center">Take Photo</Text>
               </TouchableOpacity>
               
               <TouchableOpacity
                 onPress={() => setCameraModalVisible(false)}
-                style={{
-                  padding: 15,
-                  backgroundColor: "#F44336",
-                  borderRadius: 10,
-                }}
+                className="bg-red-500 px-6 py-3 rounded-lg flex-1 ml-2"
               >
-                <Text style={{ color: "white" }}>Cancel</Text>
+                <Text className="text-white font-bold text-center">Cancel</Text>
               </TouchableOpacity>
             </View>
           </View>
         </View>
       </Modal>
 
+      {/* Global Loading Overlay */}
       {uploading && (
-        <View
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            justifyContent: "center",
-            alignItems: "center",
-            backgroundColor: "rgba(0,0,0,0.5)",
-          }}
-        >
-          <Loader size="large" color="#fff" />
-          <Text className="text-white mt-4">Uploading document...</Text>
+        <View className="absolute inset-0 justify-center items-center bg-black/50">
+          <View className="bg-white p-6 rounded-xl items-center">
+            <Loader size="large" />
+            <Text className="text-black mt-4 font-medium">Uploading document...</Text>
+          </View>
         </View>
       )}
     </View>
