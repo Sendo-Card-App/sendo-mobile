@@ -96,6 +96,8 @@ const AddFavorite = () => {
     pollingInterval: 1000,
   });
 
+  //console.log(favoritesResponse)
+
   const { 
     data: synchronizedContacts, 
     isLoading: isLoadingContacts,
@@ -342,11 +344,12 @@ const AddFavorite = () => {
       refetchContacts();
       refetchFavorites();
     } catch (error) {
-      console.log('Add favorite error:', error);
+        console.log('Add favorite error:', JSON.stringify(error, null, 2));
+     
       Toast.show({
         type: 'error',
         text1: 'Error',
-        text2: error.data?.message || 'Failed to add favorite'
+        text2: error.data?.data?.errors || 'Failed to add favorite'
       });
     } finally {
       setCurrentlyAdding(null);
@@ -697,7 +700,7 @@ const AddFavorite = () => {
             fontWeight: '600', 
             color: activeTab === 'favorites' ? '#28a745' : '#666' 
           }}>
-            {t('contacts.favorites')} ({favoritesResponse?.data?.length || 0})
+            {t('contacts.favorites')} ({favoritesResponse?.length || 0})
           </Text>
         </TouchableOpacity>
       </View>
@@ -768,7 +771,7 @@ const AddFavorite = () => {
       {/* Favorites list */}
       {activeTab === 'favorites' && (
         <FlatList
-          data={favoritesResponse?.data || []}
+          data={favoritesResponse || []}
           keyExtractor={(item) => item.phone}
           renderItem={renderFavoriteItem}
           contentContainerStyle={{ paddingBottom: 20 }}

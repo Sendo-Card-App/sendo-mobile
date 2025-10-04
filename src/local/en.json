@@ -574,6 +574,9 @@
 },
 "kyc_resume": {
 "identity_verification": "Identity Verification",
+ "progress": "Verification Progress",
+    "steps_remaining": "{{count}} step(s) remaining",
+    "all_steps_complete": "All steps completed! Ready to submit",
 "kyc_summary": "Your KYC Summary",
 "completion_hint": "Complete all steps to finalize your verification",
 "personal_details": "Personal Details",
@@ -727,6 +730,7 @@
     "validationError": "Validation error",
     "generalError": "An error occurred",
     "forgotPin": "Forgot PIN",
+      "contactSupport": "Contact Support",
      "sendOtp": "OK",
     "forgotPinMessage": "You need to sign in again to reset your PIN",
     "forgotPinQuestion": "Forgot your PIN?",

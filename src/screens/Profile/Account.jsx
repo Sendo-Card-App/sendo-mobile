@@ -222,7 +222,7 @@ const Account = () => {
       setIsEditing(false);
 
     } catch (error) {
-      console.error("Update error:", error);
+      console.log('Failed to upload error:', JSON.stringify(error, null, 2));
       Toast.show({
         type: "error",
         text1: "Update failed",
