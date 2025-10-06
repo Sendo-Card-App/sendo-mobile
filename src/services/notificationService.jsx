@@ -1,6 +1,6 @@
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
-import { Alert, Linking, Platform } from 'react-native';
+import { Alert } from 'react-native';
 import { getData, storeData } from './storage';
 
 // Configure how notifications are displayed in foreground
@@ -12,83 +12,126 @@ Notifications.setNotificationHandler({
   }),
 });
 
-// Helper to open app settings if permission denied
-async function openAppSettings() {
-  if (Platform.OS === 'ios') {
-    await Linking.openURL('app-settings:');
-  } else {
-    await Notifications.openSettings(); // ✅ Android 12+
-  }
-}
-
-// Register and get Expo push token
+// ✅ TRÈS SIMPLE: Vérifie seulement les permissions existantes
 export async function registerForPushNotificationsAsync() {
-  if (!Device.isDevice) {
-    console.log('❌ Must use a physical device for push notifications');
-    return null;
-  }
-
   try {
-    // Check existing permission
-    let { status } = await Notifications.getPermissionsAsync();
-
-    // If not granted, request it
-    if (status !== 'granted') {
-      const { status: newStatus } = await Notifications.requestPermissionsAsync();
-      status = newStatus;
-    }
-
-    // If still not granted after request
-    if (status !== 'granted') {
-      Alert.alert(
-        "Notifications désactivées",
-        "Activez-les dans les paramètres pour recevoir des alertes importantes.",
-        [
-          { text: "Annuler", style: "cancel" },
-          { text: "Ouvrir paramètres", onPress: openAppSettings }
-        ]
-      );
+    if (!Device.isDevice) {
+      console.log('❌ Must use a physical device for push notifications');
       return null;
     }
 
-    // Get Expo token
-    const token = (await Notifications.getExpoPushTokenAsync()).data;
-    if (token) {
-      await storeData('pushToken', token);
-      console.log('✅ Expo Push Token:', token);
-      return token;
+    // Vérifier silencieusement les permissions existantes
+    const { status } = await Notifications.getPermissionsAsync();
+
+    // Seulement si permission déjà accordée, récupérer le token
+    if (status === 'granted') {
+      const token = (await Notifications.getExpoPushTokenAsync()).data;
+      if (token) {
+        await storeData('pushToken', token);
+        console.log('✅ Expo Push Token stored');
+        return token;
+      }
     }
 
-    console.warn('❌ No push token retrieved');
+    // Si pas accordé, retourner null SANS BLOQUER
+    console.log('🔕 Push notifications not granted, app continues normally');
     return null;
+
   } catch (error) {
-    console.error('❌ Error registering push notifications:', error);
+    console.error('❌ Error checking push notifications:', error);
     return null;
   }
 }
 
+// ✅ SIMPLE: Récupération non-bloquante du token
 export async function getStoredPushToken() {
-  while (true) {
+  try {
+    // Vérifier d'abord le token existant
+    const storedToken = await getData('pushToken');
+    if (storedToken) {
+      return storedToken;
+    }
+
+    // Si pas de token, vérifier silencieusement
+    console.log('No stored token found. Checking permissions...');
+    const newToken = await registerForPushNotificationsAsync();
+    return newToken; // Peut être null
+
+  } catch (error) {
+    console.warn('Failed to retrieve push token:', error);
+    return null;
+  }
+}
+
+// ✅ OPTIONNEL: Demande GENTILLE des notifications (seulement si vous voulez une approche proactive)
+export async function requestOptionalNotifications() {
+  return new Promise(async (resolve) => {
     try {
-      const storedToken = await getData('pushToken');
-      if (storedToken) {
-        return storedToken;
+      if (!Device.isDevice) {
+        resolve(null);
+        return;
       }
 
-      console.log('No stored token found. Registering...');
-      const newToken = await registerForPushNotificationsAsync();
-      if (newToken) return newToken;
-
-      console.log('Retrying getStoredPushToken in 3 seconds...');
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      const { status } = await Notifications.getPermissionsAsync();
+      
+      // Si déjà accordé, retourner le token
+      if (status === 'granted') {
+        const token = (await Notifications.getExpoPushTokenAsync()).data;
+        if (token) {
+          await storeData('pushToken', token);
+          console.log('✅ Notifications already granted');
+          resolve(token);
+          return;
+        }
+      }
+      
+      // Si indéterminé, vous POUVEZ demander gentiment (optionnel)
+      if (status === 'undetermined') {
+        // ✅ Cette alerte est OPTIONNELLE - vous pouvez même la supprimer
+        Alert.alert(
+          "Notifications Optionnelles",
+          "Souhaitez-vous activer les notifications pour recevoir des alertes importantes ?",
+          [
+            {
+              text: "Plus tard",
+              style: "cancel",
+              onPress: () => resolve(null)
+            },
+            {
+              text: "Activer",
+              onPress: async () => {
+                try {
+                  const { status: newStatus } = await Notifications.requestPermissionsAsync();
+                  if (newStatus === 'granted') {
+                    const token = (await Notifications.getExpoPushTokenAsync()).data;
+                    if (token) {
+                      await storeData('pushToken', token);
+                      resolve(token);
+                    } else {
+                      resolve(null);
+                    }
+                  } else {
+                    resolve(null);
+                  }
+                } catch (error) {
+                  resolve(null);
+                }
+              }
+            }
+          ]
+        );
+      } else {
+        // Déjà refusé, ne pas déranger
+        resolve(null);
+      }
     } catch (error) {
-      console.warn('Failed to retrieve push token:', error);
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      console.error('Error in optional notification request:', error);
+      resolve(null);
     }
-  }
+  });
 }
 
-
+// Fonctions restantes inchangées
 export async function sendPushNotification(title, body) {
   try {
     await Notifications.scheduleNotificationAsync({
@@ -105,29 +148,22 @@ export async function sendPushNotification(title, body) {
   }
 }
 
-export async function sendPushTokenToBackend(
-  title,
-  body,
-  type,
-  metaData
-) {
+export async function sendPushTokenToBackend(title, body, type, metaData) {
   try {
     const [authToken, pushToken] = await Promise.all([
       getData('authToken'),
-      getStoredPushToken(),
+      getStoredPushToken(), // Non-bloquant
     ]);
 
-    //  Log the tokens retrieved
-    console.log(' authToken:', authToken);
-    console.log(' pushToken:', pushToken);
-
-    if (!authToken) {
-      console.warn(' No auth token found. Skipping backend push notification.');
+    // Fallback gracieux si pas de token
+    if (!pushToken) {
+      console.log('No push token, using local notification');
+      await sendPushNotification(title, body);
       return;
     }
 
-    if (!pushToken) {
-      console.warn(' No push token found. Skipping backend push notification.');
+    if (!authToken) {
+      await sendPushNotification(title, body);
       return;
     }
 
@@ -139,8 +175,6 @@ export async function sendPushTokenToBackend(
       ...metaData,
     };
 
-    console.log(' Sending payload to backend:', payload);
-
     const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/notification/send`, {
       method: 'POST',
       headers: {
@@ -151,18 +185,13 @@ export async function sendPushTokenToBackend(
     });
 
     if (!response.ok) {
-      const text = await response.text();
-      console.error('❌ Backend notification failed:', text);
-      throw new Error(text || 'Notification sending failed');
+      throw new Error('Notification sending failed');
     }
 
-    const result = await response.json();
-    console.log('✅ Notification sent successfully:', result);
-    return result;
+    return await response.json();
 
   } catch (error) {
-    console.error('❌ sendPushTokenToBackend failed:', error);
+    console.error('Backend notification failed, using local:', error);
     await sendPushNotification(title, body);
   }
 }
-

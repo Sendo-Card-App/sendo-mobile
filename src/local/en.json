@@ -1399,7 +1399,7 @@
     "defaultName": "Tontine Name",
     "members": "Members",
     "contributions": "Contributions",
-    "settings": "Settings",
+    "settings": "Tontine information",
     "contribute": "Contribute",
     "rotationWarning": "You must define the rotation order before members can contribute."
 },
@@ -1441,6 +1441,7 @@
     "distributeToNext": "Distribute to next beneficiary",
     "noContributions": "No contributions recorded",
     "dragToReorder": "Drag to reorder the rotation",
+     "noValidatedContributions": "No history",
     "alreadyDefined": "The rotation order has already been defined",
      "confirmDistribution": "Confirm Distribution",
       "cancel": "Cancel",

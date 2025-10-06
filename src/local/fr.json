@@ -1389,7 +1389,7 @@
     "defaultName": "Nom de la tontine",
     "members": "Membres",
     "contributions": "Cotisations",
-    "settings": "Paramètres",
+    "settings": "Informations de la tontine",
     "contribute": "Me Cotiser",
      "rotationWarning": "Vous devez définir l’ordre de rotation avant que les membres puissent cotiser."
    },
@@ -1432,6 +1432,7 @@
     "dragToReorder": "Glissez pour réorganiser la rotation",
     "alreadyDefined": "L'ordre de rotation a été déjà défini",
      "confirmDistribution": "Confirmer la distribution",
+      "noValidatedContributions": "Aucun historique",
       "cancel": "Annuler",
       "confirm": "Confirmer",
       "sendoFeeInfo": "Sendo prélèvera des frais de {{percentage}} % sur le montant distribué.",

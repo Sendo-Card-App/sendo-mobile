@@ -143,6 +143,8 @@ const BeneficiarySelection = ({ route }) => {
         throw new Error(response?.message || t('transfer_error'));
       }
     } catch (error) {
+     console.log("Full response:", JSON.stringify(error, null, 2));
+
       Toast.show({
         type: 'error',
         text1: t('error'),
