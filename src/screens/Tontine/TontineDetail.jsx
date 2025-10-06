@@ -80,9 +80,14 @@ const TontineDetail = () => {
             }
             className="bg-[#7ddd7d] rounded-lg mt-5 w-[47%] h-32 justify-center items-center"
           >
-            <Ionicons name="settings-outline" size={40} color="#000" />
-            <Text className="text-black font-semibold mt-2">{t("tontineDetail.settings")}</Text>
+            <View className="items-center">
+                <Ionicons name="information-circle-outline" size={40} color="#000" />
+              <Text className="text-black font-semibold mt-2 text-center">
+                {t("tontineDetail.settings")}
+              </Text>
+            </View>
           </TouchableOpacity>
+
 
           <TouchableOpacity
             onPress={() =>
