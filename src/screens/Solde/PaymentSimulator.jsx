@@ -316,7 +316,7 @@ const PaymentSimulator = () => {
               {sendoFeesCalculated.toLocaleString('fr-FR', {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2
-              })} FCFA ({SENDO_TRANSACTION_CARD_PERCENTAGE}% + {SENDO_TRANSACTION_CARD_FEES} FCFA)
+              })} FCFA ( {SENDO_TRANSACTION_CARD_FEES} FCFA)
             </Text>
           </View>
 

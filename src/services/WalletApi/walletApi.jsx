@@ -42,7 +42,7 @@ export const walletApi = createApi({
   }
 
   // ✅ Only add passcode for getBalance or other specific endpoints
-  const passcodeRequiredEndpoints = ['getBalance', 'rechargeWallet', 'transferFunds', 'withdrawalWallet', 'simulatePayment', 'initTransfer', 'bankrecharge'];
+  const passcodeRequiredEndpoints = ['getBalance', 'rechargeWallet', 'transferFunds', 'withdrawalWallet', 'simulatePayment', 'initTransfer', 'bankrecharge', 'initTransferToDestinataire'];
 
   if (passcodeRequiredEndpoints.includes(endpoint)) {
     if (passcode) {
