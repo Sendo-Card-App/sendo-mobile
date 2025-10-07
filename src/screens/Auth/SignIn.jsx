@@ -26,22 +26,33 @@ import { useTranslation } from "react-i18next";
 import Loader from "../../components/Loader";
 import Toast from "react-native-toast-message"; 
 import { storeData, getData  } from "../../services/storage";
+import { useAppState } from '../../context/AppStateContext'; // Adjust path as needed
 
 const SignIn = () => {
   const { t } = useTranslation();
   const navigation = useNavigation();
   const dispatch = useDispatch();
+  const [loginWithEmail, { isLoading }] = useLoginWithEmailMutation();
+  const [loginWithPhone] = useLoginWithPhoneMutation();
+  const { setIsPickingDocument } = useAppState(); // Get the setter from context
+  
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [loginWithEmail, { isLoading }] = useLoginWithEmailMutation();
-  const [loginWithPhone] = useLoginWithPhoneMutation();
   const [refreshInterval, setRefreshInterval] = useState(null);
   const [emailError, setEmailError] = useState(false);
   const [passwordError, setPasswordError] = useState(false);
-  
-  // Remove the loading state or set it to false initially
-  // const [loading, setLoading] = React.useState(true); // REMOVE THIS LINE
+
+  // Set app state to prevent restart during navigation and async operations
+  useEffect(() => {
+    // Cleanup when component unmounts
+    return () => {
+      setIsPickingDocument(false);
+      if (refreshInterval) {
+        clearInterval(refreshInterval);
+      }
+    };
+  }, [setIsPickingDocument, refreshInterval]);
 
   const handleSubmit = async () => {
     let hasError = false;
@@ -72,6 +83,8 @@ const SignIn = () => {
     dispatch(loginStart({ email }));
 
     try {
+      setIsPickingDocument(true); // Prevent restart during login process
+      
       // 1. Login with Email
       const response = await loginWithEmail({ email, password }).unwrap();
 
@@ -114,6 +127,8 @@ const SignIn = () => {
         }, 30 * 60 * 1000); // 30 minutes
 
         setRefreshInterval(interval);
+        
+        setIsPickingDocument(false); // Reset before navigation
         navigation.navigate("PinCode", { setup: true });
 
         Toast.show({
@@ -126,6 +141,7 @@ const SignIn = () => {
       }
     } catch (err) {
       console.log("Login error:", err);
+      setIsPickingDocument(false); // Reset on error
 
       let errorMessage = "An error on the server.";
 
@@ -152,11 +168,29 @@ const SignIn = () => {
   };
 
   const handleToggle = () => {
+    setIsPickingDocument(true); // Prevent restart during navigation
     navigation.navigate("Signup");
   };
 
-  // Remove this loading check that was causing blank page
-  // if (loading) return <Loader />;
+  const handleNavigation = (screenName) => {
+    setIsPickingDocument(true); // Prevent restart during navigation
+    navigation.navigate(screenName);
+  };
+
+  const handleGoBack = () => {
+    setIsPickingDocument(true); // Prevent restart during navigation
+    navigation.goBack();
+  };
+
+  const handleWhatsAppPress = () => {
+    setIsPickingDocument(true); // Prevent restart during external link opening
+    const url = "https://wa.me/message/GYEAYFKV6T2SO1";
+    Linking.openURL(url).catch(() => {
+      Alert.alert('Erreur', 'Impossible d\'ouvrir WhatsApp. Vérifiez qu\'il est installé.');
+    }).finally(() => {
+      setIsPickingDocument(false); // Reset after attempting to open
+    });
+  };
 
   return (
     <KeyboardAvoidinWrapper>
@@ -164,7 +198,7 @@ const SignIn = () => {
         <StatusBar style="light" backgroundColor="#181e25" />
         <TouchableOpacity
           className="absolute z-10 top-20 left-5"
-          onPress={() => navigation.goBack()}
+          onPress={handleGoBack}
         >
           <AntDesign name="left" size={24} color="white" />
         </TouchableOpacity>
@@ -279,7 +313,7 @@ const SignIn = () => {
 
           {/* Forgot Password Link */}
           <TouchableOpacity 
-            onPress={() => navigation.navigate("ForgetPassword")}
+            onPress={() => handleNavigation("ForgetPassword")}
             className="mt-4"
           >
             <Text style={{ textAlign: "right", color: '#555', fontSize: 14 }}>
@@ -296,7 +330,7 @@ const SignIn = () => {
 
           {/* OTP Login Option */}
           <TouchableOpacity 
-            onPress={() => navigation.navigate("LogIn")}
+            onPress={() => handleNavigation("LogIn")}
             className="mb-5"
           >
             <Text className="text-center text-blue-600 font-medium">
@@ -317,31 +351,26 @@ const SignIn = () => {
 
         {/* ✅ WhatsApp floating button */}
         <TouchableOpacity 
-                onPress={() => {
-                  const url = "https://wa.me/message/GYEAYFKV6T2SO1";
-                  Linking.openURL(url).catch(() => {
-                    Alert.alert('Erreur', 'Impossible d’ouvrir WhatsApp. Vérifiez qu’il est installé.');
-                  });
-                }}
-                style={{
-                  position: 'absolute',
-                  bottom: 30,
-                  right: 30,
-                  backgroundColor: '#25D366',
-                  width: 60,
-                  height: 60,
-                  borderRadius: 30,
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  elevation: 5,
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.25,
-                  shadowRadius: 3.84,
-                }}
-              >
-                <Ionicons name="logo-whatsapp" size={36} color="white" />
-              </TouchableOpacity>
+          onPress={handleWhatsAppPress}
+          style={{
+            position: 'absolute',
+            bottom: 30,
+            right: 30,
+            backgroundColor: '#25D366',
+            width: 60,
+            height: 60,
+            borderRadius: 30,
+            justifyContent: 'center',
+            alignItems: 'center',
+            elevation: 5,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.25,
+            shadowRadius: 3.84,
+          }}
+        >
+          <Ionicons name="logo-whatsapp" size={36} color="white" />
+        </TouchableOpacity>
       </SafeAreaView>
     </KeyboardAvoidinWrapper>
   );
