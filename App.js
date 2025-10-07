@@ -510,15 +510,23 @@ function AppContent() {
     const handleAppStateChange = (nextAppState) => {
       console.log('App state changed:', appState.current, '->', nextAppState);
       
-      // 🚫 DON'T show splash if user is picking a document
+      // 🚫 DON'T show splash if user is picking a document or autofilling
       if (isPickingDocument) {
-        console.log('Ignoring app state change - document picker active');
+        console.log('Ignoring app state change - document picker/autofill active');
+        appState.current = nextAppState;
+        return;
+      }
+
+       // Only show splash on cold start, not when returning from background
+      if (appState.current === 'background' && nextAppState === 'active') {
+        console.log('App returned from background, but not showing splash due to autofill prevention');
         appState.current = nextAppState;
         return;
       }
       
-      if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
-        console.log('App came to foreground, showing splash process');
+      // Only show splash on initial app start
+      if (appState.current === 'unknown' || appState.current === 'extension') {
+        console.log('App starting fresh, showing splash process');
         setShowSplash(true);
         
         setTimeout(() => {

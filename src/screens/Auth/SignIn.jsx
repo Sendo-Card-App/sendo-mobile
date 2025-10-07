@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { AntDesign, Ionicons } from "@expo/vector-icons";
 import {
   View,
@@ -7,7 +7,9 @@ import {
   Image,
   TouchableOpacity,
   StatusBar,
-  Linking
+  Linking,
+  Platform,
+  AppState
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
@@ -26,7 +28,7 @@ import { useTranslation } from "react-i18next";
 import Loader from "../../components/Loader";
 import Toast from "react-native-toast-message"; 
 import { storeData, getData  } from "../../services/storage";
-import { useAppState } from '../../context/AppStateContext'; // Adjust path as needed
+import { useAppState } from '../../context/AppStateContext';
 
 const SignIn = () => {
   const { t } = useTranslation();
@@ -34,7 +36,7 @@ const SignIn = () => {
   const dispatch = useDispatch();
   const [loginWithEmail, { isLoading }] = useLoginWithEmailMutation();
   const [loginWithPhone] = useLoginWithPhoneMutation();
-  const { setIsPickingDocument } = useAppState(); // Get the setter from context
+  const { setIsPickingDocument } = useAppState();
   
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -42,17 +44,116 @@ const SignIn = () => {
   const [refreshInterval, setRefreshInterval] = useState(null);
   const [emailError, setEmailError] = useState(false);
   const [passwordError, setPasswordError] = useState(false);
+  
+  const emailInputRef = useRef(null);
+  const passwordInputRef = useRef(null);
+  const appState = useRef(AppState.currentState);
+  const isAutoFilling = useRef(false);
+  const autofillTimeoutRef = useRef(null);
+
+  // Handle app state changes
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', nextAppState => {
+      if (
+        appState.current.match(/inactive|background/) &&
+        nextAppState === 'active'
+      ) {
+        // App has come to the foreground - autofill might have just happened
+        console.log('App has come to the foreground');
+        if (isAutoFilling.current) {
+          // Reset the autofill state after a short delay
+          autofillTimeoutRef.current = setTimeout(() => {
+            isAutoFilling.current = false;
+            setIsPickingDocument(false);
+          }, 1000);
+        }
+      }
+      appState.current = nextAppState;
+    });
+
+    return () => {
+      subscription.remove();
+      if (autofillTimeoutRef.current) {
+        clearTimeout(autofillTimeoutRef.current);
+      }
+    };
+  }, [setIsPickingDocument]);
 
   // Set app state to prevent restart during navigation and async operations
   useEffect(() => {
+    // Set app state when component mounts to handle autofill
+    setIsPickingDocument(true);
+    
     // Cleanup when component unmounts
     return () => {
       setIsPickingDocument(false);
       if (refreshInterval) {
         clearInterval(refreshInterval);
       }
+      if (autofillTimeoutRef.current) {
+        clearTimeout(autofillTimeoutRef.current);
+      }
     };
   }, [setIsPickingDocument, refreshInterval]);
+
+  const handleEmailChange = (text) => {
+    setEmail(text);
+    // If text changes rapidly (autofill), set the flag
+    if (text.length > 0 && !isAutoFilling.current) {
+      isAutoFilling.current = true;
+      setIsPickingDocument(true);
+    }
+  };
+
+  const handlePasswordChange = (text) => {
+    setPassword(text);
+    // If text changes rapidly (autofill), set the flag
+    if (text.length > 0 && !isAutoFilling.current) {
+      isAutoFilling.current = true;
+      setIsPickingDocument(true);
+    }
+  };
+
+  const handleEmailFocus = () => {
+    setIsPickingDocument(true);
+    isAutoFilling.current = false;
+  };
+
+  const handleEmailBlur = () => {
+    // Delay reset to allow for autofill completion
+    autofillTimeoutRef.current = setTimeout(() => {
+      if (!isAutoFilling.current) {
+        setIsPickingDocument(false);
+      }
+    }, 300);
+  };
+
+  const handlePasswordFocus = () => {
+    setIsPickingDocument(true);
+    isAutoFilling.current = false;
+  };
+
+  const handlePasswordBlur = () => {
+    // Delay reset to allow for autofill completion
+    autofillTimeoutRef.current = setTimeout(() => {
+      if (!isAutoFilling.current) {
+        setIsPickingDocument(false);
+      }
+    }, 300);
+  };
+
+  // Reset autofill state when both fields have values
+  useEffect(() => {
+    if (email && password && isAutoFilling.current) {
+      // Autofill likely completed, reset after a delay
+      const timer = setTimeout(() => {
+        isAutoFilling.current = false;
+        setIsPickingDocument(false);
+      }, 1000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [email, password, setIsPickingDocument]);
 
   const handleSubmit = async () => {
     let hasError = false;
@@ -83,9 +184,8 @@ const SignIn = () => {
     dispatch(loginStart({ email }));
 
     try {
-      setIsPickingDocument(true); // Prevent restart during login process
+      setIsPickingDocument(true);
       
-      // 1. Login with Email
       const response = await loginWithEmail({ email, password }).unwrap();
 
       if (response?.status === 200 && response?.data?.accessToken) {
@@ -98,6 +198,7 @@ const SignIn = () => {
           deviceId: userData.deviceId,
           isGuest: false,
         };
+        
         console.log(userData)
         await storeData('@authData', authData);
         dispatch(loginSuccess(authData)); 
@@ -124,11 +225,11 @@ const SignIn = () => {
             console.log("Token refresh failed:", error);
             clearInterval(interval);
           }
-        }, 30 * 60 * 1000); // 30 minutes
+        }, 30 * 60 * 1000);
 
         setRefreshInterval(interval);
         
-        setIsPickingDocument(false); // Reset before navigation
+        setIsPickingDocument(false);
         navigation.navigate("PinCode", { setup: true });
 
         Toast.show({
@@ -141,7 +242,7 @@ const SignIn = () => {
       }
     } catch (err) {
       console.log("Login error:", err);
-      setIsPickingDocument(false); // Reset on error
+      setIsPickingDocument(false);
 
       let errorMessage = "An error on the server.";
 
@@ -168,27 +269,27 @@ const SignIn = () => {
   };
 
   const handleToggle = () => {
-    setIsPickingDocument(true); // Prevent restart during navigation
+    setIsPickingDocument(true);
     navigation.navigate("Signup");
   };
 
   const handleNavigation = (screenName) => {
-    setIsPickingDocument(true); // Prevent restart during navigation
+    setIsPickingDocument(true);
     navigation.navigate(screenName);
   };
 
   const handleGoBack = () => {
-    setIsPickingDocument(true); // Prevent restart during navigation
+    setIsPickingDocument(true);
     navigation.goBack();
   };
 
   const handleWhatsAppPress = () => {
-    setIsPickingDocument(true); // Prevent restart during external link opening
+    setIsPickingDocument(true);
     const url = "https://wa.me/message/GYEAYFKV6T2SO1";
     Linking.openURL(url).catch(() => {
       Alert.alert('Erreur', 'Impossible d\'ouvrir WhatsApp. Vérifiez qu\'il est installé.');
     }).finally(() => {
-      setIsPickingDocument(false); // Reset after attempting to open
+      setIsPickingDocument(false);
     });
   };
 
@@ -217,11 +318,19 @@ const SignIn = () => {
           <View className="mb-1">
             <Text className="text-sm font-medium text-gray-700 mb-1 pl-3">{t("signIn.email")}</Text>
             <TextInput
+              ref={emailInputRef}
               placeholder={t("signIn.emailPlaceholder") || "Enter your email address"}
-              onChangeText={setEmail}
+              onChangeText={handleEmailChange}
+              onFocus={handleEmailFocus}
+              onBlur={handleEmailBlur}
               value={email}
               autoCapitalize="none"
               keyboardType="email-address"
+              autoComplete="email"
+              textContentType="emailAddress"
+              importantForAutofill="yes"
+              autoCorrect={false}
+              spellCheck={false}
               className="border-[#fff] bg-[#ffffff] rounded-3xl mb-3"
               style={{
                 backgroundColor: '#fff',
@@ -246,10 +355,18 @@ const SignIn = () => {
             <Text className="text-sm font-medium text-gray-700 mb-1 pl-3">{t("signIn.password")}</Text>
             <View className="relative">
               <TextInput
+                ref={passwordInputRef}
                 placeholder={t("signIn.passwordPlaceholder") || "Enter your password"}
-                onChangeText={setPassword}
+                onChangeText={handlePasswordChange}
+                onFocus={handlePasswordFocus}
+                onBlur={handlePasswordBlur}
                 value={password}
                 secureTextEntry={!showPassword}
+                autoComplete="password"
+                textContentType="password"
+                importantForAutofill="yes"
+                autoCorrect={false}
+                spellCheck={false}
                 className="border-[#fff] bg-[#ffffff] rounded-3xl"
                 style={{
                   backgroundColor: '#fff',
