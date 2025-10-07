@@ -23,12 +23,14 @@ import Loader from "../../components/Loader";
 import { storeData } from "../../services/storage";
 import Toast from 'react-native-toast-message';
 import { useLoginWithPhoneMutation } from "../../services/Auth/authAPI";
+import { useAppState } from '../../context/AppStateContext'; // Adjust path as needed
 
 const Log = () => {
   const { t, i18n } = useTranslation();
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const [loginWithPhone, { isLoading }] = useLoginWithPhoneMutation();
+  const { setIsPickingDocument } = useAppState(); // Get the setter from context
 
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
@@ -46,8 +48,23 @@ const Log = () => {
     flag: 'https://flagcdn.com/w40/cm.png'
   });
 
+  // Set app state to prevent restart when modal opens
+  useEffect(() => {
+    if (countryModalVisible || languageModalVisible) {
+      setIsPickingDocument(true);
+    } else {
+      setIsPickingDocument(false);
+    }
+
+    // Cleanup when component unmounts
+    return () => {
+      setIsPickingDocument(false);
+    };
+  }, [countryModalVisible, languageModalVisible, setIsPickingDocument]);
+
   const fetchCountries = async () => {
     try {
+      setIsPickingDocument(true); // Prevent restart during API call
       const res = await fetch('https://restcountries.com/v3.1/all?fields=name,idd,flags');
 
       if (!res.ok) {
@@ -77,10 +94,12 @@ const Log = () => {
         .sort((a, b) => a.name.localeCompare(b.name));
 
       setCountries(countriesList);
-      setFilteredCountries(countriesList); // Initialize filtered list
+      setFilteredCountries(countriesList);
     } catch (error) {
       console.log("Error fetching countries:", error);
       Toast.show({ type: 'error', text1: 'Failed to load countries' });
+    } finally {
+      setIsPickingDocument(false); // Reset after API call completes
     }
   };
 
@@ -114,6 +133,7 @@ const Log = () => {
     }
 
     try {
+      setIsPickingDocument(true); // Prevent restart during login process
       const response = await loginWithPhone({
         phone: fullPhoneNumber,
         password
@@ -139,11 +159,13 @@ const Log = () => {
         navigation.navigate("PinCode");
       }
     } catch (error) {
-      //console.error('Login error:', error);
+      console.error('Login error:', error);
       Toast.show({
         type: 'error',
         text1: error.data?.message || 'Login failed',
       });
+    } finally {
+      setIsPickingDocument(false); // Reset after login process completes
     }
   };
 
@@ -156,11 +178,21 @@ const Log = () => {
     setLanguageModalVisible(false);
   };
 
+  const handleCountryModalToggle = (visible) => {
+    setCountryModalVisible(visible);
+    setIsPickingDocument(visible);
+  };
+
+  const handleLanguageModalToggle = (visible) => {
+    setLanguageModalVisible(visible);
+    setIsPickingDocument(visible);
+  };
+
   const renderCountry = ({ item }) => (
     <TouchableOpacity
       onPress={() => {
         setSelectedCountry(item);
-        setCountryModalVisible(false);
+        handleCountryModalToggle(false);
         setSearchQuery(""); // Clear search when country is selected
       }}
       className="flex-row items-center py-3 px-4 border-b border-gray-200"
@@ -184,7 +216,7 @@ const Log = () => {
               <AntDesign name="left" size={24} color="white" />
             </TouchableOpacity>
 
-            <TouchableOpacity onPress={() => setLanguageModalVisible(true)}>
+            <TouchableOpacity onPress={() => handleLanguageModalToggle(true)}>
               <Icon name="language" size={24} color="white" />
             </TouchableOpacity>
           </View>
@@ -207,7 +239,7 @@ const Log = () => {
                   <Text className="text-lg text-center">{t("log.fr")}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
-                  onPress={() => setLanguageModalVisible(false)}
+                  onPress={() => handleLanguageModalToggle(false)}
                   className="mt-4"
                 >
                   <Text className="text-red-500 text-lg text-center">{t("log.close")}</Text>
@@ -229,7 +261,7 @@ const Log = () => {
             {/* Combined Country Code and Phone Input */}
             <View className="flex-row w-full mb-4">
               <TouchableOpacity 
-                onPress={() => setCountryModalVisible(true)}
+                onPress={() => handleCountryModalToggle(true)}
                 className="flex-row items-center bg-white py-3 px-4 rounded-l-2xl border-r border-gray-200"
               >
                 <Image source={{ uri: selectedCountry.flag }} className="w-8 h-6 mr-2" resizeMode="contain" />
@@ -297,10 +329,7 @@ const Log = () => {
               {/* Header with back button and title */}
               <View className="flex-row items-center px-4 py-3 border-b border-gray-200">
                 <TouchableOpacity 
-                  onPress={() => {
-                    setCountryModalVisible(false);
-                    setSearchQuery(""); // Clear search when closing
-                  }}
+                  onPress={() => handleCountryModalToggle(false)}
                   className="p-2 mr-2"
                 >
                   <AntDesign name="left" size={24} color="black" />
