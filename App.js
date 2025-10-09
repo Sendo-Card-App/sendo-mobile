@@ -29,6 +29,7 @@ import { registerForPushNotificationsAsync } from "./src/services/notificationSe
  
 import { useGetUserProfileQuery } from "./src/services/Auth/authAPI";
 import CustomTabBar from './src/components/CustomTabBar';
+import { getData } from "./src/services/storage";
 
 // Import AppStateProvider first
 import { AppStateProvider, useAppState } from './src/context/AppStateContext';
@@ -500,49 +501,67 @@ function RootNavigator() {
 function AppContent() {
   const appState = useRef(AppState.currentState);
   const [showSplash, setShowSplash] = useState(false);
-  const { isPickingDocument } = useAppState(); // This will work now
+  const [isUserFullyAuthenticated, setIsUserFullyAuthenticated] = useState(false);
+  const { isPickingDocument } = useAppState();
 
   useEffect(() => {
     (async () => {
       await registerForPushNotificationsAsync();
+      
+      // Vérifier si l'utilisateur est COMPLÈTEMENT authentifié (a passé le PinCode)
+      const checkFullAuthStatus = async () => {
+        try {
+          const authData = await getData('@authData');
+            const pinVerified = await AsyncStorage.getItem('pinVerified');
+          // L'utilisateur est "complètement authentifié" seulement s'il a un token ET a passé le PinCode
+           const isFullyAuthenticated = !!(authData?.accessToken && pinVerified === 'true');
+          setIsUserFullyAuthenticated(isFullyAuthenticated);
+          console.log('User fully authenticated:', isFullyAuthenticated);
+        } catch (error) {
+          console.log('Error checking auth status:', error);
+        }
+      };
+      
+      await checkFullAuthStatus();
     })();
 
     const handleAppStateChange = (nextAppState) => {
       console.log('App state changed:', appState.current, '->', nextAppState);
+      console.log('User fully authenticated:', isUserFullyAuthenticated);
       
-      // 🚫 DON'T show splash if user is picking a document or autofilling
+      // 🚫 Ignorer si document picker/autofill actif
       if (isPickingDocument) {
         console.log('Ignoring app state change - document picker/autofill active');
         appState.current = nextAppState;
         return;
       }
 
-       // Only show splash on cold start, not when returning from background
-      if (appState.current === 'background' && nextAppState === 'active') {
-        console.log('App returned from background, but not showing splash due to autofill prevention');
-        appState.current = nextAppState;
-        return;
+      // 🔐 CRITIQUE : SEULEMENT relancer l'app si l'utilisateur est COMPLÈTEMENT AUTHENTIFIÉ
+      if (isUserFullyAuthenticated && appState.current === 'background' && nextAppState === 'active') {
+        console.log('Fully authenticated user returned - showing security splash');
+        setShowSplash(true);
+        setTimeout(() => setShowSplash(false), 10);
       }
       
-      // Only show splash on initial app start
+      // ❌ IMPORTANT : NE RIEN FAIRE pour les utilisateurs en cours de connexion/inscription/OTP
+      if (!isUserFullyAuthenticated && appState.current === 'background' && nextAppState === 'active') {
+        console.log('User in auth process - preserving current screen (OTP, login, etc.)');
+        // Ne rien faire - laisser l'écran actuel intact
+      }
+      
+      // Splash normal au tout premier démarrage
       if (appState.current === 'unknown' || appState.current === 'extension') {
-        console.log('App starting fresh, showing splash process');
+        console.log('Fresh app start - showing initial splash');
         setShowSplash(true);
-        
-        setTimeout(() => {
-          setShowSplash(false);
-        }, 10);
+        setTimeout(() => setShowSplash(false), 10);
       }
       
       appState.current = nextAppState;
     };
 
     const subscription = AppState.addEventListener('change', handleAppStateChange);
-
-    return () => {
-      subscription.remove();
-    };
-  }, [isPickingDocument]);
+    return () => subscription.remove();
+  }, [isPickingDocument, isUserFullyAuthenticated]);
 
   return (
     <>

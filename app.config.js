@@ -53,6 +53,7 @@ module.exports = {
     },
     plugins: [
       "expo-notifications",
+        "expo-build-properties",
       [
         "expo-camera",
         {
