@@ -9,7 +9,7 @@ module.exports = {
   expo: {
     name: "Sendo",
     slug: "sendo",
-    version: "1.1.0",
+    version: "1.2.0",
     owner: "sfesendo",
     orientation: "portrait",
     icon: "./assets/icon-sendo.png",
@@ -46,7 +46,8 @@ module.exports = {
         "android.permission.READ_MEDIA_IMAGES",
         "android.permission.READ_MEDIA_VIDEO"
       ],
-      package: "com.sfe.ca"
+      package: "com.sfe.ca",
+      googleServicesFile: "./google-services.json"
     },
     web: {
       favicon: "./assets/favicon.png"
