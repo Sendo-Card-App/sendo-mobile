@@ -285,7 +285,7 @@ const SignIn = () => {
 
   const handleWhatsAppPress = () => {
     setIsPickingDocument(true);
-    const url = "https://wa.me/message/GYEAYFKV6T2SO1";
+    const url = "https://wa.me/message/Y27BBZMTSC36C1";
     Linking.openURL(url).catch(() => {
       Alert.alert('Erreur', 'Impossible d\'ouvrir WhatsApp. Vérifiez qu\'il est installé.');
     }).finally(() => {

@@ -641,7 +641,7 @@ const HomeScreen = () => {
 
             // CORRECTION: Déterminer quel montant afficher
             const displayAmount = 
-              item.type === 'PAYMENT' || item.type === 'TONTINE_PAYMENT' 
+              item.type === 'PAYMENT' || item.type === 'TONTINE_PAYMENT' || item.type === 'VIEW_CARD_DETAILS'
                 ? item.totalAmount 
                 : item.amount;
 

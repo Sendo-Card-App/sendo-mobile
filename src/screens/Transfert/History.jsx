@@ -34,7 +34,7 @@ const HistoryCard = ({ transaction, user, onPress }) => {
   
   // CORRECTION: Déterminer quel montant afficher
   const displayAmount = 
-    transaction.type === 'PAYMENT' || transaction.type === 'TONTINE_PAYMENT' 
+    transaction.type === 'PAYMENT' || transaction.type === 'TONTINE_PAYMENT' || transaction.type === 'VIEW_CARD_DETAILS'
       ? transaction.totalAmount 
       : transaction.amount;
 
