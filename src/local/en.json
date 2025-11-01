@@ -403,6 +403,10 @@
 "selectDocument": "Select a document",
 "documentTypes": "(Image or PDF)",
 "acceptedDocuments": "Accepted documents:",
+ "fileProcessingError": "Failed to process file",
+  "selectDocumentOrImage": "Select Document or Image",
+   "selectOption": "Select Document",
+    "chooseMethod": "How would you like to provide your address proof?",
 "documentsList": [
   "• Water or electricity bill (less than 3 months old)",
   "• Current lease agreement",
@@ -429,8 +433,22 @@
 "cancel": "Cancel",
 "accept": "Accept",
 "permission_request": "We need your permission to show the camera",
-"grant_permission": "Grant permission"
+"grant_permission": "Grant permission",
+ "takePhoto": "Take Photo",
+    "permissionDenied": "Camera Permission Required",
+    "permissionRequired": "We need camera access to take photos of your documents",
+    "captureError": "Failed to capture photo"
+    
 },
+ "gallery": {
+    "chooseFromGallery": "Choose from Gallery",
+    "permissionDenied": "Gallery Permission Required",
+    "permissionRequired": "We need gallery access to select your documents",
+    "selectionError": "Failed to select image"
+  },
+   "document": {
+    "chooseDocument": "Choose Document"
+  },
 "niu": {
 "title": "Unique Identification Number",
 "fileTooLarge": "Oops! File is too big",
@@ -460,6 +478,8 @@
 "imageSelectionError": "Error selecting image. Please try again.",
   "supportedFormats": "Supported formats: PDF, JPG, PNG",
 "documentUploadError": "Error uploading document. Please try again.",
+    "selectDocumentMethod": "Select Upload Method",
+    "chooseUploadMethod": "How would you like to upload your document?",
     "steps": {
       "fees": "Creation Fees",
       "kyc": "KYC Verification",
@@ -503,7 +523,13 @@
   "title": "You already have your NIU",
   "message": "Your Unique Identification Number (NIU) has already been processed and approved.",
   "backButton": "Back to home"
-}
+},
+"gallery": {
+    "chooseFromGallery": "Choose from Gallery"
+  },
+  "document": {
+    "chooseDocument": "Choose Document"
+  }
 },
 "personalDetail": {
   "title": "Personal Information",
@@ -1514,6 +1540,7 @@
       "seeAll": "See all",
      "services": "Services",
     "transfer": "Money Transfer",
+    "canadaKyc": "Canada KYC",
     "recharge": "Top Up Account",
     "virtualCard": "Virtual Card",
     "friendsShare": "Share with Friends",
@@ -1713,7 +1740,103 @@
     "pending": "PENDING",
     "failed": "FAILED"
   },
-  "noTransactions": "No transactions found"
+  "noTransactions": "No transactions found",
+ "canadaKyc": {
+  "title": "KYC for Canada",
+  "personalInfo": "Personal Information",
+  "personalInfoDesc": "Please provide your personal information as it appears on your identity documents.",
+  "profession": "Occupation",
+  "professionPlaceholder": "Enter your occupation",
+  "identityType": "Identity Document Type",
+  "identityTypeDesc": "Select the type of document you are using to verify your identity",
+  "identityNumber": "Document Number",
+  "identityNumberPlaceholder": "Enter your document number",
+  "expirationDate": "Expiration Date",
+  "expirationDateHint": "Format: YYYY-MM-DD",
+  "documents": "Required Documents",
+  "documentsDesc": "Please take clear images of the following documents",
+  "selfie": "Selfie Photo",
+  "selfieDesc": "Take a clear selfie for identity verification",
+  "identityFront": "Front of Document",
+  "identityFrontDesc": "Front side of your identity document",
+  "identityBack": "Back of Document",
+  "identityBackDesc": "Back side of your identity document",
+  "passeport": "Passport",
+  "passeportDesc": "Photo page of your passport",
+  "carteResidentPermanent": "Permanent Resident Card",
+  "passeportCanadien": "Canadian Passport",
+  "permisConduire": "Driver’s License",
+  "permisEtudePlusPassport": "Study Permit + Passport",
+  "permisTravailPlusPassport": "Work Permit + Passport",
+  "documentAveilePlusPassport": "eTA/EL Document + Passport",
+  "requiresPassport": "Requires a passport",
+  "savePersonalInfo": "Save Information",
+  "submitKYC": "Submit KYC Request",
+  "uploaded": "Uploaded",
+  "required": "Required",
+  "optional": "Optional",
+  "capture": "Capture Document",
+  "reupload": "Recapture",
+  "saving": "Saving...",
+  "submitting": "Submitting...",
+  "securityNotice": "Your information is encrypted and securely protected. We comply with Canadian privacy protection regulations.",
+  "error": "Error",
+  "success": "Success",
+  "fillAllFields": "Please fill in all required fields",
+  "selfieRequired": "Selfie photo is required",
+  "identityFrontRequired": "Front of identity document is required",
+  "passportRequired": "Passport is required for this document type",
+  "identityTypeRequired": "Identity document type is required",
+  "completeAllSections": "Please complete all sections before submission",
+  "personalInfoSaved": "Personal information saved successfully",
+  "selfieUploaded": "Selfie uploaded successfully",
+  "submissionSuccessful": "KYC submission successful! Your request is under review.",
+  "saveFailed": "Failed to save personal information",
+  "uploadFailed": "Failed to upload document",
+  "submissionFailed": "KYC submission failed. Please try again.",
+  "mainDocument": "Main Document",
+"mainDocumentDesc": "Your study permit, work permit, or eTA/EL document",
+"selfieCameraTitle": "Take a Selfie",
+    "passportCameraTitle": "Capture Passport",
+    "drivingLicenseFrontTitle": "Capture Driving License Front",
+    "drivingLicenseBackTitle": "Capture Driving License Back",
+    "residentCardFrontTitle": "Capture Resident Card Front",
+    "residentCardBackTitle": "Capture Resident Card Back",
+    "studyPermitFrontTitle": "Capture Study Permit Front",
+    "workPermitFrontTitle": "Capture Work Permit Front",
+    "aveileDocumentFrontTitle": "Capture AVEILE Document Front",
+    "idFrontCameraTitle": "Capture Document Front",
+    "idBackCameraTitle": "Capture Document Back",
+    "defaultCameraTitle": "Capture Document",
+
+    "selfieCameraSubtitle": "Make sure your face is clearly visible and well-lit",
+    "passportCameraSubtitle": "Capture the photo page of your Canadian passport",
+    "drivingLicenseFrontSubtitle": "Capture the front side of your driving license",
+    "drivingLicenseBackSubtitle": "Capture the back side of your driving license",
+    "residentCardFrontSubtitle": "Capture the front side of your permanent resident card",
+    "residentCardBackSubtitle": "Capture the back side of your permanent resident card",
+    "studyPermitFrontSubtitle": "Capture the front side of your study permit",
+    "workPermitFrontSubtitle": "Capture the front side of your work permit",
+    "aveileDocumentFrontSubtitle": "Capture the front side of your AVEILE document",
+    "idFrontCameraSubtitle": "Ensure the document is clear and all text is readable",
+    "idBackCameraSubtitle": "Ensure the back side is clearly visible",
+    "defaultCameraSubtitle": "Position the document within the frame",
+
+    "selfieCaptureHint": "Tap to capture your selfie",
+    "documentCaptureHint": "Tap to capture the document",
+    "defaultCaptureHint": "Tap to capture",
+
+    "selfiePositionHint": "Position your face in the center",
+    "documentPositionHint": "Position the document to fill the frame",
+    "defaultPositionHint": "Position the subject in the frame",
+
+    "cameraPermissionRequest": "We need your permission to use the camera",
+    "grantPermission": "Grant Permission",
+    "cancel": "Cancel",
+    "accept": "Accept"
+
+}
+
    
  
 

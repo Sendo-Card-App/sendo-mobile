@@ -62,46 +62,49 @@ const Log = () => {
     };
   }, [countryModalVisible, languageModalVisible, setIsPickingDocument]);
 
-  const fetchCountries = async () => {
-    try {
-      setIsPickingDocument(true); // Prevent restart during API call
-      const res = await fetch('https://restcountries.com/v3.1/all?fields=name,idd,flags');
+ const fetchCountries = async () => {
+  try {
+    setIsPickingDocument(true); // Prevent restart during API call
+    const res = await fetch('https://restcountries.com/v3.1/all?fields=name,idd,flags');
 
-      if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
-      }
-
-      const data = await res.json();
-
-      const countriesList = data
-        .map(c => {
-          const name = c?.name?.common;
-          const root = c?.idd?.root || '';
-          const suffixes = c?.idd?.suffixes || [];
-          let code = suffixes.length > 0 ? `${root}${suffixes[0]}` : root;
-
-          if (!name || !code) return null;
-
-          if (!code.startsWith('+')) {
-            code = '+' + code;
-          }
-
-          const flag = c?.flags?.png || c?.flags?.svg || null;
-
-          return { name, code, flag };
-        })
-        .filter(Boolean)
-        .sort((a, b) => a.name.localeCompare(b.name));
-
-      setCountries(countriesList);
-      setFilteredCountries(countriesList);
-    } catch (error) {
-      console.log("Error fetching countries:", error);
-      Toast.show({ type: 'error', text1: 'Failed to load countries' });
-    } finally {
-      setIsPickingDocument(false); // Reset after API call completes
+    if (!res.ok) {
+      throw new Error(`HTTP error! status: ${res.status}`);
     }
-  };
+
+    const data = await res.json();
+
+    const allowedCountries = ["Canada", "Cameroon"];
+
+    const countriesList = data
+      .map(c => {
+        const name = c?.name?.common;
+        const root = c?.idd?.root || '';
+        const suffixes = c?.idd?.suffixes || [];
+        let code = suffixes.length > 0 ? `${root}${suffixes[0]}` : root;
+
+        if (!name || !code) return null;
+
+        if (!code.startsWith('+')) {
+          code = '+' + code;
+        }
+
+        const flag = c?.flags?.png || c?.flags?.svg || null;
+
+        return { name, code, flag };
+      })
+      .filter(c => c && allowedCountries.includes(c.name))
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+    setCountries(countriesList);
+    setFilteredCountries(countriesList);
+  } catch (error) {
+    console.log("Error fetching countries:", error);
+    Toast.show({ type: 'error', text1: 'Failed to load countries' });
+  } finally {
+    setIsPickingDocument(false); // Reset after API call completes
+  }
+};
+
 
   useEffect(() => {
     fetchCountries();

@@ -13,6 +13,7 @@ import Toast from 'react-native-toast-message';
 import { AntDesign, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 import * as DocumentPicker from "expo-document-picker";
+import * as ImagePicker from "expo-image-picker";
 import * as FileSystem from "expo-file-system/legacy";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import TopLogo from "../../images/TopLogo.png";
@@ -20,7 +21,7 @@ import { useDispatch } from "react-redux";
 import KycTab from "../../components/KycTab";
 import { setNiuDocument } from "../../features/Kyc/kycReducer";
 import { useTranslation } from "react-i18next";
-import { useAppState } from '../../context/AppStateContext'; // Import the hook
+import { useAppState } from '../../context/AppStateContext';
 
 const NIU = ({ navigation }) => {
   const { t } = useTranslation();
@@ -31,7 +32,7 @@ const NIU = ({ navigation }) => {
   const [taxIdNumber, setTaxIdNumber] = useState("");
   const [currentStep, setCurrentStep] = useState(1);
   const [isFormValid, setIsFormValid] = useState(false);
-  const { setIsPickingDocument } = useAppState(); // Get the setter function
+  const { setIsPickingDocument } = useAppState();
 
   const isValidTaxId = (value) => /^[A-Za-z0-9]{14}$/.test(value.trim());
 
@@ -39,25 +40,135 @@ const NIU = ({ navigation }) => {
     setIsFormValid(isValidTaxId(taxIdNumber) && selectedDocument !== null);
   }, [taxIdNumber, selectedDocument]);
 
-  const handleTakePhoto = () => {
+  // Common file processing function
+  const handleFileSelection = async (file) => {
+    try {
+      const fileInfo = await FileSystem.getInfoAsync(file.uri);
+      const fileSizeMB = fileInfo.size / (1024 * 1024);
+
+      if (fileSizeMB > 5) {
+        Alert.alert(t("niu.fileTooLarge"), t("niu.documentSizeLimit"));
+        return false;
+      }
+
+      setSelectedDocument({
+        name: file.name || `niu_document_${Date.now()}.jpg`,
+        uri: file.uri,
+        type: file.mimeType || "image/jpeg",
+        mimeType: file.mimeType || "image/jpeg",
+      });
+      setCurrentStep(2);
+      return true;
+    } catch (error) {
+      console.error("File processing error:", error);
+      Alert.alert(t("niu.error"), t("niu.fileProcessingError"));
+      return false;
+    }
+  };
+
+  // Take photo with camera
+  const handleTakePhoto = async () => {
     if (!isValidTaxId(taxIdNumber)) {
       Alert.alert(t("niu.taxIdInvalid"), t("niu.taxIdValidationMessage"));
       return;
     }
 
-    navigation.navigate("Camera", {
-      purpose: "niu",
-      onCapture: (image) => {
-        setSelectedDocument({
-          uri: image.uri,
-          type: "image/jpeg",
-          mimeType: "image/jpeg"
-        });
-        setCurrentStep(2);
-      },
-    });
+    try {
+      setIsPickingDocument(true);
+      
+      // Request camera permissions
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          t("camera.permissionDenied"),
+          t("camera.permissionRequired"),
+          [{ text: t("common.ok") }]
+        );
+        setIsPickingDocument(false);
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      });
+
+      if (result.canceled) {
+        setIsPickingDocument(false);
+        return;
+      }
+
+      const image = result.assets[0];
+      const file = {
+        uri: image.uri,
+        name: `niu_${Date.now()}.jpg`,
+        mimeType: 'image/jpeg'
+      };
+
+      await handleFileSelection(file);
+      setIsPickingDocument(false);
+      
+    } catch (error) {
+      console.error("Camera error:", error);
+      setIsPickingDocument(false);
+      Alert.alert(t("niu.error"), error.message || t("camera.captureError"));
+    }
   };
 
+  // Pick image from gallery
+  const handlePickImage = async () => {
+    if (!isValidTaxId(taxIdNumber)) {
+      Alert.alert(t("niu.taxIdInvalid"), t("niu.taxIdValidationMessage"));
+      return;
+    }
+
+    try {
+      setIsPickingDocument(true);
+      
+      // Request gallery permissions
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          t("gallery.permissionDenied"),
+          t("gallery.permissionRequired"),
+          [{ text: t("common.ok") }]
+        );
+        setIsPickingDocument(false);
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      });
+
+      if (result.canceled) {
+        setIsPickingDocument(false);
+        return;
+      }
+
+      const image = result.assets[0];
+      const file = {
+        uri: image.uri,
+        name: image.fileName || `niu_${Date.now()}.jpg`,
+        mimeType: 'image/jpeg'
+      };
+
+      await handleFileSelection(file);
+      setIsPickingDocument(false);
+      
+    } catch (error) {
+      console.error("Image picker error:", error);
+      setIsPickingDocument(false);
+      Alert.alert(t("niu.error"), error.message || t("gallery.selectionError"));
+    }
+  };
+
+  // Pick document (PDF or other files)
   const handlePickDocument = async () => {
     if (!isValidTaxId(taxIdNumber)) {
       Alert.alert(t("niu.taxIdInvalid"), t("niu.taxIdValidationMessage"));
@@ -65,7 +176,6 @@ const NIU = ({ navigation }) => {
     }
 
     try {
-      // 🚨 Set picking state to true BEFORE opening picker
       setIsPickingDocument(true);
       
       const result = await DocumentPicker.getDocumentAsync({
@@ -80,32 +190,42 @@ const NIU = ({ navigation }) => {
       }
 
       const file = result.assets[0];
-      const fileInfo = await FileSystem.getInfoAsync(file.uri);
-      const fileSizeMB = fileInfo.size / (1024 * 1024);
-
-      if (fileSizeMB > 5) {
-        Alert.alert(t("niu.fileTooLarge"), t("niu.documentSizeLimit"));
-        setIsPickingDocument(false);
-        return;
-      }
-
-      setSelectedDocument({
-        name: file.name,
-        uri: file.uri,
-        type: file.mimeType || "application/octet-stream",
-        mimeType: file.mimeType || "application/octet-stream",
-      });
-      setCurrentStep(2);
-      
-      // 🚨 Reset picking state after successful selection
+      await handleFileSelection(file);
       setIsPickingDocument(false);
       
     } catch (error) {
       console.error("Document selection error:", error);
-      // 🚨 Reset picking state on error too
       setIsPickingDocument(false);
       Alert.alert(t("niu.error"), error.message || t("niu.documentSelectionError"));
     }
+  };
+
+  // Show selection options
+  const showSelectionOptions = () => {
+    if (!isValidTaxId(taxIdNumber)) {
+      Alert.alert(t("niu.taxIdInvalid"), t("niu.taxIdValidationMessage"));
+      return;
+    }
+
+    Alert.alert(
+      t("niu.selectDocumentMethod"),
+      t("niu.chooseUploadMethod"),
+      [
+        
+        {
+          text: t("gallery.chooseFromGallery"),
+          onPress: handlePickImage,
+        },
+        {
+          text: t("document.chooseDocument"),
+          onPress: handlePickDocument,
+        },
+        {
+          text: t("common.cancel"),
+          style: "cancel",
+        },
+      ]
+    );
   };
 
   const handleContinue = async () => {
@@ -160,7 +280,13 @@ const NIU = ({ navigation }) => {
           className="bg-gray-100 rounded-lg px-4 py-3 text-gray-800"
           keyboardType="default"
           maxLength={14}
+          autoCapitalize="characters"
         />
+        {taxIdNumber.length > 0 && !isValidTaxId(taxIdNumber) && (
+          <Text className="text-red-500 text-xs mt-1">
+            {t("niu.taxIdFormatError")}
+          </Text>
+        )}
       </View>
 
       <Image
@@ -171,35 +297,69 @@ const NIU = ({ navigation }) => {
       />
 
       <View className="w-[85%] mx-auto mt-8 space-y-4">
-        {/* <TouchableOpacity
-          className={`flex-row items-center justify-center py-3 mb-8 rounded-full border-2 ${taxIdNumber.trim() ? "border-[#7ddd7d] bg-[#7ddd7d]/20" : "border-gray-300 bg-gray-100"}`}
-          onPress={handleTakePhoto}
-          disabled={!taxIdNumber.trim()}
-        >
-          <MaterialIcons 
-            name="photo-camera" 
-            size={24} 
-            color={taxIdNumber.trim() ? "#7ddd7d" : "gray"} 
-          />
-          <Text className={`ml-2 text-lg font-bold ${taxIdNumber.trim() ? "text-[#7ddd7d]" : "text-gray-500"}`}>
-            {t("niu.takePhotoButton")}
-          </Text>
-        </TouchableOpacity> */}
-
+        {/* Option 1: Single upload button with action sheet */}
         <TouchableOpacity
-          className={`flex-row items-center justify-center py-3 rounded-full border-2 ${taxIdNumber.trim() ? "border-gray-300" : "border-gray-300 bg-gray-100"}`}
-          onPress={handlePickDocument}
-          disabled={!taxIdNumber.trim()}
+          className={`flex-row items-center justify-center py-3 rounded-full border-2 ${isValidTaxId(taxIdNumber) ? "border-[#7ddd7d] bg-[#7ddd7d]/20" : "border-gray-300 bg-gray-100"}`}
+          onPress={showSelectionOptions}
+          disabled={!isValidTaxId(taxIdNumber)}
         >
           <MaterialIcons 
-            name="upload-file" 
+            name="cloud-upload" 
             size={24} 
-            color="gray" 
+            color={isValidTaxId(taxIdNumber) ? "#7ddd7d" : "gray"} 
           />
-          <Text className={`ml-2 text-lg font-bold ${taxIdNumber.trim() ? "text-gray-500" : "text-gray-400"}`}>
-            {t("niu.uploadButton")}
+          <Text className={`ml-2 text-lg font-bold ${isValidTaxId(taxIdNumber) ? "text-[#7ddd7d]" : "text-gray-500"}`}>
+            {t("niu.uploadDocumentButton")}
           </Text>
         </TouchableOpacity>
+
+        {/* Option 2: Individual buttons for each method (uncomment to use) */}
+        {/* <View className="flex-row justify-between space-x-2">
+          <TouchableOpacity
+            className={`flex-1 items-center py-3 rounded-lg ${isValidTaxId(taxIdNumber) ? "bg-blue-50 border border-blue-200" : "bg-gray-100 border border-gray-200"}`}
+            onPress={handleTakePhoto}
+            disabled={!isValidTaxId(taxIdNumber)}
+          >
+            <Ionicons 
+              name="camera" 
+              size={24} 
+              color={isValidTaxId(taxIdNumber) ? "#3b82f6" : "gray"} 
+            />
+            <Text className={`mt-1 text-sm font-medium ${isValidTaxId(taxIdNumber) ? "text-blue-600" : "text-gray-400"}`}>
+              {t("camera.takePhoto")}
+            </Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            className={`flex-1 items-center py-3 rounded-lg ${isValidTaxId(taxIdNumber) ? "bg-green-50 border border-green-200" : "bg-gray-100 border border-gray-200"}`}
+            onPress={handlePickImage}
+            disabled={!isValidTaxId(taxIdNumber)}
+          >
+            <Ionicons 
+              name="image" 
+              size={24} 
+              color={isValidTaxId(taxIdNumber) ? "#10b981" : "gray"} 
+            />
+            <Text className={`mt-1 text-sm font-medium ${isValidTaxId(taxIdNumber) ? "text-green-600" : "text-gray-400"}`}>
+              {t("gallery.chooseFromGallery")}
+            </Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            className={`flex-1 items-center py-3 rounded-lg ${isValidTaxId(taxIdNumber) ? "bg-purple-50 border border-purple-200" : "bg-gray-100 border border-gray-200"}`}
+            onPress={handlePickDocument}
+            disabled={!isValidTaxId(taxIdNumber)}
+          >
+            <MaterialIcons 
+              name="description" 
+              size={24} 
+              color={isValidTaxId(taxIdNumber) ? "#8b5cf6" : "gray"} 
+            />
+            <Text className={`mt-1 text-sm font-medium ${isValidTaxId(taxIdNumber) ? "text-purple-600" : "text-gray-400"}`}>
+              {t("document.chooseDocument")}
+            </Text>
+          </TouchableOpacity>
+        </View> */}
       </View>
     </>
   );
@@ -226,7 +386,10 @@ const NIU = ({ navigation }) => {
           )}
           <TouchableOpacity
             className="mt-4"
-            onPress={() => setSelectedDocument(null)}
+            onPress={() => {
+              setSelectedDocument(null);
+              setCurrentStep(1);
+            }}
           >
             <Text className="text-red-500">{t("niu.removeDocument")}</Text>
           </TouchableOpacity>
@@ -243,7 +406,13 @@ const NIU = ({ navigation }) => {
           className="bg-gray-100 rounded-lg px-4 py-3 text-gray-800"
           keyboardType="default"
           maxLength={14}
+          autoCapitalize="characters"
         />
+        {taxIdNumber.length > 0 && !isValidTaxId(taxIdNumber) && (
+          <Text className="text-red-500 text-xs mt-1">
+            {t("niu.taxIdInvalid")}
+          </Text>
+        )}
       </View>
 
       <View className="w-[89%] mx-auto px-8">

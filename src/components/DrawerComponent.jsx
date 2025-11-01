@@ -421,19 +421,28 @@ Utilise mon code lors de ton inscription !`;
             </View>
           </TouchableOpacity>
              
-          
-           <TouchableOpacity
-                      className="flex-row gap-2 my-2 mb-5"
-                      onPress={() => navigation2.navigate("VerifyIdentity")}
-                    >
-                       <MaterialCommunityIcons name="fingerprint" size={Platform.OS === "ios" ? 32 : 24} color="gray" />
-                      <View>
-                        <Text className="font-bold text-gray-500">{t('drawer.request')}</Text>
-                        <Text className="text-sm text-gray-500">
-                         {t('drawer.sub')}
-                        </Text>
-                      </View>
-                    </TouchableOpacity>
+            
+            <TouchableOpacity
+              className="flex-row gap-2 my-2 mb-5"
+              onPress={() => {
+                if (userProfile?.data?.country === "Canada") {
+                  navigation2.navigate("CanadaKycSubmission");
+                } else {
+                  navigation2.navigate("VerifyIdentity");
+                }
+              }}
+            >
+              <MaterialCommunityIcons
+                name="fingerprint"
+                size={Platform.OS === "ios" ? 32 : 24}
+                color="gray"
+              />
+              <View>
+                <Text className="font-bold text-gray-500">{t('drawer.request')}</Text>
+                <Text className="text-sm text-gray-500">{t('drawer.sub')}</Text>
+              </View>
+            </TouchableOpacity>
+
                      <TouchableOpacity
                       className="flex-row gap-2 my-2 mb-5"
                       onPress={() => navigation2.navigate("NiuRequest")}

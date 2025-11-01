@@ -5,8 +5,15 @@ import { AntDesign, Feather, Ionicons } from "@expo/vector-icons";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { useTranslation } from 'react-i18next';
 import { useDispatch } from "react-redux";
-import { setIdentityDocumentFront, setIdentityDocumentBack, setSelfie, setNiuDocument, setAddressProof } from "../../features/Kyc/kycReducer";
-import { useAppState } from '../../context/AppStateContext'; // Import the hook
+import { 
+  setIdentityDocumentFront, 
+  setIdentityDocumentBack, 
+  setSelfie, 
+  setNiuDocument, 
+  setAddressProof,
+  setPassportDocument
+} from "../../features/Kyc/kycReducer";
+import { useAppState } from '../../context/AppStateContext';
 
 const Camera = ({ navigation, route }) => {
   const [permission, requestPermission] = useCameraPermissions();
@@ -16,10 +23,9 @@ const Camera = ({ navigation, route }) => {
   const { height } = Dimensions.get("screen");
   const cameraRef = useRef();
   const dispatch = useDispatch();
-  const { purpose, onCapture, returnTo, sid } = route.params || {};
+  const { purpose, onCapture, returnTo, sid, selectedIdentityType } = route.params || {};
   const { t } = useTranslation();
   
-  // Use the AppState context
   const { setIsPickingDocument } = useAppState();
 
   const takePicture = async () => {
@@ -38,15 +44,24 @@ const Camera = ({ navigation, route }) => {
         name: `${purpose}_${new Date().toISOString()}.jpg`
       };
 
+      // Enhanced switch case to handle different identity types
       switch (purpose) {
         case 'id_front':
-          dispatch(setIdentityDocumentFront(file));
+          // For passport canadien, use passport document instead of identity front
+          if (selectedIdentityType === 'passeport_canadien') {
+            dispatch(setPassportDocument(file));
+          } else {
+            dispatch(setIdentityDocumentFront(file));
+          }
           break;
         case 'id_back':
           dispatch(setIdentityDocumentBack(file));
           break;
         case 'selfie':
           dispatch(setSelfie(file));
+          break;
+        case 'passport':
+          dispatch(setPassportDocument(file));
           break;
         case 'address_proof':
           dispatch(setAddressProof(file));
@@ -61,6 +76,11 @@ const Camera = ({ navigation, route }) => {
           console.warn(`Unknown purpose: ${purpose}`);
       }
 
+      // Call the onCapture callback if provided
+      if (onCapture) {
+        onCapture(picture);
+      }
+
       // Reset the document picking state when submitting
       setIsPickingDocument(false);
 
@@ -73,39 +93,69 @@ const Camera = ({ navigation, route }) => {
   };
 
   const handleCancel = () => {
-    // Reset the document picking state when canceling
     setIsPickingDocument(false);
     setPicture(null);
   };
 
   const handleGoBack = () => {
-    // Reset the document picking state when going back
     setIsPickingDocument(false);
     navigation.goBack();
   };
 
   const getTitle = () => {
+    // Enhanced title based on identity type and purpose
     switch (purpose) {
       case 'selfie':
         return t('camera.selfie_guide');
       case 'niu':
         return t('camera.niu_guide');
       case 'id_front':
+        if (selectedIdentityType === 'passeport_canadien') {
+          return t('camera.passport_guide');
+        } else if (selectedIdentityType === 'permis_conduire') {
+          return t('camera.driving_license_front_guide');
+        } else if (selectedIdentityType === 'carte_resident_permanent') {
+          return t('camera.resident_card_front_guide');
+        } else if (selectedIdentityType === 'permis_etude_plus_passport') {
+          return t('camera.study_permit_front_guide');
+        } else if (selectedIdentityType === 'permis_travail_plus_passport') {
+          return t('camera.work_permit_front_guide');
+        } else if (selectedIdentityType === 'document_aveile_plus_passport') {
+          return t('camera.aveile_document_front_guide');
+        }
         return t('camera.id_front_guide');
       case 'id_back':
+        if (selectedIdentityType === 'permis_conduire') {
+          return t('camera.driving_license_back_guide');
+        } else if (selectedIdentityType === 'carte_resident_permanent') {
+          return t('camera.resident_card_back_guide');
+        }
         return t('camera.id_back_guide');
       case 'passport':
         return t('camera.passport_guide');
-      case 'driving_license':
-        return t('camera.driving_license_guide');
-      case 'cni':
-        return t('camera.cni_guide');
-      case 'id_card':
-        return t('camera.id_card_guide');
       case 'address_proof':
         return t('camera.address_guide');
       default:
         return t('camera.default_guide');
+    }
+  };
+
+  const getSubtitle = () => {
+    // Provide specific instructions based on document type
+    switch (purpose) {
+      case 'id_front':
+        if (selectedIdentityType === 'passeport_canadien') {
+          return t('camera.passport_subtitle');
+        } else if (selectedIdentityType === 'permis_conduire') {
+          return t('camera.driving_license_front_subtitle');
+        }
+        return t('camera.id_front_subtitle');
+      case 'id_back':
+        return t('camera.id_back_subtitle');
+      case 'passport':
+        return t('camera.passport_subtitle');
+      default:
+        return t('camera.default_subtitle');
     }
   };
 
@@ -121,6 +171,11 @@ const Camera = ({ navigation, route }) => {
       {/* Camera title */}
       <Text className="text-white text-lg font-bold mb-4 text-center">
         {getTitle()}
+      </Text>
+
+      {/* Camera subtitle */}
+      <Text className="text-gray-300 text-sm mb-4 text-center">
+        {getSubtitle()}
       </Text>
 
       {/* Camera setup */}

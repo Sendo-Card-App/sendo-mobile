@@ -16,6 +16,7 @@ import {
 } from "react-native";
 import { Modal, Pressable } from 'react-native';
 import { Ionicons, AntDesign } from "@expo/vector-icons";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import Loader from "../../components/Loader";
 import { useNavigation, useFocusEffect, useNavigationState } from "@react-navigation/native";
 import { useGetBalanceQuery } from "../../services/WalletApi/walletApi";
@@ -198,7 +199,7 @@ const HomeScreen = () => {
       if (userProfile) {
         checkKYCStatus();
       }
-    }, 120000); // 2 minutes = 120000 milliseconds
+    }, 120000); // 2 minutes
 
     // Store interval reference for cleanup
     setKycCheckInterval(interval);
@@ -496,9 +497,14 @@ const HomeScreen = () => {
                 ...(userProfile?.data?.country === "Cameroon"
                   ? [{ label: t("home.virtualCard"), icon: "card-outline", route: "OnboardingCard" }]
                   : []),
+
                 { label: t("home.friendsShare"), icon: "people-outline", route: "WelcomeShare" },
                 { label: t("home.fundRequest"), icon: "cash-outline", route: "WelcomeDemand" },
                 { label: t("home.etontine"), icon: "layers-outline" },
+
+               ...(userProfile?.data?.country === "Cameroon"
+                  ? [{ label: t("home.canadaKyc"), icon: "shield-checkmark-outline", route: "CanadaKycSubmission" }]
+                  : []),
               ].map((item, index) => (
                 <TouchableOpacity
                   key={index}
@@ -706,17 +712,22 @@ const HomeScreen = () => {
                 </Text>
               </Pressable>
               
-              <Pressable
-                className="flex-1 bg-green-500 py-4 rounded-2xl shadow-sm"
-                onPress={() => {
-                  setShowKycModal(false);
+             <Pressable
+              className="flex-1 bg-green-500 py-4 rounded-2xl shadow-sm"
+              onPress={() => {
+                setShowKycModal(false);
+                if (userProfile?.data?.country === "Canada") {
+                  navigation.navigate("CanadaKycSubmission");
+                } else {
                   navigation.navigate("VerifyIdentity");
-                }}
-              >
-                <Text className="text-white font-semibold text-center">
-                  {t('kycModal.verifyButton') || "Verify Now"}
-                </Text>
-              </Pressable>
+                }
+              }}
+            >
+              <Text className="text-white font-semibold text-center">
+                {t('kycModal.verifyButton') || "Verify Now"}
+              </Text>
+            </Pressable>
+
             </View>
           </View>
         </View>

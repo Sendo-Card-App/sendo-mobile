@@ -394,6 +394,10 @@
     "selectDocument": "Sélectionner un document",
     "documentTypes": "(Image ou PDF)",
     "acceptedDocuments": "Documents acceptés:",
+     "selectOption": "Sélectionner un document",
+    "chooseMethod": "Comment souhaitez-vous fournir votre preuve d’adresse ?",
+    "selectDocumentOrImage": "Sélectionnez un document ou une image",
+    "fileProcessingError": "Échec du traitement du fichier",
     "documentsList": [
       "• Facture d'eau ou d'électricité (moins de 3 mois)",
       "• Contrat de bail en cours de validité",
@@ -403,6 +407,16 @@
     "confirmButton": "CONFIRMER LE DOCUMENT",
     "securityNotice": "Ne partagez pas vos informations personnelles"
   },
+   "gallery": {
+    "chooseFromGallery": "Choisir depuis la galerie",
+    "permissionDenied": "Autorisation de la galerie requise",
+    "permissionRequired": "Nous avons besoin d’un accès à la galerie pour sélectionner vos documents",
+    "selectionError": "Échec de la sélection de l’image"
+  },
+  "document": {
+    "chooseDocument": "Choisir un document"
+  },
+  
   "camera": {
     "selfie_guide": "Prenez un selfie avec votre pièce d'identité",
      "id_front_guide": "Prenez un recto de votre pièce d'identité",
@@ -417,7 +431,11 @@
     "cancel": "Annulez",
     "accept": "Accepter",
     "permission_request": "Nous avons besoin de votre permission pour accéder à la caméra",
-    "grant_permission": "Accorder la permission"
+    "grant_permission": "Accorder la permission",
+      "takePhoto": "Prendre une photo",
+    "permissionDenied": "Autorisation de la caméra requise",
+    "permissionRequired": "Nous avons besoin d’un accès à la caméra pour prendre des photos de vos documents",
+    "captureError": "Échec de la capture de la photo"
   },
   "niu": {
     "title": "Numéro d'Identification Unique",
@@ -449,6 +467,8 @@
     "imageSelectionError": "Error selecting image. Please try again.",
      "supportedFormats": "Formats supporter: PDF, JPG, PNG",
     "documentUploadError": "Error uploading document. Please try again.",
+      "selectDocumentMethod": "Sélectionner la méthode de téléchargement",
+    "chooseUploadMethod": "Comment souhaitez-vous téléverser votre document ?",
     "steps": {
       "fees": "Frais de création",
       "kyc": "Vérification KYC",
@@ -492,7 +512,13 @@
       "title": "Vous avez déjà votre NIU",
       "message": "Votre numéro d'identification unique (NIU) a déjà été traité et approuvé.",
       "backButton": "Retour à l'accueil"
-    }
+    },
+    "gallery": {
+    "chooseFromGallery": "Choisir depuis la galerie"
+  },
+  "document": {
+    "chooseDocument": "Choisir un document"
+  }
   },
  "personalDetail": {
   "title": "Informations personnelles",
@@ -1516,6 +1542,7 @@
     "balance": "Solde",
      "seeAll": "Voir tout",
      "services": "Services",
+     "canadaKyc": "KYC Canada",
     "transfer": "Transfert D'argent",
     "viewDocument": "Document de versement Bancaire",
     "recharge": "Créditer mon compte",
@@ -1710,7 +1737,102 @@
     "pending": "EN ATTENTE",
     "failed": "ÉCHOUÉ"
   },
-  "noTransactions": "Aucune transaction trouvée"
+  "noTransactions": "Aucune transaction trouvée",
+   "canadaKyc": {
+    "title": "KYC pour le Canada",
+      "mainDocument": "Document Principal",
+    "mainDocumentDesc": "Votre permis d'étude, permis de travail ou document AVE/EL",
+    "personalInfo": "Informations Personnelles",
+    "personalInfoDesc": "Veuillez fournir vos informations personnelles telles qu'elles apparaissent sur vos documents d'identité",
+    "profession": "Profession",
+    "professionPlaceholder": "Entrez votre profession",
+    "identityType": "Type de Document d'Identité",
+  "identityTypeDesc": "Sélectionnez le type de pièce d’identité que vous utilisez pour vérifier votre identité",
+"identityNumber": "Numéro de la pièce d’identité",
+"identityNumberPlaceholder": "Entrez le numéro de votre pièce d’identité",
+    "expirationDate": "Date d'Expiration",
+    "expirationDateHint": "Format: AAAA-MM-JJ",
+    "documents": "Documents Requis",
+    "documentsDesc": "Veuillez prendre des images claires des documents suivants",
+    "selfie": "Photo Selfie",
+    "selfieDesc": "Prenez un selfie clair pour la vérification d'identité",
+    "identityFront": "Recto du Document",
+    "identityFrontDesc": "Côté recto de votre document d'identité",
+    "identityBack": "Verso du Document",
+    "identityBackDesc": "Côté verso de votre document d'identité",
+    "passeport": "Passeport",
+    "passeportDesc": "Page photo de votre passeport",
+    "carteResidentPermanent": "Carte de Résident Permanent",
+    "passeportCanadien": "Passeport Canadien",
+    "permisConduire": "Permis de Conduire",
+    "permisEtudePlusPassport": "Permis d'Étude + Passeport",
+    "permisTravailPlusPassport": "Permis de Travail + Passeport",
+    "documentAveilePlusPassport": "Document d'AVE/EL + Passeport",
+    "requiresPassport": "Nécessite un passeport",
+    "savePersonalInfo": "Sauvegarder les Informations",
+    "submitKYC": "Soumettre la Demande KYC",
+    "uploaded": "Téléchargé",
+    "required": "Requis",
+    "optional": "Optionnel",
+    "capture": "Capturer le Document",
+    "reupload": "Recapturer",
+    "saving": "Sauvegarde...",
+    "submitting": "Soumission...",
+    "securityNotice": "Vos informations sont cryptées et protégées de manière sécurisée. Nous respectons les réglementations canadiennes sur la protection de la vie privée.",
+    "error": "Erreur",
+    "success": "Succès",
+    "fillAllFields": "Veuillez remplir tous les champs obligatoires",
+    "selfieRequired": "La photo selfie est requise",
+    "identityFrontRequired": "Le recto du document d'identité est requis",
+    "passportRequired": "Le passeport est requis pour ce type de document",
+    "identityTypeRequired": "Le type de document d'identité est requis",
+    "completeAllSections": "Veuillez compléter toutes les sections avant la soumission",
+    "personalInfoSaved": "Informations personnelles sauvegardées avec succès",
+    "selfieUploaded": "Selfie téléchargé avec succès",
+    "submissionSuccessful": "Soumission KYC réussie! Votre demande est en cours d'examen.",
+    "saveFailed": "Échec de la sauvegarde des informations personnelles",
+    "uploadFailed": "Échec du téléchargement du document",
+    "submissionFailed": "Échec de la soumission KYC. Veuillez réessayer.",
+     "selfieCameraTitle": "Prenez un selfie",
+    "passportCameraTitle": "Prenez une photo du passeport",
+    "drivingLicenseFrontTitle": "Prenez une photo du recto du permis de conduire",
+    "drivingLicenseBackTitle": "Prenez une photo du verso du permis de conduire",
+    "residentCardFrontTitle": "Prenez une photo du recto de la carte de résident permanent",
+    "residentCardBackTitle": "Prenez une photo du verso de la carte de résident permanent",
+    "studyPermitFrontTitle": "Prenez une photo du permis d’études",
+    "workPermitFrontTitle": "Prenez une photo du permis de travail",
+    "aveileDocumentFrontTitle": "Prenez une photo du document AVE/EL",
+    "idFrontCameraTitle": "Prenez une photo du recto du document",
+    "idBackCameraTitle": "Prenez une photo du verso du document",
+    "defaultCameraTitle": "Prenez une photo du document",
+
+    "selfieCameraSubtitle": "Assurez-vous que votre visage est bien visible et bien éclairé",
+    "passportCameraSubtitle": "Prenez la page avec la photo de votre passeport canadien",
+    "drivingLicenseFrontSubtitle": "Prenez une photo claire du recto de votre permis de conduire",
+    "drivingLicenseBackSubtitle": "Prenez une photo claire du verso de votre permis de conduire",
+    "residentCardFrontSubtitle": "Prenez une photo claire du recto de votre carte de résident permanent",
+    "residentCardBackSubtitle": "Prenez une photo claire du verso de votre carte de résident permanent",
+    "studyPermitFrontSubtitle": "Prenez une photo claire de votre permis d’études",
+    "workPermitFrontSubtitle": "Prenez une photo claire de votre permis de travail",
+    "aveileDocumentFrontSubtitle": "Prenez une photo claire de votre document AVE/EL",
+    "idFrontCameraSubtitle": "Assurez-vous que le document est net et que le texte est lisible",
+    "idBackCameraSubtitle": "Assurez-vous que le verso du document est bien visible",
+    "defaultCameraSubtitle": "Placez le document à l’intérieur du cadre",
+
+    "selfieCaptureHint": "Touchez pour prendre votre selfie",
+    "documentCaptureHint": "Touchez pour capturer le document",
+    "defaultCaptureHint": "Touchez pour capturer",
+
+    "selfiePositionHint": "Positionnez votre visage au centre de l’écran",
+    "documentPositionHint": "Positionnez le document pour remplir le cadre",
+    "defaultPositionHint": "Positionnez le sujet dans le cadre",
+
+    "cameraPermissionRequest": "Nous avons besoin de votre autorisation pour utiliser la caméra",
+    "grantPermission": "Autoriser l’accès",
+    "cancel": "Annuler",
+    "accept": "Accepter"
+  }
+   
 
     
     

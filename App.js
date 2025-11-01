@@ -129,6 +129,10 @@ import SelectRecipients from "./src/screens/Demand/SelectRecipients";
 import DetailsList from "./src/screens/Demand/DetailsList";
 import EditFundField from "./src/screens/Demand/EditFundField";
 
+ // CANADA KYC SCREENS
+import CanadaKycSubmission from "./src/screens/CaKyc/CanadaKycSubmission";
+import CanadaKycCamera from "./src/screens/CaKyc/CanadaKycCamera";
+
 //MODULE TONTINE
 import TontineList from "./src/screens/Tontine/TontineList";
 import CreateTontine from "./src/screens/Tontine/CreateTontine";
@@ -447,6 +451,10 @@ function MainStack() {
       <Stack.Screen name="TontineSetting" component={TontineSetting } options={{ headerShown: false }} />
       <Stack.Screen name="FundRelease" component={FundRelease } options={{ headerShown: false }} />
        <Stack.Screen name="TermsAndConditions" component={TermsAndConditions} options={{ headerShown: false }} />
+      <Stack.Screen name="CanadaKycSubmission" component={CanadaKycSubmission} options={{ headerShown: false }} />
+      <Stack.Screen name="CanadaKycCamera" component={CanadaKycCamera} options={{ headerShown: false }} />
+
+
 
 
 
