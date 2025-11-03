@@ -98,7 +98,7 @@ const CardHistory = () => {
         ]}
       >
         {item.type === "WITHDRAWAL" ? "-" : "+"}
-        {item.amount} {item.currency}
+        {item.totalAmount} {item.currency}
       </Text>
     </TouchableOpacity>
   );

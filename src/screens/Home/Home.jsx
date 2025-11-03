@@ -61,7 +61,7 @@ const HomeScreen = () => {
     isLoading: isProfileLoading,
     refetch: refetchProfile,
   } = useGetUserProfileQuery();
-
+  
   const userId = userProfile?.data?.id;
   
   const { data: history, isLoadingHistory, isError, refetch } = useGetTransactionHistoryQuery(
@@ -621,54 +621,69 @@ const HomeScreen = () => {
       ) : history?.data?.transactions?.items?.length === 0 ? (
         <Text className="text-black text-center mt-4">{t("home.noTransactions")}</Text>
       ) : (
-        <ScrollView showsVerticalScrollIndicator={false}>
+       <ScrollView showsVerticalScrollIndicator={false}>
           {history?.data?.transactions?.items?.map((item, index) => {
             const statusColor = getStatusColor(item.status);
             const typeLabel = getTypeLabel(item.type, t);
-            let displayLabel = typeLabel;
             let description = item.description;
 
             // Handle BANK_TRANSFER deposits with URL descriptions
-            if (item.type?.toUpperCase() === "DEPOSIT" && 
-                item.method?.toUpperCase() === "BANK_TRANSFER" &&
-                description && 
-                (description.startsWith('http://') || description.startsWith('https://'))) {
+            if (
+              item.type?.toUpperCase() === "DEPOSIT" &&
+              item.method?.toUpperCase() === "BANK_TRANSFER" &&
+              description &&
+              (description.startsWith("http://") || description.startsWith("https://"))
+            ) {
               description = t("home.viewDocument");
             }
 
             // Handle TONTINE_PAYMENT descriptions to remove # and numbers
-            if (item.type?.toUpperCase() === "TONTINE_PAYMENT") {
-              if (description) {
-                description = description.replace(/#\d+/, "").trim();
-              }
+            if (item.type?.toUpperCase() === "TONTINE_PAYMENT" && description) {
+              description = description.replace(/#\\d+/, "").trim();
             }
 
             const iconSource = getMethodIcon(item);
 
-            // CORRECTION: Déterminer quel montant afficher
-            const displayAmount = 
-              item.type === 'PAYMENT' || item.type === 'TONTINE_PAYMENT' || item.type === 'VIEW_CARD_DETAILS'
-                ? item.totalAmount 
-                : item.amount;
+            // ✅ Determine which amount to display
+            let displayAmount;
 
-            const readableDescription = getTypeLabel(item.type, t);
-            
+            if (
+              item.type === "PAYMENT" ||
+              item.type === "TONTINE_PAYMENT" ||
+              item.type === "VIEW_CARD_DETAILS"
+            ) {
+              displayAmount = item.totalAmount;
+            } 
+            // ✅ NEW CONDITION: for “Retrait par SENDO” or “Dépôt par SENDO”
+            else if (
+              description?.trim() === "Retrait par SENDO" ||
+              description?.trim() === "Dépôt par SENDO"
+            ) {
+              displayAmount = item.totalAmount;
+            } 
+            else {
+              displayAmount = item.amount;
+            }
+
             return (
               <TouchableOpacity
                 key={index}
                 className="flex-row items-center mb-4 border-b border-gray-700 pb-2"
-                onPress={() => navigation.navigate('Receipt', {
-                  transaction: item,
-                  user: userProfile?.data,
-                })}
+                onPress={() =>
+                  navigation.navigate("Receipt", {
+                    transaction: item,
+                    user: userProfile?.data,
+                  })
+                }
               >
-                <Image source={iconSource} className="w-10 h-10 mr-3 rounded-full" resizeMode="contain" />
+                <Image
+                  source={iconSource}
+                  className="w-10 h-10 mr-3 rounded-full"
+                  resizeMode="contain"
+                />
                 <View className="flex-1">
-                  <Text className="text-black font-semibold">
-                    {description}
-                  </Text>
+                  <Text className="text-black font-semibold">{description}</Text>
                   <Text className="text-black text-sm">
-                    {/* AFFICHAGE CORRIGÉ: Utiliser displayAmount */}
                     {displayAmount?.toLocaleString()} {item.currency}
                   </Text>
                 </View>
@@ -679,6 +694,7 @@ const HomeScreen = () => {
             );
           })}
         </ScrollView>
+
       )}
 
       <Modal

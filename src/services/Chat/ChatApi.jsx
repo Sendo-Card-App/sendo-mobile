@@ -16,7 +16,7 @@ const TAG_TYPES = {
 export const chatApi = createApi({
   reducerPath: 'chatApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: process.env.EXPO_PUBLIC_API_URL,
+    baseUrl: process.env.EXPO_TEST_API_URL,
     prepareHeaders: (headers, { getState }) => {
       const state = getState();
       const accessToken = state.auth?.accessToken;
