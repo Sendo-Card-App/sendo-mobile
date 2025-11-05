@@ -3,7 +3,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import React, { useCallback, useState } from "react";
 import TopLogo from "../../images/TopLogo.png";
 import Loader from "../../components/Loader";
-import { Ionicons, AntDesign } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 import VerifyImage from "../../images/VerifyImage.png";
 import { useTranslation } from "react-i18next";
@@ -12,49 +12,51 @@ import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
 const VerifyIdentity = ({ navigation }) => {
   const { t } = useTranslation();
   const [loadingDocuments, setLoadingDocuments] = useState(false);
-   const { data: userProfile, isProfileLoading, refetch } = useGetUserProfileQuery(
-      undefined,
-      {
-        pollingInterval: 1000, // Refetch every 1 second
-      }
-    );
-    //console.log('User Profile:', JSON.stringify(userProfile, null, 2));
 
-useFocusEffect(
-  useCallback(() => {
-    let isActive = true;
+  const { data: userProfile, isProfileLoading, refetch } = useGetUserProfileQuery(undefined, {
+    pollingInterval: 1000, // Refetch every 1 second
+  });
 
-    const checkKYCStatus = async () => {
-      setLoadingDocuments(true);
+  // console.log('User Profile:', JSON.stringify(userProfile, null, 2));
 
-      try {
-        const result = await refetch();
-        const profile = result?.data?.data;
-        const documents = profile?.kycDocuments || [];
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
 
-        if (documents.length > 0) {
-          navigation.navigate("KYCValidation", { documents });
-          return;
+      const checkKYCStatus = async () => {
+        setLoadingDocuments(true);
+        try {
+          const result = await refetch();
+          const profile = result?.data?.data;
+          const documents = profile?.kycDocuments || [];
+
+          if (documents.length > 0) {
+            navigation.navigate("KYCValidation", { documents });
+            return;
+          }
+        } catch (error) {
+          console.warn("Failed to refetch KYC data", error);
+        } finally {
+          if (isActive) setLoadingDocuments(false);
         }
-      } catch (error) {
-        console.warn("Failed to refetch KYC data", error);
-      } finally {
-        if (isActive) setLoadingDocuments(false);
-      }
-    };
+      };
 
-    checkKYCStatus();
+      checkKYCStatus();
 
-    return () => {
-      isActive = false;
-    };
-  }, [refetch, navigation])
-);
+      return () => {
+        isActive = false;
+      };
+    }, [refetch, navigation])
+  );
 
-
-
+  // Handle navigation based on user's country
   const handleNextPress = () => {
-    navigation.navigate("KycResume");
+    const country = userProfile?.data?.country;
+    if (country === "Canada") {
+      navigation.navigate("CanadaKycSubmission");
+    } else {
+      navigation.navigate("KycResume");
+    }
   };
 
   if (isProfileLoading || loadingDocuments) {
@@ -110,7 +112,8 @@ useFocusEffect(
         </Text>
 
         {/* Show button only if no documents at all */}
-        {(!userProfile?.data?.kycDocuments || userProfile?.data?.kycDocuments.length === 0) && (
+        {(!userProfile?.data?.kycDocuments ||
+          userProfile?.data?.kycDocuments.length === 0) && (
           <TouchableOpacity
             className="mt-auto py-3 rounded-full mb-8 bg-[#7ddd7d]"
             onPress={handleNextPress}

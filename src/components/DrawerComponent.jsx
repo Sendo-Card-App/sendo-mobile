@@ -424,13 +424,8 @@ Utilise mon code lors de ton inscription !`;
             
             <TouchableOpacity
               className="flex-row gap-2 my-2 mb-5"
-              onPress={() => {
-                if (userProfile?.data?.country === "Canada") {
-                  navigation2.navigate("CanadaKycSubmission");
-                } else {
-                  navigation2.navigate("VerifyIdentity");
-                }
-              }}
+               onPress={() => navigation2.navigate("VerifyIdentity")}
+              
             >
               <MaterialCommunityIcons
                 name="fingerprint"

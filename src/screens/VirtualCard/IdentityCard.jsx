@@ -5,8 +5,16 @@ import { StatusBar } from "expo-status-bar";
 import TopLogo from "../../images/TopLogo.png";
 import { useDispatch, useSelector } from 'react-redux';
 import KycTab from "../../components/KycTab";
-import { setIdentityDocumentType, setIdentityDocumentFront, setIdentityDocumentBack } from '../../features/Kyc/kycReducer';
-import { IDENTITY_TYPES } from '../../features/Kyc/kycReducer';
+import { 
+  setIdentityDocumentType, 
+  setIdentityDocumentFront, 
+  setIdentityDocumentBack, 
+  setSelfie,
+  setPassportDocument,
+  setPersonalInfo,
+  IDENTITY_TYPES,
+  CANADA_IDENTITY_TYPES
+} from '../../features/Kyc/kycReducer';
 import { useTranslation } from 'react-i18next';
 
 const IdentityCard = ({ navigation }) => {

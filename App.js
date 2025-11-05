@@ -103,6 +103,7 @@ import Address from "./src/screens/Transfert/Address";
 import Camera from "./src/screens/VirtualCard/Camera";
 import ChangePassword from "./src/screens/Setting/ChangePassword";
 import ChatScreen from "./src/screens/Chat/ChatScreen";
+import ChatLive from "./src/screens/Chat/ChatLive";
 
 // Partager entre amis 
 import WelcomeShare from "./src/screens/Share/WelcomeShare";
@@ -291,6 +292,7 @@ function AuthStack() {
       <Stack.Screen name="OtpVerification" component={OtpVerification} />
       <Stack.Screen name="ForgetPassword" component={ForgetPassword} />
       <Stack.Screen name="ResetPassword" component={ResetPassword} />
+      <Stack.Screen name="ChatLive" component={ChatLive} />
     </Stack.Navigator>
   );
 }

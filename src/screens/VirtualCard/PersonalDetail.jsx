@@ -27,6 +27,7 @@ const PersonalDetail = ({ navigation }) => {
     region: personalDetails.region || '',
     city: personalDetails.city || '',
     cni: personalDetails.cni || '',
+    expirationDate: personalDetails.expirationDate || '',
     district: personalDetails.district || '',
     profession: personalDetails.profession || '',
   });
@@ -36,9 +37,9 @@ const PersonalDetail = ({ navigation }) => {
   };
 
   const handleSubmit = () => {
-    const { region, city, cni,  district, profession } = formData;
+    const { region, city, cni, expirationDate ,  district, profession } = formData;
 
-    if (!region || !city ||  !cni || !district || !profession) {
+    if (!region || !city ||  !cni || !district || !expirationDate  || !profession) {
       Alert.alert(t('personalDetail.errorTitle'), t('personalDetail.fillAllFields'));
       return;
     }
@@ -87,6 +88,7 @@ const PersonalDetail = ({ navigation }) => {
             { key: 'region', placeholder: 'enterRegion' },     
             { key: 'city', placeholder: 'enterCity' },
             { key: 'cni', placeholder: 'enterCni' },
+             { key: 'expirationDate', placeholder: 'enterExpirationDate' },
             { key: 'district', placeholder: 'enterDistrict' },
             { key: 'profession', placeholder: 'enterProfession' },
           ].map(({ key, placeholder }) => (

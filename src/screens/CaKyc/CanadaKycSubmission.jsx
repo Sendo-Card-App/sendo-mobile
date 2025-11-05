@@ -1,4 +1,4 @@
-import { View, Text, Image, TouchableOpacity, ScrollView, TextInput, Alert } from "react-native";
+import { View, Text, Image, TouchableOpacity, ScrollView, TextInput, Alert, ActionSheetIOS } from "react-native";
 import React, { useState } from "react";
 import TopLogo from "../../images/TopLogo.png";
 import { AntDesign, Ionicons, MaterialIcons, FontAwesome5 } from "@expo/vector-icons";
@@ -6,19 +6,25 @@ import { StatusBar } from "expo-status-bar";
 import KycTab from "../../components/KycTab";
 import { useDispatch, useSelector } from 'react-redux';
 import { 
+  setIdentityDocumentType, 
   setIdentityDocumentFront, 
   setIdentityDocumentBack, 
-  setSelfie, 
+  setSelfie,
+  setPassportDocument,
   setPersonalInfo,
-  setPassportDocument
+  IDENTITY_TYPES,
+  CANADA_IDENTITY_TYPES
 } from '../../features/Kyc/kycReducer';
 import { useTranslation } from 'react-i18next';
 import { useUpdateProfileMutation, useSendSelfieMutation, useSubmitKYCMutation } from '../../services/Kyc/kycApi';
+import { useAppState } from '../../context/AppStateContext';
+import * as ImageManipulator from 'expo-image-manipulator';
 
 const CanadaKycSubmission = ({ navigation }) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const kycData = useSelector(state => state.kyc);
+  const { openImagePicker } = useAppState();
   
   // RTK Query mutations
   const [updateProfile, { isLoading: isUpdatingProfile }] = useUpdateProfileMutation();
@@ -85,39 +91,118 @@ const CanadaKycSubmission = ({ navigation }) => {
     },
   ];
 
+  // Image compression function
+  const compressImage = async (uri) => {
+    try {
+      console.log('📸 Compressing image:', uri);
+      const result = await ImageManipulator.manipulateAsync(
+        uri,
+        [{ resize: { width: 800 } }],
+        { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
+      );
+      console.log('✅ Image compressed successfully');
+      return result.uri;
+    } catch (error) {
+      console.error('❌ Image compression failed:', error);
+      return uri;
+    }
+  };
+
+  // Helper function to add documents and files
+  const addDocumentAndFile = async (documents, files, doc, uri, index) => {
+    console.log(`📄 Adding document ${index}:`, doc.type);
+    documents.push(doc);
+    const compressedUri = await compressImage(uri);
+    const name = `file_${index}.jpg`;
+
+    files.push({
+      uri: compressedUri,
+      name,
+      type: 'image/jpeg',
+    });
+    console.log(`✅ Added file ${index}: ${name}`);
+  };
+
   const handleIdentityTypeSelect = (type) => {
     setSelectedIdentityType(type);
     setPersonalInfoState(prev => ({ ...prev, identityType: type }));
   };
 
-  const handleCapture = (type) => {
-  navigation.navigate("CanadaKycCamera", { // Changed from "Camera" to "CanadaKycCamera"
-    purpose: type,
-    selectedIdentityType: selectedIdentityType,
-    onCapture: (image) => {
-      const file = {
-        uri: image.uri,
-        type: 'image/jpeg',
-        name: `${type}_${new Date().toISOString()}.jpg`
-      };
-
-      switch (type) {
-        case 'selfie':
-          dispatch(setSelfie(file));
-          break;
-        case 'id_front':
-          dispatch(setIdentityDocumentFront(file));
-          break;
-        case 'id_back':
-          dispatch(setIdentityDocumentBack(file));
-          break;
-        case 'passport':
-          dispatch(setPassportDocument(file));
-          break;
+  const showImageSourceOptions = (type) => {
+    ActionSheetIOS.showActionSheetWithOptions(
+      {
+        options: [t('common.cancel'), t('common.takePhoto'), t('common.chooseFromGallery')],
+        cancelButtonIndex: 0,
+      },
+      async (buttonIndex) => {
+        if (buttonIndex === 0) {
+          return;
+        } else if (buttonIndex === 1) {
+          handleCameraCapture(type);
+        } else if (buttonIndex === 2) {
+          handleImagePicker(type);
+        }
       }
+    );
+  };
+
+  const handleCameraCapture = (type) => {
+    navigation.navigate("CanadaKycCamera", {
+      purpose: type,
+      selectedIdentityType: selectedIdentityType,
+      onCapture: (image) => {
+        handleImageCapture(type, image);
+      }
+    });
+  };
+
+  const handleImagePicker = async (type) => {
+    try {
+      const image = await openImagePicker();
+      if (image) {
+        handleImageCapture(type, image);
+      }
+    } catch (error) {
+      console.error('❌ Error picking image:', error);
+      Alert.alert(t('common.error'), t('common.imagePickerError'));
     }
-  });
-};
+  };
+
+  const handleImageCapture = (type, image) => {
+    console.log(`🖼️ Image captured for ${type}:`, image.uri);
+    
+    const file = {
+      uri: image.uri,
+      type: 'image/jpeg',
+      name: `${type}_${new Date().toISOString()}.jpg`
+    };
+
+    switch (type) {
+      case 'selfie':
+        dispatch(setSelfie(file));
+        break;
+      case 'id_front':
+        dispatch(setIdentityDocumentFront(file));
+        break;
+      case 'id_back':
+        dispatch(setIdentityDocumentBack(file));
+        break;
+      case 'passport':
+        dispatch(setPassportDocument(file));
+        break;
+    }
+  };
+
+  const handleCapture = (type) => {
+    const requiresPassportTypes = ['permis_etude_plus_passport', 'permis_travail_plus_passport', 'document_aveile_plus_passport'];
+    
+    if (requiresPassportTypes.includes(selectedIdentityType) && 
+        (type === 'id_front' || type === 'passport')) {
+      showImageSourceOptions(type);
+    } else {
+      handleCameraCapture(type);
+    }
+  };
 
   const getCapturedDocuments = () => {
     const selectedType = identityTypes.find(type => type.id === selectedIdentityType);
@@ -128,7 +213,6 @@ const CanadaKycSubmission = ({ navigation }) => {
       passport: !!kycData.passportDocument
     };
 
-    // Determine which documents should be shown based on selected identity type
     const requiredDocs = {
       selfie: true,
       idFront: true,
@@ -147,183 +231,229 @@ const CanadaKycSubmission = ({ navigation }) => {
     };
   };
 
-  const createDocumentsArray = () => {
-    const selectedType = identityTypes.find(type => type.id === selectedIdentityType);
+ const handleFinalSubmission = async () => {
+  console.log('🚀 Starting Canada KYC submission process...');
+  
+  // Validate personal info
+  if (!personalInfo.profession || !personalInfo.identityType || !personalInfo.identityNumber || !personalInfo.expirationDate) {
+    console.log('❌ Validation failed: Missing personal info fields');
+    Alert.alert(t('canadaKyc.error'), t('canadaKyc.fillAllFields'));
+    return;
+  }
+
+  // Validate documents
+  const selectedType = identityTypes.find(type => type.id === selectedIdentityType);
+  const requiresPassport = selectedType?.requiresPassport;
+  
+  let errorMessage = '';
+  
+  if (!kycData.selfie) {
+    errorMessage = t('canadaKyc.selfieRequired');
+  } else if (!kycData.identityDocument?.front) {
+    errorMessage = t('canadaKyc.identityFrontRequired');
+  } else if (requiresPassport && !kycData.passportDocument) {
+    errorMessage = t('canadaKyc.passportRequired');
+  }
+
+  if (errorMessage) {
+    console.log('❌ Document validation failed:', errorMessage);
+    Alert.alert(t('canadaKyc.error'), errorMessage);
+    return;
+  }
+
+  console.log('✅ All validations passed');
+
+  try {
+    // 1. Send profession to updateProfile endpoint (SAME AS KycResume)
+    console.log('📤 Step 1: Sending profile data...');
+    const profileData = {
+      profession: personalInfo.profession
+    };
+    console.log('👤 Profile data being sent:', JSON.stringify(profileData, null, 2));
+    
+    const profileResponse = await updateProfile(profileData).unwrap();
+    dispatch(setPersonalInfo(personalInfo));
+    console.log('✅ Profile update successful:', JSON.stringify(profileResponse, null, 2));
+
+    // 2. Prepare documents and files (FOLLOWING KycResume PATTERN)
+    console.log('📤 Step 2: Preparing KYC documents...');
+    
     const documents = [];
+    const files = [];
     let fileIndex = 0;
 
-    // For documents that require passport (permis_etude, permis_travail, document_aveile)
-    if (selectedType?.requiresPassport) {
-      // Add the main document (permis_etude, permis_travail, or document_aveile) as front
+    const idDocumentNumber = personalInfo.identityNumber;
+    const expirationDate = personalInfo.expirationDate;
+    const selectedIdentityDoc = identityTypes.find(type => type.id === selectedIdentityType);
+
+    console.log('📋 Selected identity type:', selectedIdentityDoc);
+    console.log('🔢 Identity number:', idDocumentNumber);
+    console.log('📅 Expiration date:', expirationDate);
+
+    // Helper function (SAME AS KycResume)
+    const addDocumentAndFile = async (doc, uri, index) => {
+      documents.push(doc);
+      const compressedUri = await compressImage(uri);
+      const name = `file_${index}.jpg`;
+
+      files.push({
+        uri: compressedUri,
+        name,
+        type: 'image/jpeg',
+      });
+    };
+
+    // ADD ID_PROOF DOCUMENTS (FOLLOWING KycResume PATTERN)
+    if (selectedIdentityDoc?.requiresPassport) {
+      console.log('🛂 Processing document that requires passport');
+      
+      // Main document (front) - ID_PROOF
       if (kycData.identityDocument?.front) {
-        documents.push({
-          type: 'ID_PROOF',
-          idDocumentNumber: personalInfo.identityNumber,
-          expirationDate: personalInfo.expirationDate,
-          fileIndex: fileIndex++
-        });
+        console.log('📄 Adding main document as ID_PROOF');
+        await addDocumentAndFile(
+          { 
+            type: 'ID_PROOF', 
+            idDocumentNumber, 
+            expirationDate 
+            // Note: No documentType field like in KycResume
+          },
+          kycData.identityDocument.front.uri,
+          fileIndex++
+        );
       }
 
-      // Add passport as the second document (back)
+      // Passport document - Also as ID_PROOF (same as KycResume passport handling)
       if (kycData.passportDocument) {
-        documents.push({
-          type: 'ID_PROOF',
-          idDocumentNumber: personalInfo.identityNumber,
-          expirationDate: personalInfo.expirationDate,
-          fileIndex: fileIndex++
-        });
+        console.log('📄 Adding passport as ID_PROOF');
+        await addDocumentAndFile(
+          { 
+            type: 'ID_PROOF', 
+            idDocumentNumber, 
+            expirationDate 
+            // Note: No documentType field like in KycResume
+          },
+          kycData.passportDocument.uri,
+          fileIndex++
+        );
       }
-    } 
-    // For documents that don't require passport
-    else {
-      // Add identity document front
+    } else {
+      console.log('🆔 Processing document without passport requirement');
+      
+      // Front of ID document - ID_PROOF
       if (kycData.identityDocument?.front) {
-        documents.push({
-          type: 'ID_PROOF',
-          idDocumentNumber: personalInfo.identityNumber,
-          expirationDate: personalInfo.expirationDate,
-          fileIndex: fileIndex++
-        });
+        console.log('📄 Adding ID front as ID_PROOF');
+        await addDocumentAndFile(
+          { 
+            type: 'ID_PROOF', 
+            idDocumentNumber, 
+            expirationDate 
+            // Note: No documentType field like in KycResume
+          },
+          kycData.identityDocument.front.uri,
+          fileIndex++
+        );
       }
 
-      // Add identity document back if exists and needed
+      // Back of ID document - ID_PROOF (if required, same as CNI in KycResume)
       if (kycData.identityDocument?.back && 
           (selectedIdentityType === 'permis_conduire' || selectedIdentityType === 'carte_resident_permanent')) {
-        documents.push({
-          type: 'ID_PROOF', 
-          idDocumentNumber: personalInfo.identityNumber,
-          expirationDate: personalInfo.expirationDate,
-          fileIndex: fileIndex++
-        });
+        console.log('📄 Adding ID back as ID_PROOF');
+        await addDocumentAndFile(
+          { 
+            type: 'ID_PROOF', 
+            idDocumentNumber, 
+            expirationDate 
+            // Note: No documentType field like in KycResume
+          },
+          kycData.identityDocument.back.uri,
+          fileIndex++
+        );
       }
     }
 
-    return documents;
-  };
-
-  const createFormData = () => {
-    const formData = new FormData();
-    const selectedType = identityTypes.find(type => type.id === selectedIdentityType);
-    let fileIndex = 0;
-
-    // Add identity document front
-    if (kycData.identityDocument?.front) {
-      formData.append('files', {
-        uri: kycData.identityDocument.front.uri,
-        type: 'image/jpeg',
-        name: `id_front_${fileIndex}.jpg`
-      });
-      fileIndex++;
+    // ADD SELFIE (SAME AS KycResume)
+    if (kycData.selfie) {
+      console.log('🤳 Adding selfie');
+      await addDocumentAndFile(
+        { type: 'SELFIE' },
+        kycData.selfie.uri,
+        fileIndex++
+      );
     }
 
-    // Add identity document back if exists and needed
-    if (kycData.identityDocument?.back && 
-        (selectedIdentityType === 'permis_conduire' || selectedIdentityType === 'carte_resident_permanent')) {
-      formData.append('files', {
-        uri: kycData.identityDocument.back.uri,
-        type: 'image/jpeg',
-        name: `id_back_${fileIndex}.jpg`
-      });
-      fileIndex++;
-    }
+    console.log('📑 Final documents array:', JSON.stringify(documents, null, 2));
+    console.log('📁 Total files to upload:', files.length);
 
-    // Add passport if required and exists
-    if (selectedType?.requiresPassport && kycData.passportDocument) {
-      // Add passport twice as per your requirement
-      formData.append('files', {
-        uri: kycData.passportDocument.uri,
-        type: 'image/jpeg',
-        name: `passport_${fileIndex}.jpg`
-      });
-      fileIndex++;
-      
-      formData.append('files', {
-        uri: kycData.passportDocument.uri, // Using same image twice as per your requirement
-        type: 'image/jpeg',
-        name: `passport_${fileIndex}.jpg`
-      });
-      fileIndex++;
-    }
-
-    // Add documents metadata
-    const documents = createDocumentsArray();
-    formData.append('documents', JSON.stringify(documents));
-
-    // Add personal info
-    formData.append('expirationDate', personalInfo.expirationDate);
-    formData.append('identityNumber', personalInfo.identityNumber);
-    formData.append('identityType', personalInfo.identityType);
-
-    return formData;
-  };
-
-  const handleFinalSubmission = async () => {
-    // Validate personal info
-    if (!personalInfo.profession || !personalInfo.identityType || !personalInfo.identityNumber || !personalInfo.expirationDate) {
-      Alert.alert(t('canadaKyc.error'), t('canadaKyc.fillAllFields'));
-      return;
-    }
-
-    // Validate documents
-    const selectedType = identityTypes.find(type => type.id === selectedIdentityType);
-    const requiresPassport = selectedType?.requiresPassport;
+    // Validate document count (OPTIONAL - based on your requirements)
+    const expectedDocumentCount = selectedIdentityDoc?.requiresPassport ? 3 : 
+                                (selectedIdentityType === 'permis_conduire' || selectedIdentityType === 'carte_resident_permanent') ? 3 : 2;
     
-    let errorMessage = '';
+    if (documents.length !== expectedDocumentCount) {
+      console.log(`⚠️ Expected ${expectedDocumentCount} documents but got ${documents.length}`);
+      // Continue anyway, as the server might handle variable counts
+    }
+
+    // 3. Create FormData (EXACTLY LIKE KycResume)
+    const kycFormData = new FormData();
+    kycFormData.append('documents', JSON.stringify(documents));
     
-    if (!kycData.selfie) {
-      errorMessage = t('canadaKyc.selfieRequired');
-    } else if (!kycData.identityDocument?.front) {
-      errorMessage = t('canadaKyc.identityFrontRequired');
-    } else if (requiresPassport && !kycData.passportDocument) {
-      errorMessage = t('canadaKyc.passportRequired');
-    }
+    files.forEach((file, index) => {
+      console.log(`📦 Appending file ${index}:`, file.name);
+      kycFormData.append('files', file);
+    });
 
-    if (errorMessage) {
-      Alert.alert(t('canadaKyc.error'), errorMessage);
-      return;
-    }
+    console.log('🚀 Calling submitKYC API...');
+    console.log('📊 FormData structure (same as KycResume):');
+    console.log('   - documents:', JSON.stringify(documents));
+    console.log('   - files count:', files.length);
 
-    try {
-      // 1. Send profession to updateProfile endpoint
-      const profileData = {
-        profession: personalInfo.profession
-      };
-      await updateProfile(profileData).unwrap();
-      dispatch(setPersonalInfo(personalInfo));
-
-      // 2. Send selfie to sendSelfie endpoint
-      const selfieFormData = new FormData();
-      selfieFormData.append('selfie', {
-        uri: kycData.selfie.uri,
-        type: 'image/jpeg',
-        name: 'selfie.jpg'
+    // 4. Submit KYC (SAME AS KycResume)
+    const startTime = Date.now();
+    const response = await submitKYC(kycFormData).unwrap();
+    const endTime = Date.now();
+    
+    console.log(`✅ submitKYC API call completed in ${endTime - startTime}ms`);
+    console.log('📨 API Response:', JSON.stringify(response, null, 2));
+    
+    // Check response (SAME AS KycResume)
+    if (response?.status === 201) {
+      console.log('🎉 Canada KYC submission completed successfully');
+      navigation.navigate('Success', {
+        message: 'Votre KYC a été soumis avec succès',
+        nextScreen: 'MainTabs',
       });
-      await sendSelfie(selfieFormData).unwrap();
-
-      // 3. Send identity documents and info to submitKYC endpoint
-      const kycFormData = createFormData();
-      const response = await submitKYC(kycFormData).unwrap();
-        console.log('KYC submission response:', JSON.stringify(response, null, 2));
-      
-        if (response?.status === 201) {
-        navigation.navigate('Success', {
-          message: 'Votre KYC a été soumis avec succès',
-          nextScreen: 'MainTabs',
-        });
-      } else {
-        throw new Error('Server responded but submission failed');
-      }
-    } catch (error) {
-       console.log('KYC submission error:', JSON.stringify(error, null, 2));
-    
+    } else {
+      console.log('⚠️ Server responded but submission may have failed');
+      throw new Error(response?.message || 'Server responded but submission failed');
     }
-  };
+  } catch (error) {
+    console.log('❌ Canada KYC submission failed with error:');
+    console.log('   - Error:', error);
+    console.log('   - Error status:', error?.status);
+    console.log('   - Error message:', error?.message);
+    console.log('   - Error data:', JSON.stringify(error?.data, null, 2));
+    
+    let errorMsg = t('canadaKyc.generalError');
+    
+    if (error?.status === 'FETCH_ERROR') {
+      errorMsg = t('canadaKyc.networkError');
+    } else if (error?.data?.message) {
+      errorMsg = error.data.message;
+    } else if (error?.data?.data?.errors?.[0]) {
+      errorMsg = error.data.data.errors[0];
+    } else if (error?.message) {
+      errorMsg = error.message;
+    }
+    
+    Alert.alert(t('canadaKyc.error'), errorMsg);
+  }
+};
 
+  // ... rest of your component code (DocumentCard, IdentityTypeCard, etc.) remains the same
   const DocumentCard = ({ title, subtitle, icon, type, isRequired = true, iconLibrary = "FontAwesome5" }) => {
     const IconComponent = iconLibrary === "FontAwesome5" ? FontAwesome5 : MaterialIcons;
     const { captured, required } = getCapturedDocuments();
     
-    // Determine if document is captured based on type
     const isDocumentCaptured = () => {
       switch (type) {
         case 'selfie':

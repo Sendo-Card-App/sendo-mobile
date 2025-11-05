@@ -74,6 +74,7 @@ const KycResume = ({ navigation }) => {
       completed: !!personalDetails.profession && 
                 !!personalDetails.region && 
                 !!personalDetails.city && 
+                !!personalDetails.expirationDate && 
                 !!personalDetails.district &&
                 !!personalDetails.cni,
       icon: "account-details"
@@ -144,6 +145,7 @@ const KycResume = ({ navigation }) => {
 
     try {
       const idDocumentNumber = personalDetails.cni;
+      const expirationDate = personalDetails.expirationDate;
 
       const profilePayload = {
         profession: personalDetails.profession,
@@ -175,23 +177,23 @@ const KycResume = ({ navigation }) => {
       // 2. ID_PROOF
       if (identityDocument.type === 'passport' && identityDocument.front) {
         await addDocumentAndFile(
-          { type: 'ID_PROOF', idDocumentNumber },
+          { type: 'ID_PROOF', idDocumentNumber, expirationDate },
           identityDocument.front.uri,
           fileIndex++
         );
         await addDocumentAndFile(
-          { type: 'ID_PROOF', idDocumentNumber },
+          { type: 'ID_PROOF', idDocumentNumber, expirationDate },
           identityDocument.front.uri,
           fileIndex++
         );
       } else if (identityDocument.front && identityDocument.back) {
         await addDocumentAndFile(
-          { type: 'ID_PROOF', idDocumentNumber },
+          { type: 'ID_PROOF', idDocumentNumber, expirationDate },
           identityDocument.front.uri,
           fileIndex++
         );
         await addDocumentAndFile(
-          { type: 'ID_PROOF', idDocumentNumber },
+          { type: 'ID_PROOF', idDocumentNumber, expirationDate },
           identityDocument.back.uri,
           fileIndex++
         );

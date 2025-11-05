@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { AntDesign, Ionicons } from "@expo/vector-icons";
+import { AntDesign, Ionicons, MaterialIcons } from "@expo/vector-icons"; // Ajout de MaterialIcons
 import {
   View,
   Text,
@@ -210,7 +210,6 @@ const SignIn = () => {
               refreshToken: authData.refreshToken,
               deviceId: authData.deviceId
             }).unwrap();
-
             if (result?.data?.accessToken) {
               const newAuthData = {
                 ...authData,
@@ -283,15 +282,11 @@ const SignIn = () => {
     navigation.goBack();
   };
 
-  const handleWhatsAppPress = () => {
-    setIsPickingDocument(true);
-    const url = "https://wa.me/message/Y27BBZMTSC36C1";
-    Linking.openURL(url).catch(() => {
-      Alert.alert('Erreur', 'Impossible d\'ouvrir WhatsApp. Vérifiez qu\'il est installé.');
-    }).finally(() => {
-      setIsPickingDocument(false);
-    });
-  };
+  // Remplacer WhatsApp par le chat live
+  // const handleCustomerServicePress = () => {
+  //   setIsPickingDocument(true);
+  //   navigation.navigate("ChatScreen");
+  // };
 
   return (
     <KeyboardAvoidinWrapper>
@@ -466,14 +461,14 @@ const SignIn = () => {
           </Text>
         </TouchableOpacity>
 
-        {/* ✅ WhatsApp floating button */}
-        <TouchableOpacity 
-          onPress={handleWhatsAppPress}
+        {/* ✅ Remplacer WhatsApp par le bouton de service client - Chat live */}
+        {/* <TouchableOpacity 
+          onPress={handleCustomerServicePress}
           style={{
             position: 'absolute',
             bottom: 30,
             right: 30,
-            backgroundColor: '#25D366',
+            backgroundColor: '#007AFF', // Bleu pour le chat
             width: 60,
             height: 60,
             borderRadius: 30,
@@ -486,8 +481,8 @@ const SignIn = () => {
             shadowRadius: 3.84,
           }}
         >
-          <Ionicons name="logo-whatsapp" size={36} color="white" />
-        </TouchableOpacity>
+          <MaterialIcons name="chat" size={32} color="white" />
+        </TouchableOpacity> */}
       </SafeAreaView>
     </KeyboardAvoidinWrapper>
   );

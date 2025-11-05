@@ -6,11 +6,15 @@ import { CameraView, useCameraPermissions } from "expo-camera";
 import { useTranslation } from 'react-i18next';
 import { useDispatch } from "react-redux";
 import { 
+  setIdentityDocumentType, 
   setIdentityDocumentFront, 
   setIdentityDocumentBack, 
-  setSelfie, 
-  setPassportDocument 
-} from "../../features/Kyc/kycReducer";
+  setSelfie,
+  setPassportDocument,
+  setPersonalInfo,
+  IDENTITY_TYPES,
+  CANADA_IDENTITY_TYPES
+} from '../../features/Kyc/kycReducer';
 import { useAppState } from '../../context/AppStateContext';
 
 const CanadaKycCamera = ({ navigation, route }) => {

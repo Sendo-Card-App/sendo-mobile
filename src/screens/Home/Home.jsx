@@ -502,7 +502,7 @@ const HomeScreen = () => {
                 { label: t("home.fundRequest"), icon: "cash-outline", route: "WelcomeDemand" },
                 { label: t("home.etontine"), icon: "layers-outline" },
 
-               ...(userProfile?.data?.country === "Cameroon"
+               ...(userProfile?.data?.country === "Canada"
                   ? [{ label: t("home.canadaKyc"), icon: "shield-checkmark-outline", route: "CanadaKycSubmission" }]
                   : []),
               ].map((item, index) => (
