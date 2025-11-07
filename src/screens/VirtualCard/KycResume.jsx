@@ -177,36 +177,36 @@ const KycResume = ({ navigation }) => {
       // 2. ID_PROOF
       if (identityDocument.type === 'passport' && identityDocument.front) {
         await addDocumentAndFile(
-          { type: 'ID_PROOF', idDocumentNumber, expirationDate },
+          { type: 'ID_PROOF', idDocumentNumber, expirationDate, taxIdNumber: niuDocument.taxIdNumber },
           identityDocument.front.uri,
           fileIndex++
         );
         await addDocumentAndFile(
-          { type: 'ID_PROOF', idDocumentNumber, expirationDate },
+          { type: 'ID_PROOF', idDocumentNumber, expirationDate, taxIdNumber: niuDocument.taxIdNumber },
           identityDocument.front.uri,
           fileIndex++
         );
       } else if (identityDocument.front && identityDocument.back) {
         await addDocumentAndFile(
-          { type: 'ID_PROOF', idDocumentNumber, expirationDate },
+          { type: 'ID_PROOF', idDocumentNumber, expirationDate, taxIdNumber: niuDocument.taxIdNumber },
           identityDocument.front.uri,
           fileIndex++
         );
         await addDocumentAndFile(
-          { type: 'ID_PROOF', idDocumentNumber, expirationDate },
+          { type: 'ID_PROOF', idDocumentNumber, expirationDate, taxIdNumber: niuDocument.taxIdNumber },
           identityDocument.back.uri,
           fileIndex++
         );
       }
 
-      // 3. NIU_PROOF
-      if (niuDocument?.document) {
-        await addDocumentAndFile(
-          { type: 'NIU_PROOF', taxIdNumber: niuDocument.taxIdNumber },
-          niuDocument.document.uri,
-          fileIndex++
-        );
-      }
+      // // 3. NIU_PROOF
+      // if (niuDocument?.document) {
+      //   await addDocumentAndFile(
+      //     { type: 'NIU_PROOF', taxIdNumber: niuDocument.taxIdNumber },
+      //      niuDocument.document.uri,
+      //     fileIndex++
+      //   );
+      // }
 
       // 4. ADDRESS_PROOF
       if (addressProof) {

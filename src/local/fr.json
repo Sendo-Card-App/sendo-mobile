@@ -450,114 +450,22 @@
   "niu": {
     "title": "Numéro d'Identification Unique",
     "taxNumber": "N° Contribuable",
-    "uploadInstruction": "Televerser votre attestation d’immatriculation",
-    "description": "Le numéro d'identification unique est une combinaison de lettres et de chiffres attribuée aux contribuables. Ce numéro est essentiel pour identifier l'utilisateur en tant que contribuable.",
-    "takePhotoButton": "PRENDRE UNE PHOTO",
-     "uploadButton": "Televerse un document",
-      "removeDocument": "Retire le document",
-    "securityNotice": "Ne partagez pas vos informations personnelles",
-    "uploadDocumentButton": "Upload Document",
-     "taxIdLabel": "Numéro d’identification fiscale",
+    "enterTaxIdInstruction": "Veuillez saisir votre Numéro d'Identification Fiscale (NIU)",
+    "taxIdLabel": "Numéro d'identification fiscale",
     "taxIdPlaceholder": "Entrez votre numéro NIU",
-     "backToEdit": "Retour à la modification",
-      "documentPreview": "Aperçu du document",
-      "taxIdInvalid": "NIU invalide",
-      "taxIdValidationMessage": "Votre NIU doit contenir exactement 14 caractères alphanumériques.",
-    "fileTooLarge": "Fichier trop volumineux",
-     "generalError": "Une erreur inattendue est survenue. Veuillez réessayer plus tard.",
-    "taxIdRequired": "Le numéro fiscal est requis",
-    "noDocumentSelected": "Veuillez sélectionner un document avant de continuer",
-    "documentSizeLimit": "La taille maximale des documents est de 5MB",
-    "imageSizeLimit": "La taille maximale des images est de 5MB",
-    "error": "Erreur",
-    "documentSelectionError": "Une erreur s'est produite lors de la sélection du document",
+    "taxIdFormatError": "Le NIU doit contenir exactement 14 caractères alphanumériques",
+    "taxIdValid": "Format NIU valide",
+    "taxIdDescription": "Le numéro d'identification unique est une combinaison de lettres et de chiffres attribuée aux contribuables. Ce numéro est essentiel pour identifier l'utilisateur en tant que contribuable.",
+    "taxIdInvalid": "NIU invalide",
+    "taxIdValidationMessage": "Votre NIU doit contenir exactement 14 caractères alphanumériques.",
+    "incompleteForm": "Formulaire incomplet",
     "continueButton": "Continue",
-    "cameraPermissionDenied": "Camera permission is required to take photos",
-    "galleryPermissionDenied": "Gallery access is required to upload documents",
-    "imageSelectionError": "Error selecting image. Please try again.",
-     "supportedFormats": "Formats supporter: PDF, JPG, PNG",
-    "documentUploadError": "Error uploading document. Please try again.",
-      "selectDocumentMethod": "Sélectionner la méthode de téléchargement",
-    "chooseUploadMethod": "Comment souhaitez-vous téléverser votre document ?",
-    "steps": {
-      "fees": "Frais de création",
-      "kyc": "Vérification KYC",
-      "niuNumber": "Numéro NIU",
-      "attestation": "Document d'attestation",
-      "cniUpload": "Upload de la CNI"
-    },
-        "security": {
-      "message": "Transaction sécurisée et cryptée"
-    },
-     "cni": {
-      "uploadTitle": "Upload de la Carte Nationale d'Identité",
-      "uploadDescription": "Veuillez uploader les deux côtés de votre CNI pour procéder à la demande de NIU",
-      "frontSide": "Recto CNI",
-      "backSide": "Verso CNI",
-      "uploadFront": "Upload Recto",
-      "uploadBack": "Upload Verso",
-      "uploadOption": "Upload CNI",
-      "chooseMethod": "Choisissez une méthode d'upload",
-      "takePhoto": "Prendre une photo",
-      "chooseFromGallery": "Choisir depuis la galerie",
-      "bothSidesRequired": "Veuillez uploader les deux côtés de votre CNI",
-      "uploading": "Upload en cours...",
-      "uploadError": "Erreur lors de la sélection de l'image",
-      "cameraError": "Erreur lors de la prise de photo",
-      "uploadFailed": "Échec de l'upload des images CNI",
-      "permissionDenied": "Permission refusée",
-      "permissionMessage": "L'accès à la galerie est nécessaire pour uploader votre CNI",
-      "cameraPermissionDenied": "Camera non autorisée",
-      "cameraPermissionMessage": "L'accès à la caméra est nécessaire pour prendre une photo de votre CNI",
-      "requirementsTitle": "Recommandations importantes",
-      "requirement1": "Assurez-vous que la CNI est valide et non expirée",
-      "requirement2": "La photo doit être nette et bien éclairée",
-      "requirement3": "Toutes les informations doivent être lisibles"
-    },
-    "request": {
-      "title": "Demander un NIU",
-      "processTitle": "Processus de création",
-      "feesTitle": "Information sur les frais",
-      "feesAmount": "Montant des frais",
-      "currentBalance": "Votre solde actuel",
-      "termsAccept": "J'accepte les CGU et autorise Sendo à créer mon NIU",
-      "paymentAccept": "J'autorise le prélèvement de ",
-      "payButton": "Payer le NIU",
-      "processing": "Traitement en cours...",
-      "statusApproved": "Réponse à votre demande ",
-      "statusPending": "Votre demande NIU est en cours de traitement",
-      "statusRejected": "Votre précédente demande NIU a été rejetée \n",
-      "raison": "Raison",
-      "alreadyApproved": "Déjà approuvé"
-    },
-     "paymentModal": {
-      "title": "Confirmation de paiement",
-      "message": "Confirmez-vous le paiement pour la création du NIU ?",
-      "confirm": "Confirmer",
-      "cancel": "Annuler"
-    },
-    "errors": {
-      "title": "Erreur",
-      "termsNotAccepted": "Veuillez accepter les conditions pour continuer",
-      "kycNotVerified": "Votre identité doit être vérifiée avant de demander un NIU",
-      "insufficientBalance": "Votre solde est insuffisant pour payer les frais de création du NIU",
-      "technical": "Une erreur est survenue. Veuillez réessayer plus tard"
-    },
-    "success": {
-      "title": "Succès",
-      "message": "Votre demande de NIU a été soumise avec succès"
-    },
-     "alreadyHave": {
-      "title": "Vous avez déjà votre NIU",
-      "message": "Votre numéro d'identification unique (NIU) a déjà été traité et approuvé.",
-      "backButton": "Retour à l'accueil"
-    },
-    "gallery": {
-    "chooseFromGallery": "Choisir depuis la galerie"
-  },
-  "document": {
-    "chooseDocument": "Choisir un document"
-  }
+    "processing": "Traitement en cours...",
+    "backToKyc": "Retour au résumé KYC",
+    "securityNotice": "Ne partagez pas vos informations personnelles",
+    "error": "Erreur",
+    "generalError": "Une erreur inattendue est survenue. Veuillez réessayer plus tard.",
+    "taxIdRequired": "Le numéro fiscal est requis"
   },
  "personalDetail": {
   "title": "Informations personnelles",
@@ -815,6 +723,7 @@
   "common": {
     "cancel": "Annuler",
     "close": "Fermer",
+    "ok": "OK",
     "signIn": "Se connecter",
     "error": "Erreur",
      "loading": "Loading...",
@@ -1002,6 +911,7 @@
     "home": "Accueil",
     "cards": "Mes Cartes",
     "history": "Historiques",
+     "transfer": "Transfert CA - CAM",
     "settings": "Paramètres"
   },
   "screens": {
@@ -1130,10 +1040,10 @@
   "confirmeTheTransfer": {
     "title": "Confirmation du Transfert",
     "interacInstructions": "Veuillez utiliser les informations suivantes pour transférer des fonds sur notre compte INTERAC :",
-    "interacPhone": "Numéro de téléphone :  506 233 2921",
+    "interacPhone": "Email :sendoperations@sf-e.ca",
     "showDetails": "Voir plus de détails",
   "hideDetails": "Réduire les détails",
-  "extraInfo1": "Veuillez envoyer les fonds sur ce numéro : 506 233 2921",
+  "extraInfo1": "Veuillez envoyer les fonds sur ce mail : sendoperations@sf-e.ca",
   "extraInfo2": "Notre numéro est configuré pour un dépôt automatique. Cependant, si une question et une réponse de sécurité vous sont demandées, veuillez saisir :",
   "extraInfo3": "Nom : services financiers étudiants\nQuestion : services financiers étudiants\nRéponse : sfe2025",
   "extraInfo4": "NB : Le nom du compte bancaire émetteur du virement Interac doit correspondre au nom de votre compte sur SENDO. Autrement, la transaction ne pourra pas être exécutée.",

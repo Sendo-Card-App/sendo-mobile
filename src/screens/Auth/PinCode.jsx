@@ -387,19 +387,23 @@ const PinCode = ({ navigation, route }) => {
     return;
   }
 
-  // 🆕 Handle "Session invalide"
-  if (error?.data?.message?.includes('Session invalide')) {
-    await removeData('@passcode');
-    dispatch(clearPasscode());
-    await AsyncStorage.removeItem('pinVerified');
+  // Handle "Session invalide"
+if (
+  error?.data?.message?.includes('Session invalide') ||
+  error?.data?.message?.includes('Token invalide')
+) {
+  await removeData('@passcode');
+  dispatch(clearPasscode());
+  await AsyncStorage.removeItem('pinVerified');
 
-    // redirect to SignIn screen
-    navigation.reset({
-      index: 0,
-      routes: [{ name: 'SignIn' }],
-    });
-    return;
-  }
+  // Redirect to SignIn screen
+  navigation.reset({
+    index: 0,
+    routes: [{ name: 'SignIn' }],
+  });
+  return;
+}
+
 
   // Default error
   showToast(

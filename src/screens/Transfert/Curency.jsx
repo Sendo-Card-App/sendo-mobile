@@ -61,7 +61,7 @@ const {
 
   const isToCameroon = countryName === 'Cameroon';
   const TRANSFER_FEES = parseFloat(getConfigValue('TRANSFER_FEES'));
-  const CAD_SENDO_VALUE = parseFloat(getConfigValue('CAD_SENDO_VALUE'));
+  const SENDO_VALUE_CAD_CA_CAM = parseFloat(getConfigValue('SENDO_VALUE_CAD_CA_CAM'));
   const MIN_AMOUNT_TO_TRANSFER_FROM_CANADA = parseFloat(getConfigValue('MIN_AMOUNT_TO_TRANSFER_FROM_CANADA'));
 
   useEffect(() => {

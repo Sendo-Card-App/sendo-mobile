@@ -34,6 +34,7 @@ const BeneficiaryScreen = () => {
   } = useGetConfigQuery(undefined, {
     pollingInterval: 1000,
   });
+  //console.log(configData)
 
   const [showVerifiedMessage, setShowVerifiedMessage] = useState(false);
   const { 
@@ -49,7 +50,7 @@ const BeneficiaryScreen = () => {
     return configItem ? configItem.value : null;
   };
 
-  const CAD_SENDO_VALUE = getConfigValue('CAD_SENDO_VALUE');
+  const SENDO_VALUE_CAD_CA_CAM = getConfigValue('SENDO_VALUE_CAD_CA_CAM');
    
   useEffect(() => {
     if (userProfile?.data?.isVerifiedKYC) {
@@ -114,8 +115,8 @@ const BeneficiaryScreen = () => {
             style={styles.countryItem}
             onPress={() => navigation.navigate("Curency", {
               countryName: "Cameroon",
-              conversionRate: t('conversionRateCAD', { value: CAD_SENDO_VALUE }),
-              cadRealTimeValue: CAD_SENDO_VALUE,
+              conversionRate: t('conversionRateCAD', { value: SENDO_VALUE_CAD_CA_CAM }),
+              cadRealTimeValue: SENDO_VALUE_CAD_CA_CAM,
               flagImage: Cameroon
             })}
           >
@@ -126,7 +127,7 @@ const BeneficiaryScreen = () => {
             />
             <Text style={styles.countryName}>{t('cameroon')}</Text>
             <Text style={styles.conversionRate}>
-              {t('conversionRateCAD', { value: CAD_SENDO_VALUE })}
+              {t('conversionRateCAD', { value: SENDO_VALUE_CAD_CA_CAM })}
             </Text>
           </TouchableOpacity>
           
@@ -135,8 +136,8 @@ const BeneficiaryScreen = () => {
             style={styles.countryItem}
             onPress={() => navigation.navigate("Curency", {
               countryName: "Canada",
-              conversionRate: t('conversionRateXAF', { value: CAD_SENDO_VALUE }),
-              cadRealTimeValue: CAD_SENDO_VALUE,
+              conversionRate: t('conversionRateXAF', { value: SENDO_VALUE_CAD_CA_CAM }),
+              cadRealTimeValue: SENDO_VALUE_CAD_CA_CAM,
               flagImage: Canada
             })}
           >
@@ -147,7 +148,7 @@ const BeneficiaryScreen = () => {
             />
             <Text style={styles.countryName}>{t('canada')}</Text>
             <Text style={styles.conversionRate}>
-              {t('conversionRateXAF', { value: CAD_SENDO_VALUE })}
+              {t('conversionRateXAF', { value: SENDO_VALUE_CAD_CA_CAM })}
             </Text>
           </TouchableOpacity> */}
         </ScrollView>

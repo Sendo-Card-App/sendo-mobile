@@ -56,33 +56,33 @@ function CustomTabBar({ state, descriptors, navigation }) {
         const isFocused = state.index === index;
 
         // Floating center button (Send Money)
-        if (route.name === 'BeneficiaryTab') {
-          return (
-            <Animated.View 
-              key={route.key}
-              style={[
-                styles.centerButton,
-                { transform: [{ scale: scaleValue }] }
-              ]}
-            >
-              <TouchableOpacity
-                onPress={() => handlePress(route, isFocused)}
-                activeOpacity={0.85}
-                accessibilityRole="button"
-                accessibilityLabel={t('tabs.send_money')}
-                style={styles.centerButtonTouchable}
-              >
-                <View style={styles.centerButtonInner}>
-                  <FontAwesome5 
-                    name="money-bill-wave" 
-                    size={24} 
-                    color="#fff" 
-                  />
-                </View>
-              </TouchableOpacity>
-            </Animated.View>
-          );
-        }
+        // if (route.name === 'BeneficiaryTab') {
+        //   return (
+        //     <Animated.View 
+        //       key={route.key}
+        //       style={[
+        //         styles.centerButton,
+        //         { transform: [{ scale: scaleValue }] }
+        //       ]}
+        //     >
+        //       <TouchableOpacity
+        //         onPress={() => handlePress(route, isFocused)}
+        //         activeOpacity={0.85}
+        //         accessibilityRole="button"
+        //         accessibilityLabel={t('tabs.send_money')}
+        //         style={styles.centerButtonTouchable}
+        //       >
+        //         <View style={styles.centerButtonInner}>
+        //           <FontAwesome5 
+        //             name="money-bill-wave" 
+        //             size={24} 
+        //             color="#fff" 
+        //           />
+        //         </View>
+        //       </TouchableOpacity>
+        //     </Animated.View>
+        //   );
+        // }
 
         // Default icon and label logic
         let iconName;
@@ -98,6 +98,12 @@ function CustomTabBar({ state, descriptors, navigation }) {
           iconName = isFocused ? 'repeat' : 'repeat-outline'; // Better represents transactions/transfers
           // Alternatives: 'swap-vertical', 'sync', 'trending-up'
           label = t('tabs.history');
+          break;
+
+          case 'BeneficiaryTab':
+         iconName = isFocused ? 'send' : 'send-outline';
+          // Alternatives: 'swap-vertical', 'sync', 'trending-up'
+          label = t('tabs.transfer');
           break;
           
         case 'ManageVirtualCardTab':

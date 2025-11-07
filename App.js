@@ -72,6 +72,8 @@ import AboutUs from "./src/screens/Setting/AboutUs";
 import BeneficiaryScreen from "./src/screens/Transfert/BeneficiaryScreen";
 import Curency from "./src/screens/Transfert/Curency";
 import PaymentMethod from "./src/screens/Transfert/PaymentMethod";
+import BankTransferDetails from "./src/screens/Transfert/BankTransferDetails";
+import TransferSummary from "./src/screens/Transfert/TransferSummary";
 import Support from "./src/screens/Setting/Support";
 import Payment from "./src/screens/VirtualCard/Payment";
 import DrawerComponent from "./src/components/DrawerComponent";
@@ -215,7 +217,7 @@ const screenWidth = Dimensions.get('window').width;
               name="BeneficiaryTab"
               component={BeneficiaryScreen}
               options={{
-                title: '',
+                title: t('tabs.transfer'),
                 unmountOnBlur: true,
               }}
             />
@@ -455,6 +457,9 @@ function MainStack() {
        <Stack.Screen name="TermsAndConditions" component={TermsAndConditions} options={{ headerShown: false }} />
       <Stack.Screen name="CanadaKycSubmission" component={CanadaKycSubmission} options={{ headerShown: false }} />
       <Stack.Screen name="CanadaKycCamera" component={CanadaKycCamera} options={{ headerShown: false }} />
+      <Stack.Screen name="BankTransferDetails" component={BankTransferDetails} options={{ headerShown: false }} />
+      <Stack.Screen name="TransferSummary" component={TransferSummary} options={{ headerShown: false }} />
+      
 
 
 

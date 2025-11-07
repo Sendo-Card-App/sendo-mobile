@@ -41,6 +41,18 @@ export const transferApi = createApi({
       invalidatesTags: [TAG_TYPES.TRANSFERS],
     }),
     
+      initiateBankTransfer: builder.mutation({
+      query: (transferData) => ({
+        url: '/transfer-money/bank-init',
+        method: 'POST',
+        body: transferData,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }),
+      invalidatesTags: [TAG_TYPES.TRANSFERS],
+    }),
+
     // Initialize transfer to existing destinataire
     initTransferToDestinataire: builder.mutation({
       query: ({ destinataireId, amount, description = '' }) => ({
@@ -56,5 +68,6 @@ export const transferApi = createApi({
 export const {
   useGetTransfersQuery,
   useInitTransferMutation,
+   useInitiateBankTransferMutation,
   useInitTransferToDestinataireMutation,
 } = transferApi;

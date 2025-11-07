@@ -621,79 +621,93 @@ const HomeScreen = () => {
       ) : history?.data?.transactions?.items?.length === 0 ? (
         <Text className="text-black text-center mt-4">{t("home.noTransactions")}</Text>
       ) : (
-       <ScrollView showsVerticalScrollIndicator={false}>
-          {history?.data?.transactions?.items?.map((item, index) => {
-            const statusColor = getStatusColor(item.status);
-            const typeLabel = getTypeLabel(item.type, t);
-            let description = item.description;
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {history?.data?.transactions?.items?.map((item, index) => {
+          const statusColor = getStatusColor(item.status);
+          const typeLabel = getTypeLabel(item.type, t);
+          let description = item.description;
 
-            // Handle BANK_TRANSFER deposits with URL descriptions
-            if (
-              item.type?.toUpperCase() === "DEPOSIT" &&
-              item.method?.toUpperCase() === "BANK_TRANSFER" &&
-              description &&
-              (description.startsWith("http://") || description.startsWith("https://"))
-            ) {
-              description = t("home.viewDocument");
-            }
+          // Handle BANK_TRANSFER deposits with URL descriptions
+          if (
+            item.type?.toUpperCase() === "DEPOSIT" &&
+            item.method?.toUpperCase() === "BANK_TRANSFER" &&
+            description &&
+            (description.startsWith("http://") || description.startsWith("https://"))
+          ) {
+            description = t("home.viewDocument");
+          }
 
-            // Handle TONTINE_PAYMENT descriptions to remove # and numbers
-            if (item.type?.toUpperCase() === "TONTINE_PAYMENT" && description) {
-              description = description.replace(/#\\d+/, "").trim();
-            }
+          // Handle TONTINE_PAYMENT descriptions to remove # and numbers
+          if (item.type?.toUpperCase() === "TONTINE_PAYMENT" && description) {
+            description = description.replace(/#\d+/, "").trim();
+          }
 
-            const iconSource = getMethodIcon(item);
+          const iconSource = getMethodIcon(item);
 
-            // ✅ Determine which amount to display
-            let displayAmount;
+          //  Determine which amount to display
+          let displayAmount;
+          if (
+            item.type === "PAYMENT" ||
+            item.type === "TONTINE_PAYMENT" ||
+            item.type === "VIEW_CARD_DETAILS"
+          ) {
+            displayAmount = item.totalAmount;
+          } else if (
+            description?.trim() === "Retrait par SENDO" ||
+            description?.trim() === "Dépôt par SENDO"
+          ) {
+            displayAmount = item.totalAmount;
+          } else {
+            displayAmount = item.amount;
+          }
 
-            if (
-              item.type === "PAYMENT" ||
-              item.type === "TONTINE_PAYMENT" ||
-              item.type === "VIEW_CARD_DETAILS"
-            ) {
-              displayAmount = item.totalAmount;
-            } 
-            // ✅ NEW CONDITION: for “Retrait par SENDO” or “Dépôt par SENDO”
-            else if (
-              description?.trim() === "Retrait par SENDO" ||
-              description?.trim() === "Dépôt par SENDO"
-            ) {
-              displayAmount = item.totalAmount;
-            } 
-            else {
-              displayAmount = item.amount;
-            }
+          // Format createdAt date
+          const formattedDate = new Date(item.createdAt).toLocaleString("fr-FR", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          });
 
-            return (
-              <TouchableOpacity
-                key={index}
-                className="flex-row items-center mb-4 border-b border-gray-700 pb-2"
-                onPress={() =>
-                  navigation.navigate("Receipt", {
-                    transaction: item,
-                    user: userProfile?.data,
-                  })
-                }
-              >
-                <Image
-                  source={iconSource}
-                  className="w-10 h-10 mr-3 rounded-full"
-                  resizeMode="contain"
-                />
-                <View className="flex-1">
-                  <Text className="text-black font-semibold">{description}</Text>
-                  <Text className="text-black text-sm">
-                    {displayAmount?.toLocaleString()} {item.currency}
-                  </Text>
-                </View>
+          return (
+            <TouchableOpacity
+              key={index}
+              className="flex-row items-center mb-4 border-b border-gray-300 pb-2"
+              onPress={() =>
+                navigation.navigate("Receipt", {
+                  transaction: item,
+                  user: userProfile?.data,
+                })
+              }
+            >
+              {/* Left icon */}
+              <Image
+                source={iconSource}
+                className="w-10 h-10 mr-3 rounded-full"
+                resizeMode="contain"
+              />
+
+              {/* Center content */}
+              <View className="flex-1">
+                <Text className="text-black font-semibold">{description}</Text>
+                <Text className="text-black text-sm">
+                  {displayAmount?.toLocaleString()} {item.currency}
+                </Text>
+              </View>
+
+              {/* Right side: status + date */}
+              <View className="items-end">
                 <Text className={`text-xs font-semibold ${statusColor}`}>
                   {t(`transactionStatus.${item.status?.toUpperCase()}`)}
                 </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
+                <Text className="text-gray-500 text-[10px] mt-1">{formattedDate}</Text>
+              </View>
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
+
 
       )}
 
