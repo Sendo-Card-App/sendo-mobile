@@ -25,19 +25,6 @@ const PaymentMethod = () => {
   const route = useRoute();
   const { t } = useTranslation();
 
-  // const {
-  //   contact,
-  //   amount,
-  //   convertedAmount,
-  //   totalAmount,
-  //   transferFee,
-  //   fromCurrency,
-  //   toCurrency,
-  //   countryName,
-  //   cadRealTimeValue,
-
-    
-  // } = route.params;
    const {
     amount,
     convertedAmount,
@@ -63,6 +50,7 @@ const handleSelect = (provider) => {
     cadRealTimeValue,
     provider,
   };
+  console.log('Selected provider:', provider);
 
   // Check which method was selected
   if (provider === 'Virement Bancaire') {

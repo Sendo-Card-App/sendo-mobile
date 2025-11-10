@@ -503,7 +503,7 @@ const HomeScreen = () => {
                 { label: t("home.etontine"), icon: "layers-outline" },
 
                ...(userProfile?.data?.country === "Canada"
-                  ? [{ label: t("home.canadaKyc"), icon: "shield-checkmark-outline", route: "CanadaKycSubmission" }]
+                  ? [{ label: t("home.canadaKyc"), icon: "shield-checkmark-outline", route: "VerifyIdentity" }]
                   : []),
               ].map((item, index) => (
                 <TouchableOpacity

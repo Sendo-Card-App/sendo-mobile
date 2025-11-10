@@ -51,6 +51,7 @@ const BeneficiarySelection = ({ route }) => {
     cadRealTimeValue,
     provider
   } = route.params;
+   //console.log('Selected provider37:', provider);
 
   const { data: userProfile } = useGetUserProfileQuery();
   const userId = userProfile?.data.id;

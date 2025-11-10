@@ -24,6 +24,7 @@ const AddContact = ({ navigation, route }) => {
     cadRealTimeValue,
     provider
   } = route.params || {};
+ // console.log('Selected provider:', provider);
 
   const [selectedCode, setSelectedCode] = useState('+237');
   const [showModal, setShowModal] = useState(false);
@@ -54,7 +55,8 @@ const AddContact = ({ navigation, route }) => {
         fromCurrency,
         toCurrency,
         countryName,
-        cadRealTimeValue
+        cadRealTimeValue,
+        provider
       });
     }
   };

@@ -14,7 +14,7 @@ import { AntDesign, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { useGetConfigQuery } from '../../services/Config/configApi';
-import { useInitiateBankTransferMutation } from '../../services/Transfer/transferApi'; // Import the new hook
+import { useInitiateBankTransferMutation } from '../../services/Transfer/transferApi'; 
 
 const TransferSummary = () => {
   const navigation = useNavigation();
@@ -68,7 +68,7 @@ const calculateTransferDetails = () => {
   const cadValue = Number(cadRealTimeValue) || 0;
   const amountNumber = parseFloat(amount) || 0;
 
-  const total = amountNumber + 1; // ✅ total is always amountNumber + 1
+  const total = amountNumber + 1; //  total is always amountNumber + 1
   const convertedAmount = amountNumber * cadValue;
   const finalTotalConvertedAmount = convertedAmount + cadValue;
 
@@ -110,7 +110,6 @@ const {
   };
 
  const processBankTransfer = async () => {
-  // Instead of running transfer immediately, go to PinCode screen first
   navigation.navigate('Auth', {
     screen: 'PinCode',
     params: {
