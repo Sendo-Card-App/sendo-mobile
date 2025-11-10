@@ -259,10 +259,11 @@ const CanadaKycSubmission = ({ navigation }) => {
   try {
    
     console.log(' Step 1: Sending profile data...');
-    const profileData = {
+    const formData = {
       profession: personalInfo.profession
     };
-    const profileResponse = await updateProfile(profileData).unwrap();
+    console.log(formData)
+    const profileResponse = await updateProfile(formData).unwrap();
     dispatch(setPersonalInfo(personalInfo));
 
     // 2. Prepare documents and files (FOLLOWING KycResume PATTERN)

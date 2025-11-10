@@ -47,7 +47,6 @@ const TransferSummary = () => {
 
   // Extract all parameters from navigation
   const {
-    contact,
     amount,
     convertedAmount,
     totalAmount: initialTotalAmount,
@@ -64,27 +63,32 @@ const TransferSummary = () => {
   } = route.params;
 
   // Calculate fees and total amount
-  const calculateTransferDetails = () => {
-    const transferFeeUSD = TRANSFER_FEES;
-    const transferFeeInFromCurrency = transferFeeUSD * cadRealTimeValue;
-    const amountNumber = parseFloat(amount) || 0;
-    console.log(amountNumber)
-    const total = amountNumber + transferFeeInFromCurrency;
-    
-    return {
-      transferFeeUSD,
-      transferFeeInFromCurrency: transferFeeInFromCurrency.toFixed(2),
-      totalAmount: total.toFixed(2),
-      convertedAmount: (amountNumber * cadRealTimeValue).toFixed(2),
-    };
-  };
+const calculateTransferDetails = () => {
+  const transferFeeUSD = Number(TRANSFER_FEES) || 0;
+  const cadValue = Number(cadRealTimeValue) || 0;
+  const amountNumber = parseFloat(amount) || 0;
 
-  const {
+  const total = amountNumber + 1; // ✅ total is always amountNumber + 1
+  const convertedAmount = amountNumber * cadValue;
+  const finalTotalConvertedAmount = convertedAmount + cadValue;
+
+  return {
     transferFeeUSD,
-    transferFeeInFromCurrency,
-    totalAmount,
-    convertedAmount: finalConvertedAmount,
-  } = calculateTransferDetails();
+    transferFeeInFromCurrency: (transferFeeUSD * cadValue).toFixed(2),
+    totalAmount: total.toFixed(2),
+    convertedAmount: convertedAmount.toFixed(2),
+    finalTotalConvertedAmount: finalTotalConvertedAmount.toFixed(2),
+  };
+};
+
+const {
+  transferFeeUSD,
+  transferFeeInFromCurrency,
+  totalAmount,
+  convertedAmount: finalConvertedAmount,
+  finalTotalConvertedAmount,
+} = calculateTransferDetails();
+
 
   const handleConfirmTransfer = async () => {
     Alert.alert(
@@ -119,7 +123,6 @@ const TransferSummary = () => {
             bankName: selectedBank,
             nameAccount: accountName,
             accountNumber: iban,
-            pin, // Include the verified PIN
           };
 
           console.log('Sending bank transfer data:', transferData);
@@ -204,29 +207,6 @@ const TransferSummary = () => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Beneficiary Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Bénéficiaire</Text>
-            <TouchableOpacity onPress={() => handleEdit('ContactSelection')}>
-              <Text style={styles.editButton}>Modifier</Text>
-            </TouchableOpacity>
-          </View>
-          
-          <View style={styles.infoCard}>
-            <View style={styles.contactInfo}>
-              <View style={styles.avatar}>
-                <Text style={styles.avatarText}>
-                  {contact?.name?.charAt(0) || 'C'}
-                </Text>
-              </View>
-              <View style={styles.contactDetails}>
-                <Text style={styles.contactName}>{contact?.name || 'Non spécifié'}</Text>
-                <Text style={styles.contactPhone}>{contact?.phone || 'Non spécifié'}</Text>
-              </View>
-            </View>
-          </View>
-        </View>
 
         {/* Transfer Details Section */}
         <View style={styles.section}>
@@ -277,10 +257,10 @@ const TransferSummary = () => {
               </View>
               <View style={styles.totalValues}>
                 <Text style={styles.totalValue}>
-                  {amount} {fromCurrency}
+                  {totalAmount} {fromCurrency}
                 </Text>
                 <Text style={styles.convertedAmount}>
-                  {finalConvertedAmount} {toCurrency}
+                  {finalTotalConvertedAmount} {toCurrency}
                 </Text>
               </View>
             </View>

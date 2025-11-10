@@ -8,18 +8,25 @@ const TAG_TYPES = {
 export const transferApi = createApi({
   reducerPath: 'transferApi',
   baseQuery: fetchBaseQuery({
-   baseUrl: process.env.EXPO_TEST_API_URL,
+   baseUrl: process.env.EXPO_TEST_API_URL || 'https://dev.api.sf-e.ca/api',
+
     prepareHeaders: (headers, { getState }) => {
       const token = getState().auth.token;
       const passcode = getState().auth.passcode; // Assuming you store passcode in auth slice
       
+     console.log('🧠 prepareHeaders called:');
+      console.log('Bearer token:', token ? '✅ exists' : '❌ missing');
+      console.log('X-Passcode:', passcode ? passcode : '❌ missing');
+
       if (token) {
         headers.set('Authorization', `Bearer ${token}`);
       }
       if (passcode) {
         headers.set('X-Passcode', passcode);
       }
-      return headers;
+
+      console.log('📤 Headers sent:', Object.fromEntries(headers.entries()));
+          return headers;
     },
   }),
  tagTypes: Object.values(TAG_TYPES),
@@ -46,9 +53,6 @@ export const transferApi = createApi({
         url: '/transfer-money/bank-init',
         method: 'POST',
         body: transferData,
-        headers: {
-          'Content-Type': 'application/json',
-        },
       }),
       invalidatesTags: [TAG_TYPES.TRANSFERS],
     }),

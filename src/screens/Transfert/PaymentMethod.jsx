@@ -25,8 +25,20 @@ const PaymentMethod = () => {
   const route = useRoute();
   const { t } = useTranslation();
 
-  const {
-    contact,
+  // const {
+  //   contact,
+  //   amount,
+  //   convertedAmount,
+  //   totalAmount,
+  //   transferFee,
+  //   fromCurrency,
+  //   toCurrency,
+  //   countryName,
+  //   cadRealTimeValue,
+
+    
+  // } = route.params;
+   const {
     amount,
     convertedAmount,
     totalAmount,
@@ -34,13 +46,13 @@ const PaymentMethod = () => {
     fromCurrency,
     toCurrency,
     countryName,
-    cadRealTimeValue,
+    cadRealTimeValue
   } = route.params;
 
 const handleSelect = (provider) => {
   // Common params to send in navigation
   const params = {
-    contact,
+   // contact,
     amount,
     convertedAmount,
     totalAmount,
@@ -58,7 +70,7 @@ const handleSelect = (provider) => {
     navigation.navigate('BankTransferDetails', params);
   } else {
     // Keep existing behavior for Orange Money and MTN Money
-    navigation.navigate('Address', params);
+    navigation.navigate('BeneficiarySelection', params);
   }
 };
 

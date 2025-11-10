@@ -26,7 +26,6 @@ const BankTransferDetails = () => {
   const { t } = useTranslation();
 
   const {
-    contact,
     amount,
     convertedAmount,
     totalAmount,
@@ -140,7 +139,6 @@ const handleNext = () => {
     
     // Navigate to TransferSummary instead of BeneficiaryDetails
     navigation.navigate('TransferSummary', {
-      contact,
       amount,
       convertedAmount,
       totalAmount,

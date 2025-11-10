@@ -126,7 +126,7 @@ const {
       return;
     }
 
-    navigation.navigate('BeneficiarySelection', {
+    navigation.navigate('PaymentMethod', {
       amount,
       convertedAmount,
       totalAmount,

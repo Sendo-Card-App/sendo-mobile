@@ -59,17 +59,24 @@ const methods = [
     title: t('select_method.sendo_transfer'),
     subtitle: t('select_method.transfer'),
     icon: <Image source={TopLogo} style={styles.methodIcon} />,
-    action: () => navigation.navigate("WalletTransfer"),
-    color: '#7ddd7d'
+    action: () => navigation.navigate('WalletTransfer'),
+    color: '#7ddd7d',
   },
   {
     id: 'mobile',
     title: t('select_method.transfer_to_mobile'),
     icon: <AntDesign name="mobile" size={40} color="#0D1C6A" />,
     action: () => setShowServiceModal(true),
-    color: '#0D1C6A'
-  }
-];
+    color: '#0D1C6A',
+  },
+].filter((method) => {
+  // ✅ Only show both methods if user is from Cameroon
+  if (userProfile?.data?.country === 'Cameroon') return true;
+
+  // ❌ Otherwise, show only the "transfer" method
+  return method.id === 'ca_cm';
+});
+
 
 // 👉 Only push CA-CM method if country is Canada
 if (userProfile?.data?.country === "Canada") {
