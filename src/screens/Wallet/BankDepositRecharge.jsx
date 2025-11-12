@@ -6,7 +6,8 @@ import Loader from "../../components/Loader";
 import { useBankrechargeMutation } from '../../services/WalletApi/walletApi';
 import { Ionicons, AntDesign } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { useAppState } from '../../context/AppStateContext'; //  imported
+import { useAppState } from '../../context/AppStateContext';
+import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
 
 const BankDepositRecharge = ({ navigation }) => {
   const [amount, setAmount] = useState('');
@@ -14,49 +15,82 @@ const BankDepositRecharge = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
   const { t } = useTranslation();
   const [bankRecharge] = useBankrechargeMutation();
+  const { isPickingDocument, setIsPickingDocument } = useAppState();
 
-  const { isPickingDocument, setIsPickingDocument } = useAppState(); // context usage
+  const {
+    data: userProfile,
+    isLoading: isProfileLoading,
+    refetch: refetchProfile,
+  } = useGetUserProfileQuery();
 
   const pickFile = async () => {
-    if (isPickingDocument) return; // Prevent multiple pickers
+    if (isPickingDocument) return;
     try {
-      setIsPickingDocument(true); // mark start
+      setIsPickingDocument(true);
       const result = await DocumentPicker.getDocumentAsync({ type: '*/*' });
       if (!result.assets || !result.assets.length) return;
       setFile(result.assets[0]);
     } catch (err) {
       Toast.show({ type: 'error', text1: 'Erreur', text2: 'Impossible de sélectionner le fichier' });
     } finally {
-      setIsPickingDocument(false); //  mark end
+      setIsPickingDocument(false);
     }
   };
 
   const handleSubmit = async () => {
-    if (!amount || !file) {
-      Toast.show({ type: 'error', text1: 'Erreur', text2: 'Veuillez remplir tous les champs obligatoires' });
+    if (!amount) {
+      Toast.show({ type: 'error', text1: 'Erreur', text2: 'Veuillez indiquer un montant' });
+      return;
+    }
+
+    const isCanada = userProfile?.data?.country === "Canada";
+
+    if (!isCanada && !file) {
+      Toast.show({ type: 'error', text1: 'Erreur', text2: 'Veuillez téléverser le bordereau de versement bancaire' });
       return;
     }
 
     setLoading(true);
     try {
       const formData = new FormData();
-      formData.append('method', 'BANK_TRANSFER');
-      formData.append('amount', amount);
-      formData.append('bankFile', {
-        uri: file.uri,
-        name: file.name || `fichier_${Date.now()}`,
-        type: file.mimeType || 'application/octet-stream',
-      });
+
+      if (isCanada) {
+        // Canada: Interac transfer
+        formData.append('method', 'INTERAC');
+        formData.append('amount', amount);
+      } else {
+        // Other countries: Bank transfer
+        formData.append('method', 'BANK_TRANSFER');
+        formData.append('amount', amount);
+        formData.append('bankFile', {
+          uri: file.uri,
+          name: file.name || `fichier_${Date.now()}`,
+          type: file.mimeType || 'application/octet-stream',
+        });
+      }
 
       const response = await bankRecharge(formData).unwrap();
 
-      Toast.show({ type: 'success', text1: 'Succès', text2: response?.message || 'Dépôt bancaire effectué avec succès' });
+      if (isCanada) {
+        Toast.show({
+          type: 'success',
+          text1: 'Interac initié',
+          text2: "Veuillez envoyer le transfert Interac à l'adresse suivante : sendoperations@sf-e.ca",
+        });
+      } else {
+        Toast.show({
+          type: 'success',
+          text1: 'Succès',
+          text2: response?.message || 'Dépôt bancaire effectué avec succès',
+        });
+      }
+
       navigation.goBack();
     } catch (error) {
       Toast.show({
         type: 'error',
         text1: 'Erreur',
-        text2: error?.data?.message || error?.error || error?.message || 'Une erreur est survenue lors du dépôt bancaire'
+        text2: error?.data?.message || error?.error || error?.message || 'Une erreur est survenue lors du dépôt bancaire',
       });
     } finally {
       setLoading(false);
@@ -66,7 +100,7 @@ const BankDepositRecharge = ({ navigation }) => {
   return (
     <View style={{ flex: 1, backgroundColor: 'white' }}>
       <StatusBar backgroundColor="#7ddd7d" barStyle="light-content" />
-      
+
       {/* Header */}
       <View style={{ backgroundColor: '#7ddd7d', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, paddingTop: 50 }}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
@@ -90,28 +124,45 @@ const BankDepositRecharge = ({ navigation }) => {
           onChangeText={setAmount}
         />
 
-        <Text style={{ marginBottom: 10, color: '#666', fontSize: 14, textAlign: 'center' }}>
-          Veuillez téléverser le bordereau de versement bancaire
-        </Text>
+        {userProfile?.data?.country === "Canada" ? (
+          <View style={{ backgroundColor: '#f1f9f1', borderRadius: 10, padding: 15, marginBottom: 20 }}>
+            <Text style={{ color: '#0D1C6A', textAlign: 'center', fontSize: 14 }}>
+              Veuillez envoyer un virement Interac à l’adresse suivante :
+            </Text>
+            <Text style={{ textAlign: 'center', marginTop: 8, fontWeight: 'bold', color: '#333' }}>
+              sendoperations@sf-e.ca
+            </Text>
+          </View>
+        ) : (
+          <>
+            <Text style={{ marginBottom: 10, color: '#666', fontSize: 14, textAlign: 'center' }}>
+              Veuillez téléverser le bordereau de versement bancaire
+            </Text>
 
-        <TouchableOpacity
-          onPress={pickFile}
-          disabled={isPickingDocument} //  disable while picking
-          style={{
-            padding: 15,
-            borderWidth: 1,
-            borderColor: '#ddd',
-            borderRadius: 10,
-            marginBottom: 10,
-            alignItems: 'center',
-            backgroundColor: isPickingDocument ? '#e0e0e0' : '#f5f5f5'
-          }}
-        >
-          <Text>{isPickingDocument ? 'Sélection en cours...' : file ? file.name : t('bank_deposit.choose_file')}</Text>
-        </TouchableOpacity>
+            <TouchableOpacity
+              onPress={pickFile}
+              disabled={isPickingDocument}
+              style={{
+                padding: 15,
+                borderWidth: 1,
+                borderColor: '#ddd',
+                borderRadius: 10,
+                marginBottom: 10,
+                alignItems: 'center',
+                backgroundColor: isPickingDocument ? '#e0e0e0' : '#f5f5f5'
+              }}
+            >
+              <Text>{isPickingDocument ? 'Sélection en cours...' : file ? file.name : t('bank_deposit.choose_file')}</Text>
+            </TouchableOpacity>
 
-        {file?.mimeType?.startsWith('image') && (
-          <Image source={{ uri: file.uri }} style={{ width: '100%', height: 180, marginBottom: 20, borderRadius: 10 }} resizeMode="contain" />
+            {file?.mimeType?.startsWith('image') && (
+              <Image
+                source={{ uri: file.uri }}
+                style={{ width: '100%', height: 180, marginBottom: 20, borderRadius: 10 }}
+                resizeMode="contain"
+              />
+            )}
+          </>
         )}
 
         <TouchableOpacity
@@ -128,7 +179,9 @@ const BankDepositRecharge = ({ navigation }) => {
           {loading ? <Loader color="white" /> : <Text style={{ color: 'white', fontWeight: 'bold' }}>{t('bank_deposit.submit')}</Text>}
         </TouchableOpacity>
 
-        <Text style={{ fontSize: 12, color: '#666', textAlign: 'center' }}>{t('bank_deposit.file_requirements')}</Text>
+        <Text style={{ fontSize: 12, color: '#666', textAlign: 'center' }}>
+          {t('bank_deposit.file_requirements')}
+        </Text>
       </ScrollView>
     </View>
   );

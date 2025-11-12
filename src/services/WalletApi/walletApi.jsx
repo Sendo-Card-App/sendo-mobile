@@ -25,7 +25,7 @@ const PASSCODE_REQUIRED_ENDPOINTS = [
 export const walletApi = createApi({
   reducerPath: 'walletApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: process.env.EXPO_TEST_API_URL,
+    baseUrl: process.env.EXPO_PUBLIC_API_URL,
     prepareHeaders: (headers, { getState, endpoint }) => {
   const { accessToken } = getState().auth;
   const { passcode } = getState().passcode;

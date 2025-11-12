@@ -436,15 +436,25 @@ const HomeScreen = () => {
               {isBalanceLoading ? (
                 <Loader size="small" color="black" />
               ) : showBalance ? (
-                `${(balanceData?.data?.balance ?? 0).toLocaleString(undefined, {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })} ${balanceData?.data?.currency ?? ""}`
+                userProfile?.data?.country === "Canada" ? (
+                  // Currency BEFORE balance
+                  `${balanceData?.data?.currency ?? ""} ${(balanceData?.data?.balance ?? 0).toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}`
+                ) : (
+                  // Currency AFTER balance
+                  `${(balanceData?.data?.balance ?? 0).toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })} ${balanceData?.data?.currency ?? ""}`
+                )
               ) : (
                 "****"
               )}
             </Text>
           </View>
+
 
           {/* Boutons actions */}
           <View className="flex-row mt-1 gap-4">

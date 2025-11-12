@@ -227,7 +227,7 @@ const CanadaKycSubmission = ({ navigation }) => {
     };
   };
 
- const handleFinalSubmission = async () => {
+const handleFinalSubmission = async () => {
   console.log(' Starting Canada KYC submission process...');
   
   // Validate personal info
@@ -257,16 +257,15 @@ const CanadaKycSubmission = ({ navigation }) => {
   }
 
   try {
-   
     console.log(' Step 1: Sending profile data...');
     const formData = {
       profession: personalInfo.profession
     };
-    console.log(formData)
+    console.log('Profile data:', formData);
     const profileResponse = await updateProfile(formData).unwrap();
     dispatch(setPersonalInfo(personalInfo));
 
-    // 2. Prepare documents and files (FOLLOWING KycResume PATTERN)
+    // 2. Prepare documents and files
     console.log(' Step 2: Preparing KYC documents...');
     
     const documents = [];
@@ -277,8 +276,8 @@ const CanadaKycSubmission = ({ navigation }) => {
     const expirationDate = personalInfo.expirationDate;
     const selectedIdentityDoc = identityTypes.find(type => type.id === selectedIdentityType);
 
-    // Helper function (SAME AS KycResume)
-    const addDocumentAndFile = async (doc, uri, index) => {
+    // FIXED: Use the outer function's parameters correctly
+    const addDocumentAndFileInner = async (doc, uri, index) => {
       documents.push(doc);
       const compressedUri = await compressImage(uri);
       const name = `file_${index}.jpg`;
@@ -292,30 +291,40 @@ const CanadaKycSubmission = ({ navigation }) => {
 
     // ADD ID_PROOF DOCUMENTS 
     if (selectedIdentityDoc?.requiresPassport) {
-      
       // Main document (front) - ID_PROOF
       if (kycData.identityDocument?.front) {
-        await addDocumentAndFile(
-          {type: 'ID_PROOF',idDocumentNumber, expirationDate},
+        await addDocumentAndFileInner(
+          {
+            type: 'ID_PROOF',
+            idDocumentNumber: idDocumentNumber,
+            expirationDate: expirationDate
+          },
           kycData.identityDocument.front.uri,
           fileIndex++
         );
       }
 
-      // Passport document - Also as ID_PROOF (
+      // Passport document - Also as ID_PROOF
       if (kycData.passportDocument) {
-        await addDocumentAndFile(
-          {type: 'ID_PROOF',idDocumentNumber, expirationDate},
+        await addDocumentAndFileInner(
+          {
+            type: 'ID_PROOF', 
+            idDocumentNumber: idDocumentNumber,
+            expirationDate: expirationDate
+          },
           kycData.passportDocument.uri,
           fileIndex++
         );
       }
     } else {
-      
       // Front of ID document - ID_PROOF
       if (kycData.identityDocument?.front) {
-        await addDocumentAndFile(
-          {type: 'ID_PROOF',idDocumentNumber,expirationDate},
+        await addDocumentAndFileInner(
+          {
+            type: 'ID_PROOF',
+            idDocumentNumber: idDocumentNumber,
+            expirationDate: expirationDate
+          },
           kycData.identityDocument.front.uri,
           fileIndex++
         );
@@ -324,17 +333,21 @@ const CanadaKycSubmission = ({ navigation }) => {
       // Back of ID document - ID_PROOF 
       if (kycData.identityDocument?.back && 
           (selectedIdentityType === 'permis_conduire' || selectedIdentityType === 'carte_resident_permanent')) {
-        await addDocumentAndFile(
-          {type: 'ID_PROOF',  idDocumentNumber, expirationDate},
+        await addDocumentAndFileInner(
+          {
+            type: 'ID_PROOF',
+            idDocumentNumber: idDocumentNumber,
+            expirationDate: expirationDate
+          },
           kycData.identityDocument.back.uri,
           fileIndex++
         );
       }
     }
 
-    // ADD SELFIE
+    // ADD SELFIE - FIXED: Use the inner function
     if (kycData.selfie) {
-      await addDocumentAndFile(
+      await addDocumentAndFileInner(
         { type: 'SELFIE' },
         kycData.selfie.uri,
         fileIndex++
@@ -344,16 +357,20 @@ const CanadaKycSubmission = ({ navigation }) => {
     console.log('📑 Final documents array:', JSON.stringify(documents, null, 2));
     console.log('📁 Total files to upload:', files.length);
 
-    // Validate document count (OPTIONAL - based on your requirements)
+    // Log each file for debugging
+    files.forEach((file, index) => {
+      console.log(`   File ${index}: ${file.name} - ${file.uri.substring(0, 50)}...`);
+    });
+
+    // Validate document count
     const expectedDocumentCount = selectedIdentityDoc?.requiresPassport ? 3 : 
                                 (selectedIdentityType === 'permis_conduire' || selectedIdentityType === 'carte_resident_permanent') ? 3 : 2;
     
     if (documents.length !== expectedDocumentCount) {
       console.log(`⚠️ Expected ${expectedDocumentCount} documents but got ${documents.length}`);
-      // Continue anyway, as the server might handle variable counts
     }
 
-    // 3. Create FormData (EXACTLY LIKE KycResume)
+    // 3. Create FormData
     const kycFormData = new FormData();
     kycFormData.append('documents', JSON.stringify(documents));
     
@@ -363,11 +380,11 @@ const CanadaKycSubmission = ({ navigation }) => {
     });
 
     console.log('🚀 Calling submitKYC API...');
-    console.log('📊 FormData structure (same as KycResume):');
+    console.log('📊 FormData structure:');
     console.log('   - documents:', JSON.stringify(documents));
     console.log('   - files count:', files.length);
 
-    // 4. Submit KYC (SAME AS KycResume)
+    // 4. Submit KYC
     const startTime = Date.now();
     const response = await submitKYC(kycFormData).unwrap();
     const endTime = Date.now();
@@ -375,7 +392,7 @@ const CanadaKycSubmission = ({ navigation }) => {
     console.log(`✅ submitKYC API call completed in ${endTime - startTime}ms`);
     console.log('📨 API Response:', JSON.stringify(response, null, 2));
     
-    // Check response (SAME AS KycResume)
+    // Check response
     if (response?.status === 201) {
       console.log('🎉 Canada KYC submission completed successfully');
       navigation.navigate('Success', {

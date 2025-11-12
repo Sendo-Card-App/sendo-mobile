@@ -8,13 +8,12 @@ const TAG_TYPES = {
 export const transferApi = createApi({
   reducerPath: 'transferApi',
   baseQuery: fetchBaseQuery({
-   baseUrl: process.env.EXPO_TEST_API_URL,
+   baseUrl: process.env.EXPO_PUBLIC_API_URL,
 
     prepareHeaders: (headers, { getState }) => {
       const token = getState().auth.accessToken;
        const passcode = getState().passcode.passcode;
- // Assuming you store passcode in auth slice
-      
+      // Assuming you store passcode in auth slice
      console.log('🧠 prepareHeaders called:');
       console.log('Bearer token:', token ? '✅ exists' : '❌ missing');
       console.log('X-Passcode:', passcode ? passcode : '❌ missing');

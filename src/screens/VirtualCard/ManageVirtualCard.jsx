@@ -87,7 +87,7 @@ const ManageVirtualCard = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [modalType, setModalType] = useState("success");
   const [modalMessage, setModalMessage] = useState("");
-  const [showDebts, setShowDebts] = useState(false);
+  const [showDebts, setShowDebts] = useState(true);
   const [preActiveModalVisible, setPreActiveModalVisible] = useState(false);
   const [isProcessingFreeze, setIsProcessingFreeze] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -605,7 +605,7 @@ const handleCardDetailsRequest = async (isReadOnly) => {
           </View>
           
 
-          {/* Actions */}
+         
           {/* Actions */}
           {cardStatus !== "TERMINATED" && (
             <View className="mb-1 mt-2">
@@ -739,7 +739,7 @@ const handleCardDetailsRequest = async (isReadOnly) => {
 
 
           {/* Balance + Actions */}
-         {cardStatus !== "TERMINATED" ? (
+        {cardStatus !== "TERMINATED" && cardStatus !== "BLOCKED" ? (
             <>
               {/* Balance and Action Buttons */}
               <View className="mt-4 bg-gray-100 rounded-xl p-4">
