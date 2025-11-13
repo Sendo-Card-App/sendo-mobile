@@ -389,19 +389,6 @@ const NetworkErrorBoundary = ({
           <Text style={styles.autoRetryText}>
             Vérification automatique toutes les 5 secondes
           </Text>
-
-          {/* Conseils spécifiques */}
-          <View style={[
-            styles.tipsContainer,
-            { backgroundColor: Colors.status.error + '05' }
-          ]}>
-            <Text style={styles.tipsTitle}>
-              Conseils pour résoudre le problème :
-            </Text>
-            <Text style={styles.tipText}>• Vérifiez votre connexion WiFi ou données mobiles</Text>
-            <Text style={styles.tipText}>• Redémarrez votre routeur si nécessaire</Text>
-            <Text style={styles.tipText}>• Contactez votre fournisseur d'accès internet</Text>
-          </View>
         </View>
       </Animated.View>
     );

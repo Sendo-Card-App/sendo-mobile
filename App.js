@@ -72,6 +72,8 @@ import AboutUs from "./src/screens/Setting/AboutUs";
 import BeneficiaryScreen from "./src/screens/Transfert/BeneficiaryScreen";
 import Curency from "./src/screens/Transfert/Curency";
 import PaymentMethod from "./src/screens/Transfert/PaymentMethod";
+import BankTransferDetails from "./src/screens/Transfert/BankTransferDetails";
+import TransferSummary from "./src/screens/Transfert/TransferSummary";
 import Support from "./src/screens/Setting/Support";
 import Payment from "./src/screens/VirtualCard/Payment";
 import DrawerComponent from "./src/components/DrawerComponent";
@@ -103,6 +105,7 @@ import Address from "./src/screens/Transfert/Address";
 import Camera from "./src/screens/VirtualCard/Camera";
 import ChangePassword from "./src/screens/Setting/ChangePassword";
 import ChatScreen from "./src/screens/Chat/ChatScreen";
+import ChatLive from "./src/screens/Chat/ChatLive";
 
 // Partager entre amis 
 import WelcomeShare from "./src/screens/Share/WelcomeShare";
@@ -128,6 +131,10 @@ import RequestPay from "./src/screens/Demand/RequestPay";
 import SelectRecipients from "./src/screens/Demand/SelectRecipients";
 import DetailsList from "./src/screens/Demand/DetailsList";
 import EditFundField from "./src/screens/Demand/EditFundField";
+
+ // CANADA KYC SCREENS
+import CanadaKycSubmission from "./src/screens/CaKyc/CanadaKycSubmission";
+import CanadaKycCamera from "./src/screens/CaKyc/CanadaKycCamera";
 
 //MODULE TONTINE
 import TontineList from "./src/screens/Tontine/TontineList";
@@ -210,7 +217,7 @@ const screenWidth = Dimensions.get('window').width;
               name="BeneficiaryTab"
               component={BeneficiaryScreen}
               options={{
-                title: '',
+                title: t('tabs.transfer'),
                 unmountOnBlur: true,
               }}
             />
@@ -287,6 +294,7 @@ function AuthStack() {
       <Stack.Screen name="OtpVerification" component={OtpVerification} />
       <Stack.Screen name="ForgetPassword" component={ForgetPassword} />
       <Stack.Screen name="ResetPassword" component={ResetPassword} />
+      <Stack.Screen name="ChatLive" component={ChatLive} />
     </Stack.Navigator>
   );
 }
@@ -447,6 +455,13 @@ function MainStack() {
       <Stack.Screen name="TontineSetting" component={TontineSetting } options={{ headerShown: false }} />
       <Stack.Screen name="FundRelease" component={FundRelease } options={{ headerShown: false }} />
        <Stack.Screen name="TermsAndConditions" component={TermsAndConditions} options={{ headerShown: false }} />
+      <Stack.Screen name="CanadaKycSubmission" component={CanadaKycSubmission} options={{ headerShown: false }} />
+      <Stack.Screen name="CanadaKycCamera" component={CanadaKycCamera} options={{ headerShown: false }} />
+      <Stack.Screen name="BankTransferDetails" component={BankTransferDetails} options={{ headerShown: false }} />
+      <Stack.Screen name="TransferSummary" component={TransferSummary} options={{ headerShown: false }} />
+      
+
+
 
 
 

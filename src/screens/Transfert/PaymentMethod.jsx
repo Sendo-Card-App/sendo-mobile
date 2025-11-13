@@ -6,7 +6,8 @@ import {
   Image,
   StatusBar,
   StyleSheet,
-  Pressable
+  Pressable,
+  ScrollView,
 } from 'react-native';
 import { AntDesign, MaterialIcons } from '@expo/vector-icons';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -17,14 +18,14 @@ import HomeImage from '../../images/HomeImage2.png';
 import button from '../../images/ButtomLogo.png';
 import om from '../../images/om.png';
 import mtn from '../../images/mtn.png';
+import bank from '../../images/bank.png'; // 🏦 Add a bank icon in your assets
 
 const PaymentMethod = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { t } = useTranslation();
 
-  const {
-    contact,
+   const {
     amount,
     convertedAmount,
     totalAmount,
@@ -35,20 +36,32 @@ const PaymentMethod = () => {
     cadRealTimeValue
   } = route.params;
 
-  const handleSelect = (provider) => {
-    navigation.navigate('Address', {
-      contact,
-      amount,
-      convertedAmount,
-      totalAmount,
-      transferFee,
-      fromCurrency,
-      toCurrency,
-      countryName,
-      cadRealTimeValue,
-      provider,
-    });
+const handleSelect = (provider) => {
+  // Common params to send in navigation
+  const params = {
+   // contact,
+    amount,
+    convertedAmount,
+    totalAmount,
+    transferFee,
+    fromCurrency,
+    toCurrency,
+    countryName,
+    cadRealTimeValue,
+    provider,
   };
+  console.log('Selected provider:', provider);
+
+  // Check which method was selected
+  if (provider === 'Virement Bancaire') {
+    // Navigate to the new bank transfer screen
+    navigation.navigate('BankTransferDetails', params);
+  } else {
+    // Keep existing behavior for Orange Money and MTN Money
+    navigation.navigate('BeneficiarySelection', params);
+  }
+};
+
 
   return (
     <View style={styles.container}>
@@ -71,18 +84,38 @@ const PaymentMethod = () => {
       </View>
 
       <View style={styles.divider} />
+
       <Text style={styles.title}>{t('paymentMethodScreen.title')}</Text>
 
-      {/* Pressables */}
-      <Pressable style={styles.card} onPress={() => handleSelect('Orange Money')}>
-        <Image source={om} style={styles.logo} />
-        <Text style={styles.bankName}>Orange Money</Text>
-      </Pressable>
+      {/* Payment Methods */}
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <View style={styles.methodsContainer}>
+          <Pressable style={styles.card} onPress={() => handleSelect('Orange Money')}>
+            <View style={styles.cardLeft}>
+              <Image source={om} style={styles.logo} />
+              <Text style={styles.bankName}>Orange Money</Text>
+            </View>
+            <AntDesign name="right-circle" size={20} color="#7ddd7d" />
+          </Pressable>
 
-      <Pressable style={styles.card} onPress={() => handleSelect('MTN Mobile Money')}>
-        <Image source={mtn} style={styles.logo} />
-        <Text style={styles.bankName}>MTN Mobile Money</Text>
-      </Pressable>
+          <Pressable style={styles.card} onPress={() => handleSelect('MTN Mobile Money')}>
+            <View style={styles.cardLeft}>
+              <Image source={mtn} style={styles.logo} />
+              <Text style={styles.bankName}>MTN Mobile Money</Text>
+            </View>
+            <AntDesign name="right-circle" size={20} color="#7ddd7d" />
+          </Pressable>
+
+          <Pressable style={styles.card} onPress={() => handleSelect('Virement Bancaire')}>
+              <View style={styles.cardLeft}>
+                <Image source={bank} style={styles.logo} />
+                <Text style={styles.bankName}>Virement Bancaire</Text>
+              </View>
+              <AntDesign name="right-circle" size={20} color="#7ddd7d" />
+            </Pressable>
+
+        </View>
+      </ScrollView>
 
       {/* Footer */}
       <View style={styles.footer}>
@@ -116,10 +149,10 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
   divider: {
-    borderColor: 'gray',
+    borderColor: '#C0C0C0',
     borderWidth: 1,
     borderStyle: 'dashed',
-    marginBottom: 10,
+    marginBottom: 15,
   },
   title: {
     color: '#000',
@@ -128,19 +161,31 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     fontWeight: 'bold',
   },
+  methodsContainer: {
+    gap: 15,
+  },
   card: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: '#fff',
     borderWidth: 1,
-    borderColor: '#7ddd7d',
-    borderRadius: 12,
-    padding: 15,
-    marginBottom: 15,
+    borderColor: '#E6E6E6',
+    borderRadius: 16,
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  cardLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   logo: {
-    width: 40,
-    height: 40,
+    width: 45,
+    height: 45,
     resizeMode: 'contain',
     marginRight: 15,
   },

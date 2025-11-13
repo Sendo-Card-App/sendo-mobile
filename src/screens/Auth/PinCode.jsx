@@ -10,7 +10,7 @@ import { getData, removeData, storeData } from "../../services/storage";
 import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
 import { clearAuth } from '../../features/Auth/authSlice';
 import Loader from "../../components/Loader";
-import { Ionicons } from '@expo/vector-icons';
+import { AntDesign, Ionicons, MaterialIcons } from "@expo/vector-icons"; 
 import Communications from 'react-native-communications';
 import Toast from 'react-native-toast-message';
 import * as LocalAuthentication from 'expo-local-authentication';
@@ -18,11 +18,13 @@ import { useTranslation } from 'react-i18next';
 import { getStoredPushToken } from '../../services/notificationService';
 import { useGetTokenMutation, useCreateTokenMutation, useCheckPincodeMutation, useRefreshTokenMutation, } from '../../services/Auth/authAPI';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAppState } from '../../context/AppStateContext';
 
 const PinCode = ({ navigation, route }) => {
   const { t } = useTranslation();
   const [pin, setPin] = useState('');
   const [error, setError] = useState(null);
+    const { setIsPickingDocument } = useAppState();
   const [passcodeExists, setPasscodeExists] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [biometricAvailable, setBiometricAvailable] = useState(false);
@@ -385,19 +387,23 @@ const PinCode = ({ navigation, route }) => {
     return;
   }
 
-  // 🆕 Handle "Session invalide"
-  if (error?.data?.message?.includes('Session invalide')) {
-    await removeData('@passcode');
-    dispatch(clearPasscode());
-    await AsyncStorage.removeItem('pinVerified');
+  // Handle "Session invalide"
+if (
+  error?.data?.message?.includes('Session invalide') ||
+  error?.data?.message?.includes('Token invalide')
+) {
+  await removeData('@passcode');
+  dispatch(clearPasscode());
+  await AsyncStorage.removeItem('pinVerified');
 
-    // redirect to SignIn screen
-    navigation.reset({
-      index: 0,
-      routes: [{ name: 'SignIn' }],
-    });
-    return;
-  }
+  // Redirect to SignIn screen
+  navigation.reset({
+    index: 0,
+    routes: [{ name: 'SignIn' }],
+  });
+  return;
+}
+
 
   // Default error
   showToast(
@@ -410,6 +416,11 @@ const PinCode = ({ navigation, route }) => {
 } finally {
   setIsLoading(false);
 }
+  };
+
+   const handleCustomerServicePress = () => {
+    setIsPickingDocument(true);
+    navigation.navigate("ChatLive");
   };
 
   const renderDots = () => (
@@ -676,32 +687,27 @@ const PinCode = ({ navigation, route }) => {
       </View>
       
       {/* Floating WhatsApp Button */}
-      <TouchableOpacity 
-        onPress={() => {
-          const url = "https://wa.me/message/Y27BBZMTSC36C1";
-          Linking.openURL(url).catch(() => {
-            Alert.alert('Erreur', 'Impossible d\'ouvrir WhatsApp. Vérifiez qu\'il est installé.');
-          });
-        }}
-        style={{
-          position: 'absolute',
-          bottom: 30,
-          right: 30,
-          backgroundColor: '#25D366',
-          width: 60,
-          height: 60,
-          borderRadius: 30,
-          justifyContent: 'center',
-          alignItems: 'center',
-          elevation: 5,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.25,
-          shadowRadius: 3.84,
-        }}
-      >
-        <Ionicons name="logo-whatsapp" size={36} color="white" />
-      </TouchableOpacity>
+       <TouchableOpacity 
+          onPress={handleCustomerServicePress}
+          style={{
+            position: 'absolute',
+            bottom: 30,
+            right: 30,
+            backgroundColor: '#007AFF', // Bleu pour le chat
+            width: 60,
+            height: 60,
+            borderRadius: 30,
+            justifyContent: 'center',
+            alignItems: 'center',
+            elevation: 5,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.25,
+            shadowRadius: 3.84,
+          }}
+        >
+          <MaterialIcons name="chat" size={32} color="white" />
+        </TouchableOpacity>
 
       {/* Contact Support Modal */}
       <Modal 
@@ -732,14 +738,7 @@ const PinCode = ({ navigation, route }) => {
           </Text>
           
           <TouchableOpacity
-            onPress={() => {
-              setShowContactSupportModal(false);
-              const url = "https://wa.me/message/Y27BBZMTSC36C1";
-              
-              Linking.openURL(url).catch(() => {
-                Alert.alert('Erreur', 'Impossible d\'ouvrir WhatsApp. Vérifiez qu\'il est installé.');
-              });
-            }}
+            onPress={handleCustomerServicePress}
             style={{
               backgroundColor: '#7ddd7d',
               padding: 15,

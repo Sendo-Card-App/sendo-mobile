@@ -27,7 +27,6 @@ export const kycApi = createApi({
         url: KYC_ENDPOINTS.SUBMIT_KYC,
         method: 'POST',
         body: formData,
-        formData: true,
       }),
       invalidatesTags: ['KYC'],
     }),

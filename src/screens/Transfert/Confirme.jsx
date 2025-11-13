@@ -73,6 +73,7 @@ const ConfirmeTheTransfer = () => {
     toCurrency,
       cadRealTimeValue,
 } = route.params;
+
   const fullName = formData.fullname || '';
 const nameParts = fullName.trim().split(' ');
 const firstname = nameParts[0] || '';

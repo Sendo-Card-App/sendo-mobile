@@ -9,7 +9,6 @@ import { AntDesign, Ionicons } from '@expo/vector-icons';
 const COUNTRY_CODES = [
   { code: '+237', label: '🇨🇲 CM' },
   { code: '+1', label: '🇨🇦 CA' },
-  { code: '+33', label: '🇫🇷 FR' },
 ];
 
 const AddContact = ({ navigation, route }) => {
@@ -22,8 +21,10 @@ const AddContact = ({ navigation, route }) => {
     fromCurrency,
     toCurrency,
     countryName,
-    cadRealTimeValue
+    cadRealTimeValue,
+    provider
   } = route.params || {};
+ // console.log('Selected provider:', provider);
 
   const [selectedCode, setSelectedCode] = useState('+237');
   const [showModal, setShowModal] = useState(false);
@@ -45,7 +46,7 @@ const AddContact = ({ navigation, route }) => {
         onSave(newContact);
       }
 
-      navigation.navigate('PaymentMethod', {
+      navigation.navigate('Address', {
         contact: newContact,
         amount,
         convertedAmount,
@@ -54,7 +55,8 @@ const AddContact = ({ navigation, route }) => {
         fromCurrency,
         toCurrency,
         countryName,
-        cadRealTimeValue
+        cadRealTimeValue,
+        provider
       });
     }
   };

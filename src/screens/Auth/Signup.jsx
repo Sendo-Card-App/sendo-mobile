@@ -242,25 +242,31 @@ const Signup = () => {
     navigation.navigate("SignIn");
   };
 
-  useEffect(() => {
-    fetch("https://restcountries.com/v3.1/all?fields=name,idd,flags")
-      .then((res) => res.json())
-      .then((data) => {
-        const countryList = data
-          .map((country) => ({
-            name: country.name.common,
-            flag: country.flags?.png || country.flags?.svg || null,
-            callingCode: country.idd?.root
-              ? `${country.idd.root}${(country.idd.suffixes || [""])[0]}`
-              : null,
-          }))
-          .filter((c) => c.callingCode && c.flag);
-        setCountries(countryList.sort((a, b) => a.name.localeCompare(b.name)));
-      })
-      .catch((err) => {
-        console.error("Failed to fetch countries:", err);
-      });
-  }, []);
+useEffect(() => {
+  fetch("https://restcountries.com/v3.1/all?fields=name,idd,flags")
+    .then((res) => res.json())
+    .then((data) => {
+      const allowedCountries = ["Canada", "Cameroon"];
+
+      const countryList = data
+        .map((country) => ({
+          name: country.name.common,
+          flag: country.flags?.png || country.flags?.svg || null,
+          callingCode: country.idd?.root
+            ? `${country.idd.root}${(country.idd.suffixes || [""])[0]}`
+            : null,
+        }))
+        .filter(
+          (c) => c.callingCode && c.flag && allowedCountries.includes(c.name)
+        );
+
+      setCountries(countryList.sort((a, b) => a.name.localeCompare(b.name)));
+    })
+    .catch((err) => {
+      console.error("Failed to fetch countries:", err);
+    });
+}, []);
+
 
   useEffect(() => {
     if (isSignupSuccess) {

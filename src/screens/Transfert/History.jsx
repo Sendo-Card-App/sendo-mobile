@@ -178,7 +178,8 @@ const FilterModal = ({ visible, onClose, filters, setFilters, applyFilters }) =>
   const types = [
     { label: t('history1.deposit'), value: 'DEPOSIT' },
     { label: t('history1.withdraw'), value: 'WITHDRAW' },
-    { label: t('history1.transfer'), value: 'TRANSFER' }
+    { label: t('history1.transfer'), value: 'TRANSFER' },
+    { label: t('history1.card'), value: 'PAYMENT' }
   ];
 
   const statuses = [

@@ -48,8 +48,10 @@ const BeneficiarySelection = ({ route }) => {
     fromCurrency,
     toCurrency,
     countryName,
-    cadRealTimeValue
+    cadRealTimeValue,
+    provider
   } = route.params;
+   //console.log('Selected provider37:', provider);
 
   const { data: userProfile } = useGetUserProfileQuery();
   const userId = userProfile?.data.id;
@@ -89,7 +91,7 @@ const BeneficiarySelection = ({ route }) => {
       email: contact?.user?.email || '',
     };
 
-    navigation.navigate('PaymentMethod', {
+    navigation.navigate('Address', {
       contact: fullContact,
       amount,
       convertedAmount,
@@ -98,7 +100,8 @@ const BeneficiarySelection = ({ route }) => {
       fromCurrency,
       toCurrency,
       countryName,
-      cadRealTimeValue
+      cadRealTimeValue,
+      provider
     });
   };
 
@@ -110,7 +113,7 @@ const BeneficiarySelection = ({ route }) => {
       email: contact?.user?.email || '',
     };
 
-    navigation.navigate('PaymentMethod', {
+    navigation.navigate('Address', {
       contact: fullContact,
       amount,
       convertedAmount,
@@ -119,7 +122,8 @@ const BeneficiarySelection = ({ route }) => {
       fromCurrency,
       toCurrency,
       countryName,
-      cadRealTimeValue
+      cadRealTimeValue,
+      provider
     });
   };
 
@@ -248,7 +252,7 @@ const BeneficiarySelection = ({ route }) => {
             navigation.navigate('AddContact', {
               onSave: handleSelectBeneficiary,
               amount, convertedAmount, totalAmount, transferFee,
-              fromCurrency, toCurrency, countryName, cadRealTimeValue
+              fromCurrency, toCurrency, countryName, cadRealTimeValue,provider
             })
           }
         >

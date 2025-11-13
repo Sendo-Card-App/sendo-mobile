@@ -179,9 +179,9 @@ const OtpVerification = ({ route, onClose, onResend }) => {
     }
   };
 
-  const handleBack = () => {
-    navigation.goBack();
-  };
+  // const handleBack = () => {
+  //   navigation.goBack();
+  // };
 
   const renderOtpScreen = () => (
     <KeyboardAvoidinWrapper>
@@ -248,8 +248,8 @@ const OtpVerification = ({ route, onClose, onResend }) => {
     return (
       <Modal animationType="slide" transparent visible={true} onRequestClose={onClose}>
         <View className="flex-1 bg-[#181e25] bg-opacity-50 justify-center items-center">
-          <TouchableOpacity className="absolute z-10 top-5 left-5" onPress={handleBack}>
-            <AntDesign name="left" size={24} color="white" />
+          <TouchableOpacity className="absolute z-10 top-5 left-5" >
+           
           </TouchableOpacity>
           <View className="w-9/12 bg-white p-6 rounded-xl items-center">
             <Text className="mb-4 text-gray-600">Code sent to {phone}</Text>

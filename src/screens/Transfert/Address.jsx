@@ -44,6 +44,7 @@ const Address = () => {
     cadRealTimeValue,
     provider,
   } = route.params;
+  console.log('Selected providerA:', provider);
 
   const user = contact.ownerUser;
 

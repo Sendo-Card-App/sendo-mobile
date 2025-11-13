@@ -16,6 +16,7 @@ import {
 } from "react-native";
 import { Modal, Pressable } from 'react-native';
 import { Ionicons, AntDesign } from "@expo/vector-icons";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import Loader from "../../components/Loader";
 import { useNavigation, useFocusEffect, useNavigationState } from "@react-navigation/native";
 import { useGetBalanceQuery } from "../../services/WalletApi/walletApi";
@@ -60,7 +61,7 @@ const HomeScreen = () => {
     isLoading: isProfileLoading,
     refetch: refetchProfile,
   } = useGetUserProfileQuery();
-
+  
   const userId = userProfile?.data?.id;
   
   const { data: history, isLoadingHistory, isError, refetch } = useGetTransactionHistoryQuery(
@@ -198,7 +199,7 @@ const HomeScreen = () => {
       if (userProfile) {
         checkKYCStatus();
       }
-    }, 120000); // 2 minutes = 120000 milliseconds
+    }, 120000); // 2 minutes
 
     // Store interval reference for cleanup
     setKycCheckInterval(interval);
@@ -435,15 +436,25 @@ const HomeScreen = () => {
               {isBalanceLoading ? (
                 <Loader size="small" color="black" />
               ) : showBalance ? (
-                `${(balanceData?.data?.balance ?? 0).toLocaleString(undefined, {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })} ${balanceData?.data?.currency ?? ""}`
+                userProfile?.data?.country === "Canada" ? (
+                  // Currency BEFORE balance
+                  `${balanceData?.data?.currency ?? ""} ${(balanceData?.data?.balance ?? 0).toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}`
+                ) : (
+                  // Currency AFTER balance
+                  `${(balanceData?.data?.balance ?? 0).toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })} ${balanceData?.data?.currency ?? ""}`
+                )
               ) : (
                 "****"
               )}
             </Text>
           </View>
+
 
           {/* Boutons actions */}
           <View className="flex-row mt-1 gap-4">
@@ -496,9 +507,14 @@ const HomeScreen = () => {
                 ...(userProfile?.data?.country === "Cameroon"
                   ? [{ label: t("home.virtualCard"), icon: "card-outline", route: "OnboardingCard" }]
                   : []),
+
                 { label: t("home.friendsShare"), icon: "people-outline", route: "WelcomeShare" },
                 { label: t("home.fundRequest"), icon: "cash-outline", route: "WelcomeDemand" },
                 { label: t("home.etontine"), icon: "layers-outline" },
+
+               ...(userProfile?.data?.country === "Canada"
+                  ? [{ label: t("home.canadaKyc"), icon: "shield-checkmark-outline", route: "VerifyIdentity" }]
+                  : []),
               ].map((item, index) => (
                 <TouchableOpacity
                   key={index}
@@ -615,64 +631,94 @@ const HomeScreen = () => {
       ) : history?.data?.transactions?.items?.length === 0 ? (
         <Text className="text-black text-center mt-4">{t("home.noTransactions")}</Text>
       ) : (
-        <ScrollView showsVerticalScrollIndicator={false}>
-          {history?.data?.transactions?.items?.map((item, index) => {
-            const statusColor = getStatusColor(item.status);
-            const typeLabel = getTypeLabel(item.type, t);
-            let displayLabel = typeLabel;
-            let description = item.description;
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {history?.data?.transactions?.items?.map((item, index) => {
+          const statusColor = getStatusColor(item.status);
+          const typeLabel = getTypeLabel(item.type, t);
+          let description = item.description;
 
-            // Handle BANK_TRANSFER deposits with URL descriptions
-            if (item.type?.toUpperCase() === "DEPOSIT" && 
-                item.method?.toUpperCase() === "BANK_TRANSFER" &&
-                description && 
-                (description.startsWith('http://') || description.startsWith('https://'))) {
-              description = t("home.viewDocument");
-            }
+          // Handle BANK_TRANSFER deposits with URL descriptions
+          if (
+            item.type?.toUpperCase() === "DEPOSIT" &&
+            item.method?.toUpperCase() === "BANK_TRANSFER" &&
+            description &&
+            (description.startsWith("http://") || description.startsWith("https://"))
+          ) {
+            description = t("home.viewDocument");
+          }
 
-            // Handle TONTINE_PAYMENT descriptions to remove # and numbers
-            if (item.type?.toUpperCase() === "TONTINE_PAYMENT") {
-              if (description) {
-                description = description.replace(/#\d+/, "").trim();
-              }
-            }
+          // Handle TONTINE_PAYMENT descriptions to remove # and numbers
+          if (item.type?.toUpperCase() === "TONTINE_PAYMENT" && description) {
+            description = description.replace(/#\d+/, "").trim();
+          }
 
-            const iconSource = getMethodIcon(item);
+          const iconSource = getMethodIcon(item);
 
-            // CORRECTION: Déterminer quel montant afficher
-            const displayAmount = 
-              item.type === 'PAYMENT' || item.type === 'TONTINE_PAYMENT' || item.type === 'VIEW_CARD_DETAILS'
-                ? item.totalAmount 
-                : item.amount;
+          //  Determine which amount to display
+          let displayAmount;
+          if (
+            item.type === "PAYMENT" ||
+            item.type === "TONTINE_PAYMENT" ||
+            item.type === "VIEW_CARD_DETAILS"
+          ) {
+            displayAmount = item.totalAmount;
+          } else if (
+            description?.trim() === "Retrait par SENDO" ||
+            description?.trim() === "Dépôt par SENDO"
+          ) {
+            displayAmount = item.totalAmount;
+          } else {
+            displayAmount = item.amount;
+          }
 
-            const readableDescription = getTypeLabel(item.type, t);
-            
-            return (
-              <TouchableOpacity
-                key={index}
-                className="flex-row items-center mb-4 border-b border-gray-700 pb-2"
-                onPress={() => navigation.navigate('Receipt', {
+          // Format createdAt date
+          const formattedDate = new Date(item.createdAt).toLocaleString("fr-FR", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+
+          return (
+            <TouchableOpacity
+              key={index}
+              className="flex-row items-center mb-4 border-b border-gray-300 pb-2"
+              onPress={() =>
+                navigation.navigate("Receipt", {
                   transaction: item,
                   user: userProfile?.data,
-                })}
-              >
-                <Image source={iconSource} className="w-10 h-10 mr-3 rounded-full" resizeMode="contain" />
-                <View className="flex-1">
-                  <Text className="text-black font-semibold">
-                    {description}
-                  </Text>
-                  <Text className="text-black text-sm">
-                    {/* AFFICHAGE CORRIGÉ: Utiliser displayAmount */}
-                    {displayAmount?.toLocaleString()} {item.currency}
-                  </Text>
-                </View>
+                })
+              }
+            >
+              {/* Left icon */}
+              <Image
+                source={iconSource}
+                className="w-10 h-10 mr-3 rounded-full"
+                resizeMode="contain"
+              />
+
+              {/* Center content */}
+              <View className="flex-1">
+                <Text className="text-black font-semibold">{description}</Text>
+                <Text className="text-black text-sm">
+                  {displayAmount?.toLocaleString()} {item.currency}
+                </Text>
+              </View>
+
+              {/* Right side: status + date */}
+              <View className="items-end">
                 <Text className={`text-xs font-semibold ${statusColor}`}>
                   {t(`transactionStatus.${item.status?.toUpperCase()}`)}
                 </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
+                <Text className="text-gray-500 text-[10px] mt-1">{formattedDate}</Text>
+              </View>
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
+
+
       )}
 
       <Modal
@@ -706,17 +752,22 @@ const HomeScreen = () => {
                 </Text>
               </Pressable>
               
-              <Pressable
-                className="flex-1 bg-green-500 py-4 rounded-2xl shadow-sm"
-                onPress={() => {
-                  setShowKycModal(false);
+             <Pressable
+              className="flex-1 bg-green-500 py-4 rounded-2xl shadow-sm"
+              onPress={() => {
+                setShowKycModal(false);
+                if (userProfile?.data?.country === "Canada") {
+                  navigation.navigate("CanadaKycSubmission");
+                } else {
                   navigation.navigate("VerifyIdentity");
-                }}
-              >
-                <Text className="text-white font-semibold text-center">
-                  {t('kycModal.verifyButton') || "Verify Now"}
-                </Text>
-              </Pressable>
+                }
+              }}
+            >
+              <Text className="text-white font-semibold text-center">
+                {t('kycModal.verifyButton') || "Verify Now"}
+              </Text>
+            </Pressable>
+
             </View>
           </View>
         </View>
