@@ -671,61 +671,64 @@ const handleCardDetailsRequest = async (isReadOnly) => {
           )}
 
           {/* 🔸 Action Buttons */}
-            <View className="flex flex-row justify-between mt-1">
-              {/* 👁 View Info */}
-              <TouchableOpacity
-                className="flex flex-1 bg-gray-100 mx-1 py-1 px-4 rounded-xl flex-col items-center justify-center"
-                onPress={handleShowCardDetails}
-                disabled={isProcessing || isLoadingIframe || isHideLoading}
-              >
-                {isProcessing || isLoadingIframe ? (
-                  <ActivityIndicator size="small" color="#7ddd7d" />
-                ) : (
-                  <Ionicons name="eye-outline" size={24} color="#333" />
-                )}
-                <Text className="mt-2 text-center text-sm">
-                  {t("manageVirtualCard.viewInfo")}
-                </Text>
-              </TouchableOpacity>
+          {cardStatus !== "TERMINATED" && cardStatus !== "BLOCKED" ? (
+  <View className="flex flex-row justify-between mt-1">
+    {/* 👁 View Info */}
+    <TouchableOpacity
+      className="flex flex-1 bg-gray-100 mx-1 py-1 px-4 rounded-xl flex-col items-center justify-center"
+      onPress={handleShowCardDetails}
+      disabled={isProcessing || isLoadingIframe || isHideLoading}
+    >
+      {isProcessing || isLoadingIframe ? (
+        <ActivityIndicator size="small" color="#7ddd7d" />
+      ) : (
+        <Ionicons name="eye-outline" size={24} color="#333" />
+      )}
+      <Text className="mt-2 text-center text-sm">
+        {t("manageVirtualCard.viewInfo")}
+      </Text>
+    </TouchableOpacity>
 
-              {/* ❄️ Freeze / Unfreeze */}
-              <TouchableOpacity
-                className="flex flex-1 bg-gray-100 mx-1 py-1 px-4 rounded-xl flex-col items-center justify-center"
-                onPress={debouncedHandleFreezeUnfreeze}
-                disabled={isProcessingFreeze || isLoadingFreeze}
-              >
-                {isProcessingFreeze || isLoadingFreeze ? (
-                  <ActivityIndicator size="small" color="#7ddd7d" />
-                ) : (
-                  <Ionicons name="snow-outline" size={24} color="#333" />
-                )}
-                <Text className="mt-2 text-center text-sm">
-                  {isCardFrozen
-                    ? t("manageVirtualCard.unfreeze")
-                    : t("manageVirtualCard.freeze")}
-                </Text>
-              </TouchableOpacity>
+    {/* ❄️ Freeze / Unfreeze */}
+    <TouchableOpacity
+      className="flex flex-1 bg-gray-100 mx-1 py-1 px-4 rounded-xl flex-col items-center justify-center"
+      onPress={debouncedHandleFreezeUnfreeze}
+      disabled={isProcessingFreeze || isLoadingFreeze}
+    >
+      {isProcessingFreeze || isLoadingFreeze ? (
+        <ActivityIndicator size="small" color="#7ddd7d" />
+      ) : (
+        <Ionicons name="snow-outline" size={24} color="#333" />
+      )}
+      <Text className="mt-2 text-center text-sm">
+        {isCardFrozen
+          ? t("manageVirtualCard.unfreeze")
+          : t("manageVirtualCard.freeze")}
+      </Text>
+    </TouchableOpacity>
 
-              {/* ⚙️ Settings */}
-              <TouchableOpacity
-                className="flex flex-1 bg-gray-100 mx-1 py-1 px-3 rounded-xl flex-col items-center justify-center"
-                onPress={() => {
-                  if (!isProcessingSetting) {
-                    navigation.navigate("CardSettings", {
-                      cardName: cardData?.cardName,
-                      cardId: cardData?.cardId,
-                      balanceData: balanceData?.data?.balance,
-                    });
-                  }
-                }}
-                disabled={isProcessingSetting}
-              >
-                <Ionicons name="settings-outline" size={24} color="#333" />
-                <Text className="mt-2 text-center text-sm">
-                  {t("manageVirtualCard.settings")}
-                </Text>
-              </TouchableOpacity>
-            </View>
+    {/* ⚙️ Settings */}
+    <TouchableOpacity
+      className="flex flex-1 bg-gray-100 mx-1 py-1 px-3 rounded-xl flex-col items-center justify-center"
+      onPress={() => {
+        if (!isProcessingSetting) {
+          navigation.navigate("CardSettings", {
+            cardName: cardData?.cardName,
+            cardId: cardData?.cardId,
+            balanceData: balanceData?.data?.balance,
+          });
+        }
+      }}
+      disabled={isProcessingSetting}
+    >
+      <Ionicons name="settings-outline" size={24} color="#333" />
+      <Text className="mt-2 text-center text-sm">
+        {t("manageVirtualCard.settings")}
+      </Text>
+    </TouchableOpacity>
+  </View>
+) : null}
+
 
             {/* 🚫 Terminated Message */}
             {!cardData ? (
