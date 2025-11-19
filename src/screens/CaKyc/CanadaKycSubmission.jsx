@@ -1,4 +1,4 @@
-import { View, Text, Image, TouchableOpacity, ScrollView, TextInput, Alert, ActionSheetIOS } from "react-native";
+import { View, Text, Image, TouchableOpacity, ScrollView, TextInput, Alert, ActionSheetIOS,Platform } from "react-native";
 import React, { useState, useEffect } from "react";
 import TopLogo from "../../images/TopLogo.png";
 import { AntDesign, Ionicons, MaterialIcons, FontAwesome5 } from "@expo/vector-icons";
