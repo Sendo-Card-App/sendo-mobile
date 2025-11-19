@@ -53,41 +53,63 @@ const SelectMethod = ({ navigation }) => {
     });
   //console.log(userProfile)
 
-const methods = [
-  {
-    id: 'transfer',
-    title: t('select_method.sendo_transfer'),
-    subtitle: t('select_method.transfer'),
-    icon: <Image source={TopLogo} style={styles.methodIcon} />,
-    action: () => navigation.navigate('WalletTransfer'),
-    color: '#7ddd7d',
-  },
-  {
-    id: 'mobile',
-    title: t('select_method.transfer_to_mobile'),
-    icon: <AntDesign name="mobile" size={40} color="#0D1C6A" />,
-    action: () => setShowServiceModal(true),
-    color: '#0D1C6A',
-  },
-].filter((method) => {
-  // ✅ Only show both methods if user is from Cameroon
-  if (userProfile?.data?.country === 'Cameroon') return true;
+let methods = [];
 
-  // ❌ Otherwise, show only the "transfer" method
-  return method.id === 'ca_cm';
-});
+// 🇨🇲 Cameroon users → Show Sendo Transfer + Mobile Transfer (❌ No CA-CM)
+if (userProfile?.data?.country === "Cameroon") {
+  methods = [
+    {
+      id: 'transfer',
+      title: t('select_method.sendo_transfer'),
+      subtitle: t('select_method.transfer'),
+      icon: <Image source={TopLogo} style={styles.methodIcon} />,
+      action: () => navigation.navigate('WalletTransfer'),
+      color: '#7ddd7d',
+    },
+    {
+      id: 'mobile',
+      title: t('select_method.transfer_to_mobile'),
+      icon: <AntDesign name="mobile" size={40} color="#0D1C6A" />,
+      action: () => setShowServiceModal(true),
+      color: '#0D1C6A',
+    },
+  ];
+}
 
+// 🇨🇦 Canada users → Show ONLY Transfer + CA-CM
+else if (userProfile?.data?.country === "Canada") {
+  methods = [
+    {
+      id: 'transfer',
+      title: t('select_method.sendo_transfer'),
+      subtitle: t('select_method.transfer'),
+      icon: <Image source={TopLogo} style={styles.methodIcon} />,
+      action: () => navigation.navigate('WalletTransfer'),
+      color: '#7ddd7d',
+    },
+    {
+      id: 'ca_cm',
+      title: 'Transfert CA-CM',
+      subtitle: "D'argent",
+      icon: <Image source={HomeImage2} style={styles.methodIconLarge} />,
+      action: () => navigation.navigate("BeneficiaryScreen"),
+      color: '#7ddd7d',
+    },
+  ];
+}
 
-// 👉 Only push CA-CM method if country is Canada
-if (userProfile?.data?.country === "Canada") {
-  methods.push({
-    id: 'ca_cm',
-    title: 'Transfert CA-CM',
-    subtitle: "D'argent",
-    icon: <Image source={HomeImage2} style={styles.methodIconLarge} />,
-    action: () => navigation.navigate("BeneficiaryScreen"),
-    color: '#7ddd7d'
-  });
+// 🌍 Other countries → Show only Sendo Transfer (fallback)
+else {
+  methods = [
+    {
+      id: 'transfer',
+      title: t('select_method.sendo_transfer'),
+      subtitle: t('select_method.transfer'),
+      icon: <Image source={TopLogo} style={styles.methodIcon} />,
+      action: () => navigation.navigate('WalletTransfer'),
+      color: '#7ddd7d',
+    }
+  ];
 }
 
 

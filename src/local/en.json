@@ -455,33 +455,85 @@
    "document": {
     "chooseDocument": "Choose Document"
   },
- "niu": {
-    "title": "Unique Identification Number",
-    "taxNumber": "Taxpayer Number",
-    "enterTaxIdInstruction": "Please enter your Tax Identification Number (NIU)",
-    "taxIdLabel": "Tax Identification Number",
-    "taxIdPlaceholder": "Enter your NIU number",
-    "taxIdFormatError": "NIU must contain exactly 14 alphanumeric characters",
-    "taxIdValid": "Valid NIU format",
-    "taxIdDescription": "The unique identification number is a combination of letters and numbers assigned to taxpayers. This number is essential to identify the user as a taxpayer.",
-    "taxIdInvalid": "Invalid NIU",
-    "taxIdValidationMessage": "Your NIU must contain exactly 14 alphanumeric characters.",
-    "incompleteForm": "Incomplete Form",
-    "continueButton": "Continue",
-    "processing": "Processing...",
-    "backToKyc": "Back to KYC Summary",
-    "securityNotice": "Do not share your personal information",
-    "error": "Error",
-    "generalError": "An unexpected error occurred. Please try again later.",
-    "taxIdRequired": "Tax number is required"
-  },
+
+"niu": {
+    "errors": {
+      "title": "Error",
+      "balanceFetchFailed": "Failed to fetch balance",
+      "termsNotAccepted": "Please accept the terms and conditions",
+      "insufficientBalance": "Insufficient balance",
+      "technical": "Technical error, please try again"
+    },
+    "cni": {
+      "permissionDenied": "Permission denied",
+      "permissionMessage": "Gallery access is required to upload images",
+      "cameraPermissionDenied": "Camera access denied",
+      "cameraPermissionMessage": "Camera access is required to take photos",
+      "uploadError": "Error selecting image",
+      "cameraError": "Error taking photo",
+      "uploadFailed": "Upload failed",
+      "uploadTitle": "CNI Upload",
+      "uploadDescription": "Please upload photos of your national identity card",
+      "frontSide": "Front Side CNI",
+      "backSide": "Back Side CNI",
+      "uploadOption": "Upload Option",
+      "chooseMethod": "Choose a method",
+      "takePhoto": "Take photo",
+      "chooseFromGallery": "Choose from gallery",
+      "uploadFront": "Upload front side",
+      "uploadBack": "Upload back side",
+      "requirementsTitle": "Upload Requirements",
+      "requirement1": "Clear and readable image",
+      "requirement2": "All details must be visible",
+      "uploading": "Uploading..."
+    },
+    "success": {
+      "title": "Success",
+      "message": "NIU request submitted successfully"
+    },
+    "alreadyHave": {
+      "title": "NIU Already Obtained",
+      "message": "You already have an NIU number or your request has been approved.",
+      "backButton": "Back to home"
+    },
+    "steps": {
+      "fees": "Fee payment",
+      "kyc": "KYC verification",
+      "cniUpload": "CNI upload",
+      "niuNumber": "NIU assignment",
+      "attestation": "Certificate generation"
+    },
+    "request": {
+      "processTitle": "NIU Request Process",
+      "feesTitle": "Processing Fees",
+      "feesAmount": "Fee amount",
+      "termsAccept": "I accept the terms and conditions",
+      "paymentAccept": "I accept the debit of",
+      "payButton": "Pay and submit",
+      "statusApproved": "✅ Request approved",
+      "statusPending": "⏳ Request being processed",
+      "statusRejected": "❌ Request rejected",
+      "raison": "Reason"
+    },
+    "security": {
+      "message": "Secure and encrypted transaction"
+    },
+    "paymentModal": {
+      "title": "Payment Confirmation",
+      "message": "Are you sure you want to proceed with the NIU fee payment?",
+      "confirm": "Confirm payment",
+      "cancel": "Cancel"
+    }
+  }
+,
 "personalDetail": {
   "title": "Personal Information",
   "header": "Please enter your personal details",
   "subheader": "This helps us verify your identity securely.",
   "country": "Country",
   "region": "Region",
-  "expirationDate": "Expiration Date",
+ "expirationDate": "Expiration date of the identity document",
+  "cni": "ID document number",
   "city": "City",
   "district": "District",
   "profession": "Profession",
@@ -1051,7 +1103,7 @@
      "showDetails": "View more details",
     "hideDetails": "Hide details",
     "extraInfo1": "Please send the funds to this email:sendoperations@sf-e.ca",
-    "extraInfo2": "Our number is set up for automatic deposit. However, if a security question and answer are required, please use:",
+    "extraInfo2": "Our email address is set up for automatic deposit. However, if a security question and answer are required, please use:",
     "extraInfo3": "Name: student financial services\nQuestion: student financial services\nAnswer: sfe2025",
     "extraInfo4": "Note: The name of the bank account sending the Interac transfer must match the name of your account on SENDO. Otherwise, the transaction cannot be processed.",
     "extraInfo5": "Once your payment is confirmed, we will deposit the funds into your recipient's account.",

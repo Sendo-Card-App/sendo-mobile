@@ -482,6 +482,7 @@ const HomeScreen = () => {
       </View>
 
       {/* Services Section */}
+      {userProfile?.data?.country !== "Canada" && (
           <Animated.View 
             style={{ transform: [{ translateY: slideAnim }], opacity: fadeAnim }}
             className="mb-1"
@@ -537,6 +538,7 @@ const HomeScreen = () => {
               ))}
             </View>
           </Animated.View>
+      )}
 
 
        {/* Ads Carousel */}
@@ -757,7 +759,7 @@ const HomeScreen = () => {
               onPress={() => {
                 setShowKycModal(false);
                 if (userProfile?.data?.country === "Canada") {
-                  navigation.navigate("CanadaKycSubmission");
+                  navigation.navigate("VerifyIdentity");
                 } else {
                   navigation.navigate("VerifyIdentity");
                 }

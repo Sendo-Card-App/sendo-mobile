@@ -484,6 +484,7 @@ Utilise mon code lors de ton inscription !`;
               <Text className="text-sm text-gray-500">{t('drawer.favorite_desc')}</Text>
             </View>
           </TouchableOpacity>
+          {userProfile?.data?.country !== "Canada" && (
 
           <TouchableOpacity
             className="flex-row gap-2 my-2 mb-5 items-center"
@@ -495,7 +496,8 @@ Utilise mon code lors de ton inscription !`;
               <Text className="text-sm text-gray-500">{t("drawer.share_desc")}</Text>
             </View>
           </TouchableOpacity>
-
+          )}
+          {userProfile?.data?.country !== "Canada" && (
           <TouchableOpacity
             className="flex-row gap-2 my-2 mb-5 items-center"
             onPress={() => navigation2.navigate("WelcomeDemand")}
@@ -506,6 +508,7 @@ Utilise mon code lors de ton inscription !`;
               <Text className="text-sm text-gray-500">{t("drawer.demand_desc")}</Text>
             </View>
           </TouchableOpacity>
+          )}
 
           {/* <TouchableOpacity
             className="flex-row gap-2 my-2 mb-5"

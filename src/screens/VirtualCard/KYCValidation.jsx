@@ -18,6 +18,7 @@ import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
 import { useUpdateKycDocumentMutation } from "../../services/Kyc/kycApi"; 
 import { useAppState } from '../../context/AppStateContext';
+import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
 
 // Define camera types locally as fallback
 const CameraType = {
@@ -28,7 +29,6 @@ const CameraType = {
 const documentTypeMap = {
   ID_PROOF: "kyc.id_proof",
   ADDRESS_PROOF: "kyc.address_proof",
-  NIU_PROOF: "kyc.niu_proof",
   SELFIE: "kyc.selfie",
 };
 
@@ -48,6 +48,13 @@ const KYCValidation = () => {
   
   const [updateKycDocument] = useUpdateKycDocumentMutation();
   const { setIsPickingDocument } = useAppState();
+  
+  const { data: userProfile, isLoading: isProfileLoading } = useGetUserProfileQuery(undefined, { 
+    pollingInterval: 1000 // Refetch every 1 second
+  });
+
+  // Check if user is from Canada
+  const isCanadianUser = userProfile?.data?.country === "Canada";
 
   // Handle Android back button
   useEffect(() => {
@@ -113,7 +120,22 @@ const KYCValidation = () => {
 
   const hasRejectedDoc = documents?.some((doc) => doc?.status === "REJECTED") || false;
 
-  const kycItems = Object.keys(documentTypeMap).map((type) => {
+  // Filter document types based on user's country
+  const getFilteredDocumentTypes = () => {
+    const allTypes = Object.keys(documentTypeMap);
+    
+    if (isCanadianUser) {
+      // For Canadian users, exclude ADDRESS_PROOF and NIU_PROOF
+      return allTypes.filter(type => 
+        type !== "ADDRESS_PROOF"
+      );
+    }
+    
+    // For non-Canadian users, show all document types
+    return allTypes;
+  };
+
+  const kycItems = getFilteredDocumentTypes().map((type) => {
     const docList = groupedDocs()[type] || [];
     const firstDoc = docList[0];
 

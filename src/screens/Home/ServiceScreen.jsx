@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { Ionicons, AntDesign, MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
 import { useTranslation } from "react-i18next";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -19,6 +20,17 @@ const ServiceScreen = () => {
   const { t } = useTranslation();
   const [hasAcceptedTerms, setHasAcceptedTerms] = useState(null);
   const [screenWidth, setScreenWidth] = useState(Dimensions.get("window").width);
+    const {
+      data: userProfile,
+      isLoading: isProfileLoading,
+      refetch: refetchProfile,
+    } = useGetUserProfileQuery();
+
+
+    // Filter services based on country
+  const country = userProfile?.data?.country;
+
+
 
   // Animation values
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -26,52 +38,25 @@ const ServiceScreen = () => {
   const scaleAnim = useRef(new Animated.Value(0.9)).current;
   const itemAnimations = useRef([]).current;
 
-  const services = [
-    { 
-      label: t("home.friendsShare"), 
-      icon: "people-outline", 
-      route: "WelcomeShare",
-      color: "#7ddd7d",
-      bgColor: "#f0f9f0"
-    },
-    { 
-      label: t("home.fundRequest"), 
-      icon: "cash-outline", 
-      route: "WelcomeDemand",
-      color: "#ff6b6b",
-      bgColor: "#fff0f0"
-    },
-    { 
-      label: t("home.etontine"), 
-      icon: "layers-outline", 
-      route: "TontineList",
-      color: "#4dabf7",
-      bgColor: "#f0f7ff"
-    },
-    { 
-      label: t("home.payBills"), 
-      icon: "calculator-outline", 
-      route: "PaymentSimulator",
-      color: "#ff922b",
-      bgColor: "#fff9f0"
-    },
-    { 
-      label: t("drawer.request1"), 
-      icon: "chatbubbles-outline", 
-      route: "NiuRequest",
-      color: "#cc5de8",
-      bgColor: "#f8f0fc"
-    },
- { 
-    label: t("serviceScreen.support") || "Support", 
-    icon: "headset-outline", 
-    route: "ChatScreen",
-    color: "#8B5CF6",
-    bgColor: "#F5F3FF",
-    description: t("serviceScreen.supportDesc") || "Get help and assistance"
-  },
-    
-  ];
+// 1️⃣ Define services first (keep at top, before any filter)
+const services = [
+  { label: t("home.friendsShare"), icon: "people-outline", route: "WelcomeShare", color: "#7ddd7d", bgColor: "#f0f9f0" },
+  { label: t("home.fundRequest"), icon: "cash-outline", route: "WelcomeDemand", color: "#ff6b6b", bgColor: "#fff0f0" },
+  { label: t("home.etontine"), icon: "layers-outline", route: "TontineList", color: "#4dabf7", bgColor: "#f0f7ff" },
+  { label: t("home.payBills"), icon: "calculator-outline", route: "PaymentSimulator", color: "#ff922b", bgColor: "#fff9f0" },
+  { label: t("drawer.request1"), icon: "chatbubbles-outline", route: "NiuRequest", color: "#cc5de8", bgColor: "#f8f0fc" },
+  { label: t("serviceScreen.support") || "Support", icon: "headset-outline", route: "ChatScreen", color: "#8B5CF6", bgColor: "#F5F3FF" },
+];
+
+// 2️⃣ Now safely filter based on country
+let filteredServices = services;
+
+if (country === "Canada") {
+  filteredServices = services.filter(item =>
+    item.route === "NiuRequest" || item.route === "ChatScreen"
+  );
+}
+
 
   // Initialize animations after services is defined
   if (itemAnimations.length === 0) {
@@ -302,7 +287,7 @@ const ServiceScreen = () => {
       >
         <FlatList
           key={`grid-${numColumns}`}
-          data={services}
+         data={filteredServices}
           renderItem={renderItem}
           keyExtractor={(item, index) => index.toString()}
           numColumns={numColumns}

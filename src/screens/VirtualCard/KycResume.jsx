@@ -229,7 +229,7 @@ const KycResume = ({ navigation }) => {
       console.log('Documents to submit:', documents.length);
       console.log('Files to upload:', files.length);
 
-      if (documents.length !== 5 || files.length !== 5) {
+      if (documents.length !== 4 || files.length !== 4) {
         throw new Error(`5 documents and 5 files required. Currently: ${documents.length} doc(s), ${files.length} file(s)`);
       }
 

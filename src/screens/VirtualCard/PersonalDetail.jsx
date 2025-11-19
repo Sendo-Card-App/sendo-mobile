@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { useDispatch, useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import KycTab from "../../components/KycTab";
 import { updatePersonalDetails } from '../../features/Kyc/kycReducer';
 import TopLogo from "../../images/TopLogo.png";
@@ -32,14 +33,38 @@ const PersonalDetail = ({ navigation }) => {
     profession: personalDetails.profession || '',
   });
 
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+
   const handleInputChange = (name, value) => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = () => {
-    const { region, city, cni, expirationDate ,  district, profession } = formData;
+  const handleDateChange = (event, date) => {
+    setShowDatePicker(false);
+    
+    if (date && event.type === 'set') {
+      const formattedDate = formatDate(date);
+      setSelectedDate(date);
+      setFormData(prev => ({ ...prev, expirationDate: formattedDate }));
+    }
+  };
 
-    if (!region || !city ||  !cni || !district || !expirationDate  || !profession) {
+  const showDatepicker = () => {
+    setShowDatePicker(true);
+  };
+
+  const formatDate = (date) => {
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
+  const handleSubmit = () => {
+    const { region, city, cni, expirationDate, district, profession } = formData;
+
+    if (!region || !city || !cni || !district || !expirationDate || !profession) {
       Alert.alert(t('personalDetail.errorTitle'), t('personalDetail.fillAllFields'));
       return;
     }
@@ -88,7 +113,6 @@ const PersonalDetail = ({ navigation }) => {
             { key: 'region', placeholder: 'enterRegion' },     
             { key: 'city', placeholder: 'enterCity' },
             { key: 'cni', placeholder: 'enterCni' },
-             { key: 'expirationDate', placeholder: 'enterExpirationDate' },
             { key: 'district', placeholder: 'enterDistrict' },
             { key: 'profession', placeholder: 'enterProfession' },
           ].map(({ key, placeholder }) => (
@@ -104,6 +128,31 @@ const PersonalDetail = ({ navigation }) => {
               />
             </View>
           ))}
+
+          {/* Expiration Date with DateTimePicker */}
+          <View>
+            <Text className="font-bold text-gray-600 mt-4 mb-1 text-xs">
+              {t('personalDetail.expirationDate')}
+            </Text>
+            <TouchableOpacity
+              className="border border-gray-300 rounded-lg px-4 py-3 text-gray-800 mb-2"
+              onPress={showDatepicker}
+            >
+              <Text className={formData.expirationDate ? "text-gray-800" : "text-gray-400"}>
+                {formData.expirationDate || t('personalDetail.enterExpirationDate')}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {showDatePicker && (
+            <DateTimePicker
+              value={selectedDate}
+              mode="date"
+              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              onChange={handleDateChange}
+              minimumDate={new Date()} // Prevent selecting past dates
+            />
+          )}
 
           <View className="border border-dashed border-gray-300 my-2" />
           <Text className="text-gray-600 mb-4 text-center">
