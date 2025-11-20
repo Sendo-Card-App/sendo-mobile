@@ -302,6 +302,7 @@
 "title": "Wallet Transfer",
 "available_balance": "Available Balance",
  "recipient_id": "Recipient ID",
+ 
 "recipient_name": "Name of beneficiary",
 "recipient_info": "Recipient Information",
  "fee_information": "Fee Information",
