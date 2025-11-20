@@ -1,5 +1,5 @@
-import { View, Text, Image, TouchableOpacity, ScrollView, TextInput, Alert, ActionSheetIOS } from "react-native";
-import React, { useState } from "react";
+import { View, Text, Image, TouchableOpacity, ScrollView, TextInput, Alert, ActionSheetIOS,Platform } from "react-native";
+import React, { useState, useEffect } from "react";
 import TopLogo from "../../images/TopLogo.png";
 import { AntDesign, Ionicons, MaterialIcons, FontAwesome5 } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
@@ -13,12 +13,14 @@ import {
   setPassportDocument,
   setPersonalInfo,
   IDENTITY_TYPES,
-  CANADA_IDENTITY_TYPES
+  CANADA_IDENTITY_TYPES,
+  resetFailedSubmission
 } from '../../features/Kyc/kycReducer';
 import { useTranslation } from 'react-i18next';
 import { useUpdateProfileMutation, useSendSelfieMutation, useSubmitKYCMutation } from '../../services/Kyc/kycApi';
 import { useAppState } from '../../context/AppStateContext';
 import * as ImageManipulator from 'expo-image-manipulator';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 const CanadaKycSubmission = ({ navigation }) => {
   const { t } = useTranslation();
@@ -27,9 +29,9 @@ const CanadaKycSubmission = ({ navigation }) => {
   const { openImagePicker } = useAppState();
   
   // RTK Query mutations
-  const [updateProfile, { isLoading: isUpdatingProfile }] = useUpdateProfileMutation();
-  const [sendSelfie, { isLoading: isSendingSelfie }] = useSendSelfieMutation();
-  const [submitKYC, { isLoading: isSubmittingKYC }] = useSubmitKYCMutation();
+  const [updateProfile, { isLoading: isUpdatingProfile, error: updateProfileError }] = useUpdateProfileMutation();
+  const [sendSelfie, { isLoading: isSendingSelfie, error: sendSelfieError }] = useSendSelfieMutation();
+  const [submitKYC, { isLoading: isSubmittingKYC, error: submitKYCError }] = useSubmitKYCMutation();
 
   const [personalInfo, setPersonalInfoState] = useState({
     profession: '',
@@ -39,6 +41,8 @@ const CanadaKycSubmission = ({ navigation }) => {
   });
 
   const [selectedIdentityType, setSelectedIdentityType] = useState('');
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date());
 
   const identityTypes = [
     { 
@@ -90,6 +94,53 @@ const CanadaKycSubmission = ({ navigation }) => {
       documentType: 'ID_PROOF'
     },
   ];
+
+  // Get any error from the mutations
+  const error = updateProfileError || sendSelfieError || submitKYCError;
+
+  useEffect(() => {
+    if (error) {
+      Alert.alert(
+        t('canadaKyc.error'),
+        error?.data?.message || error?.message || t('canadaKyc.generalError')
+      );
+      // Reset errors after showing
+      dispatch(resetFailedSubmission());
+    }
+  }, [error]);
+
+  // Date Picker Functions
+  const handleDateChange = (event, date) => {
+    setShowDatePicker(false);
+    
+    if (event.type === 'set' && date) {
+      setSelectedDate(date);
+      // Format date as YYYY-MM-DD
+      const formattedDate = date.toISOString().split('T')[0];
+      setPersonalInfoState(prev => ({ ...prev, expirationDate: formattedDate }));
+    }
+  };
+
+  const showDatePickerModal = () => {
+    setShowDatePicker(true);
+  };
+
+  const formatDateDisplay = (dateString) => {
+    if (!dateString) return '';
+    
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-CA'); // YYYY-MM-DD format
+  };
+
+  const getMinDate = () => {
+    return new Date(); // Today's date
+  };
+
+  const getMaxDate = () => {
+    const maxDate = new Date();
+    maxDate.setFullYear(maxDate.getFullYear() + 10); // 10 years from now
+    return maxDate;
+  };
 
   // Image compression function
   const compressImage = async (uri) => {
@@ -248,6 +299,8 @@ const handleFinalSubmission = async () => {
     errorMessage = t('canadaKyc.identityFrontRequired');
   } else if (requiresPassport && !kycData.passportDocument) {
     errorMessage = t('canadaKyc.passportRequired');
+  } else if (!requiresPassport && (selectedIdentityType === 'permis_conduire' || selectedIdentityType === 'carte_resident_permanent') && !kycData.identityDocument?.back) {
+    errorMessage = t('canadaKyc.identityBackRequired');
   }
 
   if (errorMessage) {
@@ -276,8 +329,8 @@ const handleFinalSubmission = async () => {
     const expirationDate = personalInfo.expirationDate;
     const selectedIdentityDoc = identityTypes.find(type => type.id === selectedIdentityType);
 
-    // FIXED: Use the outer function's parameters correctly
-    const addDocumentAndFileInner = async (doc, uri, index) => {
+    // Helper function to add document and file
+    const addDocumentAndFile = async (doc, uri, index) => {
       documents.push(doc);
       const compressedUri = await compressImage(uri);
       const name = `file_${index}.jpg`;
@@ -293,7 +346,7 @@ const handleFinalSubmission = async () => {
     if (selectedIdentityDoc?.requiresPassport) {
       // Main document (front) - ID_PROOF
       if (kycData.identityDocument?.front) {
-        await addDocumentAndFileInner(
+        await addDocumentAndFile(
           {
             type: 'ID_PROOF',
             idDocumentNumber: idDocumentNumber,
@@ -306,7 +359,7 @@ const handleFinalSubmission = async () => {
 
       // Passport document - Also as ID_PROOF
       if (kycData.passportDocument) {
-        await addDocumentAndFileInner(
+        await addDocumentAndFile(
           {
             type: 'ID_PROOF', 
             idDocumentNumber: idDocumentNumber,
@@ -319,7 +372,7 @@ const handleFinalSubmission = async () => {
     } else {
       // Front of ID document - ID_PROOF
       if (kycData.identityDocument?.front) {
-        await addDocumentAndFileInner(
+        await addDocumentAndFile(
           {
             type: 'ID_PROOF',
             idDocumentNumber: idDocumentNumber,
@@ -333,7 +386,7 @@ const handleFinalSubmission = async () => {
       // Back of ID document - ID_PROOF 
       if (kycData.identityDocument?.back && 
           (selectedIdentityType === 'permis_conduire' || selectedIdentityType === 'carte_resident_permanent')) {
-        await addDocumentAndFileInner(
+        await addDocumentAndFile(
           {
             type: 'ID_PROOF',
             idDocumentNumber: idDocumentNumber,
@@ -345,9 +398,9 @@ const handleFinalSubmission = async () => {
       }
     }
 
-    // ADD SELFIE - FIXED: Use the inner function
+    // ADD SELFIE
     if (kycData.selfie) {
-      await addDocumentAndFileInner(
+      await addDocumentAndFile(
         { type: 'SELFIE' },
         kycData.selfie.uri,
         fileIndex++
@@ -362,12 +415,40 @@ const handleFinalSubmission = async () => {
       console.log(`   File ${index}: ${file.name} - ${file.uri.substring(0, 50)}...`);
     });
 
-    // Validate document count
-    const expectedDocumentCount = selectedIdentityDoc?.requiresPassport ? 3 : 
-                                (selectedIdentityType === 'permis_conduire' || selectedIdentityType === 'carte_resident_permanent') ? 3 : 2;
+    // VALIDATE EXACTLY 3 DOCUMENTS AND 3 FILES
+    const REQUIRED_DOCUMENT_COUNT = 3;
+    const REQUIRED_FILE_COUNT = 3;
     
-    if (documents.length !== expectedDocumentCount) {
-      console.log(`⚠️ Expected ${expectedDocumentCount} documents but got ${documents.length}`);
+    if (documents.length !== REQUIRED_DOCUMENT_COUNT || files.length !== REQUIRED_FILE_COUNT) {
+      console.log(`❌ Expected exactly ${REQUIRED_DOCUMENT_COUNT} documents and ${REQUIRED_FILE_COUNT} files but got ${documents.length} documents and ${files.length} files`);
+      
+      // Determine what's missing for better error message
+      const missingItems = [];
+      
+      if (documents.length < REQUIRED_DOCUMENT_COUNT) {
+        const missingDocs = REQUIRED_DOCUMENT_COUNT - documents.length;
+        missingItems.push(`${missingDocs} document(s)`);
+      }
+      
+      if (files.length < REQUIRED_FILE_COUNT) {
+        const missingFiles = REQUIRED_FILE_COUNT - files.length;
+        missingItems.push(`${missingFiles} file(s)`);
+      }
+      
+      const errorDetails = `Required: ${REQUIRED_DOCUMENT_COUNT} documents and ${REQUIRED_FILE_COUNT} files\nCurrent: ${documents.length} documents and ${files.length} files\n\nMissing: ${missingItems.join(' and ')}`;
+      
+      console.log('❌ Validation failed:', errorDetails);
+      throw new Error(`Please upload all required documents. ${errorDetails}`);
+    }
+
+    // VALIDATE DOCUMENT STRUCTURE
+    const idProofCount = documents.filter(doc => doc.type === 'ID_PROOF').length;
+    const selfieCount = documents.filter(doc => doc.type === 'SELFIE').length;
+
+    if (idProofCount !== 2 || selfieCount !== 1) {
+      const structureError = `Invalid document structure. Expected: 2 ID_PROOF documents and 1 SELFIE document. Got: ${idProofCount} ID_PROOF and ${selfieCount} SELFIE`;
+      console.log('❌', structureError);
+      throw new Error(structureError);
     }
 
     // 3. Create FormData
@@ -379,17 +460,23 @@ const handleFinalSubmission = async () => {
       kycFormData.append('files', file);
     });
 
-    console.log('🚀 Calling submitKYC API...');
-    console.log('📊 FormData structure:');
-    console.log('   - documents:', JSON.stringify(documents));
-    console.log('   - files count:', files.length);
+    // Verify final structure
+    console.log('✅ FINAL VALIDATION PASSED:');
+    console.log('   Documents array (3 objects):', documents.map(doc => ({
+      type: doc.type,
+      idDocumentNumber: doc.idDocumentNumber || 'N/A',
+      expirationDate: doc.expirationDate || 'N/A'
+    })));
+    console.log('   Files array (3 objects):', files.map(file => ({
+      name: file.name,
+      type: file.type,
+      uri: file.uri.substring(0, 50) + '...'
+    })));
 
     // 4. Submit KYC
     const startTime = Date.now();
     const response = await submitKYC(kycFormData).unwrap();
-    const endTime = Date.now();
-    
-    console.log(`✅ submitKYC API call completed in ${endTime - startTime}ms`);
+   
     console.log('📨 API Response:', JSON.stringify(response, null, 2));
     
     // Check response
@@ -419,6 +506,7 @@ const handleFinalSubmission = async () => {
     } else if (error?.data?.data?.errors?.[0]) {
       errorMsg = error.data.data.errors[0];
     } else if (error?.message) {
+      // Show the specific validation error message to user
       errorMsg = error.message;
     }
     
@@ -615,20 +703,40 @@ const handleFinalSubmission = async () => {
               />
             </View>
 
-            {/* Expiration Date */}
+            {/* Expiration Date with Date Picker */}
             <View className="mb-4">
               <Text className="text-gray-700 font-medium mb-2 text-sm">
                 {t('canadaKyc.expirationDate')} *
               </Text>
-              <TextInput
-                className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-800 text-sm"
-                placeholder="YYYY-MM-DD"
-                value={personalInfo.expirationDate}
-                onChangeText={(text) => setPersonalInfoState(prev => ({ ...prev, expirationDate: text }))}
-              />
+              
+              <TouchableOpacity
+                className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3"
+                onPress={showDatePickerModal}
+              >
+                <View className="flex-row justify-between items-center">
+                  <Text className={`text-gray-800 text-sm ${personalInfo.expirationDate ? '' : 'text-gray-400'}`}>
+                    {personalInfo.expirationDate ? formatDateDisplay(personalInfo.expirationDate) : 'YYYY-MM-DD'}
+                  </Text>
+                  <Ionicons name="calendar-outline" size={20} color="#6B7280" />
+                </View>
+              </TouchableOpacity>
+              
               <Text className="text-gray-500 text-xs mt-1">
                 {t('canadaKyc.expirationDateHint')}
               </Text>
+
+              {/* Date Picker Modal */}
+              {showDatePicker && (
+                <DateTimePicker
+                  value={selectedDate}
+                  mode="date"
+                  display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                  onChange={handleDateChange}
+                  minimumDate={getMinDate()}
+                  maximumDate={getMaxDate()}
+                  style={Platform.OS === 'ios' ? { height: 200 } : {}}
+                />
+              )}
             </View>
           </View>
 

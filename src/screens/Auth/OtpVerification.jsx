@@ -125,6 +125,7 @@ const OtpVerification = ({ route, onClose, onResend }) => {
       });
     }
   } catch (err) {
+    console.log("OTP verification error:", err);
     const status =
       err?.status || err?.data?.status || err?.data?.data?.status;
     const errorMessage =
@@ -265,8 +266,8 @@ const OtpVerification = ({ route, onClose, onResend }) => {
 
   return (
     <SafeAreaView className="flex-1 bg-[#181e25] justify-center">
-      <TouchableOpacity className="absolute z-10 top-20 left-5" onPress={handleBack}>
-        <AntDesign name="left" size={24} color="white" />
+      <TouchableOpacity className="absolute z-10 top-20 left-5" >
+       
       </TouchableOpacity>
       {renderOtpScreen()}
     </SafeAreaView>

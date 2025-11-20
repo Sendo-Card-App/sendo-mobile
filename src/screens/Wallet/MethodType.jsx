@@ -82,31 +82,35 @@ const MethodType = ({ navigation }) => {
         style={{ flex: 1, backgroundColor: '#fff' }}
         contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 30 }}
       >
-        {/* Mobile Transfer Section */}
-        <Text style={{ fontSize: 16, fontWeight: '500', marginVertical: 10 }}>
-          {t('method.send_to_mobile')}
-        </Text>
-
-        <TouchableOpacity
-          onPress={() => setShowServiceModal(true)}
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            backgroundColor: '#F1F1F1',
-            borderRadius: 10,
-            padding: 15,
-            marginBottom: 20,
-          }}
-        >
-          <AntDesign name="mobile" size={50} color="#999" style={{ marginRight: 5 }} />
-          <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#0D1C6A', marginLeft: 10, flex: 1 }}>
-            {t('method.transfer_to_mobile')}
+       {!isCanada && (
+        <>
+          {/* Mobile Transfer Section */}
+          <Text style={{ fontSize: 16, fontWeight: '500', marginVertical: 10 }}>
+            {t('method.send_to_mobile')}
           </Text>
-          <Text style={{ fontSize: 12, color: '#999' }}>{t('method.transfer_fee')}</Text>
-        </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => setShowServiceModal(true)}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              backgroundColor: '#F1F1F1',
+              borderRadius: 10,
+              padding: 15,
+              marginBottom: 20,
+            }}
+          >
+            <AntDesign name="mobile" size={50} color="#999" style={{ marginRight: 5 }} />
+            <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#0D1C6A', marginLeft: 10, flex: 1 }}>
+              {t('method.transfer_to_mobile')}
+            </Text>
+            <Text style={{ fontSize: 12, color: '#999' }}>{t('method.transfer_fee')}</Text>
+          </TouchableOpacity>
+        </>
+      )}
 
         {/* Bank or Interac Section */}
-        <Text style={{ fontSize: 16, fontWeight: '500', marginBottom: 10 }}>
+        <Text style={{ fontSize: 16, fontWeight: '500', marginBottom: 10, marginTop:10 }}>
           {isCanada ? t('method.send_interac') : t('method.send_to_friends')}
         </Text>
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { AntDesign, Ionicons, MaterialIcons } from "@expo/vector-icons"; // Ajout de MaterialIcons
+import { AntDesign, Ionicons } from "@expo/vector-icons";
 import {
   View,
   Text,
@@ -156,117 +156,126 @@ const SignIn = () => {
   }, [email, password, setIsPickingDocument]);
 
   const handleSubmit = async () => {
-    let hasError = false;
+  let hasError = false;
 
-    if (!email) {
-      setEmailError(true);
-      hasError = true;
-    } else {
-      setEmailError(false);
-    }
+  if (!email) {
+    setEmailError(true);
+    hasError = true;
+  } else {
+    setEmailError(false);
+  }
 
-    if (!password) {
-      setPasswordError(true);
-      hasError = true;
-    } else {
-      setPasswordError(false);
-    }
+  if (!password) {
+    setPasswordError(true);
+    hasError = true;
+  } else {
+    setPasswordError(false);
+  }
 
-    if (hasError) {
-      Toast.show({
-        type: 'error',
-        text1: 'Validation Error',
-        text2: 'Please fill in all required fields',
-      });
-      return;
-    }
+  if (hasError) {
+    Toast.show({
+      type: 'error',
+      text1: 'Validation Error',
+      text2: 'Please fill in all required fields',
+    });
+    return;
+  }
 
-    dispatch(loginStart({ email }));
+  dispatch(loginStart({ email }));
 
-    try {
-      setIsPickingDocument(true);
+  try {
+    setIsPickingDocument(true);
+    
+    const response = await loginWithEmail({ email, password }).unwrap();
+
+    if (response?.status === 200 && response?.data?.accessToken) {
+      const userData = response.data;
+
+      const authData = {
+        user: userData,
+        accessToken: userData.accessToken,
+        refreshToken: userData.refreshToken,
+        deviceId: userData.deviceId,
+        isGuest: false,
+      };
       
-      const response = await loginWithEmail({ email, password }).unwrap();
+      console.log(userData)
+      await storeData('@authData', authData);
+      dispatch(loginSuccess(authData)); 
+      dispatch(setIsNewUser(true));
+      
+      const interval = setInterval(async () => {
+        try {
+          const result = await loginWithPhone({
+            refreshToken: authData.refreshToken,
+            deviceId: authData.deviceId
+          }).unwrap();
 
-      if (response?.status === 200 && response?.data?.accessToken) {
-        const userData = response.data;
-
-        const authData = {
-          user: userData,
-          accessToken: userData.accessToken,
-          refreshToken: userData.refreshToken,
-          deviceId: userData.deviceId,
-          isGuest: false,
-        };
-        
-        console.log(userData)
-        await storeData('@authData', authData);
-        dispatch(loginSuccess(authData)); 
-        dispatch(setIsNewUser(true));
-        
-        const interval = setInterval(async () => {
-          try {
-            const result = await loginWithPhone({
-              refreshToken: authData.refreshToken,
-              deviceId: authData.deviceId
-            }).unwrap();
-            if (result?.data?.accessToken) {
-              const newAuthData = {
-                ...authData,
-                accessToken: result.data.accessToken,
-                refreshToken: result.data.refreshToken || authData.refreshToken
-              };
-              
-              await storeData('@authData', newAuthData);
-              dispatch(loginSuccess(newAuthData));
-            }
-          } catch (error) {
-            console.log("Token refresh failed:", error);
-            clearInterval(interval);
+          if (result?.data?.accessToken) {
+            const newAuthData = {
+              ...authData,
+              accessToken: result.data.accessToken,
+              refreshToken: result.data.refreshToken || authData.refreshToken
+            };
+            
+            await storeData('@authData', newAuthData);
+            dispatch(loginSuccess(newAuthData));
           }
-        }, 30 * 60 * 1000);
+        } catch (error) {
+          console.log("Token refresh failed:", error);
+          clearInterval(interval);
+        }
+      }, 30 * 60 * 1000);
 
-        setRefreshInterval(interval);
-        
-        setIsPickingDocument(false);
-        navigation.navigate("PinCode", { setup: true });
-
-        Toast.show({
-          type: 'success',
-          text1: 'Login Successful',
-          text2: response.message || 'Welcome back!',
-        });
-      } else {
-        throw new Error('Invalid response structure');
-      }
-    } catch (err) {
-      console.log("Login error:", err);
+      setRefreshInterval(interval);
+      
       setIsPickingDocument(false);
+      navigation.navigate("PinCode", { setup: true });
 
-      let errorMessage = "An error on the server.";
+      Toast.show({
+        type: 'success',
+        text1: 'Login Successful',
+        text2: response.message || 'Welcome back!',
+      });
+    } else {
+      throw new Error('Invalid response structure');
+    }
+  } catch (err) {
+    console.log("Login error:", err);
+    setIsPickingDocument(false);
 
-      if (err?.status === 403) {
-        errorMessage = "Account Not Verified.";
-      } else if (err?.status === 500) {
-        errorMessage = "Could not connect. Please try again.";
-      } else if (err?.status === 401) {
-        errorMessage = "Invalid Email or Password.";
-      } else if (err?.status === 404) {
-        errorMessage = "User Not Found.";
-      } else if (err?.data?.message) {
-        errorMessage = err.data.message;
-      }
+    let errorMessage = "An error on the server.";
 
-      dispatch(loginFailure(errorMessage));
+    if (err?.status === 403) {
+      errorMessage = "Account Not Verified.";
+      
+      // Navigate to OTP verification with email
+      navigation.navigate("OtpVerification", { 
+        email: email,
+      });
+      
+    } else if (err?.status === 500) {
+      errorMessage = "Could not connect. Please try again.";
+    } else if (err?.status === 401) {
+      errorMessage = "Invalid Email or Password.";
+    } else if (err?.status === 404) {
+      errorMessage = "User Not Found.";
+    } else if (err?.data?.message) {
+      errorMessage = err.data.message;
+    }
 
+    dispatch(loginFailure(errorMessage));
+
+    // Only show Toast if it's not a 403 error (since we're navigating)
+    if (err?.status !== 403) {
       Toast.show({
         type: 'error',
         text1: 'Login Failed',
         text2: errorMessage,
       });
     }
-  };
-
+  }
+};
   const handleToggle = () => {
     setIsPickingDocument(true);
     navigation.navigate("Signup");
@@ -282,11 +291,15 @@ const SignIn = () => {
     navigation.goBack();
   };
 
-  // Remplacer WhatsApp par le chat live
-  // const handleCustomerServicePress = () => {
-  //   setIsPickingDocument(true);
-  //   navigation.navigate("ChatScreen");
-  // };
+  const handleWhatsAppPress = () => {
+    setIsPickingDocument(true);
+    const url = "https://wa.me/message/Y27BBZMTSC36C1";
+    Linking.openURL(url).catch(() => {
+      Alert.alert('Erreur', 'Impossible d\'ouvrir WhatsApp. Vérifiez qu\'il est installé.');
+    }).finally(() => {
+      setIsPickingDocument(false);
+    });
+  };
 
   return (
     <KeyboardAvoidinWrapper>
@@ -461,14 +474,14 @@ const SignIn = () => {
           </Text>
         </TouchableOpacity>
 
-        {/* ✅ Remplacer WhatsApp par le bouton de service client - Chat live */}
+        {/* ✅ WhatsApp floating button */}
         {/* <TouchableOpacity 
-          onPress={handleCustomerServicePress}
+          onPress={handleWhatsAppPress}
           style={{
             position: 'absolute',
             bottom: 30,
             right: 30,
-            backgroundColor: '#007AFF', // Bleu pour le chat
+            backgroundColor: '#25D366',
             width: 60,
             height: 60,
             borderRadius: 30,
@@ -481,7 +494,7 @@ const SignIn = () => {
             shadowRadius: 3.84,
           }}
         >
-          <MaterialIcons name="chat" size={32} color="white" />
+          <Ionicons name="logo-whatsapp" size={36} color="white" />
         </TouchableOpacity> */}
       </SafeAreaView>
     </KeyboardAvoidinWrapper>
