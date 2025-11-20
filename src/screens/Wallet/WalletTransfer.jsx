@@ -129,7 +129,8 @@ const WalletTransfer = ({ navigation }) => {
         nextScreen: 'MainTabs',
       });
     } catch (error) {
-      console.log('Transfer error:', error);
+      console.log("Transfer error:", JSON.stringify(error, null, 2));
+     
       const status = error?.status;
       if (status === 503) showErrorToast('SERVICE_UNAVAILABLE');
       else if (status === 500) showErrorToast('ACTION_FAILED', 'Erreur serveur lors du transfert');

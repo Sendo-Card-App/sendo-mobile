@@ -20,7 +20,7 @@
         "buildType": "app-bundle"  
       },
       "env": {
-        "EXPO_TEST_API_URL": "https://api.sf-e.ca/api "
+        "EXPO_PUBLIC_API_URL": "https://api.sf-e.ca/api "
       }
     }
   },
