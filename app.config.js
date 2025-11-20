@@ -9,7 +9,7 @@ module.exports = {
   expo: {
     name: "Sendo",
     slug: "sendo",
-    version: "1.2.0",
+    version: "1.2.4",
     owner: "sfesendo",
     orientation: "portrait",
     icon: "./assets/icon-sendo.png",
@@ -79,7 +79,7 @@ module.exports = {
     ],
     extra: {
       eas: {
-        apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL,
+        apiBaseUrl: process.env.EXPO_PUBLIC_API_URL || "https://api.sf-e.ca/api",
         projectId: "08a59933-10e3-45bc-b064-54b97ea7eca9"
       }
     }
