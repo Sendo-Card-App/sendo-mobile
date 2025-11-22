@@ -61,6 +61,7 @@ const TransferSummary = () => {
     iban,
     bankImage,
   } = route.params;
+ // console.log(totalAmount)
 
   // Calculate fees and total amount
 const calculateTransferDetails = () => {

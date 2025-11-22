@@ -242,7 +242,9 @@ const WalletTransfer = ({ navigation }) => {
           )}
 
           {/* Amount */}
-          <Text style={{ fontSize: 16, color: '#666', marginBottom: 5 }}>{t('wallet_transfer.amount')}</Text>
+        <Text style={{ fontSize: 16, color: '#666', marginBottom: 5 }}>
+          {isCanada ? 'Montant (CAD)' : t('wallet_transfer.amount')}
+        </Text>
           <TextInput
             style={{
               borderWidth: 1,

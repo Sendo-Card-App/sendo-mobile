@@ -38,8 +38,23 @@ const Signup = () => {
   const [emailSend] = useEmailSendMutation();
   const { error, isSignupSuccess } = useSelector((state) => state.auth);
 
-  const [countries, setCountries] = useState([]);
-  const [filteredCountries, setFilteredCountries] = useState([]);
+  // Hardcoded countries array with only Cameroon and Canada
+  const countries = [
+    {
+      name: 'Cameroon',
+      code: '+237',
+      flag: 'https://flagcdn.com/w40/cm.png',
+      callingCode: '+237'
+    },
+    {
+      name: 'Canada',
+      code: '+1',
+      flag: 'https://flagcdn.com/w40/ca.png',
+      callingCode: '+1'
+    }
+  ];
+
+  const [filteredCountries, setFilteredCountries] = useState(countries);
   const [selectedCountry, setSelectedCountry] = useState({
     name: 'Cameroon',
     code: '+237',
@@ -53,7 +68,6 @@ const Signup = () => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
-
   // Filtrage des pays basé sur la recherche
   useEffect(() => {
     if (searchQuery.trim() === "") {
@@ -65,8 +79,7 @@ const Signup = () => {
       );
       setFilteredCountries(filtered);
     }
-  }, [searchQuery, countries]);
-  
+  }, [searchQuery]);
 
   const [signupDetails, setSignupDetails] = useState({
     firstName: "",
@@ -241,32 +254,6 @@ const Signup = () => {
   const handleToggle = () => {
     navigation.navigate("SignIn");
   };
-
-useEffect(() => {
-  fetch("https://restcountries.com/v3.1/all?fields=name,idd,flags")
-    .then((res) => res.json())
-    .then((data) => {
-      const allowedCountries = ["Canada", "Cameroon"];
-
-      const countryList = data
-        .map((country) => ({
-          name: country.name.common,
-          flag: country.flags?.png || country.flags?.svg || null,
-          callingCode: country.idd?.root
-            ? `${country.idd.root}${(country.idd.suffixes || [""])[0]}`
-            : null,
-        }))
-        .filter(
-          (c) => c.callingCode && c.flag && allowedCountries.includes(c.name)
-        );
-
-      setCountries(countryList.sort((a, b) => a.name.localeCompare(b.name)));
-    })
-    .catch((err) => {
-      console.error("Failed to fetch countries:", err);
-    });
-}, []);
-
 
   useEffect(() => {
     if (isSignupSuccess) {
@@ -825,9 +812,9 @@ useEffect(() => {
             </View>
 
             {/* Barre de recherche */}
-            <View className="px-4 py-3 border-b border-gray-200">
+            <View className="px-4 py-3 border-b pt-10 border-gray-200">
               <View className="flex-row items-center bg-gray-100 rounded-lg px-3 py-2">
-                <AntDesign name="search1" size={20} color="gray" />
+                <AntDesign name="search" size={20} color="gray" />
                 <TextInput
                   placeholder={t("signup.search_country")}
                   value={searchQuery}
@@ -846,13 +833,9 @@ useEffect(() => {
             {/* Liste des pays */}
             {filteredCountries.length === 0 ? (
               <View className="flex-1 justify-center items-center">
-                {countries.length === 0 ? (
-                  <ActivityIndicator size="large" color="#7ddd7d" />
-                ) : (
-                  <Text className="text-gray-500 text-lg">
-                    {t("signup.no_countries_found")}
-                  </Text>
-                )}
+                <Text className="text-gray-500 text-lg">
+                  {t("signup.no_countries_found")}
+                </Text>
               </View>
             ) : (
               <FlatList
