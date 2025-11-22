@@ -37,8 +37,21 @@ const Log = () => {
   const [languageModalVisible, setLanguageModalVisible] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const [countries, setCountries] = useState([]);
-  const [filteredCountries, setFilteredCountries] = useState([]);
+  // Hardcoded countries array with only Cameroon and Canada
+  const countries = [
+    {
+      name: 'Cameroon',
+      code: '+237',
+      flag: 'https://flagcdn.com/w40/cm.png'
+    },
+    {
+      name: 'Canada',
+      code: '+1',
+      flag: 'https://flagcdn.com/w40/ca.png'
+    }
+  ];
+
+  const [filteredCountries, setFilteredCountries] = useState(countries);
   const [fullPhoneNumber, setFullPhoneNumber] = useState(""); 
   const [countryModalVisible, setCountryModalVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -62,54 +75,6 @@ const Log = () => {
     };
   }, [countryModalVisible, languageModalVisible, setIsPickingDocument]);
 
- const fetchCountries = async () => {
-  try {
-    setIsPickingDocument(true); // Prevent restart during API call
-    const res = await fetch('https://restcountries.com/v3.1/all?fields=name,idd,flags');
-
-    if (!res.ok) {
-      throw new Error(`HTTP error! status: ${res.status}`);
-    }
-
-    const data = await res.json();
-
-    const allowedCountries = ["Canada", "Cameroon"];
-
-    const countriesList = data
-      .map(c => {
-        const name = c?.name?.common;
-        const root = c?.idd?.root || '';
-        const suffixes = c?.idd?.suffixes || [];
-        let code = suffixes.length > 0 ? `${root}${suffixes[0]}` : root;
-
-        if (!name || !code) return null;
-
-        if (!code.startsWith('+')) {
-          code = '+' + code;
-        }
-
-        const flag = c?.flags?.png || c?.flags?.svg || null;
-
-        return { name, code, flag };
-      })
-      .filter(c => c && allowedCountries.includes(c.name))
-      .sort((a, b) => a.name.localeCompare(b.name));
-
-    setCountries(countriesList);
-    setFilteredCountries(countriesList);
-  } catch (error) {
-    console.log("Error fetching countries:", error);
-    Toast.show({ type: 'error', text1: 'Failed to load countries' });
-  } finally {
-    setIsPickingDocument(false); // Reset after API call completes
-  }
-};
-
-
-  useEffect(() => {
-    fetchCountries();
-  }, []);
-
   useEffect(() => {
     if (phone && selectedCountry.code) {
       setFullPhoneNumber(`${selectedCountry.code}${phone}`);
@@ -127,7 +92,7 @@ const Log = () => {
       );
       setFilteredCountries(filtered);
     }
-  }, [searchQuery, countries]);
+  }, [searchQuery]);
 
   const handleLogin = async () => {
     if (!phone || !password) {
@@ -330,7 +295,7 @@ const Log = () => {
           <Modal visible={countryModalVisible} animationType="slide">
             <SafeAreaView className="flex-1 bg-white">
               {/* Header with back button and title */}
-              <View className="flex-row items-center px-4 py-3 border-b border-gray-200">
+              <View className="flex-row items-center px-4 py-3 pt-10 border-b border-gray-200">
                 <TouchableOpacity 
                   onPress={() => handleCountryModalToggle(false)}
                   className="p-2 mr-2"
@@ -346,7 +311,7 @@ const Log = () => {
               {/* Search Bar */}
               <View className="px-4 py-3 border-b border-gray-200">
                 <View className="flex-row items-center bg-gray-100 rounded-lg px-3 py-2">
-                  <AntDesign name="search1" size={20} color="gray" />
+                  <AntDesign name="search" size={20} color="gray" />
                   <TextInput
                     placeholder={t("log.search_country")}
                     value={searchQuery}
@@ -364,13 +329,9 @@ const Log = () => {
 
               {filteredCountries.length === 0 ? (
                 <View className="flex-1 justify-center items-center">
-                  {countries.length === 0 ? (
-                    <ActivityIndicator size="large" color="#7ddd7d" />
-                  ) : (
-                    <Text className="text-gray-500 text-lg">
-                      {t("log.no_countries_found")}
-                    </Text>
-                  )}
+                  <Text className="text-gray-500 text-lg">
+                    {t("log.no_countries_found")}
+                  </Text>
                 </View>
               ) : (
                 <FlatList

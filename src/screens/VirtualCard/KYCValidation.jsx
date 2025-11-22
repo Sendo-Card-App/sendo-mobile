@@ -32,10 +32,79 @@ const documentTypeMap = {
   SELFIE: "kyc.selfie",
 };
 
+// Move ImageViewer outside as a separate component to prevent recreation
+const ImageViewer = ({ visibleImages, currentIndex, onClose, onIndexChange }) => {
+  if (!visibleImages || !Array.isArray(visibleImages) || visibleImages.length === 0) {
+    return null;
+  }
+
+  const currentImage = visibleImages[currentIndex];
+  if (!currentImage) return null;
+
+  return (
+    <Modal
+      visible={!!visibleImages}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+    >
+      <View className="flex-1 bg-black/90 justify-center items-center px-5">
+        <TouchableOpacity 
+          className="absolute top-10 right-5 z-10"
+          onPress={onClose}
+        >
+          <Feather name="x" size={30} color="white" />
+        </TouchableOpacity>
+
+        <Image
+          source={{ uri: currentImage }}
+          style={{
+            width: "100%",
+            height: "70%",
+            resizeMode: "contain",
+            borderRadius: 10,
+          }}
+          onError={() => {
+            Alert.alert("Error", "Failed to load image");
+          }}
+        />
+
+        {/* Controls */}
+        <View className="flex-row justify-between items-center mt-4 w-full px-10">
+          <TouchableOpacity
+            onPress={() => onIndexChange(currentIndex > 0 ? currentIndex - 1 : visibleImages.length - 1)}
+            className="p-2 bg-white rounded-full"
+            disabled={visibleImages.length <= 1}
+          >
+            <Feather name="chevron-left" size={24} color={visibleImages.length <= 1 ? "#ccc" : "#000"} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => onIndexChange(currentIndex < visibleImages.length - 1 ? currentIndex + 1 : 0)}
+            className="p-2 bg-white rounded-full"
+            disabled={visibleImages.length <= 1}
+          >
+            <Feather name="chevron-right" size={24} color={visibleImages.length <= 1 ? "#ccc" : "#000"} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Image counter */}
+        {visibleImages.length > 1 && (
+          <Text className="text-white mt-4">
+            {currentIndex + 1} / {visibleImages.length}
+          </Text>
+        )}
+      </View>
+    </Modal>
+  );
+};
+
 const KYCValidation = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { documents } = route.params || { documents: [] };
+
+ // console.log("KYCValidation documents:", documents);
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [visibleImages, setVisibleImages] = useState(null);
@@ -60,8 +129,7 @@ const KYCValidation = () => {
   useEffect(() => {
     const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
       if (visibleImages) {
-        setVisibleImages(null);
-        setCurrentIndex(0);
+        closeImageViewer();
         return true;
       }
       if (cameraModalVisible) {
@@ -80,15 +148,12 @@ const KYCValidation = () => {
 
     const checkCameraAvailability = async () => {
       try {
-        // Simple check to see if camera is generally available
-        // Since permissions are handled in app.json, we assume camera is available
         if (isMounted) {
           setCameraAvailable(true);
         }
       } catch (error) {
         console.error("Camera availability check error:", error);
         if (isMounted) {
-          // Assume camera is available if we can't check
           setCameraAvailable(true);
         }
       }
@@ -125,13 +190,9 @@ const KYCValidation = () => {
     const allTypes = Object.keys(documentTypeMap);
     
     if (isCanadianUser) {
-      // For Canadian users, exclude ADDRESS_PROOF and NIU_PROOF
-      return allTypes.filter(type => 
-        type !== "ADDRESS_PROOF"
-      );
+      return allTypes.filter(type => type !== "ADDRESS_PROOF");
     }
     
-    // For non-Canadian users, show all document types
     return allTypes;
   };
 
@@ -167,15 +228,35 @@ const KYCValidation = () => {
       rejected: firstDoc?.status === "REJECTED",
       rejectionReason,
       publicId: firstDoc?.publicId,
+      documentNumber: firstDoc?.idDocumentNumber,
+      expirationDate: firstDoc?.expirationDate,
+      taxIdNumber: firstDoc?.taxIdNumber,
     };
   });
+
+  // Open image viewer
+  const openImageViewer = (images, index = 0) => {
+    console.log("Opening image viewer with:", images);
+    setVisibleImages(images);
+    setCurrentIndex(index);
+  };
+
+  // Close image viewer
+  const closeImageViewer = () => {
+    setVisibleImages(null);
+    setCurrentIndex(0);
+  };
+
+  // Handle index change in image viewer
+  const handleIndexChange = (newIndex) => {
+    setCurrentIndex(newIndex);
+  };
 
   const safeImagePickerOperation = async (operation, errorMessage) => {
     try {
       setIsPickingDocument(true);
       const result = await operation();
       
-      // Small delay to ensure state is set
       await new Promise(resolve => setTimeout(resolve, 100));
       
       if (!result.canceled && result.assets?.[0]?.uri) {
@@ -186,7 +267,6 @@ const KYCValidation = () => {
       console.error("Image picker error:", error);
       Alert.alert("Error", errorMessage);
     } finally {
-      // Ensure we always reset the picking state
       setTimeout(() => {
         setIsPickingDocument(false);
       }, 200);
@@ -252,18 +332,15 @@ const KYCValidation = () => {
     try {
       const formData = new FormData();
       
-      // Safe URI handling
       let fileUri = uri;
       if (Platform.OS === "ios" && uri.startsWith('file://')) {
         fileUri = uri.replace("file://", "");
       }
       
-      // Determine file type and name
       const isPDF = uri.toLowerCase().endsWith('.pdf');
       const fileType = isPDF ? 'application/pdf' : 'image/jpeg';
       const fileName = `document_${Date.now()}.${isPDF ? 'pdf' : 'jpg'}`;
       
-      // Append the file to FormData
       formData.append("document", {
         uri: fileUri,
         name: fileName,
@@ -299,7 +376,6 @@ const KYCValidation = () => {
     setSelectedDocument(item);
     
     if (item.id === "SELFIE") {
-      // For selfie, directly open camera (permissions handled by app.json)
       setCameraModalVisible(true);
     } else if (item.id === "ADDRESS_PROOF") {
       Alert.alert(
@@ -346,77 +422,15 @@ const KYCValidation = () => {
     }
   };
 
-  // Safe image viewer component
-  const ImageViewer = () => {
-    if (!visibleImages || !Array.isArray(visibleImages) || visibleImages.length === 0) {
-      return null;
+  // Format date for display
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString();
+    } catch (error) {
+      return dateString;
     }
-
-    const currentImage = visibleImages[currentIndex];
-    if (!currentImage) return null;
-
-    return (
-      <Modal
-        visible={!!visibleImages}
-        transparent
-        animationType="fade"
-        onRequestClose={() => {
-          setVisibleImages(null);
-          setCurrentIndex(0);
-        }}
-      >
-        <View className="flex-1 bg-black/90 justify-center items-center px-5">
-          <Image
-            source={{ uri: currentImage }}
-            style={{
-              width: "100%",
-              height: "70%",
-              resizeMode: "contain",
-              borderRadius: 10,
-            }}
-            onError={() => {
-              Alert.alert("Error", "Failed to load image");
-            }}
-          />
-
-          {/* Controls */}
-          <View className="flex-row justify-between items-center mt-4 w-full px-10">
-            <TouchableOpacity
-              onPress={() => setCurrentIndex((prev) => prev > 0 ? prev - 1 : visibleImages.length - 1)}
-              className="p-2 bg-white rounded-full"
-              disabled={visibleImages.length <= 1}
-            >
-              <Feather name="chevron-left" size={24} color={visibleImages.length <= 1 ? "#ccc" : "#000"} />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => {
-                setVisibleImages(null);
-                setCurrentIndex(0);
-              }}
-              className="p-2 bg-red-600 rounded-full"
-            >
-              <Feather name="x" size={24} color="white" />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => setCurrentIndex((prev) => prev < visibleImages.length - 1 ? prev + 1 : 0)}
-              className="p-2 bg-white rounded-full"
-              disabled={visibleImages.length <= 1}
-            >
-              <Feather name="chevron-right" size={24} color={visibleImages.length <= 1 ? "#ccc" : "#000"} />
-            </TouchableOpacity>
-          </View>
-
-          {/* Image counter */}
-          {visibleImages.length > 1 && (
-            <Text className="text-white mt-4">
-              {currentIndex + 1} / {visibleImages.length}
-            </Text>
-          )}
-        </View>
-      </Modal>
-    );
   };
 
   return (
@@ -458,6 +472,25 @@ const KYCValidation = () => {
                   </Text>
                 )}
 
+                {/* Display document details */}
+                {item.documentNumber && (
+                  <Text className="text-xs text-gray-600 mt-1">
+                    Document Number: {item.documentNumber}
+                  </Text>
+                )}
+
+                {item.expirationDate && (
+                  <Text className="text-xs text-gray-600 mt-1">
+                    Expiration: {formatDate(item.expirationDate)}
+                  </Text>
+                )}
+
+                {item.taxIdNumber && (
+                  <Text className="text-xs text-gray-600 mt-1">
+                    Tax ID: {item.taxIdNumber}
+                  </Text>
+                )}
+
                 {item.rejected && item.rejectionReason && (
                   <Text className="text-red-500 text-xs mt-1">
                     Reason: {item.rejectionReason}
@@ -469,10 +502,7 @@ const KYCValidation = () => {
               <View className="flex-row gap-2">
                 {item.urls.length > 0 && (
                   <TouchableOpacity
-                    onPress={() => {
-                      setVisibleImages(item.urls);
-                      setCurrentIndex(0);
-                    }}
+                    onPress={() => openImageViewer(item.urls, 0)}
                     className="p-2 bg-green-500 rounded-full"
                   >
                     <Feather name="eye" size={16} color="white" />
@@ -499,7 +529,12 @@ const KYCValidation = () => {
       </ScrollView>
 
       {/* Image Viewer */}
-      <ImageViewer />
+      <ImageViewer 
+        visibleImages={visibleImages}
+        currentIndex={currentIndex}
+        onClose={closeImageViewer}
+        onIndexChange={handleIndexChange}
+      />
 
       {/* Camera Selection Modal */}
       <Modal

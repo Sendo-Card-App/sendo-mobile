@@ -49,7 +49,7 @@ const HomeScreen = () => {
   const [showKycModal, setShowKycModal] = useState(false);
   const [kycCheckInterval, setKycCheckInterval] = useState(null);
 
-   const fadeAnim = useState(new Animated.Value(0))[0];
+  const fadeAnim = useState(new Animated.Value(0))[0];
   const slideAnim = useState(new Animated.Value(50))[0];
   const scaleAnim = useState(new Animated.Value(0.9))[0];
   const balancePulseAnim = useState(new Animated.Value(1))[0];
@@ -63,7 +63,8 @@ const HomeScreen = () => {
   } = useGetUserProfileQuery();
   
   const userId = userProfile?.data?.id;
-  
+ // console.log(userId)
+
   const { data: history, isLoadingHistory, isError, refetch } = useGetTransactionHistoryQuery(
     { 
       userId,
@@ -482,7 +483,7 @@ const HomeScreen = () => {
       </View>
 
       {/* Services Section */}
-      {userProfile?.data?.country !== "Canada" && (
+    
           <Animated.View 
             style={{ transform: [{ translateY: slideAnim }], opacity: fadeAnim }}
             className="mb-1"
@@ -504,41 +505,50 @@ const HomeScreen = () => {
 
             {/* Services grid */}
             <View className="flex-row justify-between flex-wrap">
-              {[
-                ...(userProfile?.data?.country === "Cameroon"
-                  ? [{ label: t("home.virtualCard"), icon: "card-outline", route: "OnboardingCard" }]
-                  : []),
+  {(
+    userProfile?.data?.country === "Canada"
+      ? [
+          { label: t("home.canadaKyc"), icon: "shield-checkmark-outline", route: "VerifyIdentity" },
+          { label: t("drawer.request1"), icon: "chatbubbles-outline", route: "NiuRequest", color: "#cc5de8", bgColor: "#f8f0fc" },
+          { label: t("home.payBills"), icon: "calculator-outline", route: "PaymentSimulator", color: "#ff922b", bgColor: "#fff9f0" },
+          { label: t("serviceScreen.support") || "Support", icon: "headset-outline", route: "ChatScreen", color: "#8B5CF6", bgColor: "#F5F3FF" },
+        ]
+      : [
+          ...(userProfile?.data?.country === "Cameroon"
+            ? [{ label: t("home.virtualCard"), icon: "card-outline", route: "OnboardingCard" }]
+            : []),
 
-                { label: t("home.friendsShare"), icon: "people-outline", route: "WelcomeShare" },
-                { label: t("home.fundRequest"), icon: "cash-outline", route: "WelcomeDemand" },
-                { label: t("home.etontine"), icon: "layers-outline" },
+          { label: t("home.friendsShare"), icon: "people-outline", route: "WelcomeShare" },
+          { label: t("home.fundRequest"), icon: "cash-outline", route: "WelcomeDemand" },
+          { label: t("home.etontine"), icon: "layers-outline" },
 
-               ...(userProfile?.data?.country === "Canada"
-                  ? [{ label: t("home.canadaKyc"), icon: "shield-checkmark-outline", route: "VerifyIdentity" }]
-                  : []),
-              ].map((item, index) => (
-                <TouchableOpacity
-                  key={index}
-                  className="items-center w-1/4 mb-1"
-                  onPress={() => {
-                    if (item.label === t("home.etontine")) {
-                      hasAcceptedTerms
-                        ? navigation.navigate("TontineList")
-                        : navigation.navigate("TermsAndConditions");
-                    } else {
-                      navigation.navigate(item.route);
-                    }
-                  }}
-                >
-                  <View className="bg-white p-4 rounded-2xl mb-2 shadow-sm border border-gray-100">
-                    <Ionicons name={item.icon} size={28} color="#16A34A" />
-                  </View>
-                  <Text className="text-xs text-gray-700 font-medium text-center">{item.label}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+        ]
+  ).map((item, index) => (
+    <TouchableOpacity
+      key={index}
+      className="items-center w-1/4 mb-1"
+      onPress={() => {
+        if (item.label === t("home.etontine")) {
+          hasAcceptedTerms
+            ? navigation.navigate("TontineList")
+            : navigation.navigate("TermsAndConditions");
+        } else {
+          navigation.navigate(item.route);
+        }
+      }}
+    >
+      <View className="bg-white p-4 rounded-2xl mb-2 shadow-sm border border-gray-100">
+        <Ionicons name={item.icon} size={28} color="#16A34A" />
+      </View>
+      <Text className="text-xs text-gray-700 font-medium text-center">
+        {item.label}
+      </Text>
+    </TouchableOpacity>
+  ))}
+              </View>
+
           </Animated.View>
-      )}
+      
 
 
        {/* Ads Carousel */}
