@@ -37,7 +37,7 @@ const CreateVirtualCard = () => {
 
   // Redirect if virtual card already exists AND is not TERMINATED
   useEffect(() => {
-    const virtualCard = userProfile?.data?.virtualCard;
+    const virtualCard = userProfile?.data?.user?.virtualCard;
     if (virtualCard && virtualCard.status !== "TERMINATED") {
       navigation.replace("ManageVirtualCard");
     }

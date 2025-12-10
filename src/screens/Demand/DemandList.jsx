@@ -28,7 +28,7 @@ const DemandList = () => {
   const [statusFilter, setStatusFilter] = useState('ALL');
 
   const { data: userProfile } = useGetUserProfileQuery();
-  const userId = userProfile?.data?.id;
+  const userId = userProfile?.data?.user?.id;
 
   const { data: fundRequests, isLoading: loadingRequests } = useGetMyFundRequestsQuery(userId, {
     skip: !userId,

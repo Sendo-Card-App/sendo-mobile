@@ -56,7 +56,7 @@ const SelectMethod = ({ navigation }) => {
 let methods = [];
 
 // 🇨🇲 Cameroon users → Show Sendo Transfer + Mobile Transfer (❌ No CA-CM)
-if (userProfile?.data?.country === "Cameroon") {
+if (userProfile?.data?.user?.country === "Cameroon") {
   methods = [
     {
       id: 'transfer',
@@ -77,7 +77,7 @@ if (userProfile?.data?.country === "Cameroon") {
 }
 
 // 🇨🇦 Canada users → Show ONLY Transfer + CA-CM
-else if (userProfile?.data?.country === "Canada") {
+else if (userProfile?.data?.user?.country === "Canada") {
   methods = [
     {
       id: 'transfer',

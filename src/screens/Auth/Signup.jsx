@@ -68,6 +68,31 @@ const Signup = () => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Calculate minimum date (18 years ago from today)
+  const calculateMinDate = () => {
+    const today = new Date();
+    const minDate = new Date(
+      today.getFullYear() - 18,
+      today.getMonth(),
+      today.getDate()
+    );
+    return minDate;
+  };
+
+  // Calculate maximum date (100 years ago from today)
+  const calculateMaxDate = () => {
+    const today = new Date();
+    const maxDate = new Date(
+      today.getFullYear() - 100,
+      today.getMonth(),
+      today.getDate()
+    );
+    return maxDate;
+  };
+
+  const minDate = calculateMinDate();
+  const maxDate = calculateMaxDate();
+
   // Filtrage des pays basé sur la recherche
   useEffect(() => {
     if (searchQuery.trim() === "") {
@@ -110,7 +135,30 @@ const Signup = () => {
   const isValidPhone = (phone) => /^\d+$/.test(phone);
   const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const isValidPassword = (password) => password.length >= 8;
-  const isValidDate = (dateStr) => dateStr && dateStr.length > 0;
+  
+  // Function to check if user is at least 18 years old
+  const isValidDateOfBirth = (dateStr) => {
+    if (!dateStr) return false;
+    
+    const selectedDate = new Date(dateStr);
+    const today = new Date();
+    
+    // Calculate age
+    let age = today.getFullYear() - selectedDate.getFullYear();
+    const monthDiff = today.getMonth() - selectedDate.getMonth();
+    
+    // Adjust age if birthday hasn't occurred yet this year
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < selectedDate.getDate())) {
+      age--;
+    }
+    
+    return age >= 18;
+  };
+
+  const isValidDate = (dateStr) => {
+    if (!dateStr) return false;
+    return isValidDateOfBirth(dateStr);
+  };
 
   const validateField = (name, value) => {
     let error = "";
@@ -129,7 +177,27 @@ const Signup = () => {
           if (!isValidPhone(value)) error = t("signup.invalidPhone");
           break;
         case "dateOfBirth":
-          if (!isValidDate(value)) error = t("signup.invalidDate");
+          if (!isValidDate(value)) {
+            // Check which error to show
+            if (value) {
+              const selectedDate = new Date(value);
+              const today = new Date();
+              let age = today.getFullYear() - selectedDate.getFullYear();
+              const monthDiff = today.getMonth() - selectedDate.getMonth();
+              
+              if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < selectedDate.getDate())) {
+                age--;
+              }
+              
+              if (age < 18) {
+                error = t("signup.ageRestriction") || "You must be at least 18 years old";
+              } else {
+                error = t("signup.invalidDate") || "Invalid date of birth";
+              }
+            } else {
+              error = t("signup.fieldRequired");
+            }
+          }
           break;
         case "country":
           if (!value) error = t("signup.countryRequired");
@@ -152,6 +220,15 @@ const Signup = () => {
       setDate(selectedDate);
       const formattedDate = selectedDate.toISOString().split('T')[0]; // YYYY-MM-DD
       handleChange("dateOfBirth", formattedDate);
+      
+      // Check age immediately after date selection
+      if (!isValidDateOfBirth(formattedDate)) {
+        Toast.show({
+          type: 'error',
+          text1: t('signup.ageErrorTitle') || 'Age Restriction',
+          text2: t('signup.ageRestriction') || 'You must be at least 18 years old',
+        });
+      }
     }
   };
 
@@ -163,11 +240,20 @@ const Signup = () => {
                 validateField("lastName", signupDetails.lastName) && 
                 validateField("email", signupDetails.email);
     } else if (step === 2) {
-      isValid = validateField("dateOfBirth", signupDetails.dateOfBirth) && 
-                validateField("placeOfBirth", signupDetails.placeOfBirth) && 
-                validateField("phone", signupDetails.phone) && 
-                validateField("address", signupDetails.address) &&
-                validateField("country", signupDetails.country);
+      // Special check for date of birth to show clear message
+      if (!isValidDateOfBirth(signupDetails.dateOfBirth)) {
+        setValidationErrors(prev => ({
+          ...prev,
+          dateOfBirth: t("signup.ageRestriction") || "You must be at least 18 years old"
+        }));
+        isValid = false;
+      } else {
+        isValid = validateField("dateOfBirth", signupDetails.dateOfBirth) && 
+                  validateField("placeOfBirth", signupDetails.placeOfBirth) && 
+                  validateField("phone", signupDetails.phone) && 
+                  validateField("address", signupDetails.address) &&
+                  validateField("country", signupDetails.country);
+      }
     }
     
     return isValid;
@@ -195,6 +281,16 @@ const Signup = () => {
         type: 'error',
         text1: 'Error',
         text2: 'Please fill all fields correctly',
+      });
+      return;
+    }
+
+    // Final age validation before submission
+    if (!isValidDateOfBirth(signupDetails.dateOfBirth)) {
+      Toast.show({
+        type: 'error',
+        text1: t('signup.ageErrorTitle') || 'Age Restriction',
+        text2: t('signup.ageRestriction') || 'You must be at least 18 years old',
       });
       return;
     }
@@ -440,30 +536,48 @@ const Signup = () => {
       </Text>
 
       {/* Date of Birth */}
-      <Text className="text-sm font-medium text-gray-700 mb-1 pl-3">  {t("signup.DOB")}</Text>
-      <TouchableOpacity
-        onPress={() => setShowDatePicker(true)}
-        className="border-[#fff] bg-[#ffffff] rounded-3xl mb-2 py-4"
-        style={{
-          backgroundColor: '#fff',
-          borderRadius: 30,
-          paddingVertical: 14,
-          paddingHorizontal: 20,
-          fontSize: 16,
-          borderWidth: 1,
-          borderColor: validationErrors.dateOfBirth ? '#ff4444' : '#ddd',
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 1 },
-          shadowOpacity: 0.1,
-          shadowRadius: 2,
-          elevation: 2,
-          color: '#000'
-        }}
-      >
-        <Text style={{ color: signupDetails.dateOfBirth ? '#000' : '#888' }}>
-          {signupDetails.dateOfBirth || t("signup.dateOfBirthPlaceholder")}
+      <View className="mb-2">
+        <Text className="text-sm font-medium text-gray-700 mb-1 pl-3">
+          {t("signup.DOB")} <Text className="text-gray-500 text-xs">({t("signup.minAge") || "Must be 18+"})</Text>
         </Text>
-      </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => setShowDatePicker(true)}
+          className="border-[#fff] bg-[#ffffff] rounded-3xl py-4"
+          style={{
+            backgroundColor: '#fff',
+            borderRadius: 30,
+            paddingVertical: 14,
+            paddingHorizontal: 20,
+            fontSize: 16,
+            borderWidth: 1,
+            borderColor: validationErrors.dateOfBirth ? '#ff4444' : '#ddd',
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.1,
+            shadowRadius: 2,
+            elevation: 2,
+            color: '#000'
+          }}
+        >
+          <View className="flex-row justify-between items-center">
+            <Text style={{ color: signupDetails.dateOfBirth ? '#000' : '#888' }}>
+              {signupDetails.dateOfBirth || t("signup.dateOfBirthPlaceholder")}
+            </Text>
+            <AntDesign name="calendar" size={20} color="#888" />
+          </View>
+        </TouchableOpacity>
+        
+        {validationErrors.dateOfBirth ? (
+          <Text className="text-red-500 text-xs mt-2 pl-3">
+            {validationErrors.dateOfBirth}
+          </Text>
+        ) : signupDetails.dateOfBirth && isValidDateOfBirth(signupDetails.dateOfBirth) ? (
+          <Text className="text-green-600 text-xs mt-2 pl-3 flex-row items-center">
+            <AntDesign name="checkcircle" size={12} color="#10B981" style={{ marginRight: 4 }} />
+            {t("signup.ageVerified") || "Age verified (18+)"}
+          </Text>
+        ) : null}
+      </View>
 
       {showDatePicker && (
         <DateTimePicker
@@ -471,16 +585,10 @@ const Signup = () => {
           mode="date"
           display="default"
           onChange={handleDateChange}
-          maximumDate={new Date()}
+          maximumDate={minDate} // Can't select dates after 18 years ago
+          minimumDate={maxDate} // Can't select dates before 100 years ago
         />
       )}
-
-      {validationErrors.dateOfBirth && (
-        <Text className="text-red-500 text-xs mb-3 pl-3">
-          {validationErrors.dateOfBirth}
-        </Text>
-      )}
-    
 
       {/* Place of Birth */}
       <Text className="text-sm font-medium text-gray-700 mb-1 pl-3">{t("signup.pob")}</Text>
@@ -625,7 +733,8 @@ const Signup = () => {
 
         <TouchableOpacity
           onPress={nextStep}
-          className={`bg-[#7ddd7d] rounded-3xl p-4 items-center justify-center flex-1 ml-2`}
+          disabled={!isValidDateOfBirth(signupDetails.dateOfBirth)}
+          className={`${isValidDateOfBirth(signupDetails.dateOfBirth) ? 'bg-[#7ddd7d]' : 'bg-gray-400'} rounded-3xl p-4 items-center justify-center flex-1 ml-2`}
           style={{
             shadowColor: '#000',
             shadowOffset: { width: 0, height: 2 },
@@ -741,8 +850,8 @@ const Signup = () => {
 
         <TouchableOpacity
           onPress={handleSignup}
-          disabled={isLoading}
-          className={`bg-[#7ddd7d] rounded-3xl p-4 items-center justify-center flex-1 ml-2 ${isLoading ? "opacity-60" : ""}`}
+          disabled={isLoading || !isValidDateOfBirth(signupDetails.dateOfBirth)}
+          className={`${isValidDateOfBirth(signupDetails.dateOfBirth) ? 'bg-[#7ddd7d]' : 'bg-gray-400'} rounded-3xl p-4 items-center justify-center flex-1 ml-2 ${isLoading ? "opacity-60" : ""}`}
           style={{
             shadowColor: '#000',
             shadowOffset: { width: 0, height: 2 },

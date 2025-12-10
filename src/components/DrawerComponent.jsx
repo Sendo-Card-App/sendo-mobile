@@ -24,6 +24,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { incrementAttempt, resetAttempts, lockPasscode } from '../features/Auth/passcodeSlice';
 import { useTranslation } from "react-i18next";
 import { useGetUserProfileQuery, useLogoutMutation, useGetProfilePictureQuery } from "../services/Auth/authAPI";
+import { useGetConfigQuery } from "../services/Config/configApi";
 import Loader from "./Loader";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Share } from 'react-native';
@@ -46,6 +47,20 @@ const DrawerComponent = ({ navigation }) => {
   const isLocked = lockedUntil && new Date(lockedUntil) > new Date()
 
   const {
+      data: configData,
+      isLoading: isConfigLoading,
+      error: configError,
+      refetch: refetchConfig,
+    } = useGetConfigQuery();
+  
+    const getConfigValue = (name) => {
+      const configItem = configData?.data?.find((item) => item.name === name);
+      return configItem ? configItem.value : null;
+    };
+  
+  const SPONSORSHIP_FEES = getConfigValue("SPONSORSHIP_FEES");
+
+  const {
       data: userProfile,
       isLoading: isProfileFetching,
       isLoading: isProfileLoading,
@@ -57,7 +72,7 @@ const DrawerComponent = ({ navigation }) => {
     }
   );
 
-  const userId = userProfile?.data?.id;
+  const userId = userProfile?.data?.user?.id;
   
     const { data: profilePicture, isLoading: isPictureLoading } = useGetProfilePictureQuery(
       userId, // pass userId here
@@ -220,7 +235,7 @@ const DrawerComponent = ({ navigation }) => {
     );
   }
  const shareReferralCode = () => {
-  if (!userProfile?.data?.referralCode) {
+  if (!userProfile?.data?.referralCode?.code) {
     Toast.show({
       type: 'error',
       text1: 'Erreur',
@@ -230,9 +245,9 @@ const DrawerComponent = ({ navigation }) => {
   }
 
   const appName = 'Sendo'; 
-  const appStoreLink = 'https://apps.apple.com/...';
-  const playStoreLink = 'https://play.google.com/...';
-  const referralCode = userProfile.data.referralCode;
+  const appStoreLink = 'https://apps.apple.com/tr/app/sendo/id6753186956';
+  const playStoreLink = 'https://play.google.com/store/apps/details?id=com.sfe.ca&pcampaignid=web_share';
+  const referralCode = userProfile.data.referralCode.code;
 
   const message = `Salut ! Rejoins-moi sur ${appName} en utilisant mon code de parrainage ${referralCode} et nous recevrons tous les deux un bonus !
 
@@ -293,9 +308,9 @@ Utilise mon code lors de ton inscription !`;
         <View className="flex-row items-center justify-between">
           {/* 👤 Avatar */}
          <View className="flex-row items-center">
-          {profilePicture?.data?.link ? (
+          {profilePicture?.data?.user?.link ? (
             <Image
-              source={{ uri: `${profilePicture.data.link}?t=${userProfile?.data?.updatedAt}` }}
+              source={{ uri: `${profilePicture.data.user?.link}?t=${userProfile?.data?.user?.updatedAt}` }}
               style={{ width: 50, height: 50, borderRadius: 25, marginRight: 10 }}
             />
           ) : (
@@ -324,7 +339,7 @@ Utilise mon code lors de ton inscription !`;
                 flexWrap: "wrap"
               }}
             >
-              {userProfile?.data?.firstname} {userProfile?.data?.lastname}
+              {userProfile?.data?.user?.firstname} {userProfile?.data?.user?.lastname}
             </Text>
 
             {userProfile?.data?.kycDocuments?.some(doc => doc.status === "APPROVED") && (
@@ -342,19 +357,19 @@ Utilise mon code lors de ton inscription !`;
         <View className="mt-2">
           <View className="flex-row items-center">
             <Ionicons name="mail-outline" size={14} color="#6B7280" style={{ marginRight: 4 }} />
-            <Text className="text-sm text-gray-600">{userProfile?.data?.email}</Text>
+            <Text className="text-sm text-gray-600">{userProfile?.data?.user?.email}</Text>
           </View>
 
           <View className="flex-row items-center mt-1">
             <Ionicons name="call-outline" size={14} color="#6B7280" style={{ marginRight: 4 }} />
-            <Text className="text-sm text-gray-600">{userProfile?.data?.phone}</Text>
+            <Text className="text-sm text-gray-600">{userProfile?.data?.user?.phone}</Text>
           </View>
 
           {/*  Matricule */}
           <View className="flex-row items-center mt-1">
             <Ionicons name="card-outline" size={14} color="#6B7280" style={{ marginRight: 4 }} />
             <Text className="text-sm text-gray-600">
-             {t('drawer.matricule')} <Text className="font-medium">{userProfile?.data?.wallet?.matricule}</Text>
+             {t('drawer.matricule')} <Text className="font-medium">{userProfile?.data?.user?.wallet?.matricule}</Text>
             </Text>
           </View>
         </View>
@@ -368,21 +383,29 @@ Utilise mon code lors de ton inscription !`;
 
       {/* Body */}
       <View className="flex-1 mx-8">
-        {/* <View className="border-b border-gray-400 py-3">
-          <Text className="font-bold text-gray-600">{t('drawer.bonus')}</Text>
-          <Text className="text-xs text-gray-500 my-2">
-            {t('drawer.bonus_description')}
-          </Text>
-          <Text className="text-sm text-gray-500">{t('drawer.bonus_code')} {userProfile?.data?.referralCode}</Text>
-          <TouchableOpacity onPress={shareReferralCode}>
+      <View className="border-b border-gray-400 py-3">
+        <Text className="font-bold text-gray-600">
+          {t('drawer.bonus', { amount: SPONSORSHIP_FEES })}
+        </Text>
+
+        <Text className="text-xs text-gray-500 my-2">
+          {t('drawer.bonus_description', { amount: SPONSORSHIP_FEES })}
+        </Text>
+
+        <Text className="text-sm text-gray-500">
+          {t('drawer.bonus_code')} {userProfile?.data?.referralCode?.code}
+        </Text>
+
+        <TouchableOpacity onPress={shareReferralCode}>
           <View className="flex-row items-center mt-2">
             <EvilIcons name="share-google" size={24} color="#7ddd7d" />
             <Text className="text-[#7ddd7d] font-bold">
               {t('drawer.invite_friends')}
             </Text>
           </View>
-          </TouchableOpacity>
-        </View> */}
+        </TouchableOpacity>
+      </View>
+
 
         <ScrollView
           className="py-4"

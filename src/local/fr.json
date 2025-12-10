@@ -107,6 +107,10 @@
     "title": "Créer un compte",
     "title1": "Mon Compte",
       "firstName": "Prénom",
+       "ageRestriction": "Vous devez avoir au moins 18 ans",
+    "ageErrorTitle": "Restriction d'âge",
+    "ageVerified": "Âge vérifié (18+)",
+    "minAge": "Doit avoir 18+",
       "dateOfBirthPlaceholder": "Sélectionnez votre date de naissance",
       "DOB": "Date de naissance",
       "select_country": "Sélectionner un pays",
@@ -226,11 +230,10 @@
   "title": "André",
   "email": "randré24cand@gmail.com",
   "phone": "+237 600 00 00 00",
-  "bonus": "Bonus de 1,00 CAD gratuit",
-  "matricule": "Numéro de compte :",
-  "bonus_description": "Vous recevrez 1,00 CAD et votre ami recevra 1,00 CAD lors de son premier transfert. Des exigences d’envoi minimales peuvent s’appliquer. Sous réserve de conditions.",
-  "bonus_code": "Votre code:",
-  "invite_friends": "INVITER VOS AMIS",
+  "bonus": "Bonus de {{amount}} XAF gratuit",
+"bonus_description": "Vous recevrez {{amount}} XAF et votre ami recevra {{amount}} XAF lors de son premier transfert. Des exigences d’envoi minimales peuvent s’appliquer. Sous réserve de conditions.",
+"bonus_code": "Votre code:",
+"invite_friends": "INVITER VOS AMIS",
   "balance": "Estimateur de paiement enligne",
   "history": "Historique",
   "pay_bills": "Payer les factures",
@@ -454,24 +457,88 @@
     "captureError": "Échec de la capture de la photo"
   },
   "niu": {
-    "title": "Numéro d'Identification Unique",
-    "taxNumber": "N° Contribuable",
-    "enterTaxIdInstruction": "Veuillez saisir votre Numéro d'Identification Fiscale (NIU)",
-    "taxIdLabel": "Numéro d'identification fiscale",
-    "taxIdPlaceholder": "Entrez votre numéro NIU",
-    "taxIdFormatError": "Le NIU doit contenir exactement 14 caractères alphanumériques",
-    "taxIdValid": "Format NIU valide",
-    "taxIdDescription": "Le numéro d'identification unique est une combinaison de lettres et de chiffres attribuée aux contribuables. Ce numéro est essentiel pour identifier l'utilisateur en tant que contribuable.",
-    "taxIdInvalid": "NIU invalide",
-    "taxIdValidationMessage": "Votre NIU doit contenir exactement 14 caractères alphanumériques.",
-    "incompleteForm": "Formulaire incomplet",
-    "continueButton": "Continue",
-    "processing": "Traitement en cours...",
-    "backToKyc": "Retour au résumé KYC",
-    "securityNotice": "Ne partagez pas vos informations personnelles",
-    "error": "Erreur",
-    "generalError": "Une erreur inattendue est survenue. Veuillez réessayer plus tard.",
-    "taxIdRequired": "Le numéro fiscal est requis"
+    "errors": {
+      "title": "Erreur",
+      "balanceFetchFailed": "Impossible de récupérer le solde. Veuillez réessayer.",
+      "termsNotAccepted": "Veuillez accepter les conditions générales et l'autorisation de paiement.",
+      "insufficientBalance": "Solde insuffisant. Veuillez recharger votre compte.",
+      "technical": "Une erreur technique est survenue. Veuillez réessayer."
+    },
+    "success": {
+      "title": "Succès",
+      "message": "Votre demande de NIU a été soumise avec succès."
+    },
+    "cni": {
+      "permissionDenied": "Permission refusée",
+      "permissionMessage": "L'accès à la galerie est nécessaire pour télécharger votre CNI.",
+      "cameraPermissionDenied": "Caméra refusée",
+      "cameraPermissionMessage": "L'accès à la caméra est nécessaire pour prendre une photo.",
+      "uploadError": "Erreur lors de la sélection de l'image",
+      "cameraError": "Erreur lors de la prise de photo",
+      "uploadTitle": "Téléchargement de la CNI",
+      "uploadDescription": "Veuillez télécharger les deux côtés de votre carte nationale d'identité (CNI).",
+      "frontSide": "Recto de la CNI",
+      "backSide": "Verso de la CNI",
+      "uploadOption": "Options de téléchargement",
+      "chooseMethod": "Comment souhaitez-vous télécharger l'image ?",
+      "takePhoto": "Prendre une photo",
+      "chooseFromGallery": "Choisir dans la galerie",
+      "uploadFront": "Télécharger le recto",
+      "uploadBack": "Télécharger le verso",
+      "uploadFailed": "Échec du téléchargement. Veuillez réessayer.",
+      "requirementsTitle": "Exigences de la photo",
+      "requirement1": "La CNI doit être clairement lisible",
+      "requirement2": "Toutes les informations doivent être visibles",
+      "rectoMandatory": "Le recto de la CNI est obligatoire",
+      "versoRecommended": "Le verso est recommandé pour un traitement plus rapide"
+    },
+    "request": {
+      "processTitle": "Processus de demande",
+      "statusApproved": "Demande approuvée",
+      "statusPending": "En attente de traitement",
+      "statusRejected": "Demande rejetée",
+      "raison": "Raison",
+      "feesTitle": "Frais de traitement",
+      "feesAmount": "Montant des frais",
+      "termsAccept": "J'accepte les conditions générales de la demande",
+      "paymentAccept": "J'autorise le paiement de",
+      "payButton": "Payer et soumettre"
+    },
+    "steps": {
+      "fees": "Paiement",
+      "kyc": "Vérification KYC",
+      "cniUpload": "Téléchargement CNI",
+      "niuNumber": "Attribution NIU",
+      "attestation": "Attestation"
+    },
+    "alreadyHave": {
+      "title": "Demande déjà traitée",
+      "message": "Vous avez déjà une demande de NIU approuvée ou en cours de traitement.",
+      "backButton": "Retour à l'accueil"
+    },
+    "security": {
+      "message": "Transaction sécurisée et cryptée"
+    },
+    "paymentModal": {
+      "title": "Confirmation de paiement",
+      "message": "Voulez-vous confirmer le paiement de {{amount}} FCFA pour votre demande de NIU ?",
+      "confirm": "Confirmer le paiement",
+      "cancel": "Annuler"
+    }
+  },
+  "screensNiu": {
+    "niuRequest": "Demande de NIU"
+  },
+  "commonNiu": {
+    "loading": "Chargement...",
+  "uploading": "Téléchargement...",
+  "tapToSelect": "Appuyez pour sélectionner",
+  "availableBalance": "Solde disponible",
+  "balanceAfterPayment": "Solde après paiement",
+  "termsAndConditions": "Conditions et Autorisations",
+  "submitRequest": "Soumettre la Demande",
+  "insufficientBalance": "Solde insuffisant",
+  "pleaseAcceptTerms": "Veuillez accepter toutes les conditions"
   },
  "personalDetail": {
   "title": "Informations personnelles",
@@ -560,7 +627,22 @@
     "completed": "Complété",
     "pending": "En attente",
     "submit": "SOUMETTRE",
-    "privacy_notice": "Ne partagez pas vos informations personnelles"
+    "privacy_notice": "Ne partagez pas vos informations personnelles",
+     "optional": "Optionnel",
+    "no_niu_title": "N° d'Identification Unique manquant",
+    "no_niu_message": "Vous pouvez soumettre votre KYC maintenant et demander votre NIU plus tard, ou demander un NIU avant de continuer.",
+    "submit_without_niu": "Soumettre sans NIU",
+    "request_niu": "Demander un NIU",
+    "niu_missing": "NIU manquant",
+    "niu_optional_note": "N° d'Identification Unique est optionnel",
+    "niu_notice_title": "N° d'Identification Unique",
+    "niu_notice_message": "Vous pouvez soumettre votre KYC maintenant et demander votre NIU plus tard via l'application.",
+    "niu_hint": "Le N° d'Identification Unique est optionnel pour la soumission.",
+    "without_niu": "sans NIU",
+    "incomplete_required_message": "Veuillez compléter tous les documents requis avant de soumettre.",
+    "required_steps_complete": "Documents requis complétés",
+    "submitting": "Soumission en cours..."
+  
   },
   "manageVirtualCard": {
     "title": "Gérer ma carte virtuelle",
@@ -1790,6 +1872,15 @@
     "grantPermission": "Autoriser l’accès",
     "cancel": "Annuler",
     "accept": "Accepter"
+  },
+  "referralSuccess": {
+    "title": "Félicitations !",
+    "message1": "Votre code de parrainage a été utilisé avec succès !",
+    "message2": "Le bonus de parrainage a été ajouté à votre portefeuille. Merci d'avoir invité d'autres personnes à nous rejoindre !",
+    "bonusAdded": "Bonus ajouté :",
+    "yourCode": "Votre code de parrainage était :",
+    "gotIt": "Compris !",
+    "close": "Fermer"
   }
    
 

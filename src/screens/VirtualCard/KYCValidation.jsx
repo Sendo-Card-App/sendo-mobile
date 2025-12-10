@@ -478,13 +478,6 @@ const KYCValidation = () => {
                     Document Number: {item.documentNumber}
                   </Text>
                 )}
-
-                {item.expirationDate && (
-                  <Text className="text-xs text-gray-600 mt-1">
-                    Expiration: {formatDate(item.expirationDate)}
-                  </Text>
-                )}
-
                 {item.taxIdNumber && (
                   <Text className="text-xs text-gray-600 mt-1">
                     Tax ID: {item.taxIdNumber}

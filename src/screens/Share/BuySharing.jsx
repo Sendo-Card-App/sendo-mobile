@@ -22,7 +22,7 @@ const { width } = Dimensions.get("window");
 export default function Historique({ navigation }) {
   const { t } = useTranslation();
   const { data: userProfile, isLoading: profileLoading } = useGetUserProfileQuery();
-  const userId = userProfile?.data?.id;
+  const userId = userProfile?.data?.user?.id;
   const [filterModalVisible, setFilterModalVisible] = useState(false);
   const [activeFilter, setActiveFilter] = useState("all"); // "all", "pending", "paid", "cancelled"
 

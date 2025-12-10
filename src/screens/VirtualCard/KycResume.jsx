@@ -1,4 +1,4 @@
-// Enhanced KycResume component with proper error handling
+// Enhanced KycResume component with NIU optional and notice banner
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Image, FlatList, Alert, Animated } from "react-native";
 import { useSelector, useDispatch } from 'react-redux';
@@ -31,9 +31,30 @@ const KycResume = ({ navigation }) => {
   const isKYCComplete = useSelector(selectIsKYCComplete);
   const { t } = useTranslation();
 
-  // Pulse animation for incomplete sections
+  // Calculate if all required documents are complete (excluding NIU)
+  const isRequiredDocumentsComplete = () => {
+    return !!personalDetails.profession && 
+           !!personalDetails.region && 
+           !!personalDetails.city && 
+           !!personalDetails.expirationDate && 
+           !!personalDetails.district &&
+           !!personalDetails.cni &&
+           !!selfie &&
+           !!addressProof &&
+           !!identityDocument.front &&
+           (
+             identityDocument.type === 'passport' ||
+             (identityDocument.type === 'cni' && !!identityDocument.back) ||
+             (identityDocument.type === 'drivers_license' && !!identityDocument.back)
+           );
+  };
+
+  const hasNIU = !!niuDocument;
+  const requiredDocumentsComplete = isRequiredDocumentsComplete();
+
+  // Pulse animation for incomplete required sections
   useEffect(() => {
-    if (!isKYCComplete) {
+    if (!requiredDocumentsComplete) {
       const pulse = Animated.loop(
         Animated.sequence([
           Animated.timing(pulseAnim, {
@@ -51,7 +72,7 @@ const KycResume = ({ navigation }) => {
       pulse.start();
       return () => pulse.stop();
     }
-  }, [isKYCComplete]);
+  }, [requiredDocumentsComplete]);
 
   // Show error message if previous submission failed
   useEffect(() => {
@@ -77,14 +98,16 @@ const KycResume = ({ navigation }) => {
                 !!personalDetails.expirationDate && 
                 !!personalDetails.district &&
                 !!personalDetails.cni,
-      icon: "account-details"
+      icon: "account-details",
+      required: true
     },
     { 
       id: "2", 
       name: t('kyc_resume.selfie'), 
       route: "KycSelfie", 
       completed: !!selfie,
-      icon: "camera-front-variant"
+      icon: "camera-front-variant",
+      required: true
     },
     {
       id: "3",
@@ -96,25 +119,32 @@ const KycResume = ({ navigation }) => {
           (identityDocument.type === 'cni' && !!identityDocument.back) ||
           (identityDocument.type === 'drivers_license' && !!identityDocument.back)
         ),
-      icon: "card-account-details"
+      icon: "card-account-details",
+      required: true
     },
     { 
       id: "4", 
       name: t('kyc_resume.niu_document'), 
       route: "NIU", 
       completed: !!niuDocument,
-      icon: "file-document"
+      icon: "file-document",
+      required: false, // NIU is optional
+      optional: true
     },
     { 
       id: "5", 
       name: t('kyc_resume.address_proof'), 
       route: "Addresse", 
       completed: !!addressProof,
-      icon: "home-map-marker"
+      icon: "home-map-marker",
+      required: true
     },
   ];
 
-  const incompleteCount = Data.filter(item => !item.completed).length;
+  const incompleteCount = Data.filter(item => !item.completed && item.required).length;
+  const totalCompleted = Data.filter(item => item.completed).length;
+  const totalRequired = Data.filter(item => item.required).length;
+  const requiredCompleted = Data.filter(item => item.completed && item.required).length;
 
   const compressImage = async (uri) => {
     try {
@@ -131,11 +161,11 @@ const KycResume = ({ navigation }) => {
   };
 
   const handleSubmit = async () => {
-    if (isSubmitting || !isKYCComplete) {
+    if (isSubmitting || !requiredDocumentsComplete) {
       Toast.show({
         type: 'error',
         text1: t('kyc_resume.incomplete_title'),
-        text2: t('kyc_resume.incomplete_message'),
+        text2: t('kyc_resume.incomplete_required_message'),
       });
       return;
     }
@@ -146,6 +176,7 @@ const KycResume = ({ navigation }) => {
     try {
       const idDocumentNumber = personalDetails.cni;
       const expirationDate = personalDetails.expirationDate;
+      const taxIdNumber = niuDocument?.taxIdNumber || null;
 
       const profilePayload = {
         profession: personalDetails.profession,
@@ -177,36 +208,28 @@ const KycResume = ({ navigation }) => {
       // 2. ID_PROOF
       if (identityDocument.type === 'passport' && identityDocument.front) {
         await addDocumentAndFile(
-          { type: 'ID_PROOF', idDocumentNumber, expirationDate, taxIdNumber: niuDocument.taxIdNumber },
+          { type: 'ID_PROOF', idDocumentNumber, expirationDate, taxIdNumber },
           identityDocument.front.uri,
           fileIndex++
         );
         await addDocumentAndFile(
-          { type: 'ID_PROOF', idDocumentNumber, expirationDate, taxIdNumber: niuDocument.taxIdNumber },
+          { type: 'ID_PROOF', idDocumentNumber, expirationDate, taxIdNumber },
           identityDocument.front.uri,
           fileIndex++
         );
       } else if (identityDocument.front && identityDocument.back) {
         await addDocumentAndFile(
-          { type: 'ID_PROOF', idDocumentNumber, expirationDate, taxIdNumber: niuDocument.taxIdNumber },
+          { type: 'ID_PROOF', idDocumentNumber, expirationDate, taxIdNumber },
           identityDocument.front.uri,
           fileIndex++
         );
         await addDocumentAndFile(
-          { type: 'ID_PROOF', idDocumentNumber, expirationDate, taxIdNumber: niuDocument.taxIdNumber },
+          { type: 'ID_PROOF', idDocumentNumber, expirationDate, taxIdNumber },
           identityDocument.back.uri,
           fileIndex++
         );
       }
 
-      // // 3. NIU_PROOF
-      // if (niuDocument?.document) {
-      //   await addDocumentAndFile(
-      //     { type: 'NIU_PROOF', taxIdNumber: niuDocument.taxIdNumber },
-      //      niuDocument.document.uri,
-      //     fileIndex++
-      //   );
-      // }
 
       // 4. ADDRESS_PROOF
       if (addressProof) {
@@ -229,8 +252,12 @@ const KycResume = ({ navigation }) => {
       console.log('Documents to submit:', documents.length);
       console.log('Files to upload:', files.length);
 
-      if (documents.length !== 4 || files.length !== 4) {
-        throw new Error(`5 documents and 5 files required. Currently: ${documents.length} doc(s), ${files.length} file(s)`);
+      // Adjust expected document count based on whether NIU is included
+      const expectedDocumentCount =  4;
+      const expectedFileCount =  4;
+      
+      if (documents.length !== expectedDocumentCount || files.length !== expectedFileCount) {
+        throw new Error(`Expected ${expectedDocumentCount} documents and ${expectedFileCount} files. Currently: ${documents.length} doc(s), ${files.length} file(s)`);
       }
 
       const formData = new FormData();
@@ -240,10 +267,13 @@ const KycResume = ({ navigation }) => {
       });
 
       const response = await submitKYC(formData).unwrap();
-    console.log('KYC submission response:', JSON.stringify(response, null, 2));
+      console.log('KYC submission response:', JSON.stringify(response, null, 2));
+      
       if (response?.status === 201) {
         navigation.navigate('Success', {
-          message: 'Votre KYC a été soumis avec succès',
+          message: hasNIU 
+            ? 'Votre KYC a été soumis avec succès' 
+            : 'Votre KYC a été soumis. Vous pourrez faire une demande de NIU pour compléter votre vérification KYC.',
           nextScreen: 'MainTabs',
         });
       } else {
@@ -284,34 +314,43 @@ const KycResume = ({ navigation }) => {
     }
   };
 
-  const KycOption = ({ id, name, route, completed, icon }) => (
+  const KycOption = ({ id, name, route, completed, icon, optional }) => (
     <TouchableOpacity
-      className={`py-4 px-4 my-2 rounded-2xl flex-row items-center gap-4 ${completed ? 'bg-green-50 border border-green-200' : 'bg-orange-50 border border-orange-200'}`}
+      className={`py-4 px-4 my-2 rounded-2xl flex-row items-center gap-4 ${completed ? 'bg-green-50 border border-green-200' : optional ? 'bg-blue-50 border border-blue-200' : 'bg-orange-50 border border-orange-200'}`}
       onPress={() => navigation.navigate(route)}
       style={{
-        shadowColor: completed ? '#10b981' : '#f59e0b',
+        shadowColor: completed ? '#10b981' : optional ? '#3b82f6' : '#f59e0b',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 3,
         elevation: 2,
       }}
     >
-      <View className={`p-2 rounded-full ${completed ? 'bg-green-100' : 'bg-orange-100'}`}>
+      <View className={`p-2 rounded-full ${completed ? 'bg-green-100' : optional ? 'bg-blue-100' : 'bg-orange-100'}`}>
         <MaterialCommunityIcons 
           name={icon} 
           size={22} 
-          color={completed ? "green" : "orange"} 
+          color={completed ? "green" : optional ? "blue" : "orange"} 
         />
       </View>
       <View className="flex-1">
-        <Text className="text-gray-800 font-bold text-base">{name}</Text>
-        <Text className={`text-sm ${completed ? 'text-green-600' : 'text-orange-600'}`}>
-          {completed ? t('kyc_resume.completed') : t('kyc_resume.pending')}
+        <View className="flex-row items-center">
+          <Text className="text-gray-800 font-bold text-base">{name}</Text>
+          {optional && (
+            <View className="ml-2 px-2 py-1 bg-blue-100 rounded-full">
+              <Text className="text-blue-600 text-xs font-medium">
+                {t('kyc_resume.optional')}
+              </Text>
+            </View>
+          )}
+        </View>
+        <Text className={`text-sm ${completed ? 'text-green-600' : optional ? 'text-blue-600' : 'text-orange-600'}`}>
+          {completed ? t('kyc_resume.completed') : optional ? t('kyc_resume.optional') : t('kyc_resume.pending')}
         </Text>
       </View>
-      <View className={`p-1 rounded-full ${completed ? 'bg-green-500' : 'bg-orange-500'}`}>
+      <View className={`p-1 rounded-full ${completed ? 'bg-green-500' : optional ? 'bg-blue-500' : 'bg-orange-500'}`}>
         <MaterialCommunityIcons 
-          name={completed ? "check" : "alert-circle"} 
+          name={completed ? "check" : optional ? "information" : "alert-circle"} 
           size={16} 
           color="white" 
         />
@@ -355,7 +394,10 @@ const KycResume = ({ navigation }) => {
               {t('kyc_resume.progress')}
             </Text>
             <Text className="text-white font-bold text-lg">
-              {Data.filter(item => item.completed).length}/{Data.length}
+              {requiredCompleted}/{totalRequired}
+              {!hasNIU && (
+                <Text className="text-blue-300 text-sm"> ({t('kyc_resume.niu_missing')})</Text>
+              )}
             </Text>
           </View>
           
@@ -364,7 +406,7 @@ const KycResume = ({ navigation }) => {
             <View 
               className="bg-green-400 h-3 rounded-full" 
               style={{ 
-                width: `${(Data.filter(item => item.completed).length / Data.length) * 100}%` 
+                width: `${(requiredCompleted / totalRequired) * 100}%` 
               }}
             />
           </View>
@@ -372,8 +414,15 @@ const KycResume = ({ navigation }) => {
           <Text className="text-blue-200 text-sm text-center">
             {incompleteCount > 0 
               ? t('kyc_resume.steps_remaining', { count: incompleteCount })
-              : t('kyc_resume.all_steps_complete')
+              : hasNIU 
+                ? t('kyc_resume.all_steps_complete')
+                : t('kyc_resume.required_steps_complete')
             }
+            {!hasNIU && incompleteCount === 0 && (
+              <Text className="block mt-1 text-blue-300 font-medium">
+                {t('kyc_resume.niu_optional_note')}
+              </Text>
+            )}
           </Text>
         </View>
       </View>
@@ -385,6 +434,9 @@ const KycResume = ({ navigation }) => {
           </Text>
           <Text className="text-center text-gray-500 text-sm mt-2">
             {t('kyc_resume.completion_hint')}
+            {!hasNIU && (
+              <Text className="text-blue-500 font-medium"> {t('kyc_resume.niu_hint')}</Text>
+            )}
           </Text>
         </View>
 
@@ -395,13 +447,30 @@ const KycResume = ({ navigation }) => {
           showsVerticalScrollIndicator={false}
         />
         
-        <Animated.View style={{ transform: [{ scale: isKYCComplete ? 1 : pulseAnim }] }}>
+        {/* NIU Notice Banner - ADDED HERE */}
+        {!hasNIU && requiredDocumentsComplete && (
+          <View className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4">
+            <View className="flex-row items-start">
+              <Ionicons name="information-circle" size={24} color="#3b82f6" className="mr-3" />
+              <View className="flex-1">
+                <Text className="text-blue-800 font-bold text-base mb-1">
+                  {t('kyc_resume.niu_notice_title')}
+                </Text>
+                <Text className="text-blue-600 text-sm">
+                  {t('kyc_resume.niu_notice_message')}
+                </Text>
+              </View>
+            </View>
+          </View>
+        )}
+        
+        <Animated.View style={{ transform: [{ scale: requiredDocumentsComplete ? 1 : pulseAnim }] }}>
           <TouchableOpacity 
-            className={`py-4 rounded-2xl mb-6 ${isKYCComplete ? 'bg-green-500' : 'bg-gray-400'} shadow-lg`}
+            className={`py-4 rounded-2xl mb-6 ${requiredDocumentsComplete ? 'bg-green-500' : 'bg-gray-400'} shadow-lg`}
             onPress={handleSubmit}
-            disabled={!isKYCComplete || submissionStatus === 'loading'}
+            disabled={!requiredDocumentsComplete || submissionStatus === 'loading'}
             style={{
-              shadowColor: isKYCComplete ? '#10b981' : '#9ca3af',
+              shadowColor: requiredDocumentsComplete ? '#10b981' : '#9ca3af',
               shadowOffset: { width: 0, height: 4 },
               shadowOpacity: 0.3,
               shadowRadius: 5,
@@ -417,6 +486,9 @@ const KycResume = ({ navigation }) => {
                 <Feather name="send" size={20} color="white" />
                 <Text className="text-white text-xl font-bold ml-2">
                   {t('kyc_resume.submit')}
+                  {!hasNIU && requiredDocumentsComplete && (
+                    <Text className="text-sm font-normal"> ({t('kyc_resume.without_niu')})</Text>
+                  )}
                 </Text>
               </View>
             )}

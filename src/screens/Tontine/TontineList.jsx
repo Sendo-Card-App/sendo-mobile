@@ -44,7 +44,7 @@ export default function TontineListScreen({ navigation }) {
   const user = useSelector((state) => state.auth.user);
 
   const { data: userProfile, isLoading: profileLoading, refetch: refetchProfile } = useGetUserProfileQuery();
-  const userId = userProfile?.data?.id;
+  const userId = userProfile?.data?.user?.id;
    
   const { 
     data, 

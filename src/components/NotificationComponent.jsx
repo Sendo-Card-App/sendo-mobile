@@ -46,7 +46,7 @@ export const getIconName = (type) => {
 
 const NotificationComponent = ({ navigation }) => {
   const { data: userProfile, isLoading: profileLoading } = useGetUserProfileQuery(undefined, { pollingInterval: 1000 });
-  const userId = userProfile?.data?.id;
+  const userId = userProfile?.data?.user?.id;
   const { t, i18n } = useTranslation();
   const [page, setPage] = useState(1);
   const limit = 20;

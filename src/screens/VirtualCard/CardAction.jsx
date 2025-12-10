@@ -32,7 +32,7 @@ const CardActionScreen = ({ route }) => {
   const [withdrawFromCard, { isLoading: isWithdrawing }] = useWithdrawFromCardMutation();
   const { data: userProfile, isLoading: isProfileLoading } = useGetUserProfileQuery();
 
-  const matriculeWallet = userProfile?.data?.wallet?.matricule;
+  const matriculeWallet = userProfile?.data?.user?.wallet?.matricule;
   const isLoading = isRecharging || isWithdrawing || isProfileLoading;
 
   const showModal = (type, message) => {

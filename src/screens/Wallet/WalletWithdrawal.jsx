@@ -32,7 +32,7 @@ const WalletWithdrawal = () => {
   const [checkParams, setCheckParams] = useState(null);
 
   const { data: userProfile } = useGetUserProfileQuery();
-  const userId = userProfile?.data?.id;
+  const userId = userProfile?.data?.user?.id;
 
   const { data: balanceData } = useGetBalanceQuery(userId, { skip: !userId });
   const balance = balanceData?.data?.balance ?? 0;
@@ -66,7 +66,7 @@ const WalletWithdrawal = () => {
   const SENDO_WITHDRAWAL_FEES = getConfigValue("SENDO_WITHDRAWAL_FEES");
 
   useEffect(() => {
-    const profile = userProfile?.data;
+    const profile = userProfile?.data?.user;
     if (profile) {
       setUserWalletId(profile?.wallet?.matricule || profile?.walletId);
     }
@@ -138,9 +138,9 @@ const WalletWithdrawal = () => {
     try {
       const response = await withdrawalWallet({
         phone: normalizedPhone,
-        email: userProfile?.data?.email,
-        name: `${userProfile?.data?.firstName} ${userProfile?.data?.lastName}`,
-        address: userProfile?.data?.address || "Adresse générique",
+        email: userProfile?.data?.user?.email,
+        name: `${userProfile?.data?.user?.firstName} ${userProfile?.data?.user?.lastName}`,
+        address: userProfile?.data?.user?.address || "Adresse générique",
         amount: parseFloat(amount),
         matriculeWallet: userWalletId,
       }).unwrap();

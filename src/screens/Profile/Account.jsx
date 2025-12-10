@@ -58,7 +58,7 @@ const Account = () => {
     { pollingInterval: 1000 }
   );
 
-  const userId = userProfile?.data?.id;
+  const userId = userProfile?.data?.user?.id;
 
   const { data: profilePicture, isLoading: isPictureLoading } = useGetProfilePictureQuery(
     userId,
@@ -108,16 +108,16 @@ const Account = () => {
   useEffect(() => {
     if (userProfile) {
       const profileData = {
-        firstname: userProfile.data.firstname || "",
-        lastname: userProfile.data.lastname || "",
-        phone: userProfile.data.phone || "",
-        email: userProfile.data.email || "",
-        profession: userProfile.data.profession || "",
-        region: userProfile.data.region || "",
-        city: userProfile.data.city || "",
-        district: userProfile.data.district || "",
-        picture: userProfile.data.picture 
-          ? { uri: userProfile.data.picture } 
+        firstname: userProfile.data.user.firstname || "",
+        lastname: userProfile.data.user.lastname || "",
+        phone: userProfile.data.user.phone || "",
+        email: userProfile.data.user.email || "",
+        profession: userProfile.data.user.profession || "",
+        region: userProfile.data.user.region || "",
+        city: userProfile.data.user.city || "",
+        district: userProfile.data.user.district || "",
+        picture: userProfile.data.user.picture 
+          ? { uri: userProfile.data.user.picture } 
           : null,
       };
       setFormData(profileData);
@@ -468,8 +468,8 @@ const Account = () => {
                     source={
                       formData.picture?.uri
                         ? { uri: formData.picture.uri }
-                        : profilePicture?.data?.link
-                          ? { uri: `${profilePicture.data.link}?t=${userProfile?.data?.updatedAt}` }
+                        : profilePicture?.data?.user?.link
+                          ? { uri: `${profilePicture.data.user.link}?t=${userProfile?.data?.user?.updatedAt}` }
                           : require('../../images/Avatar.png')
                     }
                     className="w-36 h-36 rounded-full border-4 border-[#7ddd7d] shadow-2xl"
@@ -519,7 +519,7 @@ const Account = () => {
                   ) : (
                     <View className="bg-gray-50 rounded-2xl p-4 border border-gray-200">
                       <Text className="text-gray-800 text-lg">
-                        {userProfile ? `${userProfile.data.firstname} ${userProfile.data.lastname}` : "Data not available"}
+                        {userProfile ? `${userProfile.data.user.firstname} ${userProfile.data.user.lastname}` : "Data not available"}
                       </Text>
                     </View>
                   )}
@@ -545,13 +545,13 @@ const Account = () => {
                         className="bg-gray-50 rounded-2xl p-4 border border-gray-200 text-gray-800 mb-3"
                         placeholderTextColor="#9CA3AF"
                       />
-                      {userProfile?.data?.secondPhoneNumber ? (
+                      {userProfile?.data?.user?.secondPhoneNumber ? (
                         <View className="mt-3 p-4 bg-green-50 rounded-2xl border border-green-200">
                           <Text className="text-green-800 font-semibold mb-1">
                             {t('account.secondPhone')}
                           </Text>
                           <Text className="text-green-700">
-                            {userProfile.data.secondPhoneNumber.phone}
+                            {userProfile.data.user.secondPhoneNumber.phone}
                           </Text>
                         </View>
                       ) : (
@@ -571,16 +571,16 @@ const Account = () => {
                     <>
                       <View className="bg-gray-50 rounded-2xl p-4 border border-gray-200 mb-3">
                         <Text className="text-gray-800 text-lg">
-                          {userProfile?.data?.phone || "Loading..."}
+                          {userProfile?.data?.user?.phone || "Loading..."}
                         </Text>
                       </View>
-                      {userProfile?.data?.secondPhoneNumber && (
+                      {userProfile?.data?.user?.secondPhoneNumber && (
                         <View className="p-4 bg-green-50 rounded-2xl border border-green-200">
                           <Text className="text-green-800 font-semibold mb-1">
                             {t('account.secondPhone')}
                           </Text>
                           <Text className="text-green-700">
-                            {userProfile.data.secondPhoneNumber.phone}
+                            {userProfile.data.user.secondPhoneNumber.phone}
                           </Text>
                         </View>
                       )}
@@ -611,7 +611,7 @@ const Account = () => {
                   ) : (
                     <View className="bg-gray-50 rounded-2xl p-4 border border-gray-200">
                       <Text className="text-gray-800 text-lg">
-                        {userProfile?.data?.email || "Loading..."}
+                        {userProfile?.data?.user?.email || "Loading..."}
                       </Text>
                     </View>
                   )}
@@ -669,7 +669,7 @@ const Account = () => {
                           </Text>
                           <View className="bg-gray-50 rounded-2xl p-4 border border-gray-200">
                             <Text className="text-gray-800 text-lg">
-                              {userProfile?.data?.[field] || "Not set"}
+                              {userProfile?.data?.user?.[field] || "Not set"}
                             </Text>
                           </View>
                         </View>

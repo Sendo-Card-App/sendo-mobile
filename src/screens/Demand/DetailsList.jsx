@@ -25,7 +25,7 @@ const DetailsList = () => {
   console.log("Demand details:", JSON.stringify(demand, null, 2));
   const { t } = useTranslation();
   const { data: userProfile } = useGetUserProfileQuery();
-  const currentUserId = userProfile?.data?.id;
+  const currentUserId = userProfile?.data?.user?.id;
 
   const [updateStatus, { isLoading }] = useUpdateFundRequestStatusMutation();
   const [deleteRequest, { isLoading: isDeleting }] =

@@ -30,9 +30,9 @@ const Destinators = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { data: userProfile } = useGetUserProfileQuery();
-  const userId = userProfile?.data?.id;
-  const userWalletId = userProfile?.data?.wallet?.matricule;
-  const userFullName = `${userProfile?.data?.firstname || ""} ${userProfile?.data?.lastname || ""}`.trim();
+  const userId = userProfile?.data?.user?.id;
+  const userWalletId = userProfile?.data?.user?.wallet?.matricule;
+  const userFullName = `${userProfile?.data?.user?.firstname || ""} ${userProfile?.data?.user?.lastname || ""}`.trim();
 
   const {
     data: contactsData,

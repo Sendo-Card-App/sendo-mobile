@@ -43,7 +43,7 @@ const WalletTransfer = ({ navigation }) => {
   }, [walletId]);
 
   const { data: userProfile, isLoading: isProfileLoading } = useGetUserProfileQuery();
-  const userId = userProfile?.data?.id;
+  const userId = userProfile?.data?.user?.id;
 
   const isCanada = userProfile?.data?.country === "Canada";
 

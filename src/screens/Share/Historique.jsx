@@ -35,7 +35,7 @@ const HistoryScreen = () => {
   const { t } = useTranslation();
   const navigation = useNavigation();
   const { data: userProfile, isLoading: profileLoading } = useGetUserProfileQuery();
-  const userId = userProfile?.data?.id;
+  const userId = userProfile?.data?.user?.id;
 
   const {
     data: sharedData,

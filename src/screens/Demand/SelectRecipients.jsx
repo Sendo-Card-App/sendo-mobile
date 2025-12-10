@@ -27,9 +27,9 @@ const SelectRecipients = ({ navigation, route }) => {
 
   // Fetch user profile
   const { data: userProfile, isLoading: loadingProfile } = useGetUserProfileQuery();
-  const userId = userProfile?.data?.id;
-  const userWalletId = userProfile?.data?.wallet?.matricule;
-  const userFullName = `${userProfile?.data?.firstname || ""} ${userProfile?.data?.lastname || ""}`.trim();
+  const userId = userProfile?.data?.user?.id;
+  const userWalletId = userProfile?.data?.user?.wallet?.matricule;
+  const userFullName = `${userProfile?.data?.user?.firstname || ""} ${userProfile?.data?.user?.lastname || ""}`.trim();
 
   // Fetch synchronized contacts
   const {

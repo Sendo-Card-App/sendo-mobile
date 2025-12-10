@@ -37,7 +37,7 @@ const DemandDetailScreen = () => {
   // console.log(sharedExpense)
 
   const { data: userProfile } = useGetUserProfileQuery();
-  const userId = userProfile?.data?.id;
+  const userId = userProfile?.data?.user?.id;
   //console.log(userId)
 
   const { data: balanceData, isLoading: isBalanceLoading } = useGetBalanceQuery(userId, { skip: !userId,

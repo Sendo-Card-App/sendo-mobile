@@ -28,7 +28,7 @@ const ServiceScreen = () => {
 
 
     // Filter services based on country
-  const country = userProfile?.data?.country;
+  const country = userProfile?.data?.user?.country;
 
 
 

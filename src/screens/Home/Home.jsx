@@ -48,6 +48,8 @@ const HomeScreen = () => {
   const [createToken] = useCreateTokenMutation();
   const [showKycModal, setShowKycModal] = useState(false);
   const [kycCheckInterval, setKycCheckInterval] = useState(null);
+   const [showReferralSuccessModal, setShowReferralSuccessModal] = useState(false);
+  const [hasShownReferralSuccess, setHasShownReferralSuccess] = useState(false);
 
   const fadeAnim = useState(new Animated.Value(0))[0];
   const slideAnim = useState(new Animated.Value(50))[0];
@@ -61,9 +63,10 @@ const HomeScreen = () => {
     isLoading: isProfileLoading,
     refetch: refetchProfile,
   } = useGetUserProfileQuery();
-  
-  const userId = userProfile?.data?.id;
- // console.log(userId)
+  //console.log("userProfile Data:", JSON.stringify(userProfile, null, 2));
+   const userId = userProfile?.data?.user?.id;
+  const referralCode = userProfile?.data?.referralCode;
+  const isReferralCodeUsed = referralCode?.isUsed;
 
   const { data: history, isLoadingHistory, isError, refetch } = useGetTransactionHistoryQuery(
     { 
@@ -102,6 +105,35 @@ const HomeScreen = () => {
 
   // Count unread notifications where `readed` is false
   const unreadCount = notifications.filter(notification => !notification.readed).length;
+
+   // Check for referral code success
+  useEffect(() => {
+    const checkReferralSuccess = async () => {
+      if (isReferralCodeUsed && !hasShownReferralSuccess) {
+        // Check if we've already shown this modal
+        const hasSeenModal = await AsyncStorage.getItem('hasSeenReferralSuccessModal');
+        
+        if (!hasSeenModal || hasSeenModal !== 'true') {
+          // Show modal after a short delay for better UX
+          setTimeout(() => {
+            setShowReferralSuccessModal(true);
+            // Trigger confetti
+            if (confettiRef.current) {
+              confettiRef.current.start();
+            }
+            // Mark as shown in AsyncStorage
+            AsyncStorage.setItem('hasSeenReferralSuccessModal', 'true');
+            setHasShownReferralSuccess(true);
+          }, 1500);
+        }
+      }
+    };
+
+    if (userProfile && referralCode) {
+      checkReferralSuccess();
+    }
+  }, [userProfile, referralCode, hasShownReferralSuccess]);
+
 
    // Start animations when component mounts
   useEffect(() => {
@@ -182,8 +214,8 @@ const HomeScreen = () => {
   useEffect(() => {
     const checkKYCStatus = () => {
       // Check if user has empty KYC documents or isVerifiedKYC is false
-      const hasEmptyKyc = userProfile?.data?.kycDocuments?.length === 0;
-      const isKycVerified = userProfile?.data?.isVerifiedKYC;
+      const hasEmptyKyc = userProfile?.data?.user?.kycDocuments?.length === 0;
+      const isKycVerified = userProfile?.data?.user?.isVerifiedKYC;
       
       if (hasEmptyKyc || !isKycVerified) {
         setShowKycModal(true);
@@ -340,6 +372,67 @@ const HomeScreen = () => {
     }
   };
 
+    const ReferralSuccessModal = () => (
+    <Modal
+      animationType="fade"
+      transparent
+      visible={showReferralSuccessModal}
+      onRequestClose={() => setShowReferralSuccessModal(false)}
+    >
+      <View className="flex-1 justify-center items-center bg-black/70 px-6">
+       
+        <View className="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl">
+          {/* Celebration icon */}
+          <View className="items-center mb-4">
+            <View className="w-20 h-20 bg-gradient-to-br from-yellow-400 to-pink-500 rounded-full justify-center items-center mb-3 shadow-lg">
+              <Ionicons name="gift" size={40} color="white" />
+            </View>
+            <Text className="text-gray-900 text-2xl font-bold text-center">
+              🎉 {t('referralSuccess.title') || "Congratulations!"} 🎉
+            </Text>
+          </View>
+          
+          {/* Message */}
+          <View className="mb-6">
+            <Text className="text-gray-700 text-lg text-center leading-7 mb-3">
+              {t('referralSuccess.message1') || "Your referral code has been successfully used!"}
+            </Text>
+            <Text className="text-gray-600 text-center text-base leading-6">
+              {t('referralSuccess.message2') || "The referral bonus has been added to your wallet. Thank you for inviting others to join!"}
+            </Text>
+          </View>
+          
+          {/* Close button */}
+          <Pressable
+            className="bg-gradient-to-r from-green-500 to-emerald-600 py-4 rounded-2xl shadow-lg active:opacity-90"
+            onPress={() => setShowReferralSuccessModal(false)}
+          >
+            <View className="flex-row items-center justify-center">
+              <Ionicons name="checkmark-circle" size={24} color="white" className="mr-2" />
+              <Text className="text-white font-bold text-lg">
+                {t('referralSuccess.gotIt') || "Got it!"}
+              </Text>
+            </View>
+          </Pressable>
+          
+          {/* Share option */}
+          <Pressable
+            className="mt-4 py-3 rounded-2xl border-2 border-green-500"
+            onPress={() => {  setShowReferralSuccessModal(false);  }}
+          >
+            <View className="flex-row items-center justify-center">
+              <Ionicons name="share-social" size={20} color="#10B981" className="mr-2" />
+              <Text className="text-green-600 font-semibold text-base">
+                {t('referralSuccess.close')}
+              </Text>
+            </View>
+          </Pressable>
+        </View>
+      </View>
+    </Modal>
+  );
+
+
   return (
     <View className="flex-1 bg-[#F2F2F2] pt-10 px-4">
       <StatusBar 
@@ -427,7 +520,7 @@ const HomeScreen = () => {
 
           {/* Nom aligné sous Bonjour */}
           <Text className="text-black text-2xl font-bold mb-2">
-            {userProfile?.data?.firstname} {userProfile?.data?.lastname}
+            {userProfile?.data?.user?.firstname} {userProfile?.data?.user?.lastname}
           </Text>
 
           {/* Bloc Solde */}
@@ -506,7 +599,7 @@ const HomeScreen = () => {
             {/* Services grid */}
             <View className="flex-row justify-between flex-wrap">
   {(
-    userProfile?.data?.country === "Canada"
+    userProfile?.data?.user?.country === "Canada"
       ? [
           { label: t("home.canadaKyc"), icon: "shield-checkmark-outline", route: "VerifyIdentity" },
           { label: t("drawer.request1"), icon: "chatbubbles-outline", route: "NiuRequest", color: "#cc5de8", bgColor: "#f8f0fc" },
@@ -514,7 +607,7 @@ const HomeScreen = () => {
           { label: t("serviceScreen.support") || "Support", icon: "headset-outline", route: "ChatScreen", color: "#8B5CF6", bgColor: "#F5F3FF" },
         ]
       : [
-          ...(userProfile?.data?.country === "Cameroon"
+          ...(userProfile?.data?.user?.country === "Cameroon"
             ? [{ label: t("home.virtualCard"), icon: "card-outline", route: "OnboardingCard" }]
             : []),
 
@@ -784,6 +877,7 @@ const HomeScreen = () => {
           </View>
         </View>
       </Modal>
+        <ReferralSuccessModal />
     </View>
   );
 };

@@ -35,7 +35,7 @@ const WalletRecharge = () => {
   const [checkParams, setCheckParams] = useState(null);
 
   const { data: userProfile } = useGetUserProfileQuery();
-  const userId = userProfile?.data?.id;
+  const userId = userProfile?.data?.user?.id;
 
   const { data: balanceData } = useGetBalanceQuery(userId, {
     skip: !userId,
@@ -146,9 +146,9 @@ const SENDO_DEPOSIT_FEES = getConfigValue("SENDO_DEPOSIT_FEES");
     try {
       const response = await rechargeWallet({
         phone: normalizedPhone,
-        email: userProfile?.data?.email,
-        name: `${userProfile?.data?.firstName} ${userProfile?.data?.lastName}`,
-        address: userProfile?.data?.address || "Adresse générique",
+        email: userProfile?.data?.user?.email,
+        name: `${userProfile?.data?.user?.firstName} ${userProfile?.data?.user?.lastName}`,
+        address: userProfile?.data?.user?.address || "Adresse générique",
         amount: parseFloat(amount),
         matriculeWallet: userWalletId,
       }).unwrap();
