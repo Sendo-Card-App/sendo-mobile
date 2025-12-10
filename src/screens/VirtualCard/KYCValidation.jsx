@@ -123,7 +123,7 @@ const KYCValidation = () => {
   });
 
   // Check if user is from Canada
-  const isCanadianUser = userProfile?.data?.country === "Canada";
+  const isCanadianUser = userProfile?.data?.user?.country === "Canada";
 
   // Handle Android back button
   useEffect(() => {
