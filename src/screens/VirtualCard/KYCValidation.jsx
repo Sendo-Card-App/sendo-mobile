@@ -123,7 +123,7 @@ const KYCValidation = () => {
   });
 
   // Check if user is from Canada
-  const isCanadianUser = userProfile?.data?.country === "Canada";
+  const isCanadianUser = userProfile?.data?.user?.country === "Canada";
 
   // Handle Android back button
   useEffect(() => {
@@ -478,13 +478,6 @@ const KYCValidation = () => {
                     Document Number: {item.documentNumber}
                   </Text>
                 )}
-
-                {item.expirationDate && (
-                  <Text className="text-xs text-gray-600 mt-1">
-                    Expiration: {formatDate(item.expirationDate)}
-                  </Text>
-                )}
-
                 {item.taxIdNumber && (
                   <Text className="text-xs text-gray-600 mt-1">
                     Tax ID: {item.taxIdNumber}

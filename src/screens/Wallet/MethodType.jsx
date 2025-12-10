@@ -31,7 +31,7 @@ const MethodType = ({ navigation }) => {
     refetch: refetchProfile,
   } = useGetUserProfileQuery();
   
-  const isCanada = userProfile?.data?.country === "Canada";
+  const isCanada = userProfile?.data?.user?.country === "Canada";
 
   // ✅ Bank details (only if not Canada)
   const bankDetails = !isCanada

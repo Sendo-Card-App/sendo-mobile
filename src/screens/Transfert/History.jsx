@@ -33,10 +33,18 @@ const HistoryCard = ({ transaction, user, onPress }) => {
   const { t } = useTranslation();
   
   // CORRECTION: Déterminer quel montant afficher
-  const displayAmount = 
-    transaction.type === 'PAYMENT' || transaction.type === 'TONTINE_PAYMENT' || transaction.type === 'VIEW_CARD_DETAILS'
-      ? transaction.totalAmount 
-      : transaction.amount;
+  const description = transaction.description || '';
+  let displayAmount = transaction.amount;
+  
+  if (
+    transaction.type === 'PAYMENT' || 
+    transaction.type === 'TONTINE_PAYMENT' || 
+    transaction.type === 'VIEW_CARD_DETAILS' ||
+    description?.trim() === "Retrait par SENDO" ||
+    description?.trim() === "Dépôt par SENDO"
+  ) {
+    displayAmount = transaction.totalAmount;
+  }
 
   const getStatusColor = (status) => {
     switch(status?.toUpperCase()) {
@@ -117,7 +125,7 @@ const HistoryCard = ({ transaction, user, onPress }) => {
             {transaction.transactionId || t('history1.unknownTransaction')}
           </Text>
           <Text className="text-gray-600 text-sm">
-            {transaction.description}
+            {description}
           </Text>
         </View>
       </View>
@@ -403,7 +411,7 @@ const History = () => {
   const navigation = useNavigation();
   const userIdFromRedux = useSelector(state => state.auth.userId);
   const { data: userProfile } = useGetUserProfileQuery();
-  const userIdFromProfile = userProfile?.data?.id;
+  const userIdFromProfile = userProfile?.data?.user?.id;
   const userId = userIdFromRedux || userIdFromProfile;
 
   const [filters, setFilters] = useState({

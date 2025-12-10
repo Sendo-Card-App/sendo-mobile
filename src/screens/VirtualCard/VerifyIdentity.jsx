@@ -27,7 +27,7 @@ const VerifyIdentity = ({ navigation }) => {
         setLoadingDocuments(true);
         try {
           const result = await refetch();
-          const profile = result?.data?.data;
+          const profile = result?.data?.data?.user;
           const documents = profile?.kycDocuments || [];
 
           if (documents.length > 0) {
@@ -51,7 +51,7 @@ const VerifyIdentity = ({ navigation }) => {
 
   // Handle navigation based on user's country
   const handleNextPress = () => {
-    const country = userProfile?.data?.country;
+    const country = userProfile?.data?.user?.country;
     if (country === "Canada") {
       navigation.navigate("CanadaKycSubmission");
     } else {

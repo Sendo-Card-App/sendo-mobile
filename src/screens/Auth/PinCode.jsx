@@ -52,8 +52,8 @@ const PinCode = ({ navigation, route }) => {
     error: profileError,
     refetch 
   } = useGetUserProfileQuery();
-
-  const userId = userProfile?.data?.id;
+  // console.log('User Profile in PinCode:', userProfile);
+  const userId = userProfile?.data?.user?.id;
   const { data: serverTokenData } = useGetTokenMutation(userId, {
     skip: !userId
   });
@@ -590,7 +590,7 @@ if (
           />
 
           <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#0D1C6A' }}>
-            {t('pin.greeting')}, {userProfile?.data?.firstname} {userProfile?.data?.lastname}
+            {t('pin.greeting')}, {userProfile?.data?.user?.firstname} {userProfile?.data?.user?.lastname}
           </Text>
           <Text style={{ fontSize: 16, color: '#0D1C6A', marginTop: 10 }}>
             {hasStoredPasscode ? t('pin.enterPin') : t('pin.setupPin')}

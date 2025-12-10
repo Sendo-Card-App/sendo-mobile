@@ -51,7 +51,7 @@ const MemberContribution = () => {
 
 
   const { data: userProfile } = useGetUserProfileQuery();
-  const userId = userProfile?.data.id;
+  const userId = userProfile?.data.user?.id;
  
   const { data: balanceData } = useGetBalanceQuery(userId, {
     skip: !userId,

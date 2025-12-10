@@ -43,7 +43,7 @@ const BankDepositRecharge = ({ navigation }) => {
       return;
     }
 
-    const isCanada = userProfile?.data?.country === "Canada";
+    const isCanada = userProfile?.data?.user?.country === "Canada";
 
     if (!isCanada && !file) {
       Toast.show({ type: 'error', text1: 'Erreur', text2: 'Veuillez téléverser le bordereau de versement bancaire' });
@@ -124,7 +124,7 @@ const BankDepositRecharge = ({ navigation }) => {
           onChangeText={setAmount}
         />
 
-        {userProfile?.data?.country === "Canada" ? (
+        {userProfile?.data?.user?.country === "Canada" ? (
           <View style={{ backgroundColor: '#f1f9f1', borderRadius: 10, padding: 15, marginBottom: 20 }}>
             <Text style={{ color: '#0D1C6A', textAlign: 'center', fontSize: 14 }}>
               Veuillez envoyer un virement Interac à l’adresse suivante :

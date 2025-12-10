@@ -96,7 +96,7 @@ const ChatScreen = ({ route, navigation }) => {
   const { data: userProfile, isLoading: isProfileLoading } = useGetUserProfileQuery(undefined, {
     pollingInterval: 1000,
   });
-  const userId = userProfile?.data?.id;
+  const userId = userProfile?.data?.user?.id;
   
   const { data: conversationsResponse, isLoading: isLoadingConversations, refetch: refetchConversations } = useGetConversationsQuery(userId, {
     skip: !userId,

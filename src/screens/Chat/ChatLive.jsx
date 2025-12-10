@@ -14,9 +14,9 @@ import {
   Platform,
   StatusBar,
   Linking,
-  Modal
+  Modal,
+  SafeAreaView
 } from 'react-native';
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from 'react-i18next';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { Ionicons, AntDesign } from '@expo/vector-icons';
@@ -35,7 +35,7 @@ import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
 import Loader from '../../components/Loader';
 import { getData} from "../../services/storage";
 import { initSocket, getSocket } from '../../utils/socket';
-import { useAppState } from '../../context/AppStateContext'; // Import the hook
+import { useAppState } from '../../context/AppStateContext';
 
 let typingTimeout: NodeJS.Timeout;
 
@@ -89,14 +89,15 @@ const ChatLive = ({ route, navigation }) => {
   const [selectedConversationIndex, setSelectedConversationIndex] = useState(0);
   const [showConversationPicker, setShowConversationPicker] = useState(false);
   const [uploadAttachments] = useUploadAttachmentsMutation();
-  const [keyboardOffset, setKeyboardOffset] = useState(0);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
-  const { setIsPickingDocument } = useAppState(); // Get the setter function
+  const { setIsPickingDocument } = useAppState();
+  const inputRef = useRef(null);
 
   const { data: userProfile, isLoading: isProfileLoading } = useGetUserProfileQuery(undefined, {
     pollingInterval: 1000,
   });
-  const userId = userProfile?.data?.id;
+  const userId = userProfile?.data?.user?.id;
   
   const { data: conversationsResponse, isLoading: isLoadingConversations, refetch: refetchConversations } = useGetConversationsQuery(userId, {
     skip: !userId,
@@ -152,7 +153,10 @@ const ChatLive = ({ route, navigation }) => {
       'keyboardDidShow',
       (e) => {
         setIsKeyboardVisible(true);
-        setKeyboardOffset(e.endCoordinates.height);
+        setKeyboardHeight(e.endCoordinates.height);
+        setTimeout(() => {
+          flatListRef.current?.scrollToEnd({ animated: true });
+        }, 100);
       }
     );
     
@@ -160,7 +164,7 @@ const ChatLive = ({ route, navigation }) => {
       'keyboardDidHide',
       () => {
         setIsKeyboardVisible(false);
-        setKeyboardOffset(0);
+        setKeyboardHeight(0);
       }
     );
 
@@ -178,6 +182,9 @@ const ChatLive = ({ route, navigation }) => {
         ...prev.filter(msg => !msg.id.startsWith('temp-')),
         message
       ]);
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }, 100);
     }
   };
 
@@ -228,6 +235,9 @@ const ChatLive = ({ route, navigation }) => {
         (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
       );
       setMessages(sorted);
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }, 100);
     }
   }, [messagesResponse]);
 
@@ -264,7 +274,6 @@ const ChatLive = ({ route, navigation }) => {
 
   const pickDocument = async () => {
     try {
-      // 🚨 Set picking state to true BEFORE opening document picker
       setIsPickingDocument(true);
       
       const result = await DocumentPicker.getDocumentAsync({
@@ -279,12 +288,10 @@ const ChatLive = ({ route, navigation }) => {
         }]);
       }
       
-      // 🚨 Reset picking state after selection
       setIsPickingDocument(false);
       
     } catch (err) {
       console.log('Document picker error:', err);
-      // 🚨 Reset picking state on error too
       setIsPickingDocument(false);
       Toast.show({
         type: 'error',
@@ -296,45 +303,40 @@ const ChatLive = ({ route, navigation }) => {
 
   const pickImage = async () => {
     try {
-        // 🚨 Set picking state to true BEFORE opening image picker
-        setIsPickingDocument(true);
-        
-        // Use the Photo Picker API without requiring permanent permissions
-        const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
-            allowsEditing: true,
-            quality: 1,
-            // Add these options to limit permission scope
-            allowsMultipleSelection: false, // Set to true if you need multiple images
-            selectionLimit: 1, // Limit to 1 image
-        });
+      setIsPickingDocument(true);
+      
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        quality: 1,
+        allowsMultipleSelection: false,
+        selectionLimit: 1,
+      });
 
-        if (!result.canceled && result.assets[0]) {
-            const compressed = await ImageManipulator.manipulateAsync(
-                result.assets[0].uri,
-                [],
-                { compress: 0.5, format: ImageManipulator.SaveFormat.JPEG }
-            );
+      if (!result.canceled && result.assets[0]) {
+        const compressed = await ImageManipulator.manipulateAsync(
+          result.assets[0].uri,
+          [],
+          { compress: 0.5, format: ImageManipulator.SaveFormat.JPEG }
+        );
 
-            setAttachments(prev => [...prev, {
-                uri: compressed.uri,
-                name: `image_${Date.now()}.jpg`,
-                type: 'image/jpeg'
-            }]);
-        }
-        
-        // 🚨 Reset picking state after selection
-        setIsPickingDocument(false);
-        
+        setAttachments(prev => [...prev, {
+          uri: compressed.uri,
+          name: `image_${Date.now()}.jpg`,
+          type: 'image/jpeg'
+        }]);
+      }
+      
+      setIsPickingDocument(false);
+      
     } catch (err) {
-        console.log('Image picker error:', err);
-        // 🚨 Reset picking state on error too
-        setIsPickingDocument(false);
-        Toast.show({
-            type: 'error',
-            text1: 'Error',
-            text2: 'Failed to pick image',
-        });
+      console.log('Image picker error:', err);
+      setIsPickingDocument(false);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Failed to pick image',
+      });
     }
   };
 
@@ -351,7 +353,6 @@ const ChatLive = ({ route, navigation }) => {
       let currentConversationId = selectedConversation?.id;
       const tempMessageId = `temp-${Date.now()}`;
       
-      // Create temporary message for immediate UI feedback
       const tempMessage: Message = {
         id: tempMessageId,
         content: input.trim() !== '' ? input : '[Attachment]',
@@ -365,17 +366,14 @@ const ChatLive = ({ route, navigation }) => {
         user: userProfile?.data
       };
 
-      // Add temporary message immediately
       setMessages(prev => [...prev, tempMessage]);
 
-      // Upload attachments first
       let uploadedAttachmentUrls: string[] = [];
       
       if (attachments.length > 0) {
         uploadedAttachmentUrls = await handleUploadAttachments(attachments);
       }
 
-      // Create conversation if needed
       if (!currentConversationId || openConversations.length === 0) {
         const newConv = await createConversation().unwrap();
         currentConversationId = newConv.data.id;
@@ -385,14 +383,7 @@ const ChatLive = ({ route, navigation }) => {
 
       const socket = getSocket();
       if (!socket) throw new Error("Socket not connected");
-      const interval = setInterval(() => {
-        //console.log(" Reload triggered");
-      }, 1000);
-      socket.on("disconnect", () => {
-        clearInterval(interval);
-      });
-
-      // Send message through socket
+      
       const payload = {
         conversationId: currentConversationId,
         senderType: 'CUSTOMER',
@@ -401,16 +392,17 @@ const ChatLive = ({ route, navigation }) => {
         attachments: uploadedAttachmentUrls,
       };
 
-      console.log(" Sending socket message:", JSON.stringify(payload, null, 2));
-
       socket.emit('send_message', payload);
 
       setInput('');
       setAttachments([]);
       
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+      
     } catch (err) {
       console.error("Send error:", err);
-      // Remove temporary message on error
       setMessages(prev => prev.filter(msg => !msg.id.startsWith('temp-')));
       
       Toast.show({
@@ -423,26 +415,21 @@ const ChatLive = ({ route, navigation }) => {
     }
   };
 
-  // Helper function to get full URLs
   const getFullUrl = (url: string): string => {
     if (!url) return '';
     
-    // If it's already a full URL or data URI, return as is
     if (url.startsWith('http') || url.startsWith('data:')) {
       return url;
     }
     
-    // If it's a relative path, prepend your API base URL
     const baseUrl = 'https://api.sf-e.ca';
     return `${baseUrl}${url.startsWith('/') ? url : '/' + url}`;
   };
 
-  // Format date to show date if not today, otherwise show time
   const formatMessageDate = (dateString: string) => {
     const messageDate = new Date(dateString);
     const today = new Date();
     
-    // Check if message is from today
     if (
       messageDate.getDate() === today.getDate() &&
       messageDate.getMonth() === today.getMonth() &&
@@ -451,7 +438,6 @@ const ChatLive = ({ route, navigation }) => {
       return messageDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
     
-    // Check if message is from yesterday
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
     if (
@@ -462,7 +448,6 @@ const ChatLive = ({ route, navigation }) => {
       return `Yesterday ${messageDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
     }
     
-    // Otherwise show full date and time
     return `${messageDate.toLocaleDateString()} ${messageDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
   };
 
@@ -478,14 +463,12 @@ const ChatLive = ({ route, navigation }) => {
           isTempMessage && styles.tempMessage,
         ]}
       >
-        {/* Afficher le nom de l'expéditeur seulement pour les messages ADMIN */}
         {!isCurrentUser && item.senderType === 'ADMIN' && (
           <Text style={styles.senderName}>
             {item.user?.firstname || 'Admin'}
           </Text>
         )}
 
-        {/* Contenu texte */}
         {item.content !== '[Attachment]' && (
           <Text
             style={[
@@ -497,7 +480,6 @@ const ChatLive = ({ route, navigation }) => {
           </Text>
         )}
 
-        {/* Attachments */}
         {item.attachments?.map((attachment, index) => {
           const isImage =
             /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(attachment) ||
@@ -543,7 +525,6 @@ const ChatLive = ({ route, navigation }) => {
           );
         })}
 
-        {/* Date and time */}
         <Text
           style={[
             styles.messageTime,
@@ -596,44 +577,32 @@ const ChatLive = ({ route, navigation }) => {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#f8f9fa' }}>
+    <KeyboardAvoidingView 
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : StatusBar.currentHeight}
+    >
       <StatusBar backgroundColor="#7ddd7d" barStyle="light-content" />
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          paddingVertical: 16,
-          paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 40,
-          paddingHorizontal: 12,
-          backgroundColor: '#7ddd7d',
-        }}
-      >
-        {/* Back button */}
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={{ width: 40, alignItems: 'flex-start' }}
-        >
-         <AntDesign name="left" size={24} color="white" />
-        </TouchableOpacity>
+      
+      {/* Header */}
+      <SafeAreaView style={styles.headerSafeArea}>
+        <View style={styles.header}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}
+          >
+            <AntDesign name="left" size={24} color="white" />
+          </TouchableOpacity>
 
-        {/* Centered Title */}
-        <Text
-          style={{
-            flex: 1,
-            textAlign: 'center',
-            fontSize: 18,
-            fontWeight: 'bold',
-            color: 'white',
-          }}
-        >
-          {t('screens.chat')}
-        </Text>
+          <Text style={styles.headerTitle}>
+            {t('screens.chat') || 'Chat'}
+          </Text>
 
-        {/* Placeholder to keep title centered */}
-        <View style={{ width: 40 }} />
-      </View>
+          <View style={styles.headerPlaceholder} />
+        </View>
+      </SafeAreaView>
 
+      {/* Messages List */}
       <FlatList
         ref={flatListRef}
         data={messages}
@@ -641,30 +610,46 @@ const ChatLive = ({ route, navigation }) => {
         renderItem={renderMessage}
         contentContainerStyle={[
           styles.messagesList,
-          { paddingBottom: keyboardOffset > 0 ? keyboardOffset + 70 : 70 },
+          { paddingBottom: keyboardHeight > 0 ? keyboardHeight + 100 : 100 }
         ]}
-        onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
-        onLayout={() => flatListRef.current?.scrollToEnd({ animated: true })}
+        onContentSizeChange={() => {
+          setTimeout(() => {
+            flatListRef.current?.scrollToEnd({ animated: true });
+          }, 50);
+        }}
+        onLayout={() => {
+          setTimeout(() => {
+            flatListRef.current?.scrollToEnd({ animated: true });
+          }, 100);
+        }}
         showsVerticalScrollIndicator={false}
-        automaticallyAdjustContentInsets={true}
         keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="handled"
       />
 
-      {attachments.length > 0 && renderAttachmentPreview()}
+      {/* Attachments Preview */}
+      {attachments.length > 0 && (
+        <View style={[styles.attachmentsPreviewContainer, { bottom: keyboardHeight + 60 }]}>
+          {renderAttachmentPreview()}
+        </View>
+      )}
 
+      {/* Typing Indicator */}
       {typingStatus && (
         <View style={styles.typingIndicator}>
           <Text style={styles.typingText}>Admin is typing...</Text>
         </View>
       )}
 
-      <View
-        style={[
-          styles.inputContainer,
-          { marginBottom: keyboardOffset > 0 ? keyboardOffset : 0 },
-        ]}
-      >
+      {/* Input Container - Fixed at bottom */}
+      <View style={[
+        styles.inputContainer,
+        { 
+          paddingBottom: Platform.OS === 'ios' ? keyboardHeight > 0 ? 20 : 10 : 10,
+          bottom: keyboardHeight > 0 ? 0 : undefined,
+          position: keyboardHeight > 0 ? 'absolute' : 'relative'
+        }
+      ]}>
         <TouchableOpacity onPress={pickImage} style={styles.attachmentButton}>
           <Icon name="image" size={24} color="#555" />
         </TouchableOpacity>
@@ -674,14 +659,23 @@ const ChatLive = ({ route, navigation }) => {
         </TouchableOpacity>
 
         <TextInput
+          ref={inputRef}
           value={input}
-           onChangeText={text => {
+          onChangeText={text => {
             setInput(text);
-            emitTyping(); // Changed from handleTyping() to emitTyping()
+            emitTyping();
           }}
           placeholder="Type a message..."
           style={styles.textInput}
           multiline
+          maxLength={500}
+          returnKeyType="default"
+          blurOnSubmit={false}
+          onSubmitEditing={() => {
+            if (input.trim() !== '' || attachments.length > 0) {
+              handleSend();
+            }
+          }}
           onFocus={() => {
             setTimeout(() => {
               flatListRef.current?.scrollToEnd({ animated: true });
@@ -702,7 +696,7 @@ const ChatLive = ({ route, navigation }) => {
           {sending ? <ActivityIndicator size="small" color="#fff" /> : <Icon name="send" size={24} color="#fff" />}
         </TouchableOpacity>
       </View>
-    </SafeAreaView>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -716,59 +710,41 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  attachmentsPreview: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    paddingHorizontal: 10,
-    marginBottom: 8,
-    gap: 10,
+  headerSafeArea: {
+    backgroundColor: '#7ddd7d',
   },
-  attachmentPreview: {
-    position: 'relative',
-    width: 100,
-    height: 100,
-    borderRadius: 8,
-    overflow: 'hidden',
-    backgroundColor: '#e9ecef',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  previewImage: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 8,
-  },
-  fileAttachment: {
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    padding: 8,
+    justifyContent: 'space-between',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    backgroundColor: '#7ddd7d',
   },
-  previewText: {
-    fontSize: 12,
+  backButton: {
+    width: 40,
+    alignItems: 'center',
+  },
+  headerTitle: {
+    flex: 1,
     textAlign: 'center',
-    marginTop: 4,
-    color: '#333',
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: 'white',
   },
-  closeIcon: {
-    position: 'absolute',
-    top: 4,
-    right: 4,
-    backgroundColor: '#00000088',
-    borderRadius: 10,
-    padding: 2,
-    zIndex: 1,
+  headerPlaceholder: {
+    width: 40,
   },
   messagesList: {
-    padding: 10,
-    paddingBottom: 70,
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    flexGrow: 1,
   },
   messageContainer: {
     maxWidth: '80%',
     padding: 12,
     borderRadius: 18,
-    marginBottom: 8,
-    // Ensure proper alignment
+    marginBottom: 12,
     alignSelf: 'flex-start',
   },
   sentMessage: {
@@ -786,20 +762,22 @@ const styles = StyleSheet.create({
   },
   messageText: {
     fontSize: 16,
+    lineHeight: 20,
   },
   senderName: {
     fontWeight: 'bold',
     marginBottom: 4,
     color: '#333',
+    fontSize: 12,
   },
   sentText: {
-    color: '#fff', 
+    color: '#fff',
   },
   receivedText: {
     color: '#212529',
   },
   messageTime: {
-    fontSize: 12,
+    fontSize: 10,
     marginTop: 4,
     textAlign: 'right',
   },
@@ -830,38 +808,91 @@ const styles = StyleSheet.create({
     marginTop: 5,
     color: '#e74c3c',
     fontWeight: 'bold',
+    fontSize: 12,
   },
   fileName: {
     marginTop: 5,
-    fontSize: 12,
+    fontSize: 11,
     color: '#6c757d',
     textAlign: 'center',
   },
-  inputContainer: {
+  attachmentsPreviewContainer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+    zIndex: 100,
+  },
+  attachmentsPreview: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  attachmentPreview: {
+    position: 'relative',
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    overflow: 'hidden',
+    backgroundColor: '#e9ecef',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  previewImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 8,
+  },
+  fileAttachment: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    padding: 8,
+  },
+  previewText: {
+    fontSize: 11,
+    textAlign: 'center',
+    marginTop: 4,
+    color: '#333',
+  },
+  closeIcon: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderRadius: 10,
+    padding: 3,
+    zIndex: 1,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
     backgroundColor: '#fff',
     borderTopWidth: 1,
     borderTopColor: '#eee',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    position: 'absolute',
-    bottom: 0,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
     left: 0,
     right: 0,
+    zIndex: 10,
   },
   attachmentButton: {
     padding: 8,
-    marginRight: 5,
+    marginRight: 8,
   },
   textInput: {
     flex: 1,
     minHeight: 40,
     maxHeight: 100,
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
     fontSize: 16,
     backgroundColor: '#f1f1f1',
     borderRadius: 20,
+    paddingVertical: Platform.OS === 'ios' ? 10 : 8,
   },
   sendButton: {
     backgroundColor: '#7ddd7d',
@@ -870,18 +901,23 @@ const styles = StyleSheet.create({
     height: 40,
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: 5,
+    marginLeft: 8,
   },
   disabledButton: {
     backgroundColor: '#cccccc',
   },
   typingIndicator: {
-    padding: 10,
+    padding: 8,
+    paddingHorizontal: 16,
     alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
   },
   typingText: {
     color: '#666',
     fontStyle: 'italic',
+    fontSize: 12,
   },
 });
 

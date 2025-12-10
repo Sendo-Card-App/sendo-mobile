@@ -66,7 +66,7 @@ const OnboardingCardScreen = () => {
   });
     //console.log("userProfile list:", JSON.stringify(userProfile, null, 2));
 
-    const profileStatus = userProfile?.data?.virtualCard?.status;
+    const profileStatus = userProfile?.data?.user?.virtualCard?.status;
 
     //  First try onboardingSession (cardRequest)
     // If not found, fallback to virtualCard status from userProfile
@@ -437,10 +437,14 @@ const OnboardingCardScreen = () => {
           onPress={handleRequestCard}
           style={[
             styles.button,
-            (isRequesting || ['PENDING', 'WAITING_FOR_INFORMATION', 'REFUSED_TIMEOUT'].includes(status) || isFetchingStatus) && 
+            (isRequesting || 
+            ['PENDING', 'WAITING_FOR_INFORMATION'].includes(status) || 
+            isFetchingStatus) && 
             styles.buttonDisabled
           ]}
-          disabled={isRequesting || ['PENDING', 'WAITING_FOR_INFORMATION', 'REFUSED_TIMEOUT'].includes(status) || isFetchingStatus}
+          disabled={isRequesting || 
+                    ['PENDING', 'WAITING_FOR_INFORMATION'].includes(status) || 
+                    isFetchingStatus}
         >
           {isRequesting || isFetchingStatus ? (
             <ActivityIndicator color="#fff" />

@@ -31,7 +31,7 @@ const RequestPay = ({ navigation, route }) => {
   const [updateRecipientStatus, { isLoading: isUpdating }] = useUpdateRecipientStatusMutation();
   const [payFundRequest, { isLoading: isPaying }] = usePayFundRequestMutation();
   const { data: userProfile } = useGetUserProfileQuery();
-  const userId = userProfile?.data?.id;
+  const userId = userProfile?.data?.user?.id;
 
   const { data: balanceData } = useGetBalanceQuery(userId, { skip: !userId });
   const balance = balanceData?.data?.balance ?? 0;

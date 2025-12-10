@@ -80,7 +80,7 @@ const AddFavorite = () => {
   const { t } = useTranslation();
   const navigation = useNavigation();
   const { data: userProfile } = useGetUserProfileQuery();
-  const userId = userProfile?.data.id;
+  const userId = userProfile?.data.user?.id;
   const { setIsPickingDocument } = useAppState(); // Use the AppState context
   
   // API hooks

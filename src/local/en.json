@@ -105,6 +105,10 @@
       "title": "Create Account",
       "name": "Full Name",
       "title1": "My Account",
+       "ageRestriction": "You must be at least 18 years old",
+    "ageErrorTitle": "Age Restriction",
+    "ageVerified": "Age verified (18+)",
+    "minAge": "Must be 18+",
      "firstName": "First Name",
     "firstNamePlaceholder": "Enter your first name",
     "lastName": "Last Name",
@@ -462,74 +466,83 @@
     "chooseDocument": "Choose Document"
   },
 
-"niu": {
+ "niu": {
     "errors": {
       "title": "Error",
-      "balanceFetchFailed": "Failed to fetch balance",
-      "termsNotAccepted": "Please accept the terms and conditions",
-      "insufficientBalance": "Insufficient balance",
-      "technical": "Technical error, please try again"
-    },
-    "cni": {
-      "permissionDenied": "Permission denied",
-      "permissionMessage": "Gallery access is required to upload images",
-      "cameraPermissionDenied": "Camera access denied",
-      "cameraPermissionMessage": "Camera access is required to take photos",
-      "uploadError": "Error selecting image",
-      "cameraError": "Error taking photo",
-      "uploadFailed": "Upload failed",
-      "uploadTitle": "CNI Upload",
-      "uploadDescription": "Please upload photos of your national identity card",
-      "frontSide": "Front Side CNI",
-      "backSide": "Back Side CNI",
-      "uploadOption": "Upload Option",
-      "chooseMethod": "Choose a method",
-      "takePhoto": "Take photo",
-      "chooseFromGallery": "Choose from gallery",
-      "uploadFront": "Upload front side",
-      "uploadBack": "Upload back side",
-      "requirementsTitle": "Upload Requirements",
-      "requirement1": "Clear and readable image",
-      "requirement2": "All details must be visible",
-      "uploading": "Uploading..."
+      "balanceFetchFailed": "Unable to fetch balance. Please try again.",
+      "termsNotAccepted": "Please accept the terms and conditions and payment authorization.",
+      "insufficientBalance": "Insufficient balance. Please top up your account.",
+      "technical": "A technical error occurred. Please try again."
     },
     "success": {
       "title": "Success",
-      "message": "NIU request submitted successfully"
+      "message": "Your NIU request has been successfully submitted."
     },
-    "alreadyHave": {
-      "title": "NIU Already Obtained",
-      "message": "You already have an NIU number or your request has been approved.",
-      "backButton": "Back to home"
-    },
-    "steps": {
-      "fees": "Fee payment",
-      "kyc": "KYC verification",
-      "cniUpload": "CNI upload",
-      "niuNumber": "NIU assignment",
-      "attestation": "Certificate generation"
+    "cni": {
+      "permissionDenied": "Permission Denied",
+      "permissionMessage": "Gallery access is required to upload your ID card.",
+      "cameraPermissionDenied": "Camera Denied",
+      "cameraPermissionMessage": "Camera access is required to take a photo.",
+      "uploadError": "Error selecting image",
+      "cameraError": "Error taking photo",
+      "uploadTitle": "ID Card Upload",
+      "uploadDescription": "Please upload both sides of your National Identity Card (CNI).",
+      "frontSide": "CNI Front Side",
+      "backSide": "CNI Back Side",
+      "uploadOption": "Upload Options",
+      "chooseMethod": "How would you like to upload the image?",
+      "takePhoto": "Take a Photo",
+      "chooseFromGallery": "Choose from Gallery",
+      "uploadFront": "Upload Front Side",
+      "uploadBack": "Upload Back Side",
+      "uploadFailed": "Upload failed. Please try again.",
+      "requirementsTitle": "Photo Requirements",
+      "requirement1": "ID card must be clearly readable",
+      "requirement2": "All information must be visible",
+      "rectoMandatory": "Front side of ID card is mandatory",
+      "versoRecommended": "Back side is recommended for faster processing"
     },
     "request": {
-      "processTitle": "NIU Request Process",
+      "processTitle": "Request Process",
+      "statusApproved": "Request Approved",
+      "statusPending": "Pending Processing",
+      "statusRejected": "Request Rejected",
+      "raison": "Reason",
       "feesTitle": "Processing Fees",
-      "feesAmount": "Fee amount",
-      "termsAccept": "I accept the terms and conditions",
-      "paymentAccept": "I accept the debit of",
-      "payButton": "Pay and submit",
-      "statusApproved": "✅ Request approved",
-      "statusPending": "⏳ Request being processed",
-      "statusRejected": "❌ Request rejected",
-      "raison": "Reason"
+      "feesAmount": "Fee Amount",
+      "termsAccept": "I accept the general terms of the request",
+      "paymentAccept": "I authorize payment of",
+      "payButton": "Pay and Submit"
+    },
+    "steps": {
+      "fees": "Payment",
+      "kyc": "KYC Verification",
+      "cniUpload": "CNI Upload",
+      "niuNumber": "NIU Assignment",
+      "attestation": "Attestation"
+    },
+    "alreadyHave": {
+      "title": "Request Already Processed",
+      "message": "You already have an approved or pending NIU request.",
+      "backButton": "Back to Home"
     },
     "security": {
       "message": "Secure and encrypted transaction"
     },
     "paymentModal": {
       "title": "Payment Confirmation",
-      "message": "Are you sure you want to proceed with the NIU fee payment?",
-      "confirm": "Confirm payment",
+      "message": "Do you want to confirm the payment of {{amount}} FCFA for your NIU request?",
+      "confirm": "Confirm Payment",
       "cancel": "Cancel"
     }
+  },
+  "screensNui": {
+    "niuRequest": "NIU Request"
+  },
+  "commonNui": {
+    "loading": "Loading...",
+    "cancel": "Cancel",
+    "processing": "Processing..."
   }
 ,
 "personalDetail": {
@@ -617,7 +630,22 @@
 "completed": "Completed",
 "pending": "Pending",
 "submit": "SUBMIT",
-"privacy_notice": "Do not share your personal information"
+"privacy_notice": "Do not share your personal information",
+ "optional": "Optional",
+    "no_niu_title": "Unique Identification Number Missing",
+    "no_niu_message": "You can submit your KYC now and request your NIU later, or request a NIU before proceeding.",
+    "submit_without_niu": "Submit without NIU",
+    "request_niu": "Request NIU",
+    "niu_missing": "NIU missing",
+    "niu_optional_note": "Unique Identification Number is optional",
+    "niu_notice_title": "Unique Identification Number",
+    "niu_notice_message": "You can submit your KYC now and request your NIU later through the application.",
+    "niu_hint": "The Unique Identification Number is optional for submission.",
+    "without_niu": "without NIU",
+    "incomplete_required_message": "Please complete all required documents before submitting.",
+    "required_steps_complete": "Required documents completed",
+    "submitting": "Submitting..."
+  
 },
 "manageVirtualCard": {
 "title": "Manage my virtual card",
@@ -1842,7 +1870,16 @@
     "cancel": "Cancel",
     "accept": "Accept"
 
-}
+},
+ "referralSuccess": {
+    "title": "Congratulations!",
+    "message1": "Your referral code has been successfully used!",
+    "message2": "The referral bonus has been added to your wallet. Thank you for inviting others to join!",
+    "bonusAdded": "Bonus Added:",
+    "yourCode": "Your referral code was:",
+    "gotIt": "Got it!",
+    "close": "Close"
+  }
 
    
  
