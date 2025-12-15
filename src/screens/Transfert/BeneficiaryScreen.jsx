@@ -53,7 +53,7 @@ const BeneficiaryScreen = () => {
   const SENDO_VALUE_CAD_CA_CAM = getConfigValue('SENDO_VALUE_CAD_CA_CAM');
    
   useEffect(() => {
-    if (userProfile?.data?.isVerifiedKYC) {
+    if (userProfile?.data?.user?.isVerifiedKYC) {
       setShowVerifiedMessage(false);
       const timer = setTimeout(() => {
         setShowVerifiedMessage(false);

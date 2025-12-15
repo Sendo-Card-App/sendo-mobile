@@ -97,7 +97,7 @@ const WalletTransfer = ({ navigation }) => {
   }, [recipientData, isRecipientError, debouncedWalletId, t]);
 
   useEffect(() => {
-    const walletId = userProfile?.data?.wallet?.matricule || userProfile?.data?.walletId;
+    const walletId = userProfile?.data?.user?.wallet?.matricule || userProfile?.data?.user?.walletId;
     if (walletId) setUserWalletId(walletId);
   }, [userProfile]);
 
