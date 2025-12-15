@@ -76,7 +76,7 @@ const SENDO_DEPOSIT_FEES = getConfigValue("SENDO_DEPOSIT_FEES");
 
   useEffect(() => {
     const walletId =
-      userProfile?.data?.wallet?.matricule || userProfile?.data?.walletId;
+      userProfile?.data?.user?.wallet?.matricule || userProfile?.data?.user?.walletId;
     if (walletId) setUserWalletId(walletId);
   }, [userProfile]);
 

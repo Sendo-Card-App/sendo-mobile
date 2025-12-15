@@ -342,7 +342,7 @@ Utilise mon code lors de ton inscription !`;
               {userProfile?.data?.user?.firstname} {userProfile?.data?.user?.lastname}
             </Text>
 
-            {userProfile?.data?.kycDocuments?.some(doc => doc.status === "APPROVED") && (
+            {userProfile?.data?.user?.kycDocuments?.some(doc => doc.status === "APPROVED") && (
               <Ionicons
                 name="checkmark-circle"
                 size={18}

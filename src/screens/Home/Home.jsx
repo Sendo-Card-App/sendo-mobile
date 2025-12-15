@@ -530,7 +530,7 @@ const HomeScreen = () => {
               {isBalanceLoading ? (
                 <Loader size="small" color="black" />
               ) : showBalance ? (
-                userProfile?.data?.country === "Canada" ? (
+                userProfile?.data?.user?.country === "Canada" ? (
                   // Currency BEFORE balance
                   `${balanceData?.data?.currency ?? ""} ${(balanceData?.data?.balance ?? 0).toLocaleString(undefined, {
                     minimumFractionDigits: 2,
@@ -792,7 +792,7 @@ const HomeScreen = () => {
               onPress={() =>
                 navigation.navigate("Receipt", {
                   transaction: item,
-                  user: userProfile?.data,
+                  user: userProfile?.data?.user,
                 })
               }
             >
@@ -861,7 +861,7 @@ const HomeScreen = () => {
               className="flex-1 bg-green-500 py-4 rounded-2xl shadow-sm"
               onPress={() => {
                 setShowKycModal(false);
-                if (userProfile?.data?.country === "Canada") {
+                if (userProfile?.data?.user.country === "Canada") {
                   navigation.navigate("VerifyIdentity");
                 } else {
                   navigation.navigate("VerifyIdentity");

@@ -54,7 +54,7 @@ const BeneficiarySelection = ({ route }) => {
    //console.log('Selected provider37:', provider);
 
   const { data: userProfile } = useGetUserProfileQuery();
-  const userId = userProfile?.data.id;
+  const userId = userProfile?.data?.user.id;
  
   const {
     data: favoritesResponse,

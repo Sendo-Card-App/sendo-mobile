@@ -363,7 +363,7 @@ const ChatLive = ({ route, navigation }) => {
         attachments: attachments.map(a => a.uri), 
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        user: userProfile?.data
+        user: userProfile?.data?.user
       };
 
       setMessages(prev => [...prev, tempMessage]);

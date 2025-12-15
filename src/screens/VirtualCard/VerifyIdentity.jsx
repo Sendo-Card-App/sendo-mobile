@@ -112,8 +112,8 @@ const VerifyIdentity = ({ navigation }) => {
         </Text>
 
         {/* Show button only if no documents at all */}
-        {(!userProfile?.data?.kycDocuments ||
-          userProfile?.data?.kycDocuments.length === 0) && (
+        {(!userProfile?.data?.user?.kycDocuments ||
+          userProfile?.data?.user?.kycDocuments.length === 0) && (
           <TouchableOpacity
             className="mt-auto py-3 rounded-full mb-8 bg-[#7ddd7d]"
             onPress={handleNextPress}

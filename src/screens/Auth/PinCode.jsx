@@ -134,7 +134,7 @@ const PinCode = ({ navigation, route }) => {
       }
 
       // Handle passcode logic
-      const savedPasscode = userProfile?.data?.passcode || (await getData('@passcode'));
+      const savedPasscode = userProfile?.data?.user?.passcode || (await getData('@passcode'));
       if (savedPasscode) {
         setHasStoredPasscode(true);
         dispatch(setPasscode(savedPasscode));

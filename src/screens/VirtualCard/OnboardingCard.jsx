@@ -72,7 +72,7 @@ const OnboardingCardScreen = () => {
     // If not found, fallback to virtualCard status from userProfile
      const finalStatus =
         cardRequest?.data?.onboardingSession?.onboardingSessionStatus ||
-        userProfile?.data?.virtualCard?.status;
+        userProfile?.data?.user?.virtualCard?.status;
 
   const hasNavigated = useRef(false);
   const navigationTriggered = useRef(false);
