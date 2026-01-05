@@ -12,6 +12,7 @@ const PaymentConfirmationModal = ({
   description,
   confirmLabel,
   cancelLabel = 'Annuler',
+  currency = 'FCFA',
 }) => {
   return (
     <Modal
@@ -30,7 +31,7 @@ const PaymentConfirmationModal = ({
           </Text>
           
           <Text className="text-center text-lg font-bold mb-5">
-            Montant: {amount.toLocaleString()} FCFA
+            Montant: {amount.toLocaleString()} {currency}
           </Text>
           
           <View className="flex-row justify-between">

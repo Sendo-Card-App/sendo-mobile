@@ -70,9 +70,9 @@ const WalletTransfer = ({ navigation }) => {
   };
 
   const SENDO_TO_SENDO_TRANSFER_FEES = getConfigValue('SENDO_TO_SENDO_TRANSFER_FEES');
-  const CAD_SENDO_VALUE = getConfigValue('CAD_SENDO_VALUE');
+  const SENDO_VALUE_CAD_CA_CAM = getConfigValue('SENDO_VALUE_CAD_CA_CAM');
   const feePercentage = SENDO_TO_SENDO_TRANSFER_FEES ? parseFloat(SENDO_TO_SENDO_TRANSFER_FEES) : 0;
-  const cadToXafRate = CAD_SENDO_VALUE ? parseFloat(CAD_SENDO_VALUE) : 1;
+  const cadToXafRate = SENDO_VALUE_CAD_CA_CAM ? parseFloat(CAD_SENDO_VALUE) : 1;
 
   const transferAmount = parseFloat(amount) || 0;
   const feeAmount = isCanada ? (transferAmount * feePercentage) / 100 : 0;

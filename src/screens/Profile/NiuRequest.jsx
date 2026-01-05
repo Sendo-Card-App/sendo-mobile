@@ -54,7 +54,7 @@ const NiuRequest = () => {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [activeStep, setActiveStep] = useState(1);
 
-    const showToast = (type, title, message) => {
+  const showToast = (type, title, message) => {
     Toast.show({
       type,
       text1: title,
@@ -100,6 +100,8 @@ const {
   
   const niuConfig = configData?.data?.find(item => item.name === "NIU_REQUEST_FEES");
   const feeAmount = Number(niuConfig?.value) || 0;
+  const SENDO_VALUE_CAD_CA_CAM = configData?.data?.find(item => item.name === "SENDO_VALUE_CAD_CA_CAM");
+  const feeAmountCAD = feeAmount / (Number(SENDO_VALUE_CAD_CA_CAM?.value) || 1);
 
   const {
     data: balanceData,
@@ -713,7 +715,7 @@ const {
               </Text>
               <View className="bg-gradient-to-r from-green-100 to-emerald-100 rounded-full px-3 py-1">
                 <Text className="text-green-700 font-bold">
-                  {feeAmount.toLocaleString()} FCFA
+                  {feeAmountCAD.toLocaleString()} CAD
                 </Text>
               </View>
             </View>
@@ -763,7 +765,7 @@ const {
                     )}
                   </View>
                   <Text className="text-gray-700 flex-1">
-                    {t('niu.request.paymentAccept')} {feeAmount.toLocaleString()} FCFA
+                    {t('niu.request.paymentAccept')} {feeAmountCAD.toLocaleString()} CAD
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -795,14 +797,14 @@ const {
                   </Text>
                 </View>
               ) : (
-                <>
+                <View className='p-3 flex-row items-center bg-[#10b981] rounded-2xl'>
                   <Text className="text-white text-xl font-bold mb-1">
                     {t('niu.request.payButton')}
                   </Text>
                   <Text className="text-white/90 text-base">
-                    {feeAmount.toLocaleString()} FCFA
+                    {feeAmountCAD.toLocaleString()} CAD
                   </Text>
-                </>
+                </View>
               )}
             </TouchableOpacity>
             
@@ -831,10 +833,11 @@ const {
         onConfirm={handlePaymentConfirmation}
         amount={feeAmount}
         title={t('niu.paymentModal.title')}
-        description={t('niu.paymentModal.message', { amount: feeAmount.toLocaleString() })}
+        description={t('niu.paymentModal.message', { amount: feeAmountCAD.toLocaleString() })}
         confirmLabel={t('niu.paymentModal.confirm')}
         cancelLabel={t('niu.paymentModal.cancel')}
         balance={balance}
+        currency='CAD'
       />
 
       <Toast />
