@@ -21,7 +21,7 @@ import Loader from '../../components/Loader';
 import HomeImage from '../../images/HomeImage2.png';
 import button from '../../images/ButtomLogo.png';
 import ArrowGoRound from '../../images/ArrowGoRound.png';
-import person from '../../images/person.png';
+import bank from '../../images/bank.png';
 import mtn from '../../images/mtn.png';
 import om from '../../images/om.png';
 
@@ -215,9 +215,10 @@ const {
             {t('fast_and_free')}
           </Text>
           <View style={styles.paymentMethods}>
-            <Image source={person} style={styles.paymentMethodIcon} />
+            <Image source={bank} style={styles.paymentMethodIcon} />
+             <Image source={om} style={styles.paymentMethodIcon} />
             <Image source={mtn} style={styles.paymentMethodIcon} />
-            <Image source={om} style={styles.paymentMethodIcon} />
+           
           </View>
         </View>
 
