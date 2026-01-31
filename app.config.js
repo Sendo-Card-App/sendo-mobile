@@ -79,7 +79,7 @@ module.exports = {
     ],
     extra: {
       eas: {
-        apiBaseUrl: process.env.EXPO_PUBLIC_API_URL || "https://api.sf-e.ca/api",
+        apiBaseUrl: process.env.EXPO_TEST_API_URL || "https://dev.api.sf-e.ca/api",
         projectId: "08a59933-10e3-45bc-b064-54b97ea7eca9"
       }
     }

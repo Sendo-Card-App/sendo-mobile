@@ -29,7 +29,7 @@ const TAG_TYPES = {
 export const authApi = createApi({
   reducerPath: 'authApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: process.env.EXPO_PUBLIC_API_URL,
+    baseUrl: process.env.EXPO_TEST_API_URL,
     prepareHeaders: (headers, { getState, endpoint }) => {
        const { accessToken } = getState().auth;
        const { passcode } = getState().passcode; // Now correctly accessing the nested field

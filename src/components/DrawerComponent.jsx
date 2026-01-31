@@ -473,6 +473,7 @@ Utilise mon code lors de ton inscription !`;
                         </Text>
                       </View>
                     </TouchableOpacity>
+                    {userProfile?.data?.country !== "Canada" && (
                  <TouchableOpacity
                   className="flex-row gap-2 my-2 items-center mb-5"
                     onPress={() => navigation2.navigate("PaymentSimulator")}
@@ -485,6 +486,7 @@ Utilise mon code lors de ton inscription !`;
                         </Text>
                       </View>
                    </TouchableOpacity>
+                    )}
           {/* <TouchableOpacity
             onPress={() => navigation2.navigate("Payment")}
             className="flex-row gap-2 my-2 mb-5"

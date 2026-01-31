@@ -8,7 +8,7 @@ const TAG_TYPES = {
 export const transferApi = createApi({
   reducerPath: 'transferApi',
   baseQuery: fetchBaseQuery({
-   baseUrl: process.env.EXPO_PUBLIC_API_URL,
+   baseUrl: process.env.EXPO_TEST_API_URL,
 
     prepareHeaders: (headers, { getState }) => {
       const token = getState().auth.accessToken;

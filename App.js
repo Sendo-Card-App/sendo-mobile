@@ -136,6 +136,9 @@ import EditFundField from "./src/screens/Demand/EditFundField";
 import CanadaKycSubmission from "./src/screens/CaKyc/CanadaKycSubmission";
 import CanadaKycCamera from "./src/screens/CaKyc/CanadaKycCamera";
 
+//CANADA WITHDRAWAL SCREENS
+import InteracWithdrawal  from "./src/screens/Wallet/InteracWithdrawal";
+
 //MODULE TONTINE
 import TontineList from "./src/screens/Tontine/TontineList";
 import CreateTontine from "./src/screens/Tontine/CreateTontine";
@@ -158,6 +161,8 @@ import MemberContribution from "./src/screens/Tontine/MemberContribution";
 import TontineSetting from "./src/screens/Tontine/TontineSetting";
 import FundRelease from "./src/screens/Tontine/FundRelease";
 import TermsAndConditions from "./src/screens/Tontine/TermsAndConditions";
+
+
 
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -457,6 +462,7 @@ function MainStack() {
        <Stack.Screen name="TermsAndConditions" component={TermsAndConditions} options={{ headerShown: false }} />
       <Stack.Screen name="CanadaKycSubmission" component={CanadaKycSubmission} options={{ headerShown: false }} />
       <Stack.Screen name="CanadaKycCamera" component={CanadaKycCamera} options={{ headerShown: false }} />
+      <Stack.Screen name="InteracWithdrawal" component={InteracWithdrawal} options={{ headerShown: false }} />
       <Stack.Screen name="BankTransferDetails" component={BankTransferDetails} options={{ headerShown: false }} />
       <Stack.Screen name="TransferSummary" component={TransferSummary} options={{ headerShown: false }} />
       

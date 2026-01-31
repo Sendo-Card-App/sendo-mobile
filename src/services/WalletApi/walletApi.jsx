@@ -7,6 +7,7 @@ const WALLET_ENDPOINTS = {
   RECHARGE: '/mobile-money/neero/init/deposit',
   WITHDRAWAL: '/mobile-money/neero/init/withdrawal',
   HISTORY: '/wallet/transactions',
+  REQUEST_WITHDRAWAL: '/wallet/request-withdrawal', 
 };
 
 const TAG_TYPES = {
@@ -25,7 +26,7 @@ const PASSCODE_REQUIRED_ENDPOINTS = [
 export const walletApi = createApi({
   reducerPath: 'walletApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: process.env.EXPO_PUBLIC_API_URL,
+    baseUrl: process.env.EXPO_TEST_API_URL,
     prepareHeaders: (headers, { getState, endpoint }) => {
   const { accessToken } = getState().auth;
   const { passcode } = getState().passcode;
@@ -42,7 +43,7 @@ export const walletApi = createApi({
   }
 
   // ✅ Only add passcode for getBalance or other specific endpoints
-  const passcodeRequiredEndpoints = ['getBalance', 'rechargeWallet', 'transferFunds', 'withdrawalWallet', 'simulatePayment', 'initTransfer', 'bankrecharge', 'initTransferToDestinataire'];
+  const passcodeRequiredEndpoints = ['getBalance', 'rechargeWallet', 'transferFunds', 'withdrawalWallet', 'simulatePayment', 'initTransfer', 'bankrecharge', 'initTransferToDestinataire', 'requestWithdrawal'];
 
   if (passcodeRequiredEndpoints.includes(endpoint)) {
     if (passcode) {
@@ -136,6 +137,15 @@ export const walletApi = createApi({
       }),
       providesTags: [TAG_TYPES.WALLET],
     }),
+
+    requestWithdrawal: builder.mutation({
+      query: (payload) => ({
+        url: WALLET_ENDPOINTS.REQUEST_WITHDRAWAL,
+        method: 'POST',
+        body: payload,
+      }),
+      invalidatesTags: [TAG_TYPES.WALLET],
+    }),
     bankrecharge: builder.mutation({
       query: (formData) => ({
         url: '/wallet/recharge',
@@ -176,7 +186,8 @@ export const walletApi = createApi({
 
 export const {
   useGetBalanceQuery,
- useBankrechargeMutation,
+  useBankrechargeMutation,
+  useRequestWithdrawalMutation,
   useRechargeWalletMutation,
   useWithdrawalWalletMutation,
   useTransferFundsMutation,

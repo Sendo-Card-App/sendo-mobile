@@ -44,6 +44,7 @@ const services = [
   { label: t("home.fundRequest"), icon: "cash-outline", route: "WelcomeDemand", color: "#ff6b6b", bgColor: "#fff0f0" },
   { label: t("home.etontine"), icon: "layers-outline", route: "TontineList", color: "#4dabf7", bgColor: "#f0f7ff" },
   { label: t("home.payBills"), icon: "calculator-outline", route: "PaymentSimulator", color: "#ff922b", bgColor: "#fff9f0" },
+   { label: t("home.withdrawal"), icon: "cash-outline", route: "InteracWithdrawal", color: "#ff922b", bgColor: "#fff9f0" },
   { label: t("drawer.request1"), icon: "chatbubbles-outline", route: "NiuRequest", color: "#cc5de8", bgColor: "#f8f0fc" },
   { label: t("serviceScreen.support") || "Support", icon: "headset-outline", route: "ChatScreen", color: "#8B5CF6", bgColor: "#F5F3FF" },
 ];
@@ -53,7 +54,8 @@ let filteredServices = services;
 
 if (country === "Canada") {
   filteredServices = services.filter(item =>
-    item.route === "NiuRequest" || item.route === "ChatScreen"
+    item.route === "NiuRequest" || item.route === "ChatScreen" || item.route === "PaymentSimulator"
+    || item.route === "Withdrawal"
   );
 }
 
