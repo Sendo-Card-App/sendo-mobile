@@ -11,7 +11,6 @@ const DOCUMENT_TYPES = {
 
 // Cameroon identity types
 const IDENTITY_TYPES = {
-  DRIVERS_LICENSE: 'drivers_license',
   PASSPORT: 'passport',
   CNI: 'cni'
 };

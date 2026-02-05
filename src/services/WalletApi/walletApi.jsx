@@ -172,6 +172,14 @@ export const walletApi = createApi({
       invalidatesTags: [TAG_TYPES.TRANSFERS],
     }),
 
+    getTransferFees: builder.mutation({
+      query: (amount) => ({
+        url: '/merchant/fees-amount',
+        method: 'POST',
+        body: { amount },
+      }),
+    }),
+
     initTransferToDestinataire: builder.mutation({
       query: ({ destinataireId, amount, description = '' }) => ({
         url: '/transfer-money/init-to-know-destinataire',
@@ -196,6 +204,7 @@ export const {
   useCheckTransactionStatusQuery,
   useGetWalletDetailsQuery,
   useGetTransfersQuery,
-   useInitTransferMutation,
+  useInitTransferMutation,
+  useGetTransferFeesMutation,
    useInitTransferToDestinataireMutation,
 } = walletApi;

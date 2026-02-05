@@ -67,7 +67,7 @@ const OnboardingCardScreen = () => {
     //console.log("userProfile list:", JSON.stringify(userProfile, null, 2));
 
     const profileStatus = userProfile?.data?.user?.virtualCard?.status;
-
+      //  console.log("profileStatus:", JSON.stringify(profileStatus, null, 2));
     //  First try onboardingSession (cardRequest)
     // If not found, fallback to virtualCard status from userProfile
      const finalStatus =
@@ -140,7 +140,7 @@ const OnboardingCardScreen = () => {
     }, [])
   );
 
-  // FIXED: Navigation effect with proper conditions
+  // FIXED: Navigation effect with proper conditions - INCLUDING TERMINATED AND BLOCKED
     useEffect(() => {
     if (!finalStatus || navigationTriggered.current) return;
 
@@ -152,9 +152,9 @@ const OnboardingCardScreen = () => {
         navigation.replace("CreateVirtualCard");
       }, 100);
     } else if (
-      ["ACTIVE", "PRE_ACTIVE", "FROZEN", "BLOCKED", "SUPENDED"].includes(finalStatus)
+      ["ACTIVE", "PRE_ACTIVE", "FROZEN", "BLOCKED", "SUSPENDED", "TERMINATED"].includes(finalStatus)
     ) {
-      // User already has a card → manage it
+      // User already has a card → manage it (including terminated or blocked cards)
       setTimeout(() => {
         navigation.replace("ManageVirtualCard");
       }, 100);
@@ -220,158 +220,200 @@ const OnboardingCardScreen = () => {
     }
   };
 
-  const renderMainContent = () => {
-    if (status === 'REFUSED_TIMEOUT') {
-      return (
-        <View style={styles.statusContainer}>
-          <Image
-            source={require('../../images/time-out.png')}
-            style={styles.statusImage}
+  // Helper function to render different states
+  const renderStatusContent = () => {
+    if (!finalStatus) return null;
+
+    // Handle different statuses
+    switch(finalStatus) {
+      case 'REFUSED_TIMEOUT':
+        return renderRefusedTimeout();
+      
+      case 'PENDING':
+      case 'WAITING_FOR_INFORMATION':
+        return renderPending();
+      
+      case 'CANCELLED':
+        return renderCancelled();
+      
+      case 'VERIFIED':
+      case 'ACTIVE':
+      case 'PRE_ACTIVE':
+      case 'FROZEN':
+      case 'BLOCKED':
+      case 'SUSPENDED':
+      case 'TERMINATED':
+        // These statuses should navigate away, but show a loading state
+        return renderLoadingState();
+      
+      default:
+        return renderDefault();
+    }
+  };
+
+  const renderRefusedTimeout = () => {
+    return (
+      <View style={styles.statusContainer}>
+        <Image
+          source={require('../../images/time-out.png')}
+          style={styles.statusImage}
+          resizeMode="contain"
+        />
+        <Text style={styles.statusTitle}>
+          {t('onboardingCard.refusedTimeout.title')}
+        </Text>
+        <Text style={styles.statusSubtitle}>
+          {t('onboardingCard.refusedTimeout.subtitle')}
+        </Text>
+        
+        {/* Explanation section */}
+        <View style={styles.explanationContainer}>
+          <Text style={styles.explanationTitle}>
+            {t('onboardingCard.refusedTimeout.explanationTitle')}
+          </Text>
+          <Text style={styles.explanationText}>
+            {t('onboardingCard.refusedTimeout.explanationText')}
+          </Text>
+        </View>
+        
+        {/* Next steps */}
+        <View style={styles.nextStepsContainer}>
+          <Text style={styles.nextStepsTitle}>
+            {t('onboardingCard.refusedTimeout.nextStepsTitle')}
+          </Text>
+          <View style={styles.stepItem}>
+            <View style={styles.stepNumber}>
+              <Text style={styles.stepNumberText}>1</Text>
+            </View>
+            <Text style={styles.stepText}>
+              {t('onboardingCard.refusedTimeout.step1')}
+            </Text>
+          </View>
+          <View style={styles.stepItem}>
+            <View style={styles.stepNumber}>
+              <Text style={styles.stepNumberText}>2</Text>
+            </View>
+            <Text style={styles.stepText}>
+              {t('onboardingCard.refusedTimeout.step2')}
+            </Text>
+          </View>
+        </View>
+      </View>
+    );
+  };
+
+  const renderPending = () => {
+    return (
+      <View style={styles.pendingContainer}>
+        {/* Header with status badge */}
+        <View style={styles.headerContainer}>
+          <Text style={styles.headerTitle}>Sendo</Text>
+
+          <Animated.Image
+            source={require('../../images/sablier.png')}
+            style={[
+              styles.pendingImage,
+              {
+                transform: [{
+                  rotate: sablierRotation.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: ['0deg', '360deg'],
+                  })
+                }]
+              }
+            ]}
             resizeMode="contain"
           />
-          <Text style={styles.statusTitle}>
-            {t('onboardingCard.refusedTimeout.title')}
-          </Text>
-          <Text style={styles.statusSubtitle}>
-            {t('onboardingCard.refusedTimeout.subtitle')}
+        </View>
+        
+        <Text style={styles.statusSubHeader}>
+          {t('onboardingCard.pending.status.subHeader')}
+        </Text>
+        
+        {/* Main content */}
+        <View style={styles.contentContainer}>
+          <Text style={styles.sectionTitle}>
+            {t('onboardingCard.pending.title')}
           </Text>
           
-          {/* Explanation section */}
-          <View style={styles.explanationContainer}>
-            <Text style={styles.explanationTitle}>
-              {t('onboardingCard.refusedTimeout.explanationTitle')}
-            </Text>
-            <Text style={styles.explanationText}>
-              {t('onboardingCard.refusedTimeout.explanationText')}
-            </Text>
-          </View>
+          <Text style={styles.sectionDescription}>
+            {t('onboardingCard.pending.subtitle')}
+          </Text>
           
-          {/* Next steps */}
-          <View style={styles.nextStepsContainer}>
-            <Text style={styles.nextStepsTitle}>
-              {t('onboardingCard.refusedTimeout.nextStepsTitle')}
-            </Text>
-            <View style={styles.stepItem}>
-              <View style={styles.stepNumber}>
-                <Text style={styles.stepNumberText}>1</Text>
-              </View>
-              <Text style={styles.stepText}>
-                {t('onboardingCard.refusedTimeout.step1')}
+          {/* Status timeline */}
+          <View style={styles.statusTimeline}>
+            <View style={styles.timelineItem}>
+              <View style={[styles.timelineDot, styles.timelineDotActive]} />
+              <View style={[styles.timelineLine, styles.timelineLineActive]} />
+              <Text style={styles.timelineText}>
+                {t('onboardingCard.pending.timeline.requested')}
               </Text>
             </View>
-            <View style={styles.stepItem}>
-              <View style={styles.stepNumber}>
-                <Text style={styles.stepNumberText}>2</Text>
-              </View>
-              <Text style={styles.stepText}>
-                {t('onboardingCard.refusedTimeout.step2')}
+            
+            <View style={styles.timelineItem}>
+              <View style={[styles.timelineDot, 
+                status === 'WAITING_FOR_INFORMATION' ? styles.timelineDotActive : styles.timelineDotInactive
+              ]} />
+              <View style={[styles.timelineLine, 
+                status === 'WAITING_FOR_INFORMATION' ? styles.timelineLineActive : styles.timelineLineInactive
+              ]} />
+              <Text style={styles.timelineText}>
+                {t('onboardingCard.pending.timeline.verification')}
+              </Text>
+            </View>
+            
+            <View style={styles.timelineItem}>
+              <View style={[styles.timelineDot, styles.timelineDotInactive]} />
+              <Text style={styles.timelineText}>
+                {t('onboardingCard.pending.timeline.approved')}
+              </Text>
+            </View>
+          </View>
+          
+          {/* Request details */}
+          <View style={styles.detailsContainer}>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>
+                {t('onboardingCard.pending.labels.requestDate')}
+              </Text>
+              <Text style={styles.detailValue}>
+                {requestDate ? new Date(requestDate).toLocaleDateString() : '--'}
               </Text>
             </View>
           </View>
         </View>
-      );
-    }
+      </View>
+    );
+  };
 
-    if (['PENDING', 'WAITING_FOR_INFORMATION'].includes(status)) {
-      return (
-        <View style={styles.pendingContainer}>
-          {/* Header with status badge */}
-          <View style={styles.headerContainer}>
-            <Text style={styles.headerTitle}>Sendo</Text>
+  const renderCancelled = () => {
+    return (
+      <View style={styles.statusContainer}>
+        <Image
+          source={require('../../images/cancelled.png')}
+          style={styles.statusImage}
+          resizeMode="contain"
+        />
+        <Text style={styles.statusTitle}>{t('onboardingCard.cancelled.title')}</Text>
+        <Text style={styles.statusSubtitle}>
+          {t('onboardingCard.cancelled.subtitle')}
+        </Text>
+      </View>
+    );
+  };
 
-            <Animated.Image
-              source={require('../../images/sablier.png')}
-              style={[
-                styles.pendingImage,
-                {
-                  transform: [{
-                    rotate: sablierRotation.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: ['0deg', '360deg'],
-                    })
-                  }]
-                }
-              ]}
-              resizeMode="contain"
-            />
-          </View>
-          
-          <Text style={styles.statusSubHeader}>
-            {t('onboardingCard.pending.status.subHeader')}
-          </Text>
-          
-          {/* Main content */}
-          <View style={styles.contentContainer}>
-            <Text style={styles.sectionTitle}>
-              {t('onboardingCard.pending.title')}
-            </Text>
-            
-            <Text style={styles.sectionDescription}>
-              {t('onboardingCard.pending.subtitle')}
-            </Text>
-            
-            {/* Status timeline */}
-            <View style={styles.statusTimeline}>
-              <View style={styles.timelineItem}>
-                <View style={[styles.timelineDot, styles.timelineDotActive]} />
-                <View style={[styles.timelineLine, styles.timelineLineActive]} />
-                <Text style={styles.timelineText}>
-                  {t('onboardingCard.pending.timeline.requested')}
-                </Text>
-              </View>
-              
-              <View style={styles.timelineItem}>
-                <View style={[styles.timelineDot, 
-                  status === 'WAITING_FOR_INFORMATION' ? styles.timelineDotActive : styles.timelineDotInactive
-                ]} />
-                <View style={[styles.timelineLine, 
-                  status === 'WAITING_FOR_INFORMATION' ? styles.timelineLineActive : styles.timelineLineInactive
-                ]} />
-                <Text style={styles.timelineText}>
-                  {t('onboardingCard.pending.timeline.verification')}
-                </Text>
-              </View>
-              
-              <View style={styles.timelineItem}>
-                <View style={[styles.timelineDot, styles.timelineDotInactive]} />
-                <Text style={styles.timelineText}>
-                  {t('onboardingCard.pending.timeline.approved')}
-                </Text>
-              </View>
-            </View>
-            
-            {/* Request details */}
-            <View style={styles.detailsContainer}>
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>
-                  {t('onboardingCard.pending.labels.requestDate')}
-                </Text>
-                <Text style={styles.detailValue}>
-                  {requestDate ? new Date(requestDate).toLocaleDateString() : '--'}
-                </Text>
-              </View>
-            </View>
-          </View>
-        </View>
-      );
-    }
+  const renderLoadingState = () => {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#7ddd7d" />
+        <Text style={styles.loadingText}>
+          Redirection vers la gestion de votre carte...
+        </Text>
+      </View>
+    );
+  };
 
-    if (status === 'CANCELLED') {
-      return (
-        <View style={styles.statusContainer}>
-          <Image
-            source={require('../../images/cancelled.png')}
-            style={styles.statusImage}
-            resizeMode="contain"
-          />
-          <Text style={styles.statusTitle}>{t('onboardingCard.cancelled.title')}</Text>
-          <Text style={styles.statusSubtitle}>
-            {t('onboardingCard.cancelled.subtitle')}
-          </Text>
-        </View>
-      );
-    }
-
+  const renderDefault = () => {
     return (
       <>
         <View style={styles.imageContainer}>
@@ -409,9 +451,12 @@ const OnboardingCardScreen = () => {
         <Text style={styles.subtitle}>
           {t('onboardingCard.subtitle')}
         </Text>
-        
       </>
     );
+  };
+
+  const renderMainContent = () => {
+    return renderStatusContent();
   };
 
   return (
@@ -433,31 +478,27 @@ const OnboardingCardScreen = () => {
           {renderMainContent()}
         </ScrollView>
 
-        <TouchableOpacity
-          onPress={handleRequestCard}
-          style={[
-            styles.button,
-            (isRequesting || 
-            ['PENDING', 'WAITING_FOR_INFORMATION'].includes(status) || 
-            isFetchingStatus) && 
-            styles.buttonDisabled
-          ]}
-          disabled={isRequesting || 
-                    ['PENDING', 'WAITING_FOR_INFORMATION'].includes(status) || 
-                    isFetchingStatus}
-        >
-          {isRequesting || isFetchingStatus ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.buttonText}>
-              {status === 'REFUSED_TIMEOUT' 
-                ? t('onboardingCard.button.retry')
-                : ['PENDING', 'WAITING_FOR_INFORMATION'].includes(status)
-                ? t('onboardingCard.button.pending')
-                : t('onboardingCard.button.default')}
-            </Text>
-          )}
-        </TouchableOpacity>
+        {/* Only show button if status allows requesting a new card */}
+        {!['VERIFIED', 'ACTIVE', 'PRE_ACTIVE', 'FROZEN', 'BLOCKED', 'SUSPENDED', 'TERMINATED', 'PENDING', 'WAITING_FOR_INFORMATION'].includes(finalStatus) && (
+          <TouchableOpacity
+            onPress={handleRequestCard}
+            style={[
+              styles.button,
+              (isRequesting || isFetchingStatus) && styles.buttonDisabled
+            ]}
+            disabled={isRequesting || isFetchingStatus}
+          >
+            {isRequesting || isFetchingStatus ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.buttonText}>
+                {finalStatus === 'REFUSED_TIMEOUT' 
+                  ? t('onboardingCard.button.retry')
+                  : t('onboardingCard.button.default')}
+              </Text>
+            )}
+          </TouchableOpacity>
+        )}
       </View>
     </SafeAreaView>
   );
@@ -489,8 +530,10 @@ const styles = StyleSheet.create({
     left: 20,
     zIndex: 10,
     padding: 10,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    borderRadius: 20,
   },
-    feeMessage: {
+  feeMessage: {
     marginTop: 15,
     fontSize: 16,
     color: "#444",
@@ -518,6 +561,20 @@ const styles = StyleSheet.create({
     width: width * 0.4,
     height: width * 0.4,
     marginBottom: 30,
+  },
+  
+  // Loading state
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 100,
+  },
+  loadingText: {
+    marginTop: 20,
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
   },
   
   // Status container styles

@@ -25,24 +25,18 @@ const ReceiptScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const transaction = route.params?.transaction;
-  //console.log(transaction)
-    const userData = route.params?.user;
-   //console.log(userData)
+  const userData = route.params?.user;
   const user = transaction?.receiver; 
 
-   const idToFetch = transaction?.userId; // 2
-   const currentUserId = userData?.id; // logged in user
+  const idToFetch = transaction?.userId;
+  const currentUserId = userData?.id;
   const isSender = currentUserId === transaction.userId;
   const isReceiver = currentUserId === transaction.receiverId;
 
-
-
   // Fetch user info from API
   const { data: userInfos, isLoading: isUserLoading, error: userError } = useGetUserByIdQuery(idToFetch, {
-    skip: !idToFetch, // skip query if no ID
+    skip: !idToFetch,
   });
-  //console.log(userInfos)
-
 
   const [isGenerating, setIsGenerating] = React.useState(false);
   const { t } = useTranslation();
@@ -57,13 +51,14 @@ const ReceiptScreen = () => {
 
   const getConfigValue = (name) => {
     const configItem = configData?.data?.find(item => item.name === name);
-    return configItem ? configItem.value : null;
+    return configItem ? parseFloat(configItem.value) : null;
   };
 
-  const getExchangeRate = () => {
-    const exchangeRate = getConfigValue('TRANSFER_FEES');
-    return parseFloat(exchangeRate) || 1; // Default to 1 if not found
-  };
+  const SENDO_VALUE_CAD_CA_CAM = getConfigValue('SENDO_VALUE_CAD_CA_CAM');
+  const exchangeRate = SENDO_VALUE_CAD_CA_CAM || 482; 
+
+  // Check if this is a CAM-CA transfer
+  const isCAMCATransfer = transaction?.description === "Transfert CAM-CA";
 
   if (!transaction) {
     return (
@@ -79,7 +74,7 @@ const ReceiptScreen = () => {
     );
   }
 
-    const getStatusLabel = (status) => {
+  const getStatusLabel = (status) => {
     switch(status?.toUpperCase()) {
       case 'COMPLETED': return 'Terminé';
       case 'PENDING': return 'En attente';
@@ -91,14 +86,13 @@ const ReceiptScreen = () => {
 
   const getStatusClass = (status) => {
     switch(status?.toUpperCase()) {
-      case 'COMPLETED': return 'status-completed'; // green
-      case 'PENDING': return 'status-pending'; // orange
-      case 'FAILED': return 'status-failed'; // red
-      case 'BLOCKED': return 'status-blocked'; // gray or red
+      case 'COMPLETED': return 'status-completed';
+      case 'PENDING': return 'status-pending';
+      case 'FAILED': return 'status-failed';
+      case 'BLOCKED': return 'status-blocked';
       default: return '';
     }
   };
-
 
   const getTypeLabel = (type) => {
     switch(type?.toUpperCase()) {
@@ -106,7 +100,7 @@ const ReceiptScreen = () => {
       case 'WITHDRAWAL': return t('history1.withdraw');
       case 'TRANSFER': return t('history1.transfer');
       case 'SHARED_PAYMENT': return t('history1.share');
-       case 'VIEW_CARD_DETAILS': return t('history1.cardView');
+      case 'VIEW_CARD_DETAILS': return t('history1.cardView');
       case 'WALLET_TO_WALLET': return t('history1.wallet');
       case 'WALLET_PAYMENT': return t('history1.walletPayment');
       case 'TONTINE_PAYMENT': return t('history1.tontine');
@@ -151,98 +145,298 @@ const ReceiptScreen = () => {
     return transaction.type;
   };
 
-  // Improved version of getLocalImageBase64
-const getLocalImageBase64 = async () => {
-  try {
-    // Always load the asset
-    const logoAsset = Asset.fromModule(require('../../../assets/LogoSendo.png'));
-    await logoAsset.downloadAsync();
-
-    // Get URI (works in both dev & prod)
-    const imageUri = logoAsset.localUri || logoAsset.uri;
-
-    if (!imageUri) {
-      console.error("No valid URI for logo asset");
-      return null;
-    }
-
-    // Convert to Base64
-   const base64 = await FileSystem.readAsStringAsync(imageUri, {
-      encoding: 'base64',
-    });
-
-    return `data:image/png;base64,${base64}`;
-  } catch (error) {
-    console.error("Error loading local image:", error);
-    return null; // fallback to no logo instead of external URL
-  }
-};
-
-
   const handleDownloadReceipt = async () => {
-  if (transaction.status !== 'COMPLETED' && transaction.status !== 'FAILED') {
-    Alert.alert(
-      "Reçu indisponible",
-      "Le reçu est uniquement disponible pour les transactions réussies ou échouées"
-    );
-    return;
-  }
-
-
-  setIsGenerating(true);
-  try {
-    // Use Cloudinary hosted logo
-    const logoUrl = "https://res.cloudinary.com/dviktmefh/image/upload/v1758140850/WhatsApp_Image_2025-09-17_at_21.26.01_hjgtfa.jpg";
-    
-    // Generate HTML with the hosted logo
-    const html = generateReceiptHTML(transaction, user, getTypeLabel, logoUrl);
-    
-    // Convert HTML to PDF
-    const { uri } = await Print.printToFileAsync({ html });
-    
-    // Move to permanent location
-    const newUri = `${FileSystem.documentDirectory}Reçu_Sendo_${transaction.transactionId}.pdf`;
-    await FileSystem.moveAsync({ from: uri, to: newUri });
-
-    // Share the PDF
-    if (await Sharing.isAvailableAsync()) {
-      await Sharing.shareAsync(newUri);
-    } else {
-      Alert.alert("Succès", "Reçu généré avec succès");
+    if (transaction.status !== 'COMPLETED' && transaction.status !== 'FAILED') {
+      Alert.alert(
+        "Reçu indisponible",
+        "Le reçu est uniquement disponible pour les transactions réussies ou échouées"
+      );
+      return;
     }
-  } catch (error) {
-    console.error("Error generating receipt:", error);
-    Alert.alert("Erreur", "Échec de génération du reçu. Veuillez réessayer.");
-  } finally {
-    setIsGenerating(false);
-  }
-};
 
+    setIsGenerating(true);
+    try {
+      // Use Cloudinary hosted logo
+      const logoUrl = "https://res.cloudinary.com/dviktmefh/image/upload/v1758140850/WhatsApp_Image_2025-09-17_at_21.26.01_hjgtfa.jpg";
+      
+      // Generate HTML with the hosted logo - use special template for CAM-CA transfers
+      const html = isCAMCATransfer 
+        ? generateCAMCAReceiptHTML(transaction, userData, userInfos)
+        : generateReceiptHTML(transaction, user, getTypeLabel, logoUrl);
+      
+      // Convert HTML to PDF
+      const { uri } = await Print.printToFileAsync({ html });
+      
+      // Move to permanent location
+      const newUri = `${FileSystem.documentDirectory}Reçu_Sendo_${transaction.transactionId}.pdf`;
+      await FileSystem.moveAsync({ from: uri, to: newUri });
+
+      // Share the PDF
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(newUri);
+      } else {
+        Alert.alert("Succès", "Reçu généré avec succès");
+      }
+    } catch (error) {
+      console.error("Error generating receipt:", error);
+      Alert.alert("Erreur", "Échec de génération du reçu. Veuillez réessayer.");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  // Special receipt template for CAM-CA transfers
+  const generateCAMCAReceiptHTML = (transaction, senderData, receiverInfo, logoBase64) => {
+     const logoUrl = logoBase64;
+    const senderInfo = senderData;
+    const receiverData = transaction.receiver;
+    const isSender = currentUserId === transaction.userId;
+    
+    // Get counterpart names
+    let counterpartLabel = isSender ? "Bénéficiaire" : "Expéditeur";
+    let counterpartName = "";
+    
+    if (isSender) {
+      counterpartName = `${receiverData?.firstname || ''} ${receiverData?.lastname || ''}`;
+    } else {
+      counterpartName = `${receiverInfo?.data?.firstname || ''} ${receiverInfo?.data?.lastname || ''}`;
+    }
+
+    // For CAM-CA transfers, we need to show amount in XAF and CAD
+    const cadAmount = (transaction.amount / exchangeRate).toFixed(2);
+    const cadFees = (transaction.sendoFees / exchangeRate).toFixed(2);
+    const cadTotal = (transaction.totalAmount / exchangeRate).toFixed(2);
+
+    // Format dates
+    const operationDate = moment(transaction.createdAt).format('DD/MM/YYYY HH:mm A');
+    const emissionDate = moment().format('DD/MM/YYYY');
+
+    return `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <title>Sendo CAM-CA Receipt</title>
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          margin: 0;
+          padding: 20px;
+          background-color: #f5f5f5;
+        }
+        .receipt {
+          max-width: 800px;
+          margin: 0 auto;
+          background: white;
+          padding: 20px;
+          border-radius: 8px;
+          box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          margin-bottom: 20px;
+          border-bottom: 2px solid #7ddd7d;
+          padding-bottom: 15px;
+        }
+        .logo {
+          font-size: 24px;
+          font-weight: bold;
+          color: #7ddd7d;
+        }
+        .header .right {
+          text-align: right;
+          font-size: 12px;
+        }
+        .header .right p {
+          margin: 2px 0;
+        }
+        .info-row {
+          display: flex;
+          justify-content: space-between;
+          margin-bottom: 20px;
+          font-size: 14px;
+        }
+        .section {
+          margin-bottom: 25px;
+        }
+        .section h3 {
+          background-color: #7ddd7d;
+          color: white;
+          padding: 8px 12px;
+          margin: 0 -20px 15px -20px;
+          font-size: 16px;
+        }
+        .grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 10px;
+          font-size: 14px;
+        }
+        .grid p {
+          margin: 5px 0;
+        }
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          font-size: 14px;
+        }
+        table tr {
+          border-bottom: 1px solid #eee;
+        }
+        table td {
+          padding: 8px 0;
+        }
+        table tr.total {
+          font-weight: bold;
+          background-color: #f9f9f9;
+        }
+        table tr:last-child {
+          border-bottom: 2px solid #7ddd7d;
+        }
+        .signature {
+          display: flex;
+          justify-content: space-between;
+          margin-top: 40px;
+          padding-top: 20px;
+          border-top: 1px dashed #ccc;
+          font-size: 14px;
+        }
+        .signature div {
+          text-align: center;
+          width: 45%;
+        }
+        .signature div:first-child {
+          text-align: left;
+        }
+        .signature div:last-child {
+          text-align: right;
+        }
+        .amount-details {
+          background-color: #f8f9fa;
+          padding: 15px;
+          border-radius: 5px;
+          margin: 20px 0;
+        }
+        .amount-details h4 {
+          margin-top: 0;
+          color: #333;
+          font-size: 16px;
+        }
+        .note {
+          font-size: 12px;
+          color: #666;
+          text-align: center;
+          margin-top: 30px;
+          padding-top: 15px;
+          border-top: 1px solid #eee;
+        }
+        .exchange-rate {
+          background-color: #e8f5e8;
+          padding: 10px;
+          border-radius: 5px;
+          margin: 10px 0;
+          text-align: center;
+          font-size: 13px;
+        }
+      </style>
+    </head>
+    <body>
+
+    <div class="receipt">
+      <!-- HEADER -->
+      <div class="header">
+        <div class="logo"> <img class="logo" src="${logoUrl}" alt="Sendo Logo"></div>
+        <div class="right">
+          <p><strong>Émission:</strong> Reçu Client</p>
+          <p><strong>Destination:</strong> CANADA</p>
+          <p><strong>Date:</strong> ${emissionDate}</p>
+        </div>
+      </div>
+
+      <!-- TRANSACTION INFO -->
+      <div class="info-row">
+        <p><strong>N° Transfert:</strong> ${transaction.transactionId}</p>
+        <p><strong>Date Opération:</strong> ${operationDate}</p>
+        <p><strong>Option livraison:</strong> Transfert Sendo</p>
+      </div>
+
+      <!-- EXCHANGE RATE INFO -->
+      <div class="exchange-rate">
+        <strong>Taux de change appliqué:</strong> 1 CAD = ${exchangeRate} XAF
+      </div>
+
+      <!-- SENDER -->
+      <div class="section">
+        <h3>EXPÉDITEUR</h3>
+        <div class="grid">
+          <p><strong>Nom:</strong> ${senderInfo?.lastname || ''}</p>
+          <p><strong>Prénom:</strong> ${senderInfo?.firstname || ''}</p>
+          <p><strong>Téléphone:</strong> ${senderInfo?.phone || ''}</p>
+          <p><strong>Email:</strong> ${senderInfo?.email || ''}</p>
+          <p><strong>Pays:</strong> ${senderInfo?.country || 'Cameroun'}</p>
+        </div>
+      </div>
+
+      <!-- BENEFICIARY -->
+      <div class="section">
+        <h3>BÉNÉFICIAIRE</h3>
+        <div class="grid">
+          <p><strong>Nom:</strong> ${receiverData?.lastname || ''}</p>
+          <p><strong>Prénom:</strong> ${receiverData?.firstname || ''}</p>
+          <p><strong>Téléphone:</strong> ${receiverData?.phone || ''}</p>
+          <p><strong>Email:</strong> ${receiverData?.email || ''}</p>
+          <p><strong>Pays:</strong> Canada</p>
+          <p><strong>Type de compte:</strong> Wallet Sendo</p>
+        </div>
+      </div>
+
+      <!-- TRANSFER DETAILS -->
+      <div class="section">
+        <h3>DÉTAIL TRANSFERT</h3>
+        <table>
+          <tr><td>Montant envoyé</td><td>${transaction.amount.toLocaleString()} XAF</td></tr>
+          <tr><td>Frais de transfert</td><td>${transaction.sendoFees.toLocaleString()} XAF</td></tr>
+          <tr class="total"><td>Total débité</td><td>${transaction.totalAmount.toLocaleString()} XAF</td></tr>
+          <tr><td>Montant envoyé (CAD)</td><td>${cadAmount} CAD</td></tr>
+          <tr><td>Frais (CAD)</td><td>${cadFees} CAD</td></tr>
+          <tr class="total"><td>Total à recevoir</td><td>${cadTotal} CAD</td></tr>
+        </table>
+      </div>
+      <div class="note">
+        Ce reçu a été généré automatiquement par le système Sendo.<br>
+        Pour toute réclamation, contactez le support avec la référence: ${transaction.transactionId}
+      </div>
+    </div>
+
+    </body>
+    </html>
+    `;
+  };
 
   const generateReceiptHTML = (transaction, user, getTypeLabel, logoBase64) => {
     const displayType = getTransactionDisplayType(transaction);
     const logoUrl = logoBase64;
 
     const isSender = currentUserId === transaction.userId;
-  const isReceiver = currentUserId === transaction.receiverId;
+    const isReceiver = currentUserId === transaction.receiverId;
 
-  // 🟢 Compute counterpart label and name just like in your JSX
-  let counterpartLabel = isSender ? "Bénéficiaire :" : "Expéditeur :";
-  let counterpartName = "";
+    let counterpartLabel = isSender ? "Bénéficiaire :" : "Expéditeur :";
+    let counterpartName = "";
 
-  if (
-    transaction.type === 'WALLET_TO_WALLET' ||
-    transaction.type === 'TRANSFER' ||
-    transaction.type === 'FUND_REQUEST_PAYMENT' ||
-    transaction.type === 'SHARED_PAYMENT'
-  ) {
-    counterpartName = isSender
-      ? `${transaction.receiver?.firstname ?? ''} ${transaction.receiver?.lastname ?? ''}`
-      : `${userInfos?.data?.firstname ?? ''} ${userInfos?.data?.lastname ?? ''}`;
-  } else {
-    // fallback for bank/card/niu
-    counterpartName = `${transaction.receiver?.firstname ?? ''} ${transaction.receiver?.lastname ?? ''}`;
-  }
+    if (
+      transaction.type === 'WALLET_TO_WALLET' ||
+      transaction.type === 'TRANSFER' ||
+      transaction.type === 'FUND_REQUEST_PAYMENT' ||
+      transaction.type === 'SHARED_PAYMENT'
+    ) {
+      counterpartName = isSender
+        ? `${transaction.receiver?.firstname ?? ''} ${transaction.receiver?.lastname ?? ''}`
+        : `${userInfos?.data?.firstname ?? ''} ${userInfos?.data?.lastname ?? ''}`;
+    } else {
+      counterpartName = `${transaction.receiver?.firstname ?? ''} ${transaction.receiver?.lastname ?? ''}`;
+    }
     
     return `
     <!DOCTYPE html>
@@ -344,7 +538,7 @@ const getLocalImageBase64 = async () => {
           <span class="label">Date:</span>
           <span class="value">${moment(transaction.createdAt).format('DD/MM/YYYY HH:mm')}</span>
         </div>
-       <div class="row">
+        <div class="row">
           <span class="label">Statut:</span>
           <span class="${getStatusClass(transaction.status)}">${getStatusLabel(transaction.status)}</span>
         </div>
@@ -361,17 +555,12 @@ const getLocalImageBase64 = async () => {
           <span class="label">Montant envoyé:</span>
           <span class="amount">${transaction.amount} ${transaction.currency}</span>
         </div>
-       <div class="row">
+        <div class="row">
           <span class="label">Frais:</span>
           <span class="value">
-            ${
-              transaction.type === 'TRANSFER'
-                ? (transaction.sendoFees * getExchangeRate()).toFixed(2) + ' ' + transaction.currency
-                : (transaction.sendoFees || 0) + ' ' + transaction.currency
-            }
+            ${(transaction.sendoFees || 0)} ${transaction.currency}
           </span>
         </div>
-
 
         <div class="row">
           <span class="label">Total:</span>
@@ -417,7 +606,7 @@ const getLocalImageBase64 = async () => {
           <span class="value">${transaction.receiver?.firstname || user?.firstname} ${transaction.receiver?.lastname || user?.lastname}</span>
         </div>
         <div class="section">
-       ${transaction.type === 'WALLET_TO_WALLET' ? `
+        ${transaction.type === 'WALLET_TO_WALLET' ? `
           <div class="section">
             <div class="row">
               <span class="label">${counterpartLabel}</span>
@@ -446,6 +635,7 @@ const getLocalImageBase64 = async () => {
     `;
   };
 
+  // Rest of your component (getStatusSteps, render JSX) remains the same...
   const getStatusSteps = () => {
     const formatDate = (date) => date ? moment(date).format('DD/MM/YYYY HH:mm') : 'N/A';
 
@@ -512,7 +702,6 @@ const getLocalImageBase64 = async () => {
     <View className="flex-1 bg-white">
       <StatusBar backgroundColor="#7ddd7d" barStyle="light-content" />
       
-      {/* Header with proper background coverage */}
       <View className="bg-[#7ddd7d] pt-0">
         <SafeAreaView style={{ paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 }}>
           <View
@@ -534,7 +723,7 @@ const getLocalImageBase64 = async () => {
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
         <View className="items-center my-4 px-4">
           <Text className="text-lg font-semibold text-gray-700">
-            Transaction récents
+            {isCAMCATransfer ? "Transfert International CAM-CA" : "Transaction récents"}
           </Text>
         </View>
 
@@ -603,6 +792,33 @@ const getLocalImageBase64 = async () => {
                 Centre des impôts : DGI – Centre régional
               </Text>
             </>
+          ) : isCAMCATransfer ? (
+            <>
+              <Text className="text-gray-800 font-semibold text-sm mb-2">
+                Transfert  Cameroun - Canada
+              </Text>
+              <Text className="text-gray-600 text-sm">
+                {isSender ? "Destinataire :" : "Expéditeur :"}{" "}
+                <Text className="font-semibold">
+                  {isSender
+                    ? `${transaction.receiver?.firstname || ''} ${transaction.receiver?.lastname || ''}`
+                    : `${userInfos?.data?.firstname || ''} ${userInfos?.data?.lastname || ''}`
+                  }
+                </Text>
+              </Text>
+              <Text className="text-gray-600 text-sm">
+                Montant en XAF : {transaction.amount.toLocaleString()} XAF
+              </Text>
+              <Text className="text-gray-600 text-sm">
+                Montant en CAD : {((transaction.amount / exchangeRate).toFixed(2))} CAD
+              </Text>
+              <Text className="text-gray-600 text-sm">
+                Taux de change : 1 CAD = {exchangeRate} XAF
+              </Text>
+              <Text className="text-gray-600 text-sm mb-2">
+                Référence : {transaction.transactionId}
+              </Text>
+            </>
           ) : displayType === 'BANK_TRANSFER' ? (
             <>
               <Text className="text-gray-800 font-semibold text-sm mb-2">
@@ -628,19 +844,16 @@ const getLocalImageBase64 = async () => {
               )
             )) && (
               <>
+                {transaction.type === 'WALLET_TO_WALLET' && (
+                  <Text className="text-gray-800 font-semibold text-sm mb-2">
+                    {isSender
+                      ? `${transaction.receiver?.firstname || userInfos?.data?.firstname || ''} ${transaction.receiver?.lastname || userInfos?.data?.lastname || ''} a reçu votre transaction.`
+                      : `${userInfos?.data?.firstname || ''} ${userInfos?.data?.lastname || ''} vous a envoyé une transaction.`
+                    }
+                  </Text>
+                )}
 
-               {transaction.type === 'WALLET_TO_WALLET' && (
-
-                <Text className="text-gray-800 font-semibold text-sm mb-2">
-                  {isSender
-                    ? `${transaction.receiver?.firstname || userInfos?.data?.firstname || ''} ${transaction.receiver?.lastname || userInfos?.data?.lastname || ''} a reçu votre transaction.`
-                    : `${userInfos?.data?.firstname || ''} ${userInfos?.data?.lastname || ''} vous a envoyé une transaction.`
-                  }
-                </Text>
-              )}
-
-
-              <Text className="text-gray-600 text-sm">
+                <Text className="text-gray-600 text-sm">
                   {isSender ? "Bénéficiaire :" : "Expéditeur :"}{" "}
                   <Text className="font-semibold">
                     {transaction.type === 'WALLET_TO_WALLET' ||
@@ -653,31 +866,28 @@ const getLocalImageBase64 = async () => {
                             : `${userInfos?.data?.firstname ?? ''} ${userInfos?.data?.lastname ?? ''}`
                         )
                       : (
-                          // for bank/card/niu transactions fallback
                           `${transaction.receiver?.firstname ?? ''} ${transaction.receiver?.lastname ?? ''}`
                         )
                     }
                   </Text>
                 </Text>
 
+                <Text className="text-gray-600 text-sm">
+                  Méthode de Paiement : {getTypeLabel1(transaction.provider, transaction.type, transaction.method) || 'N/A'}
+                </Text>
 
-              <Text className="text-gray-600 text-sm">
-                Méthode de Paiement : {getTypeLabel1(transaction.provider, transaction.type, transaction.method) || 'N/A'}
-              </Text>
-
-                  {displayType !== 'NIU_PAYMENT' && (
-                    <Text className="text-gray-600 text-sm mb-2">
-                      {transaction.type === 'WALLET_TO_WALLET' ? 'Numéro de compte:' : 'Numéro:'}{" "}
-                      {transaction.type === 'WALLET_TO_WALLET'
-                        ? transaction.wallet?.matricule
-                        : transaction.type === 'TRANSFER' ||
-                          transaction.type === 'FUND_REQUEST_PAYMENT' ||
-                          transaction.type === 'SHARED_PAYMENT'
-                        ? transaction.receiver?.phone
-                        : user?.phone}
-                    </Text>
-                  )}
-
+                {displayType !== 'NIU_PAYMENT' && (
+                  <Text className="text-gray-600 text-sm mb-2">
+                    {transaction.type === 'WALLET_TO_WALLET' ? 'Numéro de compte:' : 'Numéro:'}{" "}
+                    {transaction.type === 'WALLET_TO_WALLET'
+                      ? transaction.wallet?.matricule
+                      : transaction.type === 'TRANSFER' ||
+                        transaction.type === 'FUND_REQUEST_PAYMENT' ||
+                        transaction.type === 'SHARED_PAYMENT'
+                      ? transaction.receiver?.phone
+                      : user?.phone}
+                  </Text>
+                )}
               </>
             )
           )}
@@ -685,25 +895,21 @@ const getLocalImageBase64 = async () => {
           <Text className="text-green-600 font-semibold my-1">Reçu</Text>
           <Text className="text-gray-600 text-sm">Montant de la transaction: {transaction.amount} {transaction.currency}</Text>
           <Text className="text-gray-600 text-sm">
-              Frais de transaction: {
-                transaction.type === 'TRANSFER' 
-                  ? (transaction.sendoFees * getExchangeRate()).toFixed(2) + ' ' + transaction.currency
-                  : (transaction.sendoFees || 0) + ' ' + transaction.currency
-              }
-            </Text>
+            Frais de transaction: ${(transaction.sendoFees || 0)} ${transaction.currency}
+          </Text>
 
           <Text className="text-gray-600 text-sm mb-2">Total: {transaction.totalAmount} {transaction.currency}</Text>
 
           <Text className="text-green-600 font-semibold mt-2">Détails de la transaction</Text>
-         <Text className="text-gray-600 text-sm">
+          <Text className="text-gray-600 text-sm">
             {transaction.method === "VIRTUAL_CARD" 
               ? `Payée le : ${moment(transaction.createdAt).format("DD/MM/YYYY HH:mm")}` 
               : `Envoyé : ${moment(transaction.createdAt).format("DD/MM/YYYY HH:mm")}`
             }
           </Text>
-            <Text className="text-gray-600 text-sm">Référence de la transaction : {transaction.transactionId}</Text>
+          <Text className="text-gray-600 text-sm">Référence de la transaction : {transaction.transactionId}</Text>
 
-         <TouchableOpacity
+          <TouchableOpacity
             onPress={handleDownloadReceipt}
             disabled={isGenerating || (transaction.status !== 'COMPLETED' && transaction.status !== 'FAILED')}
             className={`py-3 mt-4 rounded-lg items-center ${
@@ -716,7 +922,9 @@ const getLocalImageBase64 = async () => {
               <Loader color="white" />
             ) : (
               <Text className="text-white font-bold">
-                {transaction.status === 'COMPLETED'
+                {isCAMCATransfer 
+                  ? 'TÉLÉCHARGER LE REÇU CAM-CA'
+                  : transaction.status === 'COMPLETED'
                   ? 'TÉLÉCHARGER LE REÇU'
                   : transaction.status === 'FAILED'
                   ? 'TÉLÉCHARGER LE REÇU (ÉCHEC)'

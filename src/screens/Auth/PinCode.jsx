@@ -52,7 +52,7 @@ const PinCode = ({ navigation, route }) => {
     error: profileError,
     refetch 
   } = useGetUserProfileQuery();
-  // console.log('User Profile in PinCode:', userProfile);
+  //console.log('User Profile in PinCode:', userProfile);
   const userId = userProfile?.data?.user?.id;
   const { data: serverTokenData } = useGetTokenMutation(userId, {
     skip: !userId

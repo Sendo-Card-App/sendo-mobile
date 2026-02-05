@@ -421,36 +421,42 @@ const {
 
   const shouldShowAlreadyHaveScreen = hasNiuProof || hasProcessedNiuRequest;
 
-  if (shouldShowAlreadyHaveScreen) {
-    return (
-      <SafeAreaView className="flex-1 bg-white">
-        <StatusBar backgroundColor="#7ddd7d" barStyle="light-content" />
-        
-        {/* Header */}
-        <LinearGradient
-          colors={['#7ddd7d', '#10b981']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          className="pt-12 pb-6 px-4"
-        >
-          <View className="flex-row items-center">
-            <TouchableOpacity
-              onPress={() => navigation.goBack()}
-              className="p-2"
-            >
-              <AntDesign name="arrowleft" size={24} color="white" />
-            </TouchableOpacity>
-            <View className="flex-1 items-center">
-              <Image
-                source={TopLogo}
-                style={{ height: 40, width: 80, resizeMode: 'contain' }}
-              />
-            </View>
-            <View style={{ width: 40 }} />
+ if (shouldShowAlreadyHaveScreen) {
+  return (
+    <View className="flex-1 bg-white">
+      <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
+      
+      {/* Header with full bleed gradient */}
+      <LinearGradient
+        colors={['#7ddd7d', '#10b981']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={{
+          paddingTop: Platform.OS === 'ios' ? 50 : StatusBar.currentHeight + 10,
+          paddingBottom: 15,
+        }}
+      >
+        <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 15 }}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={{ padding: 8, width: 40 }}
+          >
+            <AntDesign name="left" size={24} color="white" />
+          </TouchableOpacity>
+          
+          <View style={{ flex: 1, alignItems: 'center' }}>
+            <Image
+              source={TopLogo}
+              style={{ height: 40, width: 80, resizeMode: 'contain' }}
+            />
           </View>
-        </LinearGradient>
+          
+          <View style={{ width: 40 }} />
+        </View>
+      </LinearGradient>
 
-        {/* Success Content */}
+      {/* Content - Use SafeAreaView here to handle bottom notch */}
+      <SafeAreaView style={{ flex: 1 }} edges={['bottom', 'left', 'right']}>
         <View className="flex-1 items-center justify-center p-8">
           <View className="items-center mb-8">
             <View className="w-32 h-32 rounded-full bg-green-100 items-center justify-center mb-6">
@@ -485,8 +491,9 @@ const {
           </TouchableOpacity>
         </View>
       </SafeAreaView>
-    );
-  }
+    </View>
+  );
+}
 
   // Main Component Render
   const steps = [
@@ -618,39 +625,44 @@ const {
     </View>
   );
 
-  return (
-    <SafeAreaView className="flex-1 bg-white">
-      <StatusBar backgroundColor="#7ddd7d" barStyle="light-content" />
-      
-      {/* Header */}
-      <LinearGradient
-        colors={['#7ddd7d', '#10b981']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        className="pt-12 pb-6"
-      >
-        <View className="px-5">
-          <View className="flex-row items-center justify-between">
-            <TouchableOpacity
-              onPress={() => navigation.goBack()}
-              className="p-2"
-            >
-              <AntDesign name="arrowleft" size={24} color="white" />
-            </TouchableOpacity>
-            
-            <View className="flex-1 items-center">
-              <Text className="text-white text-xl font-bold">
-                {t('screensNiu.niuRequest')}
-              </Text>
-            </View>
-            
-            <TouchableOpacity className="p-2">
-              <Feather name="help-circle" size={24} color="white" />
-            </TouchableOpacity>
+ return (
+  <View className="flex-1 bg-white">
+    <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
+    
+    {/* Header with full bleed gradient */}
+    <LinearGradient
+      colors={['#7ddd7d', '#10b981']}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 0 }}
+      style={{
+        paddingTop: Platform.OS === 'ios' ? 50 : StatusBar.currentHeight + 10,
+        paddingBottom: 15,
+      }}
+    >
+      <View className="px-5">
+        <View className="flex-row items-center justify-between">
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            className="p-2"
+          >
+            <AntDesign name="left" size={24} color="white" />
+          </TouchableOpacity>
+          
+          <View className="flex-1 items-center">
+            <Text className="text-white text-xl font-bold">
+              {t('screensNiu.niuRequest')}
+            </Text>
           </View>
+          
+          <TouchableOpacity className="p-2">
+            <Feather name="help-circle" size={24} color="white" />
+          </TouchableOpacity>
         </View>
-      </LinearGradient>
+      </View>
+    </LinearGradient>
 
+    {/* Content - Use SafeAreaView with specific edges */}
+    <SafeAreaView style={{ flex: 1 }} edges={['bottom', 'left', 'right']}>
       <ScrollView 
         className="flex-1 bg-gray-50"
         showsVerticalScrollIndicator={false}
@@ -801,9 +813,6 @@ const {
                   <Text className="text-white text-xl font-bold mb-1">
                     {t('niu.request.payButton')}
                   </Text>
-                  <Text className="text-white/90 text-base">
-                    {feeAmountCAD.toLocaleString()} CAD
-                  </Text>
                 </View>
               )}
             </TouchableOpacity>
@@ -825,6 +834,7 @@ const {
           </View>
         )}
       </ScrollView>
+     </SafeAreaView>
 
       {/* Payment Confirmation Modal */}
       <PaymentConfirmationModal
@@ -833,7 +843,7 @@ const {
         onConfirm={handlePaymentConfirmation}
         amount={feeAmount}
         title={t('niu.paymentModal.title')}
-        description={t('niu.paymentModal.message', { amount: feeAmountCAD.toLocaleString() })}
+        description={t('niu.paymentModal.message',  { amount: feeAmountCAD.toLocaleString() })}
         confirmLabel={t('niu.paymentModal.confirm')}
         cancelLabel={t('niu.paymentModal.cancel')}
         balance={balance}
@@ -841,7 +851,7 @@ const {
       />
 
       <Toast />
-    </SafeAreaView>
+    </View>
   );
 };
 

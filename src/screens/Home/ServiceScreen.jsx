@@ -20,17 +20,13 @@ const ServiceScreen = () => {
   const { t } = useTranslation();
   const [hasAcceptedTerms, setHasAcceptedTerms] = useState(null);
   const [screenWidth, setScreenWidth] = useState(Dimensions.get("window").width);
-    const {
-      data: userProfile,
-      isLoading: isProfileLoading,
-      refetch: refetchProfile,
-    } = useGetUserProfileQuery();
+  const {
+    data: userProfile,
+    isLoading: isProfileLoading,
+    refetch: refetchProfile,
+  } = useGetUserProfileQuery();
 
-
-    // Filter services based on country
   const country = userProfile?.data?.user?.country;
-
-
 
   // Animation values
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -38,34 +34,39 @@ const ServiceScreen = () => {
   const scaleAnim = useRef(new Animated.Value(0.9)).current;
   const itemAnimations = useRef([]).current;
 
-// 1️⃣ Define services first (keep at top, before any filter)
-const services = [
-  { label: t("home.friendsShare"), icon: "people-outline", route: "WelcomeShare", color: "#7ddd7d", bgColor: "#f0f9f0" },
-  { label: t("home.fundRequest"), icon: "cash-outline", route: "WelcomeDemand", color: "#ff6b6b", bgColor: "#fff0f0" },
-  { label: t("home.etontine"), icon: "layers-outline", route: "TontineList", color: "#4dabf7", bgColor: "#f0f7ff" },
-  { label: t("home.payBills"), icon: "calculator-outline", route: "PaymentSimulator", color: "#ff922b", bgColor: "#fff9f0" },
-   { label: t("home.withdrawal"), icon: "cash-outline", route: "InteracWithdrawal", color: "#ff922b", bgColor: "#fff9f0" },
-  { label: t("drawer.request1"), icon: "chatbubbles-outline", route: "NiuRequest", color: "#cc5de8", bgColor: "#f8f0fc" },
-  { label: t("serviceScreen.support") || "Support", icon: "headset-outline", route: "ChatScreen", color: "#8B5CF6", bgColor: "#F5F3FF" },
-];
+  // Define services based on country
+  const getServices = () => {
+    const baseServices = [
+      { label: t("home.friendsShare"), icon: "people-outline", route: "WelcomeShare", color: "#7ddd7d", bgColor: "#f0f9f0" },
+      { label: t("home.fundRequest"), icon: "cash-outline", route: "WelcomeDemand", color: "#ff6b6b", bgColor: "#fff0f0" },
+      { label: t("home.etontine"), icon: "layers-outline", route: "TontineList", color: "#4dabf7", bgColor: "#f0f7ff" },
+      { label: t("home.payBills"), icon: "calculator-outline", route: "PaymentSimulator", color: "#ff922b", bgColor: "#fff9f0" },
+      { label: t("drawer.request1"), icon: "chatbubbles-outline", route: "NiuRequest", color: "#cc5de8", bgColor: "#f8f0fc" },
+      { label: t("serviceScreen.support") || "Support", icon: "headset-outline", route: "ChatScreen", color: "#8B5CF6", bgColor: "#F5F3FF" },
+    ];
 
-// 2️⃣ Now safely filter based on country
-let filteredServices = services;
+    // Only show InteracWithdrawal for Canada
+    if (country === "Canada") {
+      return [
+        { label: t("home.withdrawal"), icon: "cash-outline", route: "InteracWithdrawal", color: "#ff922b", bgColor: "#fff9f0" },
+        { label: t("drawer.request1"), icon: "chatbubbles-outline", route: "NiuRequest", color: "#cc5de8", bgColor: "#f8f0fc" },
+        { label: t("serviceScreen.support") || "Support", icon: "headset-outline", route: "ChatScreen", color: "#8B5CF6", bgColor: "#F5F3FF" },
+      ];
+    }
 
-if (country === "Canada") {
-  filteredServices = services.filter(item =>
-    item.route === "NiuRequest" || item.route === "ChatScreen" || item.route === "PaymentSimulator"
-    || item.route === "Withdrawal"
-  );
-}
+    return baseServices;
+  };
 
+  const services = getServices();
 
   // Initialize animations after services is defined
-  if (itemAnimations.length === 0) {
-    services.forEach(() => {
-      itemAnimations.push(new Animated.Value(0));
-    });
-  }
+  useEffect(() => {
+    if (itemAnimations.length === 0) {
+      services.forEach(() => {
+        itemAnimations.push(new Animated.Value(0));
+      });
+    }
+  }, [services]); // Add services as dependency
 
   const numColumns = 2;
   const spacing = 20;
@@ -148,16 +149,16 @@ if (country === "Canada") {
 
   const renderItem = ({ item, index }) => {
     const animatedStyle = {
-      opacity: itemAnimations[index],
+      opacity: itemAnimations[index] || 0, // Add fallback
       transform: [
         { 
-          translateY: itemAnimations[index].interpolate({
+          translateY: (itemAnimations[index] || new Animated.Value(0)).interpolate({
             inputRange: [0, 1],
             outputRange: [50, 0]
           })
         },
         {
-          scale: itemAnimations[index].interpolate({
+          scale: (itemAnimations[index] || new Animated.Value(0)).interpolate({
             inputRange: [0, 1],
             outputRange: [0.8, 1]
           })
@@ -271,7 +272,9 @@ if (country === "Canada") {
             {t("serviceScreen.welcome") || "Choose a service to get started"}
           </Text>
           <Text className="text-white/70 text-center mt-1 text-sm">
-            {t("serviceScreen.subtitle") || "All your financial needs in one place"}
+            {country === "Canada" 
+              ? "Canadian services available" 
+              : t("serviceScreen.subtitle") || "All your financial needs in one place"}
           </Text>
         </View>
       </Animated.View>
@@ -287,19 +290,30 @@ if (country === "Canada") {
         }}
         className="flex-1 bg-gray-50"
       >
-        <FlatList
-          key={`grid-${numColumns}`}
-         data={filteredServices}
-          renderItem={renderItem}
-          keyExtractor={(item, index) => index.toString()}
-          numColumns={numColumns}
-          contentContainerStyle={{ 
-            padding: spacing,
-            paddingTop: 30,
-            paddingBottom: 30
-          }}
-          showsVerticalScrollIndicator={false}
-        />
+        {isProfileLoading ? (
+          <View className="flex-1 justify-center items-center">
+            <Text className="text-gray-600">Loading services...</Text>
+          </View>
+        ) : (
+          <FlatList
+            key={`grid-${numColumns}-${country}`} // Add country to key to force re-render
+            data={services}
+            renderItem={renderItem}
+            keyExtractor={(item, index) => `${item.route}-${index}`}
+            numColumns={numColumns}
+            contentContainerStyle={{ 
+              padding: spacing,
+              paddingTop: 30,
+              paddingBottom: 30
+            }}
+            showsVerticalScrollIndicator={false}
+            ListEmptyComponent={
+              <View className="flex-1 justify-center items-center py-20">
+                <Text className="text-gray-500 text-lg">No services available</Text>
+              </View>
+            }
+          />
+        )}
       </Animated.View>
 
       {/* Bottom Info */}
@@ -315,7 +329,7 @@ if (country === "Canada") {
         <View className="flex-row items-center justify-center">
           <MaterialIcons name="security" size={16} color="#7ddd7d" />
           <Text className="text-gray-600 text-sm ml-2 text-center">
-          {t('disclaimer')}
+            {t('disclaimer')}
           </Text>
         </View>
       </Animated.View>

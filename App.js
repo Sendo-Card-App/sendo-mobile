@@ -138,6 +138,7 @@ import CanadaKycCamera from "./src/screens/CaKyc/CanadaKycCamera";
 
 //CANADA WITHDRAWAL SCREENS
 import InteracWithdrawal  from "./src/screens/Wallet/InteracWithdrawal";
+import CamCaSendo from "./src/screens/Wallet/CamCaSendo";
 
 //MODULE TONTINE
 import TontineList from "./src/screens/Tontine/TontineList";
@@ -413,6 +414,7 @@ function MainStack() {
        <Stack.Screen name="KYCValidation" component={KYCValidation} options={{ headerShown: false }} />
       <Stack.Screen name="Address" component={Address} options={{ headerShown: false }} />
       <Stack.Screen name="Camera" component={Camera} options={{ headerShown: false }} />
+      <Stack.Screen name="CamCaSendo" component={CamCaSendo} options={{ headerShown: false }} />
 
       <Stack.Screen name="WelcomeShare" component={WelcomeShare} options={{ headerShown: false }} />
       <Stack.Screen name="Destinators" component={Destinators} options={{ headerShown: false }} />

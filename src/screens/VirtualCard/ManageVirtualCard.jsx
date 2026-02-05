@@ -97,6 +97,7 @@ const ManageVirtualCard = () => {
   const cardData = cardDetails?.data;
   //console.log(cardData)
   const cardStatus = cardData?.status;
+  //console.log("Card Status:", cardStatus);
   const isCardFrozen = cardStatus === "FROZEN";
   const rejectionAttempts = cardData?.paymentRejectNumber ?? 0;
   const limit = 3; // or wherever you get the limit from
@@ -182,7 +183,7 @@ const {
 
   useEffect(() => {
     if (cardStatus === "TERMINATED") {
-      setModalType("terminated");
+      setModalType("TERMINATED");
       setModalMessage("Votre carte a été supprimée. Voulez-vous en créer une nouvelle ?");
       setModalVisible(true);
     } else if (cardStatus === "IN_TERMINATION") {
@@ -730,12 +731,20 @@ const handleCardDetailsRequest = async (isReadOnly) => {
 ) : null}
 
 
-            {/* 🚫 Terminated Message */}
+            {/* 🚫 TERMINATED Message */}
             {!cardData ? (
               <View className="mt-6 bg-red-100 rounded-xl p-4">
                 <Text className="text-red-600 font-semibold text-center">
                   {t("manageVirtualCard.terminatedMessage")}
                 </Text>
+                 <View className="mt-6 bg-red-100 rounded-xl p-4">
+              <TouchableOpacity
+                className="bg-green-600 py-3 px-4 rounded-md self-center"
+                onPress={() => navigation.navigate("CreateVirtualCard")}
+              >
+                <Text className="text-white font-bold text-center">{t('manageVirtualCard.createNew')}</Text>
+              </TouchableOpacity>
+            </View>
               </View>
             ) : null}
 
@@ -898,16 +907,16 @@ const handleCardDetailsRequest = async (isReadOnly) => {
               className="bg-[#7ddd7d] py-3 rounded-md mb-2"
               onPress={() => {
                 setModalVisible(false);
-                if (modalType === "terminated") {
+                if (modalType === "TERMINATED") {
                   navigation.navigate("CreateVirtualCard");
                 }
               }}
             >
               <Text className="text-white text-center font-bold">
-                {modalType === "terminated" ? "Créer une nouvelle carte" : "OK"}
+                {modalType === "TERMINATED" ? "Créer une nouvelle carte" : "OK"}
               </Text>
             </Pressable>
-            {modalType === "terminated" && (
+            {modalType === "TERMINATED" && (
               <Pressable
                 className="py-2"
                 onPress={() => setModalVisible(false)}

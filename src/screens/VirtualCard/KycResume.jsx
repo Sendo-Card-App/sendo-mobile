@@ -286,7 +286,7 @@ const KycResume = ({ navigation }) => {
       dispatch(setSubmissionStatus('failed'));
       
       // Enhanced error extraction
-      let errorMessage = t('kyc_resume.general_error');
+      let errorMessage = t('Error');
       
       if (error?.data?.data?.errors?.[0]) {
         errorMessage = error.data.data.errors[0];
