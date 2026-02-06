@@ -67,6 +67,7 @@ const CamCaSendo = ({ navigation }) => {
   const [feeError, setFeeError] = useState(null);
   const [showSummary, setShowSummary] = useState(false);
   const [showSFEConnectModal, setShowSFEConnectModal] = useState(false);
+  const [showUnavailableModal, setShowUnavailableModal] = useState(false);
 
   // Configuration
   const {
@@ -78,11 +79,12 @@ const CamCaSendo = ({ navigation }) => {
 
   const getConfigValue = (name) => {
     const configItem = configData?.data?.find(item => item.name === name);
-    return configItem ? parseFloat(configItem.value) : null;
+    return configItem ? configItem.value : null;
   };
 
   const SENDO_VALUE_CAD_CA_CAM = getConfigValue('SENDO_VALUE_CAD_CA_CAM');
   const exchangeRate = SENDO_VALUE_CAD_CA_CAM || 482; 
+  const TRANSFER_CAM_CA_AVAILABILITY = getConfigValue("TRANSFER_CAM_CA_AVAILABILITY");
 
   // Debounce walletId input
   useEffect(() => {
@@ -133,42 +135,60 @@ const CamCaSendo = ({ navigation }) => {
   }, [amount, exchangeRate, transferFeesXAF, transferFeesCAD, isCameroon]);
 
   // Fetch transfer fees when amount changes
-  useEffect(() => {
-    const fetchTransferFees = async () => {
-      const transferAmount = parseFloat(amount);
+useEffect(() => {
+  const fetchTransferFees = async () => {
+    const transferAmount = parseFloat(amount);
+    
+    if (!amount || isNaN(transferAmount) || transferAmount <= 0) {
+      setTransferFeesXAF(0);
+      setTransferFeesCAD(0);
+      setFeeError(null);
+      return;
+    }
+
+    // For very small amounts, set fees to 0 and skip API call
+    if (transferAmount < 100) { // Minimum 100 XAF or equivalent
+      setTransferFeesXAF(0);
+      setTransferFeesCAD(0);
+      setFeeError(t('wallet_transfer.amount_too_small_for_fees'));
+      return;
+    }
+
+    try {
+      setFeeError(null);
       
-      if (!amount || isNaN(transferAmount) || transferAmount <= 0) {
-        setTransferFeesXAF(0);
-        setTransferFeesCAD(0);
-        setFeeError(null);
-        return;
+      const response = await getTransferFees(transferAmount).unwrap();
+      
+      if (response.status === 200 && response.data) {
+        setTransferFeesXAF(response.data.feesXAF || 0);
+        setTransferFeesCAD(response.data.feesCAD || 0);
+      } else {
+        throw new Error(response.message || 'Failed to fetch transfer fees');
       }
-
-      try {
-        setFeeError(null);
-        
-        const response = await getTransferFees(transferAmount).unwrap();
-        
-        if (response.status === 200 && response.data) {
-          setTransferFeesXAF(response.data.feesXAF || 0);
-          setTransferFeesCAD(response.data.feesCAD || 0);
-        } else {
-          throw new Error(response.message || 'Failed to fetch transfer fees');
-        }
-      } catch (error) {
-        console.error('Error fetching transfer fees:', error);
-        setFeeError(error.data?.message || error.message || 'Error calculating fees');
-        setTransferFeesXAF(0);
-        setTransferFeesCAD(0);
+    } catch (error) {
+      console.log("Error fetching transfer fees:", JSON.stringify(error, null, 2));
+      
+      // Handle the specific error case when no fee tier is found
+      const backendError = error?.data?.data?.errors;
+      if (backendError && Array.isArray(backendError) && backendError[0]?.includes("Aucun palier trouvé")) {
+        setFeeError(t('wallet_transfer.no_fee_tier_found'));
+      } else {
+        // Safely extract error message
+        const errorMessage = error?.data?.message || error?.message || 'Error calculating fees';
+        setFeeError(typeof errorMessage === 'string' ? errorMessage : 'Error calculating fees');
       }
-    };
+      
+      setTransferFeesXAF(0);
+      setTransferFeesCAD(0);
+    }
+  };
 
-    const timer = setTimeout(() => {
-      fetchTransferFees();
-    }, 800);
+  const timer = setTimeout(() => {
+    fetchTransferFees();
+  }, 800);
 
-    return () => clearTimeout(timer);
-  }, [amount, getTransferFees]);
+  return () => clearTimeout(timer);
+}, [amount, getTransferFees, t]);
 
   const { data: userProfile, isLoading: isProfileLoading } = useGetUserProfileQuery();
   const userId = userProfile?.data?.user?.id;
@@ -222,7 +242,40 @@ const CamCaSendo = ({ navigation }) => {
     return transferAmount + transferFeesXAF;
   }, [amount, transferFeesCAD, transferFeesXAF, isCanada]);
 
+  // --- Service availability check ---
+  const checkServiceAvailability = () => {
+    // If config is not loaded yet, assume service is available
+    if (isConfigLoading || !configData) {
+      return true;
+    }
+    
+    // Check if TRANSFER_CAM_CA_AVAILABILITY is set to "1" (available)
+    return TRANSFER_CAM_CA_AVAILABILITY === "1";
+  };
+
+  // --- Check if sender is trying to send to themselves ---
+  const checkSelfTransfer = () => {
+    if (!userWalletId || !walletId) {
+      return false; // Can't check if either wallet ID is missing
+    }
+    
+    // Check if sender's wallet ID matches recipient's wallet ID
+    return userWalletId.trim() === walletId.trim();
+  };
+
   const handlePreview = () => {
+    // First check if the service is available
+    if (!checkServiceAvailability()) {
+      setShowUnavailableModal(true);
+      return;
+    }
+
+    // Check if sender is trying to send to themselves
+    if (checkSelfTransfer()) {
+      showErrorToast('ACTION_FAILED', 'Vous ne pouvez pas transférer des fonds vers votre propre compte.');
+      return;
+    }
+
     if (!validateForm()) return;
     
     // Check monthly limit for Cameroon users
@@ -423,12 +476,21 @@ const CamCaSendo = ({ navigation }) => {
                 </Text>
               </View>
               
+              {/* In the Fees Display section, update this part: */}
               <View style={styles.feesRow}>
                 <Text style={styles.feesLabel}>Frais de transfert:</Text>
                 {isCalculatingFees ? (
                   <Loader size="small" color="#0D1C6A" />
                 ) : feeError ? (
-                  <Text style={styles.errorText}>{t('wallet_transfer.fee_error')}</Text>
+                  <View style={styles.feesValueContainer}>
+                    <Text style={styles.errorText}>
+                      {feeError === t('wallet_transfer.amount_too_small_for_fees') 
+                        ? t('wallet_transfer.amount_too_small_for_fees')
+                        : feeError === t('wallet_transfer.no_fee_tier_found')
+                        ? t('wallet_transfer.no_fee_tier_found')
+                        : t('wallet_transfer.fee_error')}
+                    </Text>
+                  </View>
                 ) : (
                   <View style={styles.feesValueContainer}>
                     <Text style={[styles.feesValue, styles.feesHighlight]}>
@@ -510,6 +572,40 @@ const CamCaSendo = ({ navigation }) => {
           </Text>
         </View>
       </ScrollView>
+
+      {/* Service Unavailable Modal */}
+      <Modal
+        visible={showUnavailableModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowUnavailableModal(false)}
+      >
+        <View style={styles.unavailableModalOverlay}>
+          <View style={styles.unavailableModalContainer}>
+            <View style={styles.unavailableModalIconContainer}>
+              <Ionicons name="warning-outline" size={48} color="#ff6b6b" />
+            </View>
+            
+            <Text style={styles.unavailableModalTitle}>
+              Service Temporarily Unavailable
+            </Text>
+            
+            <Text style={styles.unavailableModalMessage}>
+              The Cameroun-Canada transfer service is currently unavailable. Please try again later or contact support for assistance.
+            </Text>
+            
+            <View style={styles.unavailableModalButtonContainer}>
+              <TouchableOpacity
+                style={styles.unavailableModalButton}
+                onPress={() => setShowUnavailableModal(false)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.unavailableModalButtonText}>OK</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       {/* Summary Modal */}
       <Modal
@@ -657,7 +753,7 @@ const CamCaSendo = ({ navigation }) => {
               </Text>
               
               <Text style={styles.sfeModalText}>
-                Utilisez <Text style={styles.sfeHighlight}>SFE Connect</Text> pour envoyer jusqu'à 10 millions FCFA.
+                Utilisez l'aplication <Text style={styles.sfeHighlight}>SFE Connect</Text> pour envoyer jusqu'à 10 millions FCFA.
               </Text>
               
               <View style={styles.sfeFeatures}>
@@ -966,6 +1062,21 @@ const styles = StyleSheet.create({
     color: '#dc3545',
     fontSize: 14,
   },
+  totalContainer: {
+  alignItems: 'flex-end',
+  flex: 1,
+},
+totalValue: {
+  fontSize: 18,
+  fontWeight: 'bold',
+  color: '#28a745',
+  marginBottom: 2,
+},
+convertedTotal: {
+  fontSize: 12,
+  color: '#666',
+  fontStyle: 'italic',
+},
   // Modal Styles
   modalOverlay: {
     flex: 1,
@@ -997,21 +1108,6 @@ const styles = StyleSheet.create({
   modalBody: {
     padding: 20,
   },
-  totalContainer: {
-  alignItems: 'flex-end',
-  flex: 1,
-},
-totalValue: {
-  fontSize: 18,
-  fontWeight: 'bold',
-  color: '#28a745',
-  marginBottom: 2,
-},
-convertedTotal: {
-  fontSize: 12,
-  color: '#666',
-  fontStyle: 'italic',
-},
   summaryCard: {
     backgroundColor: '#f8f9fa',
     borderRadius: 12,
@@ -1114,6 +1210,66 @@ convertedTotal: {
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  // Service Unavailable Modal Styles
+  unavailableModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  unavailableModalContainer: {
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 24,
+    width: '90%',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  unavailableModalIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#fff5f5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  unavailableModalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  unavailableModalMessage: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 24,
+  },
+  unavailableModalButtonContainer: {
+    width: '100%',
+  },
+  unavailableModalButton: {
+    backgroundColor: '#ff6b6b',
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  unavailableModalButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
   },
   // SFE Connect Modal Styles
   sfeModalOverlay: {

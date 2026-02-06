@@ -321,7 +321,13 @@
     "kyc_required": "Veuillez soumettre vos documents KYC",
     "wallet_not_found": "Portefeuille introuvable",
     "general_error": "Une erreur est survenue",
-    "success_message": "VOTRE BÉNÉFICIAIRE RECEVRA SON TRANSFERT D'ICI 30 MINUTES À 24 HEURES."
+    "success_message": "VOTRE BÉNÉFICIAIRE RECEVRA SON TRANSFERT D'ICI 30 MINUTES À 24 HEURES.",
+     "fee_information": "Informations sur les frais",
+    "transfer_fee": "Frais de transfert",
+    "recipient_will_receive": "Le bénéficiaire recevra",
+     "amount_too_small_for_fees": "Montant trop faible pour calculer les frais",
+    "no_fee_tier_found": "Aucun palier de frais trouvé pour ce montant"
+    
   },
   "select_service": "Sélectionnez un service",
   "service_om": "Orange Money",

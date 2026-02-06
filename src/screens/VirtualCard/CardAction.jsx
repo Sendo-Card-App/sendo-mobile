@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Modal,
+  StyleSheet,
 } from 'react-native';
 import { Ionicons, AntDesign } from "@expo/vector-icons";
 import { useNavigation } from '@react-navigation/native';
@@ -16,6 +17,7 @@ import {
   useRechargeCardMutation,
   useWithdrawFromCardMutation,
 } from '../../services/Card/cardApi';
+import { useGetConfigQuery } from '../../services/Config/configApi';
 
 const CardActionScreen = ({ route }) => {
   const navigation = useNavigation();
@@ -27,13 +29,47 @@ const CardActionScreen = ({ route }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [modalType, setModalType] = useState('success');
   const [modalMessage, setModalMessage] = useState('');
+  const [showUnavailableModal, setShowUnavailableModal] = useState(false);
 
   const [rechargeCard, { isLoading: isRecharging }] = useRechargeCardMutation();
   const [withdrawFromCard, { isLoading: isWithdrawing }] = useWithdrawFromCardMutation();
   const { data: userProfile, isLoading: isProfileLoading } = useGetUserProfileQuery();
+  
+  // --- Config Query ---
+  const {
+    data: configData,
+    isLoading: isConfigLoading,
+  } = useGetConfigQuery();
 
   const matriculeWallet = userProfile?.data?.user?.wallet?.matricule;
   const isLoading = isRecharging || isWithdrawing || isProfileLoading;
+
+  // --- Helper function to get config values ---
+  const getConfigValue = (name) => {
+    const configItem = configData?.data?.find((item) => item.name === name);
+    return configItem ? configItem.value : null;
+  };
+
+  const DEPOSIT_CARD_AVAILABILITY = getConfigValue("DEPOSIT_CARD_AVAILABILITY");
+  const WITHDRAWAL_CARD_AVAILABILITY = getConfigValue("WITHDRAWAL_CARD_AVAILABILITY");
+
+  // --- Service availability check ---
+  const checkServiceAvailability = (type) => {
+    // If config is not loaded yet, assume service is available
+    if (isConfigLoading || !configData) {
+      return true;
+    }
+    
+    if (type === 'recharge') {
+      // Check if DEPOSIT_CARD_AVAILABILITY is set to "1" (available)
+      return DEPOSIT_CARD_AVAILABILITY === "1";
+    } else if (type === 'withdraw') {
+      // Check if WITHDRAWAL_CARD_AVAILABILITY is set to "1" (available)
+      return WITHDRAWAL_CARD_AVAILABILITY === "1";
+    }
+    
+    return true; // Default to available if type not recognized
+  };
 
   const showModal = (type, message) => {
     setModalType(type);
@@ -42,45 +78,50 @@ const CardActionScreen = ({ route }) => {
   };
 
   const handleSubmit = async () => {
-  const numericAmount = Number(amount);
-
-  if (!amount || isNaN(numericAmount) || numericAmount <= 0) {
-    showModal('error', t('manageVirtualCard.invalidAmount'));
-    return;
-  }
-
-  // New validation for backend limits
-  if (numericAmount < 500 || numericAmount > 500000) {
-    showModal('error', t('manageVirtualCard.amountOutOfRange'));
-    return;
-  }
-
-  if (!matriculeWallet) {
-    showModal('error', t('manageVirtualCard.missingMatricule'));
-    return;
-  }
-
-  const payload = {
-    amount: numericAmount,
-    idCard: Number(cardId),
-    matriculeWallet,
-  };
-  console.log(payload);
-
-  try {
-    if (actionType === 'recharge') {
-      await rechargeCard(payload).unwrap();
-      showModal('success', t('manageVirtualCard.rechargedSuccessfully'));
-    } else {
-      await withdrawFromCard(payload).unwrap();
-      showModal('success', t('manageVirtualCard.withdrawnSuccessfully'));
+    // First check if the service is available
+    if (!checkServiceAvailability(actionType)) {
+      setShowUnavailableModal(true);
+      return;
     }
-  } catch (err) {
-    console.log('Réponse du backend :', JSON.stringify(err, null, 2));
-    showModal('error', t('manageVirtualCard.actionFailed'));
-  }
-};
 
+    const numericAmount = Number(amount);
+
+    if (!amount || isNaN(numericAmount) || numericAmount <= 0) {
+      showModal('error', t('manageVirtualCard.invalidAmount'));
+      return;
+    }
+
+    // New validation for backend limits
+    if (numericAmount < 500 || numericAmount > 500000) {
+      showModal('error', t('manageVirtualCard.amountOutOfRange'));
+      return;
+    }
+
+    if (!matriculeWallet) {
+      showModal('error', t('manageVirtualCard.missingMatricule'));
+      return;
+    }
+
+    const payload = {
+      amount: numericAmount,
+      idCard: Number(cardId),
+      matriculeWallet,
+    };
+    console.log(payload);
+
+    try {
+      if (actionType === 'recharge') {
+        await rechargeCard(payload).unwrap();
+        showModal('success', t('manageVirtualCard.rechargedSuccessfully'));
+      } else {
+        await withdrawFromCard(payload).unwrap();
+        showModal('success', t('manageVirtualCard.withdrawnSuccessfully'));
+      }
+    } catch (err) {
+      console.log('Réponse du backend :', JSON.stringify(err, null, 2));
+      showModal('error', t('manageVirtualCard.actionFailed'));
+    }
+  };
 
   const clearAmount = () => setAmount('');
 
@@ -174,15 +215,15 @@ const CardActionScreen = ({ route }) => {
       <TouchableOpacity
         disabled={isLoading || !amount || isNaN(amount) || Number(amount) <= 0}
         onPress={() =>
-            navigation.navigate("Auth", {
-              screen: "PinCode",
-              params: {
-                onSuccess: async () => {
-                  await handleSubmit();
-                },
+          navigation.navigate("Auth", {
+            screen: "PinCode",
+            params: {
+              onSuccess: async () => {
+                await handleSubmit();
               },
-            })
-          }
+            },
+          })
+        }
         className={`p-4 rounded-lg flex-row justify-center items-center ${isLoading || !amount || isNaN(amount) || Number(amount) <= 0 ? 'bg-green-300' : 'bg-green-600'}`}
         accessibilityLabel={t('manageVirtualCard.submitAction')}
       >
@@ -207,6 +248,44 @@ const CardActionScreen = ({ route }) => {
           </>
         )}
       </TouchableOpacity>
+
+      {/* Service Unavailable Modal */}
+      <Modal
+        visible={showUnavailableModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowUnavailableModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalIconContainer}>
+              <Ionicons name="warning-outline" size={48} color="#ff6b6b" />
+            </View>
+            
+            <Text style={styles.modalTitle}>
+              {actionType === 'recharge' 
+                ? 'Card Recharge Service Temporarily Unavailable' 
+                : 'Card Withdrawal Service Temporarily Unavailable'}
+            </Text>
+            
+            <Text style={styles.modalMessage}>
+              {actionType === 'recharge'
+                ? 'The card recharge service is currently unavailable. Please try again later or contact support for assistance.'
+                : 'The card withdrawal service is currently unavailable. Please try again later or contact support for assistance.'}
+            </Text>
+            
+            <View style={styles.modalButtonContainer}>
+              <TouchableOpacity
+                style={styles.modalButton}
+                onPress={() => setShowUnavailableModal(false)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.modalButtonText}>OK</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       {/* Feedback Modal */}
       <Modal
@@ -248,5 +327,67 @@ const CardActionScreen = ({ route }) => {
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContainer: {
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 24,
+    width: '90%',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  modalIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#fff5f5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  modalMessage: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 24,
+  },
+  modalButtonContainer: {
+    width: '100%',
+  },
+  modalButton: {
+    backgroundColor: '#ff6b6b',
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  modalButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+});
 
 export default CardActionScreen;

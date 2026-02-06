@@ -7,6 +7,8 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  Modal,
+  StyleSheet,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { Ionicons, AntDesign } from "@expo/vector-icons";
@@ -33,6 +35,7 @@ const WalletRecharge = () => {
   const [amount, setAmount] = useState("");
   const [userWalletId, setUserWalletId] = useState("");
   const [checkParams, setCheckParams] = useState(null);
+  const [showUnavailableModal, setShowUnavailableModal] = useState(false);
 
   const { data: userProfile } = useGetUserProfileQuery();
   const userId = userProfile?.data?.user?.id;
@@ -67,12 +70,9 @@ const WalletRecharge = () => {
     return configItem ? configItem.value : null;
   };
 
-const SENDO_DEPOSIT_PERCENTAGE = getConfigValue("SENDO_DEPOSIT_PERCENTAGE");
-const SENDO_DEPOSIT_FEES = getConfigValue("SENDO_DEPOSIT_FEES");
-
-//console.log("SENDO_DEPOSIT_PERCENTAGE:", SENDO_DEPOSIT_PERCENTAGE);
-//console.log("SENDO_DEPOSIT_FEES:", SENDO_DEPOSIT_FEES);
-
+  const SENDO_DEPOSIT_PERCENTAGE = getConfigValue("SENDO_DEPOSIT_PERCENTAGE");
+  const SENDO_DEPOSIT_FEES = getConfigValue("SENDO_DEPOSIT_FEES");
+  const DEPOSIT_MOBILE_AVAILABILITY = getConfigValue("DEPOSIT_MOBILE_AVAILABILITY");
 
   useEffect(() => {
     const walletId =
@@ -104,13 +104,29 @@ const SENDO_DEPOSIT_FEES = getConfigValue("SENDO_DEPOSIT_FEES");
 
   const netDeposit = calculateNetDeposit();
 
+  const checkServiceAvailability = () => {
+    // If config is not loaded yet, assume service is available
+    if (isConfigLoading || !configData) {
+      return true;
+    }
+    
+    // Check if DEPOSIT_MOBILE_AVAILABILITY is set to "1" (available)
+    return DEPOSIT_MOBILE_AVAILABILITY === "1";
+  };
+
   const handleRecharge = async () => {
-      const trimmedPhone = phone.trim();
+    // First check if mobile deposit service is available
+    if (!checkServiceAvailability()) {
+      setShowUnavailableModal(true);
+      return;
+    }
+
+    const trimmedPhone = phone.trim();
     const normalizedPhone = trimmedPhone.startsWith("+237")
-    ? trimmedPhone
-    : trimmedPhone.startsWith("+237")
-    ? `+${trimmedPhone}`
-    : `+237${trimmedPhone}`;
+      ? trimmedPhone
+      : trimmedPhone.startsWith("+237")
+      ? `+${trimmedPhone}`
+      : `+237${trimmedPhone}`;
 
     if (
       normalizedPhone.length !== 12 &&
@@ -306,7 +322,7 @@ const SENDO_DEPOSIT_FEES = getConfigValue("SENDO_DEPOSIT_FEES");
           {t("walletRecharge.confirmationNote")}
         </Text>
 
-       <TouchableOpacity
+        <TouchableOpacity
           onPress={() =>
             navigation.navigate("Auth", {
               screen: "PinCode",
@@ -318,7 +334,7 @@ const SENDO_DEPOSIT_FEES = getConfigValue("SENDO_DEPOSIT_FEES");
             })
           }
           activeOpacity={0.8}
-           className="bg-[#7ddd7d] py-4 px-10 rounded-full self-center shadow-lg w-11/12 mt-4 flex-row justify-center items-center"
+          className="bg-[#7ddd7d] py-4 px-10 rounded-full self-center shadow-lg w-11/12 mt-4 flex-row justify-center items-center"
           style={{
             elevation: 5,
             shadowColor: "#000",
@@ -337,17 +353,114 @@ const SENDO_DEPOSIT_FEES = getConfigValue("SENDO_DEPOSIT_FEES");
         </TouchableOpacity>
 
       </View>
-    <View className="py-4 flex-row justify-center items-center gap-2 bg-[#181e25] mt-auto">
+      <View className="py-4 flex-row justify-center items-center gap-2 bg-[#181e25] mt-auto">
           <Ionicons name="shield-checkmark" size={18} color="orange" />
           <Text className="text-sm text-white">
             {t("walletRecharge.securityWarning")}
           </Text>
         </View>
       </ScrollView>
+
+      {/* Service Unavailable Modal */}
+      <Modal
+        visible={showUnavailableModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowUnavailableModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalIconContainer}>
+              <Ionicons name="warning-outline" size={48} color="#ff6b6b" />
+            </View>
+            
+            <Text style={styles.modalTitle}>
+              Service Temporarily Unavailable
+            </Text>
+            
+            <Text style={styles.modalMessage}>
+              The mobile deposit service is currently unavailable. Please try again later or contact support for assistance.
+            </Text>
+            
+            <View style={styles.modalButtonContainer}>
+              <TouchableOpacity
+                style={styles.modalButton}
+                onPress={() => setShowUnavailableModal(false)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.modalButtonText}>OK</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       <StatusBar style="light" />
       <Toast />
     </KeyboardAvoidingView>
   );
 };
+
+const styles = StyleSheet.create({
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContainer: {
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 24,
+    width: '90%',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  modalIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#fff5f5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  modalMessage: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 24,
+  },
+  modalButtonContainer: {
+    width: '100%',
+  },
+  modalButton: {
+    backgroundColor: '#ff6b6b',
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  modalButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+});
 
 export default WalletRecharge;

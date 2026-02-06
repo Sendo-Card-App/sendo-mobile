@@ -331,7 +331,12 @@
     "kyc_required": "Please submit your KYC documents",
     "wallet_not_found": "Wallet not found",
     "general_error": "An error occurred",
-    "success_message": "YOUR BENEFICIARY WILL RECEIVE THE TRANSFER WITHIN 30 MINUTES TO 24 HOURS."
+    "success_message": "YOUR BENEFICIARY WILL RECEIVE THE TRANSFER WITHIN 30 MINUTES TO 24 HOURS.",
+     "fee_information": "Fee information",
+    "transfer_fee": "Transfer fee",
+    "recipient_will_receive": "Recipient will receive",
+     "amount_too_small_for_fees": "Amount too small to calculate fees",
+    "no_fee_tier_found": "No fee tier found for this amount"
   },
 "select_service": "Select a service",
   "service_om": "Orange Money",

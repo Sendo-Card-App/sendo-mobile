@@ -9,6 +9,8 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Modal,
+  StyleSheet,
 } from 'react-native';
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -33,6 +35,7 @@ const WalletTransfer = ({ navigation }) => {
   const [recipientName, setRecipientName] = useState('');
   const [debouncedWalletId, setDebouncedWalletId] = useState('');
   const [pendingTransferData, setPendingTransferData] = useState(null);
+  const [showUnavailableModal, setShowUnavailableModal] = useState(false);
 
   // Debounce walletId input
   useEffect(() => {
@@ -71,6 +74,8 @@ const WalletTransfer = ({ navigation }) => {
 
   const SENDO_TO_SENDO_TRANSFER_FEES = getConfigValue('SENDO_TO_SENDO_TRANSFER_FEES');
   const SENDO_VALUE_CAD_CA_CAM = getConfigValue('SENDO_VALUE_CAD_CA_CAM');
+  const TRANSFER_CA_CAM_AVAILABILITY = getConfigValue("TRANSFER_CA_CAM_AVAILABILITY");
+  // console.log("TRANSFER_CA_CAM_AVAILABILITY:", TRANSFER_CA_CAM_AVAILABILITY);
   const feePercentage = SENDO_TO_SENDO_TRANSFER_FEES ? parseFloat(SENDO_TO_SENDO_TRANSFER_FEES) : 0;
   const cadToXafRate = SENDO_VALUE_CAD_CA_CAM ? parseFloat(SENDO_VALUE_CAD_CA_CAM) : 1;
 
@@ -103,8 +108,47 @@ const WalletTransfer = ({ navigation }) => {
 
   const [transferFunds, { isLoading: isTransferring }] = useTransferFundsMutation();
 
+  // --- Service availability check ---
+  const checkServiceAvailability = () => {
+    // If user is not from Canada, service is always available
+    if (!isCanada) {
+      return true;
+    }
+    
+    // If config is not loaded yet, assume service is available
+    if (isConfigLoading || !configData) {
+      return true;
+    }
+    
+    // Check if TRANSFER_CA_CAM_AVAILABILITY is set to "1" (available)
+    return TRANSFER_CA_CAM_AVAILABILITY === "1";
+  };
+
+  // --- Check if sender is trying to send to themselves ---
+  const checkSelfTransfer = () => {
+    if (!userWalletId || !walletId) {
+      return false; // Can't check if either wallet ID is missing
+    }
+    
+    // Check if sender's wallet ID matches recipient's wallet ID
+    return userWalletId.trim() === walletId.trim();
+  };
+
   const handlePinVerified = async () => {
+    // First check if the service is available for Canada users
+    if (isCanada && !checkServiceAvailability()) {
+      setShowUnavailableModal(true);
+      return;
+    }
+
     const transferAmount = parseFloat(amount);
+    
+    // Check if sender is trying to send to themselves
+    if (checkSelfTransfer()) {
+      showErrorToast('ACTION_FAILED', 'Vous ne pouvez pas transférer des fonds vers votre propre compte.');
+      return;
+    }
+
     if (!walletId || isNaN(transferAmount) || transferAmount <= 0) {
       showErrorToast('ACTION_FAILED', 'Veuillez fournir un montant supérieur à 0.');
       return;
@@ -327,14 +371,14 @@ const WalletTransfer = ({ navigation }) => {
                 },
               })
             }
-            disabled={isTransferring || isLoading || !userWalletId}
+            disabled={isTransferring || isLoading || !userWalletId || !walletId}
             style={{
               backgroundColor: '#7ddd7d',
               padding: 15,
               borderRadius: 10,
               alignItems: 'center',
               marginTop: 10,
-              opacity: (isTransferring || isLoading || !userWalletId) ? 0.7 : 1,
+              opacity: (isTransferring || isLoading || !userWalletId || !walletId) ? 0.7 : 1,
             }}
           >
             {isTransferring ? (
@@ -347,8 +391,104 @@ const WalletTransfer = ({ navigation }) => {
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Service Unavailable Modal for Canada Users */}
+      <Modal
+        visible={showUnavailableModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowUnavailableModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalIconContainer}>
+              <Ionicons name="warning-outline" size={48} color="#ff6b6b" />
+            </View>
+            
+            <Text style={styles.modalTitle}>
+              Canada to Cameroon Transfer Service Temporarily Unavailable
+            </Text>
+            
+            <Text style={styles.modalMessage}>
+              The Canada to Cameroon transfer service is currently unavailable. Please try again later or contact support for assistance.
+            </Text>
+            
+            <View style={styles.modalButtonContainer}>
+              <TouchableOpacity
+                style={styles.modalButton}
+                onPress={() => setShowUnavailableModal(false)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.modalButtonText}>OK</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
+
+const styles = StyleSheet.create({
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContainer: {
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 24,
+    width: '90%',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  modalIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#fff5f5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  modalMessage: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 24,
+  },
+  modalButtonContainer: {
+    width: '100%',
+  },
+  modalButton: {
+    backgroundColor: '#ff6b6b',
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  modalButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+});
 
 export default WalletTransfer;
