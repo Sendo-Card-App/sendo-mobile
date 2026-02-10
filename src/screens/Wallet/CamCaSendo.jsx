@@ -386,7 +386,8 @@ useEffect(() => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor="#0D1C6A" barStyle="light-content" />
+      {/* FIXED: StatusBar with correct background color */}
+      <StatusBar backgroundColor="#7ddd7d" barStyle="light-content" />
 
       {/* Header */}
       <View style={styles.header}>

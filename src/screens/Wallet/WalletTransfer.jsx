@@ -191,17 +191,26 @@ const WalletTransfer = ({ navigation }) => {
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
       <StatusBar backgroundColor="#7ddd7d" barStyle="light-content" />
 
-      {/* Header */}
+      {/* Header - MODIFICATION ICI */}
       <View style={{
         backgroundColor: '#7ddd7d',
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 20,
+        paddingTop: Platform.OS === 'ios' ? 0 : StatusBar.currentHeight, // MODIFICATION
         paddingBottom: 15,
         paddingHorizontal: 15,
+        height: Platform.OS === 'ios' ? 90 : 70 + (StatusBar.currentHeight || 0), // MODIFICATION
       }}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 40 }}>
+        <TouchableOpacity 
+          onPress={() => navigation.goBack()} 
+          style={{ 
+            width: 40, 
+            height: 40, 
+            justifyContent: 'center',
+            alignItems: 'center' 
+          }}
+        >
           <AntDesign name="left" size={24} color="white" />
         </TouchableOpacity>
 
@@ -214,11 +223,23 @@ const WalletTransfer = ({ navigation }) => {
         }}>
           {t('screens.walletTransfer')}
         </Text>
+        
         <View style={{ width: 40 }} />
       </View>
 
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView contentContainerStyle={{ paddingHorizontal: '5%', paddingBottom: 50 }}>
+      <KeyboardAvoidingView 
+        style={{ flex: 1 }} 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+      >
+        <ScrollView 
+          contentContainerStyle={{ 
+            paddingHorizontal: '5%', 
+            paddingBottom: 50,
+            paddingTop: 10,
+          }}
+          showsVerticalScrollIndicator={false}
+        >
           {/* Balance */}
           <View style={{ backgroundColor: '#F1F1F1', borderRadius: 10, padding: 15, marginVertical: 20 }}>
             <Text style={{ fontSize: 16, color: '#666' }}>{t('wallet_transfer.available_balance')}</Text>
@@ -286,9 +307,9 @@ const WalletTransfer = ({ navigation }) => {
           )}
 
           {/* Amount */}
-        <Text style={{ fontSize: 16, color: '#666', marginBottom: 5 }}>
-          {isCanada ? 'Montant (CAD)' : t('wallet_transfer.amount')}
-        </Text>
+          <Text style={{ fontSize: 16, color: '#666', marginBottom: 5 }}>
+            {isCanada ? 'Montant (CAD)' : t('wallet_transfer.amount')}
+          </Text>
           <TextInput
             style={{
               borderWidth: 1,

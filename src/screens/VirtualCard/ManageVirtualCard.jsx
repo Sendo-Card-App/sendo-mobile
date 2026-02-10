@@ -100,7 +100,7 @@ const ManageVirtualCard = () => {
   //console.log("Card Status:", cardStatus);
   const isCardFrozen = cardStatus === "FROZEN";
   const rejectionAttempts = cardData?.paymentRejectNumber ?? 0;
-  const limit = 3; // or wherever you get the limit from
+  const limit = 2; // or wherever you get the limit from
 
   const {
     data: cardTransactions,

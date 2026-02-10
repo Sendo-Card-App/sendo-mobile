@@ -37,17 +37,20 @@ const ServiceScreen = () => {
   // Define services based on country
   const getServices = () => {
     const baseServices = [
+      { label:  t("home.fund"), icon: "lock-closed-outline", route: "BlockedFundsList", color: "#9C27B0", bgColor: "#F3E5F5" },
       { label: t("home.friendsShare"), icon: "people-outline", route: "WelcomeShare", color: "#7ddd7d", bgColor: "#f0f9f0" },
       { label: t("home.fundRequest"), icon: "cash-outline", route: "WelcomeDemand", color: "#ff6b6b", bgColor: "#fff0f0" },
       { label: t("home.etontine"), icon: "layers-outline", route: "TontineList", color: "#4dabf7", bgColor: "#f0f7ff" },
       { label: t("home.payBills"), icon: "calculator-outline", route: "PaymentSimulator", color: "#ff922b", bgColor: "#fff9f0" },
       { label: t("drawer.request1"), icon: "chatbubbles-outline", route: "NiuRequest", color: "#cc5de8", bgColor: "#f8f0fc" },
       { label: t("serviceScreen.support") || "Support", icon: "headset-outline", route: "ChatScreen", color: "#8B5CF6", bgColor: "#F5F3FF" },
+     
     ];
 
     // Only show InteracWithdrawal for Canada
     if (country === "Canada") {
       return [
+        { label:  t("home.fund"), icon: "lock-closed-outline", route: "BlockedFundsList", color: "#9C27B0", bgColor: "#F3E5F5" },
         { label: t("home.withdrawal"), icon: "cash-outline", route: "InteracWithdrawal", color: "#ff922b", bgColor: "#fff9f0" },
         { label: t("drawer.request1"), icon: "chatbubbles-outline", route: "NiuRequest", color: "#cc5de8", bgColor: "#f8f0fc" },
         { label: t("serviceScreen.support") || "Support", icon: "headset-outline", route: "ChatScreen", color: "#8B5CF6", bgColor: "#F5F3FF" },

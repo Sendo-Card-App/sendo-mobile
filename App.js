@@ -140,6 +140,11 @@ import CanadaKycCamera from "./src/screens/CaKyc/CanadaKycCamera";
 import InteracWithdrawal  from "./src/screens/Wallet/InteracWithdrawal";
 import CamCaSendo from "./src/screens/Wallet/CamCaSendo";
 
+// FUND BLOCKED SCREENS
+import BlockedFundsList from "./src/screens/Fund/BlockedFundsList";
+import ConfirmSubscription from "./src/screens/Fund/ConfirmSubscription";
+import MySubscriptions from "./src/screens/Fund/MySubscriptions";
+
 //MODULE TONTINE
 import TontineList from "./src/screens/Tontine/TontineList";
 import CreateTontine from "./src/screens/Tontine/CreateTontine";
@@ -274,7 +279,8 @@ function ManageVirtualCardWrapper() {
   const status = virtualCard?.status;
 
   // Render OnboardingCard conditionally instead of navigating
-  if (isCardMissingOrEmpty || (status !== 'ACTIVE' && status !== 'PRE_ACTIVE' && status !== 'FROZEN' && status !== 'BLOCKED' && status !== 'SUPENDED')) {
+  if (isCardMissingOrEmpty || (status !== 'ACTIVE' && status !== 'PRE_ACTIVE' && status !== 'FROZEN'
+     && status !== 'BLOCKED' && status !== 'SUPENDED' && status !== 'TERMINATED')) {
     return <OnboardingCard />;
   }
 
@@ -467,6 +473,10 @@ function MainStack() {
       <Stack.Screen name="InteracWithdrawal" component={InteracWithdrawal} options={{ headerShown: false }} />
       <Stack.Screen name="BankTransferDetails" component={BankTransferDetails} options={{ headerShown: false }} />
       <Stack.Screen name="TransferSummary" component={TransferSummary} options={{ headerShown: false }} />
+
+      <Stack.Screen name="BlockedFundsList" component={BlockedFundsList} options={{ headerShown: false }} />
+      <Stack.Screen name="ConfirmSubscription" component={ConfirmSubscription} options={{ headerShown: false }} />
+      <Stack.Screen name="MySubscriptions" component={MySubscriptions} options={{ headerShown: false }} />  
       
 
 
