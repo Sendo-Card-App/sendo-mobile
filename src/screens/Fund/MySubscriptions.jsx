@@ -12,9 +12,8 @@ import {
 import { useTranslation } from 'react-i18next';
 import { Ionicons, FontAwesome5, MaterialIcons, AntDesign } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { useGetMySubscriptionsQuery } from '../../services/Fund/fundSubscriptionApi';
 import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
-import { useRequestWithdrawalMutation } from '../../services/Fund/fundSubscriptionApi';
+import { useRequestWithdrawalMutation, useGetMySubscriptionsQuery } from '../../services/Fund/fundSubscriptionApi';
 import SubscriptionSkeleton from '../../components/SubscriptionSkeleton';
 
 const MySubscriptions = () => {
@@ -27,11 +26,16 @@ const MySubscriptions = () => {
 
   const { data: userProfile } = useGetUserProfileQuery();
   const userId = userProfile?.data?.user?.id;
-  
-  const { data: subscriptionsData, isLoading, refetch } = useGetMySubscriptionsQuery(
+
+ const { data: subscriptionsData, isLoading, refetch } =
+  useGetMySubscriptionsQuery(
     { userId, page: 1, limit: 20 },
-    { skip: !userId }
+    {
+      skip: !userId,
+      pollingInterval: 1000,
+    }
   );
+
   
   const [requestWithdrawal, { isLoading: withdrawing }] = useRequestWithdrawalMutation();
 
@@ -193,7 +197,6 @@ const MySubscriptions = () => {
               </View>
               <View>
                 <Text className="text-xl font-bold text-gray-800">{item.fund.name}</Text>
-                <Text className="text-gray-500 text-xs">ID: {item.id.substring(0, 8)}...</Text>
               </View>
             </View>
           </View>
@@ -211,23 +214,6 @@ const MySubscriptions = () => {
               {item.amount.toLocaleString()} <Text className="text-lg">{item.currency}</Text>
             </Text>
           </View>
-          
-          {item.status === 'ACTIVE' && (
-            <View className="mb-1">
-              <Text className="text-gray-600 text-sm mb-1">
-                Progression: {progress.toFixed(1)}%
-              </Text>
-              <View className="h-2 bg-gray-200 rounded-full">
-                <View 
-                  style={{ 
-                    width: `${progress}%`,
-                    backgroundColor: progress > 70 ? '#10B981' : progress > 30 ? '#3B82F6' : '#F59E0B'
-                  }} 
-                  className="h-full rounded-full"
-                />
-              </View>
-            </View>
-          )}
           
           {item.status === 'MATURED' && (
             <View className="bg-red-100 px-3 py-1 rounded-full items-center mb-2">
@@ -334,12 +320,21 @@ const MySubscriptions = () => {
             <Text className="text-white/90 text-sm">{t('blockedFunds.subtitle')}</Text>
           </View>
           
-          <TouchableOpacity 
-            onPress={refetch}
-            className="w-12 h-12 bg-white/20 rounded-2xl items-center justify-center"
-          >
-            <Ionicons name="refresh" size={22} color="white" />
-          </TouchableOpacity>
+          <View className="flex-row">
+            <TouchableOpacity 
+              onPress={() => navigation.navigate('WithdrawalRequests')}
+              className="w-12 h-12 bg-white/20 rounded-2xl items-center justify-center mr-2"
+            >
+              <Ionicons name="list-outline" size={22} color="white" />
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              onPress={refetch}
+              className="w-12 h-12 bg-white/20 rounded-2xl items-center justify-center"
+            >
+              <Ionicons name="refresh" size={22} color="white" />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View className="flex-row justify-between bg-white/20 rounded-2xl p-4">
@@ -412,8 +407,8 @@ const MySubscriptions = () => {
           <View style={styles.modalContent}>
             {selectedSubscription && (
               <>
-                <View className="items-center mb-6">
-                  <View className="bg-gradient-to-r from-[#7ddd7d] to-[#5dc75d] p-4 rounded-2xl mb-4">
+                <View className="items-center">
+                  <View className="bg-gradient-to-r from-[#7ddd7d] to-[#5dc75d]  rounded-2xl">
                     <FontAwesome5 name="hand-holding-usd" size={40} color="white" />
                   </View>
                   <Text className="text-2xl font-bold text-gray-800 mb-2">
@@ -426,7 +421,7 @@ const MySubscriptions = () => {
                   </Text>
                 </View>
 
-                <View className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl p-5 mb-6">
+                <View className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl p-5 ">
                   <Text className="text-gray-800 font-bold text-lg mb-3">
                     {selectedSubscription.fund.name}
                   </Text>
@@ -448,7 +443,7 @@ const MySubscriptions = () => {
                   />
                 </View>
 
-                <View className="space-y-3 mb-6">
+                <View className="space-y-4 mb-5">
                   <Text className="text-gray-700 font-bold">{t('blockedFunds.withdrawalType')}:</Text>
                   
                   <TouchableOpacity
@@ -457,6 +452,7 @@ const MySubscriptions = () => {
                       styles.withdrawalOption,
                       selectedWithdrawalType === 'INTEREST_ONLY' && styles.selectedOption
                     ]}
+                     className="mt-2"
                   >
                     <View className="flex-row items-center">
                       <View className={`w-6 h-6 rounded-full ${selectedWithdrawalType === 'INTEREST_ONLY' ? 'bg-[#7ddd7d]' : 'bg-gray-200'} mr-3 items-center justify-center`}>
@@ -483,6 +479,7 @@ const MySubscriptions = () => {
                       styles.withdrawalOption,
                       selectedWithdrawalType === 'FULL_WITHDRAWAL' && styles.selectedOption
                     ]}
+                     className="mt-3"
                   >
                     <View className="flex-row items-center">
                       <View className={`w-6 h-6 rounded-full ${selectedWithdrawalType === 'FULL_WITHDRAWAL' ? 'bg-purple-500' : 'bg-gray-200'} mr-3 items-center justify-center`}>
@@ -502,7 +499,7 @@ const MySubscriptions = () => {
                   </TouchableOpacity>
                 </View>
 
-                <View className="space-y-3">
+                <View className="space-y-4 ">
                   <TouchableOpacity
                     onPress={confirmWithdrawal}
                     disabled={!selectedWithdrawalType || withdrawing}
@@ -519,7 +516,7 @@ const MySubscriptions = () => {
 
                   <TouchableOpacity
                     onPress={() => setWithdrawModalVisible(false)}
-                    className="bg-gray-200 rounded-xl py-4 items-center"
+                    className="bg-gray-200 rounded-xl py-4 items-center mt-4"
                   >
                     <Text className="text-gray-700 font-bold">{t('blockedFunds.cancel')}</Text>
                   </TouchableOpacity>
@@ -539,8 +536,8 @@ const MySubscriptions = () => {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <View className="items-center mb-6">
-              <View className="bg-gradient-to-r from-[#7ddd7d] to-[#5dc75d] p-4 rounded-2xl mb-4">
+            <View className="items-center">
+              <View className="bg-gradient-to-r from-[#7ddd7d] to-[#5dc75d] p-1 rounded-2xl">
                 <Ionicons name="lock-closed" size={40} color="white" />
               </View>
               <Text className="text-2xl font-bold text-gray-800 mb-2">
@@ -563,14 +560,14 @@ const MySubscriptions = () => {
                   });
                   setShowPinModal(false);
                 }}
-                className="bg-green-500 rounded-xl py-4 items-center"
+                className="bg-green-500 rounded-xl py-4 items-center mt-4"
               >
                 <Text className="text-white font-bold text-lg">Entrer le code PIN</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 onPress={handlePinCancel}
-                className="bg-gray-200 rounded-xl py-4 items-center"
+                className="bg-gray-200 rounded-xl py-4 items-center mt-4"
               >
                 <Text className="text-gray-700 font-bold">Annuler</Text>
               </TouchableOpacity>
@@ -634,7 +631,7 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 400,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 20 },
+    shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.3,
     shadowRadius: 25,
     elevation: 30,
@@ -642,7 +639,7 @@ const styles = StyleSheet.create({
   withdrawalOption: {
     backgroundColor: 'white',
     borderRadius: 12,
-    padding: 16,
+    padding: 1,
     borderWidth: 2,
     borderColor: '#E5E7EB',
   },

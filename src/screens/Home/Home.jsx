@@ -854,9 +854,10 @@ const HomeScreen = () => {
             userProfile?.data?.user?.country === "Canada"
               ? [
                   { label: t("home.canadaKyc"), icon: "shield-checkmark-outline", route: "VerifyIdentity" },
+                   { label: t("home.fund"), icon: "lock-closed-outline", route: "BlockedFundsList", color: "#8B5CF6", bgColor: "#F5F3FF" },
                   { label: t("drawer.request1"), icon: "chatbubbles-outline", route: "NiuRequest", color: "#cc5de8", bgColor: "#f8f0fc" },
                   { label: t("home.withdrawal"), icon: "cash-outline", route: "InteracWithdrawal", color: "#ff922b", bgColor: "#fff9f0" },
-                  { label: t("serviceScreen.support") || "Support", icon: "headset-outline", route: "ChatScreen", color: "#8B5CF6", bgColor: "#F5F3FF" },
+                 
                 ]
               : [
                   ...(userProfile?.data?.user?.country === "Cameroon"

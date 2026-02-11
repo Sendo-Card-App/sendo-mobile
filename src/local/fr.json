@@ -1953,7 +1953,7 @@
     "description": "Placez vos fonds dans nos plans d'investissement sécurisés avec un rendement annuel garanti de 10%. Les fonds sont bloqués jusqu'au 31 décembre.",
     "welcome": "Bonjour {{name}}",
     "investmentPlans": "Plans d'Investissement",
-    "subscribe": "Souscrire",
+    "subscribe": "Investissez maintenant",
     "mySubscriptions": "Mes Souscriptions",
      "interestEarned": "Intérêts accumulés",
     "investmentAmount": "Montant d'investissement",
@@ -2018,7 +2018,18 @@
     "withdrawCommissionOnly": "Retirer commissions seulement",
     "commissionOnlyDescription": "Retirer uniquement les commissions accumulées",
     "maturedWithdrawal": "Retrait des commissions",
-    "maturedWithdrawalMessage": "Vos fonds sont arrivés à maturité. Vous pouvez retirer vos commissions."
+    "maturedWithdrawalMessage": "Vos fonds sont arrivés à maturité. Vous pouvez retirer vos commissions.",
+     "plan": "Plan",
+    "annualInvestment": "Investissement Annuel",
+    "premium": "PREMIUM",
+    "minimumInvestment": "Investissement Minimum",
+    "oneTimePayment": "Paiement Unique",
+    "guaranteedRate": "Taux Garanti",
+    "investmentPeriod": "PÉRIODE D'INVESTISSEMENT",
+    "completedMonths": "{{months}} mois terminés",
+    "remainingMonths": "{{months}} mois restants",
+    "highYield": "Rendement Élevé",
+    "investInPlan": "Investir dans ce plan"
   },
   "tabs2": {
     "fundsList": "Fonds Disponibles",

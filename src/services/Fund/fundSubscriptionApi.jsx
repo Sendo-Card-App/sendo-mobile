@@ -31,7 +31,8 @@ export const fundSubscriptionApi = createApi({
       return headers;
     },
   }),
-  tagTypes: ['FundSubscription'],
+  
+  tagTypes: ['FundSubscription', 'WithdrawalRequest'],
   endpoints: (builder) => ({
     // Récupérer tous les fonds disponibles
     getFunds: builder.query({
@@ -64,7 +65,22 @@ export const fundSubscriptionApi = createApi({
         method: 'POST',
         body: payload,
       }),
-      invalidatesTags: ['FundSubscription'],
+      invalidatesTags: ['FundSubscription', 'WithdrawalRequest'],
+    }),
+
+    // Récupérer tous les retraits d'un utilisateur
+    getWithdrawalRequests: builder.query({
+      query: ({ userId, page = 1, limit = 10, subscriptionId }) => {
+        let url = `/fund-subscriptions/withdrawal-requests?page=${page}&limit=${limit}&userId=${userId}`;
+        if (subscriptionId) {
+          url += `&subscriptionId=${subscriptionId}`;
+        }
+        return url;
+      },
+      providesTags: (result, error, { userId, subscriptionId }) => 
+        subscriptionId 
+          ? [{ type: 'WithdrawalRequest', id: subscriptionId }]
+          : [{ type: 'WithdrawalRequest', id: 'LIST' }],
     }),
   }),
 });
@@ -74,4 +90,5 @@ export const {
   useGetMySubscriptionsQuery,
   useSubscribeToFundMutation,
   useRequestWithdrawalMutation,
+  useGetWithdrawalRequestsQuery,
 } = fundSubscriptionApi;

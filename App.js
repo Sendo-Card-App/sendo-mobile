@@ -144,6 +144,7 @@ import CamCaSendo from "./src/screens/Wallet/CamCaSendo";
 import BlockedFundsList from "./src/screens/Fund/BlockedFundsList";
 import ConfirmSubscription from "./src/screens/Fund/ConfirmSubscription";
 import MySubscriptions from "./src/screens/Fund/MySubscriptions";
+import WithdrawalRequests from "./src/screens/Fund/WithdrawalRequests";
 
 //MODULE TONTINE
 import TontineList from "./src/screens/Tontine/TontineList";
@@ -477,6 +478,7 @@ function MainStack() {
       <Stack.Screen name="BlockedFundsList" component={BlockedFundsList} options={{ headerShown: false }} />
       <Stack.Screen name="ConfirmSubscription" component={ConfirmSubscription} options={{ headerShown: false }} />
       <Stack.Screen name="MySubscriptions" component={MySubscriptions} options={{ headerShown: false }} />  
+      <Stack.Screen name="WithdrawalRequests" component={WithdrawalRequests} options={{ headerShown: false }} />
       
 
 

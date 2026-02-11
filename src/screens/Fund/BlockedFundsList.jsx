@@ -35,13 +35,23 @@ const BlockedFundsList = () => {
   const slideAnim = useRef(new Animated.Value(30)).current;
 
   const { data: userProfile } = useGetUserProfileQuery();
-  const { data: fundsData, isLoading, refetch } = useGetFundsQuery({ page: 1, limit: 10 });
-  
-  const userCountry = userProfile?.data?.user?.country || 'CAMEROON';
-  const isCAD = userCountry === 'CANADA';
+  const { data: fundsData, isLoading, refetch } = useGetFundsQuery(
+    { page: 1, limit: 10 },
+     { pollingInterval: 1000 }
+    );
+  //console.log("User list in fundsData:", JSON.stringify(fundsData, null, 2));
+
+  const userCountry = userProfile?.data?.user?.country || 'Cameroon';
+  //console.log('User Country:', userCountry);
+  const isCAD = userCountry === 'Canada';
   const userName = userProfile?.data?.user?.firstname || '';
   
   const funds = fundsData?.data?.items || [];
+  
+  // Sort funds by amount from smallest to largest
+  const sortedFunds = [...funds].sort((a, b) => 
+    (isCAD ? a.amountCAD : a.amountXAF) - (isCAD ? b.amountCAD : b.amountXAF)
+  );
 
   React.useEffect(() => {
     Animated.parallel([
@@ -70,28 +80,17 @@ const BlockedFundsList = () => {
   };
 
   const handleSubscribe = (fund) => {
-    setSelectedFund(fund);
-    setModalVisible(true);
-  };
-
-  const confirmSubscription = () => {
-    if (selectedFund) {
-      setModalVisible(false);
-      navigation.navigate('ConfirmSubscription', {
-        fund: selectedFund,
-        amount: isCAD ? selectedFund.amountCAD : selectedFund.amountXAF,
-        currency: isCAD ? 'CAD' : 'XAF',
-      });
-    }
-  };
+  // Navigate directly to ConfirmSubscription page
+  navigation.navigate('ConfirmSubscription', {
+    fund: fund,
+    amount: isCAD ? fund.amountCAD : fund.amountXAF,
+    currency: isCAD ? 'CAD' : 'XAF',
+    annualCommission: fund.annualCommission,
+  });
+};
 
   const navigateToMySubscriptions = () => {
     navigation.navigate('MySubscriptions');
-  };
-
-  const getFundColor = (index) => {
-    const colors = ['#396a2b', '#3B82F6', '#10B981', '#F59E0B', '#EF4444'];
-    return colors[index % colors.length];
   };
 
   // Calcul des statistiques
@@ -105,7 +104,9 @@ const BlockedFundsList = () => {
     const amount = isCAD ? item.amountCAD : item.amountXAF;
     const currency = isCAD ? 'CAD' : 'XAF';
     const annualCommission = (amount * item.annualCommission) / 100;
-    const fundColor = getFundColor(index);
+    
+    // Get fund rank based on sorted funds
+    const fundRank = sortedFunds.findIndex(f => f.id === item.id) + 1;
 
     return (
       <Animated.View 
@@ -116,63 +117,110 @@ const BlockedFundsList = () => {
         className="mx-4 mb-4"
       >
         <View 
-          style={[styles.fundCard, { borderLeftColor: fundColor }]}
-          className="bg-white rounded-xl p-4 shadow-lg"
+          style={[styles.fundCard, { borderLeftWidth: 6, borderLeftColor: '#7ddd7d' }]}
+          className="bg-white rounded-2xl p-5 shadow-lg"
         >
-          {/* Badge Premium */}
-          <View className="absolute -top-3 right-4 bg-gradient-to-r from-purple-600 to-pink-500 px-3 py-1 rounded-full shadow-md">
-            <Text className="text-white text-xs font-bold">🔥 {t('blockedFunds.guaranteed')}</Text>
-          </View>
-
-          <View className="flex-row justify-between items-start mb-4">
-            <View className="flex-1 pr-4">
+          {/* Fund Header with Rank Badge */}
+          <View className="flex-row justify-between items-start mb-1">
+            <View className="flex-1">
               <View className="flex-row items-center mb-2">
-                <View style={{ backgroundColor: fundColor + '20' }} className="p-2 rounded-lg mr-3">
-                  <FontAwesome5 name="coins" size={16} color={fundColor} />
+                {/* Rank Badge */}
+                <View className="w-10 h-10 bg-[#7ddd7d] rounded-xl items-center justify-center mr-3">
+                  <Text className="text-white font-bold text-lg">#{fundRank}</Text>
                 </View>
-                <Text className="text-xl font-bold text-gray-800">{item.name}</Text>
-              </View>
-              
-              <View className="bg-gradient-to-r from-gray-50 to-white rounded-lg p-3 mb-3">
-                <Text className="text-2xl font-extrabold text-gray-900 mb-1">
-                  {amount.toLocaleString()} <Text className="text-base">{currency}</Text>
-                </Text>
-                <Text className="text-gray-500 text-xs">{t('blockedFunds.investmentAmount')}</Text>
-              </View>
-
-              {/* Commission Card */}
-              <View className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-3 mb-3">
-                <View className="flex-row justify-between items-center">
-                  <View>
-                    <Text className="text-gray-700 text-xs font-semibold">
-                      {t('blockedFunds.annualReturn')}
-                    </Text>
-                    <Text className="text-green-600 text-lg font-bold">
-                      {item.annualCommission}%
-                    </Text>
-                  </View>
-                  <View className="items-end">
-                    <Text className="text-gray-700 text-xs font-semibold">
-                      {t('blockedFunds.annualCommission')}
-                    </Text>
-                    <Text className="text-gray-800 text-base font-bold">
-                      {annualCommission.toLocaleString()} {currency}
-                    </Text>
-                  </View>
-                </View>
-              </View>
-
-              {/* Timeline */}
-              <View className="flex-row items-center justify-between bg-blue-50 rounded-lg p-2 mb-3">
-                <View className="flex-row items-center">
-                  <Ionicons name="calendar-outline" size={14} color="#3B82F6" />
-                  <Text className="text-gray-600 text-xs ml-2 font-medium">
-                    {new Date().getFullYear()}-01-01 → {new Date().getFullYear()}-06-30
+                <View>
+                  <Text className="text-xl font-bold text-gray-800">{item.name}</Text>
+                  <Text className="text-gray-500 text-sm mt-1">
+                    {t('blockedFunds.plan')} {fundRank} • {t('blockedFunds.annualInvestment')}
                   </Text>
                 </View>
-                <View className="flex-row items-center">
-                  <Ionicons name="lock-closed-outline" size={14} color="#3B82F6" />
-                  <Text className="text-gray-600 text-xs ml-2 font-medium">
+              </View>
+            </View>
+          </View>
+
+          {/* Investment Amount - Main Highlight */}
+          <View className="bg-gradient-to-r from-[#7ddd7d]/10 to-[#7ddd7d]/5 rounded-2xl p-1 mb-2 border border-[#7ddd7d]/20">
+            <View className="items-center">
+              <Text className="text-gray-500 text-sm font-medium mb-1">
+                {t('blockedFunds.investmentAmount')}
+                
+              </Text>
+              <Text className="text-gray-900 text-3xl font-bold mb-1">
+                {amount.toLocaleString()} <Text className="text-2xl">{currency}</Text>
+              </Text>
+            </View>
+          </View>
+
+          {/* Returns Section */}
+          <View className="bg-gray-50 rounded-2xl p-1 mb-3">
+            <View className="flex-row justify-between items-center">
+              {/* Annual Return */}
+              <View className="items-center flex-1">
+                <View className="w-14 h-14 bg-[#7ddd7d] rounded-full items-center justify-center mb-2">
+                  <MaterialIcons name="trending-up" size={24} color="white" />
+                </View>
+                <Text className="text-gray-600 text-xs font-medium">
+                  {t('blockedFunds.annualReturn')}
+                </Text>
+                <Text className="text-[#7ddd7d] text-2xl font-bold mt-1">
+                  {item.annualCommission}%
+                </Text>
+                <Text className="text-gray-500 text-xs">{t('blockedFunds.guaranteedRate')}</Text>
+              </View>
+              
+              {/* Divider */}
+              <View className="w-px h-16 bg-gray-200 mx-4" />
+              
+              {/* Annual Commission */}
+              <View className="items-center flex-1">
+                <View className="w-14 h-14 bg-[#7ddd7d]/20 rounded-full items-center justify-center mb-2">
+                  <Ionicons name="cash-outline" size={24} color="#7ddd7d" />
+                </View>
+                <Text className="text-gray-600 text-xs font-medium">
+                  {t('blockedFunds.annualCommission')}
+                </Text>
+                <Text className="text-gray-800 text-xl font-bold mt-1">
+                  {annualCommission.toLocaleString()}
+                </Text>
+                <Text className="text-gray-500 text-xs">{currency}</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Investment Timeline */}
+          <View className="mb-2">
+            <View className="flex-row items-center mb-2">
+              <Ionicons name="calendar-outline" size={18} color="#7ddd7d" />
+              <Text className="text-gray-700 font-medium ml-2">
+                {t('blockedFunds.investmentPeriod')}
+              </Text>
+            </View>
+            
+            <View className="bg-gray-50 rounded-xl p-3">
+              <View className="flex-row justify-between items-center mb-2">
+                <View className="items-center flex-1">
+                  <View className="w-8 h-8 bg-[#7ddd7d] rounded-full items-center justify-center mb-1">
+                    <Ionicons name="play" size={14} color="white" />
+                  </View>
+                  <Text className="text-gray-600 text-xs">{t('blockedFunds.startDate')}</Text>
+                  <Text className="text-gray-800 text-sm font-semibold">
+                    {new Date().getFullYear()}-01-01
+                  </Text>
+                </View>
+                
+                <View className="flex-1 px-2">
+                  <View className="h-px bg-[#7ddd7d]/30 mx-2" />
+                  <Text className="text-center text-xs text-gray-500 mt-1">
+                    {t('blockedFunds.lockPeriod')}
+                  </Text>
+                </View>
+                
+                <View className="items-center flex-1">
+                  <View className="w-8 h-8 bg-[#7ddd7d] rounded-full items-center justify-center mb-1">
+                    <Ionicons name="lock-closed" size={14} color="white" />
+                  </View>
+                  <Text className="text-gray-600 text-xs">{t('blockedFunds.endDate')}</Text>
+                  <Text className="text-gray-800 text-sm font-semibold">
                     {new Date().getFullYear()}-12-31
                   </Text>
                 </View>
@@ -180,25 +228,49 @@ const BlockedFundsList = () => {
             </View>
           </View>
 
-          {/* Features */}
-          <View className="flex-row flex-wrap gap-2 mb-3">
-            <View className="bg-purple-100 px-2 py-1 rounded-full">
-              <Text className="text-purple-700 text-xs font-semibold">🔒 {t('blockedFunds.secure')}</Text>
+          {/* Key Features */}
+          <View className="flex-row justify-between mb-2">
+            <View className="items-center flex-1">
+              <View className="w-10 h-10 bg-[#7ddd7d]/10 rounded-full items-center justify-center mb-2">
+                <Ionicons name="shield-checkmark-outline" size={20} color="#7ddd7d" />
+              </View>
+              <Text className="text-gray-700 text-xs font-medium">
+                {t('blockedFunds.secure')}
+              </Text>
             </View>
-            <View className="bg-green-100 px-2 py-1 rounded-full">
-              <Text className="text-green-700 text-xs font-semibold">📈 {t('blockedFunds.guaranteed')}</Text>
+            
+            <View className="items-center flex-1">
+              <View className="w-10 h-10 bg-[#7ddd7d]/10 rounded-full items-center justify-center mb-2">
+                <MaterialIcons name="verified" size={20} color="#7ddd7d" />
+              </View>
+              <Text className="text-gray-700 text-xs font-medium">
+                {t('blockedFunds.guaranteed')}
+              </Text>
             </View>
-            <View className="bg-blue-100 px-2 py-1 rounded-full">
-              <Text className="text-blue-700 text-xs font-semibold">💸 {t('blockedFunds.taxFree')}</Text>
+            
+            <View className="items-center flex-1">
+              <View className="w-10 h-10 bg-[#7ddd7d]/10 rounded-full items-center justify-center mb-2">
+                <MaterialIcons name="savings" size={20} color="#7ddd7d" />
+              </View>
+              <Text className="text-gray-700 text-xs font-medium">
+                {t('blockedFunds.highYield')}
+              </Text>
             </View>
           </View>
 
+          {/* Subscribe Button */}
           <TouchableOpacity
             onPress={() => handleSubscribe(item)}
-            style={[styles.subscribeButton, { backgroundColor: fundColor }]}
-            className="rounded-lg py-3 items-center shadow-md"
+            className="bg-[#7ddd7d] rounded-xl py-4 items-center justify-center shadow-md"
+            style={{
+              shadowColor: '#7ddd7d',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.3,
+              shadowRadius: 8,
+              elevation: 5,
+            }}
           >
-            <Text className="text-white/90 text-sm mt-1">{t('blockedFunds.subscribe')}</Text>
+            <Text className="text-white font-bold text-lg">{t('blockedFunds.subscribe')}</Text>
           </TouchableOpacity>
         </View>
       </Animated.View>
@@ -312,7 +384,7 @@ const BlockedFundsList = () => {
               </View>
             ) : (
               <FlatList
-                data={funds}
+                data={sortedFunds} // Use sorted funds instead of original funds
                 renderItem={renderFundItem}
                 keyExtractor={(item) => item.id}
                 showsVerticalScrollIndicator={false}
@@ -335,132 +407,6 @@ const BlockedFundsList = () => {
           </>
         )}
       </View>
-
-      {/* Floating Action Button */}
-      <TouchableOpacity
-        onPress={navigateToMySubscriptions}
-        style={styles.fab}
-        className="absolute bottom-6 right-6 bg-gradient-to-r from-[#7ddd7d] to-[#5dc75d] rounded-full p-4 shadow-2xl"
-      >
-        <View className="flex-row items-center">
-          <Ionicons name="wallet" size={24} color="black" />
-          <Text className="text-black font-bold ml-2">{t('blockedFunds.mySubscriptions')}</Text>
-        </View>
-      </TouchableOpacity>
-
-      {/* Confirmation Modal */}
-      <Modal
-        animationType="fade"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <Animated.View 
-            style={[styles.modalContent, { opacity: fadeAnim }]}
-            className="bg-gradient-to-b from-gray-100 to-gray-200 rounded-3xl"
-          >
-            {selectedFund && (
-              <ScrollView showsVerticalScrollIndicator={false}>
-                <View className="p-6">
-                  {/* Modal Header */}
-                  <View className="items-center mb-6">
-                    <View className="bg-gradient-to-r from-[#7ddd7d] to-[#5dc75d] p-4 rounded-2xl mb-4 shadow-md">
-                      <Ionicons name="shield-checkmark" size={40} color="green" />
-                    </View>
-                    <Text style={styles.modalTitle}>
-                      {t('blockedFunds.confirmation')}
-                    </Text>
-                    <Text className="text-black text-center">
-                      {t('blockedFunds.confirmSubscription')}
-                    </Text>
-                  </View>
-
-                  {/* Fund Details */}
-                  <View className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl p-5 mb-6">
-                    <View className="flex-row justify-between items-center mb-4">
-                      <Text className="text-black font-bold text-lg">
-                        {selectedFund.name}
-                      </Text>
-                      <View className="bg-green-100 px-3 py-1 rounded-full">
-                        <Text className="text-green-700 font-bold">
-                          {selectedFund.annualCommission}%
-                        </Text>
-                      </View>
-                    </View>
-
-                    <View className="space-y-3">
-                      <DetailRow 
-                        label={t('blockedFunds.investmentAmount')}
-                        value={`${(isCAD ? selectedFund.amountCAD : selectedFund.amountXAF).toLocaleString()} ${isCAD ? 'CAD' : 'XAF'}`}
-                        icon="cash-outline"
-                        color="#10B981"
-                      />
-                      <DetailRow 
-                        label={t('blockedFunds.annualCommission')}
-                        value={`${((isCAD ? selectedFund.amountCAD : selectedFund.amountXAF) * selectedFund.annualCommission / 100).toLocaleString()} ${isCAD ? 'CAD' : 'XAF'}`}
-                        icon="trending-up-outline"
-                        color="#3B82F6"
-                      />
-                      <DetailRow 
-                        label={t('blockedFunds.lockPeriod')}
-                        value={calculateEndDate()}
-                        icon="calendar-outline"
-                        color="#F59E0B"
-                      />
-                      <DetailRow 
-                        label={t('blockedFunds.startDate')}
-                        value={`${new Date().getFullYear()}-01-01`}
-                        icon="play-outline"
-                        color="#8B5CF6"
-                      />
-                    </View>
-                  </View>
-
-                  {/* Terms Acceptance */}
-                  <View className="bg-blue-50 rounded-xl p-4 mb-6">
-                    <View className="flex-row items-start">
-                      <Ionicons name="information-circle" size={20} color="#3B82F6" />
-                      <Text className="text-blue-800 text-sm ml-2 flex-1">
-                        {t('blockedFunds.termsAcceptance')}{' '}
-                        <Text className="font-bold text-blue-900">
-                          {t('blockedFunds.readTerms')}
-                        </Text>
-                      </Text>
-                    </View>
-                  </View>
-
-                  {/* Action Buttons */}
-                  <View className="space-y-3">
-                    <TouchableOpacity
-                      style={[styles.modalButton, styles.confirmButton]}
-                      onPress={confirmSubscription}
-                      className="bg-gradient-to-r from-[#7ddd7d] to-[#5dc75d] rounded-xl py-4 shadow-md"
-                    >
-                      <Text className="text-white font-bold text-lg text-center">
-                        {t('blockedFunds.confirmSubscription')}
-                      </Text>
-                      <Text className="text-white/90 text-center text-sm">
-                        {t('blockedFunds.continue')}
-                      </Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      style={[styles.modalButton, styles.cancelButton]}
-                      onPress={() => setModalVisible(false)}
-                      className="bg-gray-200 rounded-xl py-4"
-                    >
-                      <Text className="text-gray-700 font-bold text-center">
-                        {t('blockedFunds.cancel')}
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </ScrollView>
-            )}
-          </Animated.View>
-        </View>
-      </Modal>
     </View>
   );
 };
@@ -484,7 +430,8 @@ const styles = StyleSheet.create({
     elevation: 15,
   },
   fundCard: {
-    borderLeftWidth: 4,
+    borderLeftWidth: 6,
+    borderLeftColor: '#7ddd7d',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 5 },
     shadowOpacity: 0.1,
@@ -492,9 +439,9 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   subscribeButton: {
-    shadowColor: '#000',
+    shadowColor: '#7ddd7d',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 5,
   },

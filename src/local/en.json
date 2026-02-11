@@ -2019,7 +2019,18 @@
     "withdrawCommissionOnly": "Withdraw commission only",
     "commissionOnlyDescription": "Withdraw only accumulated commissions",
     "maturedWithdrawal": "Commission withdrawal",
-    "maturedWithdrawalMessage": "Your funds have reached maturity. You can withdraw your commissions."
+    "maturedWithdrawalMessage": "Your funds have reached maturity. You can withdraw your commissions.",
+     "plan": "Plan",
+    "annualInvestment": "Annual Investment",
+    "premium": "PREMIUM",
+    "minimumInvestment": "Minimum Investment",
+    "oneTimePayment": "One-time Payment",
+    "guaranteedRate": "Guaranteed Rate",
+    "investmentPeriod": "INVESTMENT PERIOD",
+    "completedMonths": "{{months}} months completed",
+    "remainingMonths": "{{months}} months remaining",
+    "highYield": "High Yield",
+    "investInPlan": "Invest in this plan"
   },
   "tabs2": {
     "fundsList": "Available Funds",
