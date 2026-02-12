@@ -594,11 +594,6 @@ const ReceiptScreen = () => {
             </span>
           </div>
           
-          <!-- Transaction Reference -->
-          <div class="reference-number">
-            📋 Référence de transaction: ${transaction.transactionId}
-          </div>
-          
           <!-- Footer -->
         <!-- Footer with Legal Information -->
           <div class="footer">

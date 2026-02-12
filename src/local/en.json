@@ -2039,6 +2039,23 @@
   "tabs2": {
     "fundsList": "Available Funds",
     "myInvestments": "My Investments"
+  },
+   "update": {
+    "requiredTitle": "Update Required",
+    "requiredMessage1": "A new version is available.",
+    "requiredMessage2": "Please update to continue using Sendo.",
+    "updateNow": "UPDATE NOW",
+    "requiredNotice": "This update is required to continue using the application",
+    "storeAndroid": "You will be redirected to Google Play Store",
+    "storeIOS": "You will be redirected to the App Store",
+    "currentVersion": "Current version",
+    "newVersion": "New version",
+    "updateLater": "Later",
+    "updateRequired": "Update Required",
+    "updateMessage": "A new version (v{{version}}) is available. Please update to continue using Sendo.",
+    "updateButton": "Update Now",
+    "updateInstructions": "Once the update is installed, open the app again.",
+    "cannotOpenStore": "Cannot open store. Please update manually from the App Store or Google Play."
   }
 
    

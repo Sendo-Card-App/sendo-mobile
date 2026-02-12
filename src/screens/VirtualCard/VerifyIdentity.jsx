@@ -1,4 +1,4 @@
-import { View, Text, Image, TouchableOpacity } from "react-native";
+import { View, Text, Image, TouchableOpacity, ScrollView } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import React, { useCallback, useState } from "react";
 import TopLogo from "../../images/TopLogo.png";
@@ -8,16 +8,15 @@ import { StatusBar } from "expo-status-bar";
 import VerifyImage from "../../images/VerifyImage.png";
 import { useTranslation } from "react-i18next";
 import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const VerifyIdentity = ({ navigation }) => {
   const { t } = useTranslation();
   const [loadingDocuments, setLoadingDocuments] = useState(false);
 
   const { data: userProfile, isProfileLoading, refetch } = useGetUserProfileQuery(undefined, {
-    pollingInterval: 1000, // Refetch every 1 second
+    pollingInterval: 1000,
   });
-
-  // console.log('User Profile:', JSON.stringify(userProfile, null, 2));
 
   useFocusEffect(
     useCallback(() => {
@@ -49,7 +48,6 @@ const VerifyIdentity = ({ navigation }) => {
     }, [refetch, navigation])
   );
 
-  // Handle navigation based on user's country
   const handleNextPress = () => {
     const country = userProfile?.data?.user?.country;
     if (country === "Canada") {
@@ -61,80 +59,90 @@ const VerifyIdentity = ({ navigation }) => {
 
   if (isProfileLoading || loadingDocuments) {
     return (
-      <View className="bg-transparent flex-1 items-center justify-center">
+      <View className="bg-[#181e25] flex-1 items-center justify-center">
         <Loader size="large" color="green" />
       </View>
     );
   }
 
   return (
-    <View className="bg-[#181e25] flex-1 pt-0 relative">
-      {/* Logo */}
-      <View className="absolute -top-12 left-0 right-0 items-center justify-center">
-        <Image source={TopLogo} className="h-36 w-40" resizeMode="contain" />
-      </View>
-
-      {/* Navigation */}
-      <View className="border-b border-dashed border-white flex-row justify-between py-4 mt-10 items-center mx-5 pt-5">
-        <TouchableOpacity
-          onPress={() => navigation.openDrawer()}
-          className="ml-auto"
-        >
-          <Ionicons name="menu-outline" size={24} color="white" />
-        </TouchableOpacity>
-      </View>
-
-      {/* Title */}
-      <View className="border border-dashed border-gray-300 my-1" />
-      <Text className="text-center text-white text-2xl my-3">
-        {t("verifyIdentity.title")}
-      </Text>
-
-      {/* Main Content */}
-      <View className="flex-1 gap-6 py-3 bg-white px-8 rounded-t-3xl">
-        <View className="my-5">
-          <Text className="text-center text-gray-800 text-sm font-bold">
-            {t("verifyIdentity.heading")}
-          </Text>
-        </View>
-
-        <Image
-          source={VerifyImage}
-          className="w-full h-[300px]"
-          resizeMode="center"
-        />
-
-        <Text className="text-center text-gray-400 text-xs mt-10">
-          {t("verifyIdentity.description")}
-          <Text className="font-extrabold underline">
-            {t("verifyIdentity.blogLink")}
-          </Text>
-        </Text>
-
-        {/* Show button only if no documents at all */}
-        {(!userProfile?.data?.user?.kycDocuments ||
-          userProfile?.data?.user?.kycDocuments.length === 0) && (
-          <TouchableOpacity
-            className="mt-auto py-3 rounded-full mb-8 bg-[#7ddd7d]"
-            onPress={handleNextPress}
-          >
-            <Text className="text-xl text-center font-bold">
-              {t("verifyIdentity.nextButton")}
-            </Text>
-          </TouchableOpacity>
-        )}
-      </View>
-
-      {/* Footer */}
-      <View className="py-4 flex-row justify-center items-center gap-2">
-        <Ionicons name="shield-checkmark" size={18} color="orange" />
-        <Text className="text-sm text-white">
-          {t("verifyIdentity.securityNotice")}
-        </Text>
-      </View>
-
+    <SafeAreaView className="bg-[#181e25] flex-1">
       <StatusBar style="light" />
-    </View>
+      
+      <ScrollView 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ flexGrow: 1 }}
+        bounces={false}
+      >
+        <View className="flex-1">
+          {/* Logo */}
+          <View className="items-center justify-center mt-4">
+            <Image source={TopLogo} className="h-36 w-40" resizeMode="contain" />
+          </View>
+
+          {/* Navigation */}
+          <View className="border-b border-dashed border-white flex-row justify-end py-4 mx-5">
+            <TouchableOpacity onPress={() => navigation.openDrawer()}>
+              <Ionicons name="menu-outline" size={24} color="white" />
+            </TouchableOpacity>
+          </View>
+
+          {/* Title */}
+          <View className="border border-dashed border-gray-300 my-1" />
+          <Text className="text-center text-white text-2xl my-3 px-4">
+            {t("verifyIdentity.title")}
+          </Text>
+
+          {/* Main Content - White Card */}
+          <View className="flex-1 bg-white px-8 py-6 rounded-t-3xl mt-2 min-h-[600px]">
+            <View className="my-5">
+              <Text className="text-center text-gray-800 text-sm font-bold">
+                {t("verifyIdentity.heading")}
+              </Text>
+            </View>
+
+            <View className="items-center justify-center my-4">
+              <Image
+                source={VerifyImage}
+                className="w-full h-[250px]"
+                resizeMode="contain"
+              />
+            </View>
+
+            <Text className="text-center text-gray-400 text-xs mt-6 px-2">
+              {t("verifyIdentity.description")}
+              <Text className="font-extrabold underline">
+                {t("verifyIdentity.blogLink")}
+              </Text>
+            </Text>
+
+            {/* Show button only if no documents at all */}
+            {(!userProfile?.data?.user?.kycDocuments ||
+              userProfile?.data?.user?.kycDocuments.length === 0) && (
+              <TouchableOpacity
+                className="mt-10 py-4 rounded-full bg-[#7ddd7d] mx-4"
+                onPress={handleNextPress}
+              >
+                <Text className="text-xl text-center font-bold text-gray-800">
+                  {t("verifyIdentity.nextButton")}
+                </Text>
+              </TouchableOpacity>
+            )}
+            
+            {/* Espace supplémentaire en bas pour un meilleur défilement */}
+            <View className="h-10" />
+          </View>
+
+          {/* Footer */}
+          <View className="py-5 flex-row justify-center items-center gap-2 bg-[#181e25]">
+            <Ionicons name="shield-checkmark" size={18} color="orange" />
+            <Text className="text-sm text-white">
+              {t("verifyIdentity.securityNotice")}
+            </Text>
+          </View>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 

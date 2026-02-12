@@ -51,7 +51,12 @@ const ManageVirtualCard = () => {
       });
    //console.log("cards Status:", JSON.stringify(cards, null, 2));
     const { data: userProfile, isLoading: isProfileLoading, refetch } = useGetUserProfileQuery();
-    //console.log('User Profile:', JSON.stringify(userProfile, null, 2));
+
+  const virtualCardFromProfile = userProfile?.data?.user?.virtualCard;
+  //console.log("Virtual Card from Profile:", JSON.stringify(virtualCardFromProfile, null, 2));
+  
+  const profileCardStatus = virtualCardFromProfile?.status;
+  //console.log("Virtual Card Status from Profile:", profileCardStatus);
 
   const [selectedCardId, setSelectedCardId] = useState(null);
   const [readOnlyMode, setReadOnlyMode] = useState(false);
@@ -92,6 +97,7 @@ const ManageVirtualCard = () => {
   const [isProcessingFreeze, setIsProcessingFreeze] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isProcessingSetting, setIsProcessingSetting] = useState(false);
+
 
 
   const cardData = cardDetails?.data;
@@ -182,22 +188,22 @@ const {
   }
 
   useEffect(() => {
-    if (cardStatus === "TERMINATED") {
+    if (profileCardStatus === "TERMINATED") {
       setModalType("TERMINATED");
       setModalMessage("Votre carte a été supprimée. Voulez-vous en créer une nouvelle ?");
       setModalVisible(true);
-    } else if (cardStatus === "IN_TERMINATION") {
+    } else if (profileCardStatus === "IN_TERMINATION") {
       Alert.alert(
         "Suppression en cours",
         "Votre carte est en cours de suppression. Certaines fonctionnalités peuvent être limitées."
       );
-    } else if (cardStatus === "SUSPENDED") {
+    } else if (profileCardStatus === "SUSPENDED") {
       Alert.alert(
         "Carte suspendue",
         "Votre carte a été suspendue en raison d'une activité suspecte."
       );
     }
-  }, [cardStatus]);
+  }, [profileCardStatus]);
 
  const debouncedHandleFreezeUnfreeze = async () => {
   if (isProcessingFreeze) return; // prevent multiple simultaneous calls
@@ -542,14 +548,14 @@ const handleCardDetailsRequest = async (isReadOnly) => {
           {/* Card Display */}
           <View className="relative rounded-2xl overflow-hidden mt-2" style={{ height: width / 1.66 }}>
             <Image source={CardImg} className="w-full h-full absolute" resizeMode="contain" />
-            {(isCardFrozen || cardStatus === "BLOCKED") && (
+            {(isCardFrozen || profileCardStatus === "BLOCKED") && (
               <View className="absolute inset-0 bg-[#d7f0f7] bg-opacity-60 z-10 justify-center items-center">
                 <FontAwesome5 
-                  name={cardStatus === "BLOCKED" ? "ban" : "snowflake"} 
+                  name={profileCardStatus === "BLOCKED" ? "ban" : "snowflake"} 
                   size={50} 
-                  color={cardStatus === "BLOCKED" ? "#ff6b6b" : "#a0e1f5"} 
+                  color={profileCardStatus === "BLOCKED" ? "#ff6b6b" : "#a0e1f5"} 
                 />
-                {cardStatus === "BLOCKED" && (
+                {profileCardStatus === "BLOCKED" && (
                   <Text className="text-white font-bold mt-2">BLOQUÉE</Text>
                 )}
               </View>
@@ -608,7 +614,7 @@ const handleCardDetailsRequest = async (isReadOnly) => {
 
          
           {/* Actions */}
-          {cardStatus !== "TERMINATED" && (
+          {profileCardStatus !== "TERMINATED" && (
             <View className="mb-1 mt-2">
               {rejectionAttempts > 0 && (
                 <View className="mb-4">
@@ -672,7 +678,7 @@ const handleCardDetailsRequest = async (isReadOnly) => {
           )}
 
           {/* 🔸 Action Buttons */}
-          {cardStatus !== "TERMINATED" && cardStatus !== "BLOCKED" ? (
+          {profileCardStatus !== "TERMINATED" && profileCardStatus !== "BLOCKED" ? (
   <View className="flex flex-row justify-between mt-1">
     {/* 👁 View Info */}
     <TouchableOpacity
@@ -751,7 +757,7 @@ const handleCardDetailsRequest = async (isReadOnly) => {
 
 
           {/* Balance + Actions */}
-        {cardStatus !== "TERMINATED" && cardStatus !== "BLOCKED" ? (
+        {profileCardStatus !== "TERMINATED" && profileCardStatus !== "BLOCKED" ? (
             <>
               {/* Balance and Action Buttons */}
               <View className="mt-4 bg-gray-100 rounded-xl p-4">

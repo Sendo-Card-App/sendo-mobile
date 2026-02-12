@@ -51,6 +51,7 @@ const CardActionScreen = ({ route }) => {
   };
 
   const DEPOSIT_CARD_AVAILABILITY = getConfigValue("DEPOSIT_CARD_AVAILABILITY");
+ //console.log('DEPOSIT_CARD_AVAILABILITY:', DEPOSIT_CARD_AVAILABILITY);
   const WITHDRAWAL_CARD_AVAILABILITY = getConfigValue("WITHDRAWAL_CARD_AVAILABILITY");
 
   // --- Service availability check ---
@@ -117,10 +118,19 @@ const CardActionScreen = ({ route }) => {
         await withdrawFromCard(payload).unwrap();
         showModal('success', t('manageVirtualCard.withdrawnSuccessfully'));
       }
-    } catch (err) {
+      } catch (err) {
       console.log('Réponse du backend :', JSON.stringify(err, null, 2));
-      showModal('error', t('manageVirtualCard.actionFailed'));
+
+      const backendMessage =
+        err?.data?.message ||
+        err?.data?.data?.message ||
+        err?.error ||
+        t('manageVirtualCard.actionFailed');
+
+      showModal('error', backendMessage);
     }
+
+
   };
 
   const clearAmount = () => setAmount('');
