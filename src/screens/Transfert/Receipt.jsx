@@ -25,6 +25,7 @@ const ReceiptScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const transaction = route.params?.transaction;
+  //console.log("Transaction details on Receipt screen:", transaction);
   const userData = route.params?.user;
   const user = transaction?.receiver; 
 
@@ -57,8 +58,9 @@ const ReceiptScreen = () => {
   const SENDO_VALUE_CAD_CA_CAM = getConfigValue('SENDO_VALUE_CAD_CA_CAM');
   const exchangeRate = SENDO_VALUE_CAD_CA_CAM || 482; 
 
-  // Check if this is a CAM-CA transfer
-  const isCAMCATransfer = transaction?.description === "Transfert CAM-CA";
+  // Check if this is a CAM-CA transfer or CA-CAM transfer based on description
+  const isCAMCATransfer = transaction?.description === "Transfert CAM-CAM" || transaction?.description === "Transfert CAM-CA";
+  const isCACAMTransfer = transaction?.description === "Transfert CA-CAM";;
 
   if (!transaction) {
     return (
@@ -145,49 +147,10 @@ const ReceiptScreen = () => {
     return transaction.type;
   };
 
-  const handleDownloadReceipt = async () => {
-    if (transaction.status !== 'COMPLETED' && transaction.status !== 'FAILED') {
-      Alert.alert(
-        "Reçu indisponible",
-        "Le reçu est uniquement disponible pour les transactions réussies ou échouées"
-      );
-      return;
-    }
+// Special receipt template for CAM-CA transfers (Cameroun -> Canada)
 
-    setIsGenerating(true);
-    try {
-      // Use Cloudinary hosted logo
-      const logoUrl = "https://res.cloudinary.com/dviktmefh/image/upload/v1758140850/WhatsApp_Image_2025-09-17_at_21.26.01_hjgtfa.jpg";
-      
-      // Generate HTML with the hosted logo - use special template for CAM-CA transfers
-      const html = isCAMCATransfer 
-        ? generateCAMCAReceiptHTML(transaction, userData, userInfos)
-        : generateReceiptHTML(transaction, user, getTypeLabel, logoUrl);
-      
-      // Convert HTML to PDF
-      const { uri } = await Print.printToFileAsync({ html });
-      
-      // Move to permanent location
-      const newUri = `${FileSystem.documentDirectory}Reçu_Sendo_${transaction.transactionId}.pdf`;
-      await FileSystem.moveAsync({ from: uri, to: newUri });
-
-      // Share the PDF
-      if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(newUri);
-      } else {
-        Alert.alert("Succès", "Reçu généré avec succès");
-      }
-    } catch (error) {
-      console.error("Error generating receipt:", error);
-      Alert.alert("Erreur", "Échec de génération du reçu. Veuillez réessayer.");
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  // Special receipt template for CAM-CA transfers
   const generateCAMCAReceiptHTML = (transaction, senderData, receiverInfo, logoBase64) => {
-     const logoUrl = logoBase64;
+    const logoUrl = logoBase64;
     const senderInfo = senderData;
     const receiverData = transaction.receiver;
     const isSender = currentUserId === transaction.userId;
@@ -202,218 +165,1557 @@ const ReceiptScreen = () => {
       counterpartName = `${receiverInfo?.data?.firstname || ''} ${receiverInfo?.data?.lastname || ''}`;
     }
 
-    // For CAM-CA transfers, we need to show amount in XAF and CAD
+    // For CAM-CA transfers, amount received = amount sent (no fees deducted)
     const cadAmount = (transaction.amount / exchangeRate).toFixed(2);
     const cadFees = (transaction.sendoFees / exchangeRate).toFixed(2);
-    const cadTotal = (transaction.totalAmount / exchangeRate).toFixed(2);
+    const cadTotal = (transaction.amount / exchangeRate).toFixed(2); // Amount received = amount sent without fees
 
     // Format dates
-    const operationDate = moment(transaction.createdAt).format('DD/MM/YYYY HH:mm A');
+    const operationDate = moment(transaction.createdAt).format('DD/MM/YYYY HH:mm');
     const emissionDate = moment().format('DD/MM/YYYY');
 
     return `
     <!DOCTYPE html>
-    <html lang="en">
+    <html lang="fr">
     <head>
       <meta charset="UTF-8">
-      <title>Sendo CAM-CA Receipt</title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Sendo - Reçu Transfert CAM-CA</title>
       <style>
-        body {
-          font-family: Arial, sans-serif;
+        * {
           margin: 0;
-          padding: 20px;
-          background-color: #f5f5f5;
+          padding: 0;
+          box-sizing: border-box;
         }
+        
+        body {
+          font-family: 'Helvetica', 'Arial', sans-serif;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          padding: 30px 20px;
+          min-height: 100vh;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        
         .receipt {
-          max-width: 800px;
+          max-width: 850px;
           margin: 0 auto;
           background: white;
-          padding: 20px;
-          border-radius: 8px;
-          box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+          border-radius: 20px;
+          box-shadow: 0 30px 60px rgba(0,0,0,0.1);
+          overflow: hidden;
         }
-        .header {
-          display: flex;
-          justify-content: space-between;
-          align-items: flex-start;
-          margin-bottom: 20px;
-          border-bottom: 2px solid #7ddd7d;
-          padding-bottom: 15px;
-        }
-        .logo {
-          font-size: 24px;
-          font-weight: bold;
-          color: #7ddd7d;
-        }
-        .header .right {
-          text-align: right;
-          font-size: 12px;
-        }
-        .header .right p {
-          margin: 2px 0;
-        }
-        .info-row {
-          display: flex;
-          justify-content: space-between;
-          margin-bottom: 20px;
-          font-size: 14px;
-        }
-        .section {
-          margin-bottom: 25px;
-        }
-        .section h3 {
-          background-color: #7ddd7d;
+        
+        .receipt-header {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          padding: 30px 35px;
           color: white;
-          padding: 8px 12px;
-          margin: 0 -20px 15px -20px;
-          font-size: 16px;
         }
-        .grid {
+        
+        .receipt-header-top {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 20px;
+        }
+        
+        .logo-container {
+          background: white;
+          padding: 10px;
+          border-radius: 12px;
+          display: inline-block;
+        }
+        
+        .logo {
+          height: 50px;
+          width: auto;
+          display: block;
+        }
+        
+        .receipt-title {
+          text-align: right;
+        }
+        
+        .receipt-title h1 {
+          font-size: 24px;
+          font-weight: 700;
+          margin-bottom: 5px;
+          letter-spacing: 1px;
+        }
+        
+        .receipt-title p {
+          font-size: 14px;
+          opacity: 0.9;
+        }
+        
+        .transfer-badge {
+          background: rgba(255,255,255,0.2);
+          padding: 12px 20px;
+          border-radius: 10px;
+          margin-top: 15px;
+        }
+        
+        .transfer-badge span {
+          font-size: 16px;
+          font-weight: 600;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+        
+        .receipt-body {
+          padding: 35px;
+        }
+        
+        .info-grid {
           display: grid;
           grid-template-columns: 1fr 1fr;
-          gap: 10px;
+          gap: 30px;
+          margin-bottom: 30px;
+        }
+        
+        .info-section {
+          background: #f8fafc;
+          padding: 20px;
+          border-radius: 16px;
+        }
+        
+        .info-section h3 {
+          color: #1e293b;
+          font-size: 16px;
+          font-weight: 700;
+          margin-bottom: 20px;
+          padding-bottom: 10px;
+          border-bottom: 2px solid #e2e8f0;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+        
+        .info-row {
+          display: flex;
+          margin-bottom: 12px;
           font-size: 14px;
         }
-        .grid p {
-          margin: 5px 0;
+        
+        .info-label {
+          width: 110px;
+          color: #64748b;
+          font-weight: 500;
         }
-        table {
+        
+        .info-value {
+          flex: 1;
+          color: #0f172a;
+          font-weight: 600;
+        }
+        
+        .amounts-container {
+          background: linear-gradient(135deg, #667eea08 0%, #764ba208 100%);
+          border: 1px solid #e2e8f0;
+          border-radius: 16px;
+          padding: 25px;
+          margin: 30px 0;
+        }
+        
+        .currency-tabs {
+          display: flex;
+          gap: 15px;
+          margin-bottom: 20px;
+        }
+        
+        .currency-tab {
+          background: white;
+          padding: 10px 20px;
+          border-radius: 8px;
+          font-weight: 700;
+          color: #1e293b;
+          border: 1px solid #e2e8f0;
+        }
+        
+        .currency-tab.active {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+          border: none;
+        }
+        
+        .amount-table {
           width: 100%;
           border-collapse: collapse;
-          font-size: 14px;
         }
-        table tr {
-          border-bottom: 1px solid #eee;
+        
+        .amount-table tr {
+          border-bottom: 1px solid #e2e8f0;
         }
-        table td {
-          padding: 8px 0;
+        
+        .amount-table td {
+          padding: 15px 0;
+          font-size: 15px;
         }
-        table tr.total {
-          font-weight: bold;
-          background-color: #f9f9f9;
+        
+        .amount-table td:last-child {
+          text-align: right;
+          font-weight: 600;
         }
-        table tr:last-child {
-          border-bottom: 2px solid #7ddd7d;
+        
+        .amount-table tr:last-child {
+          border-bottom: none;
         }
-        .signature {
+        
+        .total-row {
+          background: #f1f5f9;
+          border-radius: 8px;
+        }
+        
+        .total-row td {
+          font-weight: 800;
+          color: #0f172a;
+        }
+        
+        .amount-received {
+          background: #10b981;
+          color: white;
+          padding: 15px 20px;
+          border-radius: 12px;
+          margin-top: 20px;
           display: flex;
           justify-content: space-between;
+          align-items: center;
+        }
+        
+        .amount-received span {
+          font-size: 18px;
+          font-weight: 700;
+        }
+        
+        .amount-received strong {
+          font-size: 24px;
+        }
+        
+        .exchange-rate-box {
+          background: #f8fafc;
+          border: 1px dashed #94a3b8;
+          padding: 15px 20px;
+          border-radius: 12px;
+          margin: 25px 0;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+        
+        .exchange-rate-box span {
+          color: #475569;
+          font-size: 15px;
+        }
+        
+        .exchange-rate-box strong {
+          color: #0f172a;
+          font-size: 18px;
+          background: white;
+          padding: 5px 15px;
+          border-radius: 20px;
+          border: 1px solid #e2e8f0;
+        }
+        
+        .footer {
           margin-top: 40px;
-          padding-top: 20px;
-          border-top: 1px dashed #ccc;
-          font-size: 14px;
-        }
-        .signature div {
+          padding-top: 30px;
+          border-top: 2px dashed #cbd5e1;
           text-align: center;
-          width: 45%;
         }
-        .signature div:first-child {
-          text-align: left;
-        }
-        .signature div:last-child {
-          text-align: right;
-        }
-        .amount-details {
-          background-color: #f8f9fa;
-          padding: 15px;
-          border-radius: 5px;
-          margin: 20px 0;
-        }
-        .amount-details h4 {
-          margin-top: 0;
-          color: #333;
-          font-size: 16px;
-        }
-        .note {
-          font-size: 12px;
-          color: #666;
-          text-align: center;
-          margin-top: 30px;
-          padding-top: 15px;
-          border-top: 1px solid #eee;
-        }
-        .exchange-rate {
-          background-color: #e8f5e8;
-          padding: 10px;
-          border-radius: 5px;
-          margin: 10px 0;
-          text-align: center;
+        
+        .footer p {
+          color: #64748b;
           font-size: 13px;
+          line-height: 1.6;
+        }
+        
+        .reference-number {
+          background: #f1f5f9;
+          padding: 12px 20px;
+          border-radius: 8px;
+          font-family: monospace;
+          font-size: 16px;
+          font-weight: 600;
+          color: #1e293b;
+          margin-top: 15px;
+        }
+        
+        @media print {
+          body {
+            background: white;
+            padding: 0;
+          }
+          .receipt {
+            box-shadow: none;
+          }
         }
       </style>
     </head>
     <body>
-
-    <div class="receipt">
-      <!-- HEADER -->
-      <div class="header">
-        <div class="logo"> <img class="logo" src="${logoUrl}" alt="Sendo Logo"></div>
-        <div class="right">
-          <p><strong>Émission:</strong> Reçu Client</p>
-          <p><strong>Destination:</strong> CANADA</p>
-          <p><strong>Date:</strong> ${emissionDate}</p>
+      <div class="receipt">
+        <!-- Header -->
+        <div class="receipt-header">
+          <div class="receipt-header-top">
+            <div class="logo-container">
+              <img class="logo" src="${logoUrl}" alt="Sendo Logo">
+            </div>
+            <div class="receipt-title">
+              <h1>REÇU DE TRANSFERT</h1>
+              <p>N° ${transaction.transactionId}</p>
+            </div>
+          </div>
+          <div class="transfer-badge">
+            <span>🌍 TRANSFERT INTERNATIONAL CAMEROUN → CANADA</span>
+          </div>
+        </div>
+        
+        <!-- Body -->
+        <div class="receipt-body">
+          <!-- Date and Reference -->
+          <div style="display: flex; justify-content: space-between; margin-bottom: 25px; color: #64748b; font-size: 14px;">
+            <span>📅 Date d'opération: ${operationDate}</span>
+            <span>📄 Date d'émission: ${emissionDate}</span>
+          </div>
+          
+          <!-- Sender & Beneficiary Info -->
+          <div class="info-grid">
+            <!-- Expéditeur -->
+            <div class="info-section">
+              <h3>📤 EXPÉDITEUR</h3>
+              <div class="info-row">
+                <span class="info-label">Nom complet:</span>
+                <span class="info-value">${senderInfo?.lastname || ''} ${senderInfo?.firstname || ''}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Téléphone:</span>
+                <span class="info-value">${senderInfo?.phone || ''}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Email:</span>
+                <span class="info-value">${senderInfo?.email || ''}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Pays:</span>
+                <span class="info-value">🇨🇲 Cameroun</span>
+              </div>
+            </div>
+            
+            <!-- Bénéficiaire -->
+            <div class="info-section">
+              <h3>📥 BÉNÉFICIAIRE</h3>
+              <div class="info-row">
+                <span class="info-label">Nom complet:</span>
+                <span class="info-value">${receiverData?.lastname || ''} ${receiverData?.firstname || ''}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Téléphone:</span>
+                <span class="info-value">${receiverData?.phone || ''}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Email:</span>
+                <span class="info-value">${receiverData?.email || ''}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Pays:</span>
+                <span class="info-value">🇨🇦 Canada</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Compte:</span>
+                <span class="info-value">Wallet Sendo</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Exchange Rate -->
+          <div class="exchange-rate-box">
+            <span>💱 Taux de change appliqué</span>
+            <strong>1 CAD = ${exchangeRate} XAF</strong>
+          </div>
+          
+          <!-- Amounts in XAF -->
+          <div class="amounts-container">
+            <div class="currency-tabs">
+              <div class="currency-tab active">XAF (Franc CFA)</div>
+              <div class="currency-tab">CAD (Dollar Canadien)</div>
+            </div>
+            
+            <table class="amount-table">
+              <tr>
+                <td>Montant envoyé</td>
+                <td>${transaction.amount.toLocaleString()} XAF</td>
+              </tr>
+              <tr>
+                <td>Frais de transfert</td>
+                <td>${transaction.sendoFees.toLocaleString()} XAF</td>
+              </tr>
+              <tr style="background: #f1f5f9; font-weight: bold;">
+                <td>Total débité</td>
+                <td>${transaction.totalAmount.toLocaleString()} XAF</td>
+              </tr>
+            </table>
+          </div>
+          
+          <!-- Amounts in CAD -->
+          <div class="amounts-container" style="margin-top: 20px; background: #f0f9ff; border-color: #bae6fd;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+              <span style="font-weight: 700; color: #0369a1;">🇨🇦 CONTREVALEUR EN CAD</span>
+              <span style="background: #0369a1; color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px;">Taux: 1 CAD = ${exchangeRate} XAF</span>
+            </div>
+            
+            <table class="amount-table">
+              <tr>
+                <td>Montant envoyé</td>
+                <td>${cadAmount} CAD</td>
+              </tr>
+              <tr>
+                <td>Frais de transfert</td>
+                <td style="color: #ef4444;">- ${cadFees} CAD</td>
+              </tr>
+              <tr style="border-bottom: none;">
+                <td style="font-weight: 700;">Total débité</td>
+                <td style="font-weight: 700;">${(transaction.totalAmount / exchangeRate).toFixed(2)} CAD</td>
+              </tr>
+            </table>
+          </div>
+          
+          <!-- Amount Received (IMPORTANT: amount sent without fees) -->
+          <div class="amount-received">
+            <span>💰 MONTANT REÇU PAR LE BÉNÉFICIAIRE</span>
+            <strong>${cadTotal} CAD</strong>
+          </div>
+          
+          <div style="background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 12px 15px; margin: 20px 0; display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 20px;">ℹ️</span>
+            <span style="color: #9a3412; font-size: 13px;">
+              <strong>Note importante:</strong> Le bénéficiaire reçoit exactement ${cadTotal} CAD, 
+              soit l'équivalent du montant envoyé (${transaction.amount.toLocaleString()} XAF) sans déduction des frais. 
+              Les frais de ${transaction.sendoFees.toLocaleString()} XAF (${cadFees} CAD) sont à la charge de l'expéditeur.
+            </span>
+          </div>
+          
+          <!-- Transaction Reference -->
+          <div class="reference-number">
+            📋 Référence de transaction: ${transaction.transactionId}
+          </div>
+          
+          <!-- Footer -->
+        <!-- Footer with Legal Information -->
+          <div class="footer">
+            <div style="background: #f8fafc; padding: 20px; border-radius: 12px; margin-bottom: 20px; text-align: left;">
+              <p style="font-size: 12px; color: #1e293b; margin: 0 0 10px 0; line-height: 1.5;">
+                <strong style="color: #0f172a;">Sendo</strong> est enregistrée comme entreprise de services monétaires auprès du Centre d’analyse des opérations et déclarations financières du Canada (CANAFE) sous le numéro d’enregistrement <strong style="color: #0f172a;">C100000856</strong>. Sendo est également titulaire d’un permis délivré par Revenu Québec sous le numéro <strong style="color: #0f172a;">19525</strong>.
+              </p>
+              <p style="font-size: 12px; color: #1e293b; margin: 0 0 10px 0; line-height: 1.5;">
+                Au Cameroun, Sendo opère en partenariat avec <strong style="color: #0f172a;">Maviance</strong>, agrégateur de paiement agréé en Afrique, ainsi qu’avec des banques partenaires pour l’émission de ses cartes Visa.
+              </p>
+            </div>
+            
+            <div style="border-top: 1px solid #e2e8f0; padding-top: 20px; margin-top: 10px;">
+              <p style="font-size: 14px; font-weight: 600; color: #1e293b; margin-bottom: 8px;">
+                CE REÇU EST UN JUSTIFICATIF OFFICIEL DE TRANSFERT
+              </p>
+              <p style="font-size: 12px; color: #475569; margin-bottom: 5px;">
+                Ce document a été généré électroniquement par Sendo le ${emissionDate} à ${moment().format('HH:mm')}.
+              </p>
+              <p style="font-size: 12px; color: #475569; margin-bottom: 15px;">
+                Il est valable sans signature manuscrite conformément aux conditions générales d'utilisation du service.
+              </p>
+              <p style="font-size: 11px; color: #64748b; margin-top: 15px;">
+                Sendo - Transferts d'argent internationaux • support@sendo.com • www.sendo.com
+              </p>
+            </div>
+          </div>
         </div>
       </div>
-
-      <!-- TRANSACTION INFO -->
-      <div class="info-row">
-        <p><strong>N° Transfert:</strong> ${transaction.transactionId}</p>
-        <p><strong>Date Opération:</strong> ${operationDate}</p>
-        <p><strong>Option livraison:</strong> Transfert Sendo</p>
-      </div>
-
-      <!-- EXCHANGE RATE INFO -->
-      <div class="exchange-rate">
-        <strong>Taux de change appliqué:</strong> 1 CAD = ${exchangeRate} XAF
-      </div>
-
-      <!-- SENDER -->
-      <div class="section">
-        <h3>EXPÉDITEUR</h3>
-        <div class="grid">
-          <p><strong>Nom:</strong> ${senderInfo?.lastname || ''}</p>
-          <p><strong>Prénom:</strong> ${senderInfo?.firstname || ''}</p>
-          <p><strong>Téléphone:</strong> ${senderInfo?.phone || ''}</p>
-          <p><strong>Email:</strong> ${senderInfo?.email || ''}</p>
-          <p><strong>Pays:</strong> ${senderInfo?.country || 'Cameroun'}</p>
-        </div>
-      </div>
-
-      <!-- BENEFICIARY -->
-      <div class="section">
-        <h3>BÉNÉFICIAIRE</h3>
-        <div class="grid">
-          <p><strong>Nom:</strong> ${receiverData?.lastname || ''}</p>
-          <p><strong>Prénom:</strong> ${receiverData?.firstname || ''}</p>
-          <p><strong>Téléphone:</strong> ${receiverData?.phone || ''}</p>
-          <p><strong>Email:</strong> ${receiverData?.email || ''}</p>
-          <p><strong>Pays:</strong> Canada</p>
-          <p><strong>Type de compte:</strong> Wallet Sendo</p>
-        </div>
-      </div>
-
-      <!-- TRANSFER DETAILS -->
-      <div class="section">
-        <h3>DÉTAIL TRANSFERT</h3>
-        <table>
-          <tr><td>Montant envoyé</td><td>${transaction.amount.toLocaleString()} XAF</td></tr>
-          <tr><td>Frais de transfert</td><td>${transaction.sendoFees.toLocaleString()} XAF</td></tr>
-          <tr class="total"><td>Total débité</td><td>${transaction.totalAmount.toLocaleString()} XAF</td></tr>
-          <tr><td>Montant envoyé (CAD)</td><td>${cadAmount} CAD</td></tr>
-          <tr><td>Frais (CAD)</td><td>${cadFees} CAD</td></tr>
-          <tr class="total"><td>Total à recevoir</td><td>${cadTotal} CAD</td></tr>
-        </table>
-      </div>
-      <div class="note">
-        Ce reçu a été généré automatiquement par le système Sendo.<br>
-        Pour toute réclamation, contactez le support avec la référence: ${transaction.transactionId}
-      </div>
-    </div>
-
     </body>
     </html>
     `;
   };
+
+// Special receipt template for CA-CAM transfers (Canada -> Cameroun)
+const generateCACAMReceiptHTML = (transaction, senderData, receiverInfo, logoBase64) => {
+  const logoUrl = logoBase64;
+  const senderInfo = senderData;
+  const receiverData = transaction.receiver;
+  const isSender = currentUserId === transaction.userId;
+  
+  // Get counterpart names
+  let counterpartLabel = isSender ? "Bénéficiaire" : "Expéditeur";
+  let counterpartName = "";
+  
+  if (isSender) {
+    counterpartName = `${receiverData?.firstname || ''} ${receiverData?.lastname || ''}`;
+  } else {
+    counterpartName = `${receiverInfo?.data?.firstname || ''} ${receiverInfo?.data?.lastname || ''}`;
+  }
+
+  // For CA-CAM transfers, amount received = amount sent (no fees deducted)
+  const cadAmount = (transaction.amount / exchangeRate).toFixed(2);
+  const cadFees = (transaction.sendoFees / exchangeRate).toFixed(2);
+  const xafAmount = transaction.amount; // Amount sent in XAF (but it's actually the amount in CAD converted)
+  const xafReceived = (transaction.amount * exchangeRate).toFixed(0); // Amount received in XAF = amount sent in CAD * rate
+  
+  // Format dates
+  const operationDate = moment(transaction.createdAt).format('DD/MM/YYYY HH:mm');
+  const emissionDate = moment().format('DD/MM/YYYY');
+
+  return `
+  <!DOCTYPE html>
+  <html lang="fr">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sendo - Reçu Transfert CA-CAM</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      
+      body {
+        font-family: 'Helvetica', 'Arial', sans-serif;
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        padding: 30px 20px;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      
+      .receipt {
+        max-width: 850px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 30px 60px rgba(0,0,0,0.1);
+        overflow: hidden;
+      }
+      
+      .receipt-header {
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        padding: 30px 35px;
+        color: white;
+      }
+      
+      .receipt-header-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+      
+      .logo-container {
+        background: white;
+        padding: 10px;
+        border-radius: 12px;
+        display: inline-block;
+      }
+      
+      .logo {
+        height: 50px;
+        width: auto;
+        display: block;
+      }
+      
+      .receipt-title {
+        text-align: right;
+      }
+      
+      .receipt-title h1 {
+        font-size: 24px;
+        font-weight: 700;
+        margin-bottom: 5px;
+        letter-spacing: 1px;
+      }
+      
+      .receipt-title p {
+        font-size: 14px;
+        opacity: 0.9;
+      }
+      
+      .transfer-badge {
+        background: rgba(255,255,255,0.2);
+        padding: 12px 20px;
+        border-radius: 10px;
+        margin-top: 15px;
+      }
+      
+      .transfer-badge span {
+        font-size: 16px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      
+      .receipt-body {
+        padding: 35px;
+      }
+      
+      .info-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 30px;
+        margin-bottom: 30px;
+      }
+      
+      .info-section {
+        background: #f8fafc;
+        padding: 20px;
+        border-radius: 16px;
+      }
+      
+      .info-section h3 {
+        color: #1e293b;
+        font-size: 16px;
+        font-weight: 700;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #e2e8f0;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      
+      .info-row {
+        display: flex;
+        margin-bottom: 12px;
+        font-size: 14px;
+      }
+      
+      .info-label {
+        width: 110px;
+        color: #64748b;
+        font-weight: 500;
+      }
+      
+      .info-value {
+        flex: 1;
+        color: #0f172a;
+        font-weight: 600;
+      }
+      
+      .amounts-container {
+        background: linear-gradient(135deg, #11998e08 0%, #38ef7d08 100%);
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 25px;
+        margin: 30px 0;
+      }
+      
+      .currency-tabs {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 20px;
+      }
+      
+      .currency-tab {
+        background: white;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 700;
+        color: #1e293b;
+        border: 1px solid #e2e8f0;
+      }
+      
+      .currency-tab.active {
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        color: white;
+        border: none;
+      }
+      
+      .amount-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      
+      .amount-table tr {
+        border-bottom: 1px solid #e2e8f0;
+      }
+      
+      .amount-table td {
+        padding: 15px 0;
+        font-size: 15px;
+      }
+      
+      .amount-table td:last-child {
+        text-align: right;
+        font-weight: 600;
+      }
+      
+      .amount-table tr:last-child {
+        border-bottom: none;
+      }
+      
+      .total-row {
+        background: #f1f5f9;
+        border-radius: 8px;
+      }
+      
+      .total-row td {
+        font-weight: 800;
+        color: #0f172a;
+      }
+      
+      .amount-received {
+        background: #10b981;
+        color: white;
+        padding: 15px 20px;
+        border-radius: 12px;
+        margin-top: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      
+      .amount-received span {
+        font-size: 18px;
+        font-weight: 700;
+      }
+      
+      .amount-received strong {
+        font-size: 24px;
+      }
+      
+      .exchange-rate-box {
+        background: #f8fafc;
+        border: 1px dashed #94a3b8;
+        padding: 15px 20px;
+        border-radius: 12px;
+        margin: 25px 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      
+      .exchange-rate-box span {
+        color: #475569;
+        font-size: 15px;
+      }
+      
+      .exchange-rate-box strong {
+        color: #0f172a;
+        font-size: 18px;
+        background: white;
+        padding: 5px 15px;
+        border-radius: 20px;
+        border: 1px solid #e2e8f0;
+      }
+      
+      .footer {
+        margin-top: 40px;
+        padding-top: 30px;
+        border-top: 2px dashed #cbd5e1;
+        text-align: center;
+      }
+      
+      .footer p {
+        color: #64748b;
+        font-size: 13px;
+        line-height: 1.6;
+      }
+      
+      .reference-number {
+        background: #f1f5f9;
+        padding: 12px 20px;
+        border-radius: 8px;
+        font-family: monospace;
+        font-size: 16px;
+        font-weight: 600;
+        color: #1e293b;
+        margin-top: 15px;
+      }
+      
+      @media print {
+        body {
+          background: white;
+          padding: 0;
+        }
+        .receipt {
+          box-shadow: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="receipt">
+      <!-- Header -->
+      <div class="receipt-header">
+        <div class="receipt-header-top">
+          <div class="logo-container">
+            <img class="logo" src="${logoUrl}" alt="Sendo Logo">
+          </div>
+          <div class="receipt-title">
+            <h1>REÇU DE TRANSFERT</h1>
+            <p>N° ${transaction.transactionId}</p>
+          </div>
+        </div>
+        <div class="transfer-badge">
+          <span>🌍 TRANSFERT INTERNATIONAL CANADA → CAMEROUN</span>
+        </div>
+      </div>
+      
+      <!-- Body -->
+      <div class="receipt-body">
+        <!-- Date and Reference -->
+        <div style="display: flex; justify-content: space-between; margin-bottom: 25px; color: #64748b; font-size: 14px;">
+          <span>📅 Date d'opération: ${operationDate}</span>
+          <span>📄 Date d'émission: ${emissionDate}</span>
+        </div>
+        
+        <!-- Sender & Beneficiary Info -->
+        <div class="info-grid">
+          <!-- Expéditeur -->
+          <div class="info-section">
+            <h3>📤 EXPÉDITEUR</h3>
+            <div class="info-row">
+              <span class="info-label">Nom complet:</span>
+              <span class="info-value">${senderInfo?.lastname || ''} ${senderInfo?.firstname || ''}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Téléphone:</span>
+              <span class="info-value">${senderInfo?.phone || ''}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Email:</span>
+              <span class="info-value">${senderInfo?.email || ''}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Pays:</span>
+              <span class="info-value">🇨🇦 Canada</span>
+            </div>
+          </div>
+          
+          <!-- Bénéficiaire -->
+          <div class="info-section">
+            <h3>📥 BÉNÉFICIAIRE</h3>
+            <div class="info-row">
+              <span class="info-label">Nom complet:</span>
+              <span class="info-value">${receiverData?.lastname || ''} ${receiverData?.firstname || ''}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Téléphone:</span>
+              <span class="info-value">${receiverData?.phone || ''}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Email:</span>
+              <span class="info-value">${receiverData?.email || ''}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Pays:</span>
+              <span class="info-value">🇨🇲 Cameroun</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Compte:</span>
+              <span class="info-value">Wallet Sendo</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Exchange Rate -->
+        <div class="exchange-rate-box">
+          <span>💱 Taux de change appliqué</span>
+          <strong>1 CAD = ${exchangeRate} XAF</strong>
+        </div>
+        
+        <!-- Amounts in CAD -->
+        <div class="amounts-container">
+          <div class="currency-tabs">
+            <div class="currency-tab active">CAD (Dollar Canadien)</div>
+            <div class="currency-tab">XAF (Franc CFA)</div>
+          </div>
+          
+          <table class="amount-table">
+            <tr>
+              <td>Montant envoyé</td>
+              <td>${transaction.amount.toLocaleString()} CAD</td>
+            </tr>
+            <tr>
+              <td>Frais de transfert</td>
+              <td>${transaction.sendoFees.toLocaleString()} CAD</td>
+            </tr>
+            <tr style="background: #f1f5f9; font-weight: bold;">
+              <td>Total débité</td>
+              <td>${transaction.totalAmount.toLocaleString()} CAD</td>
+            </tr>
+          </table>
+        </div>
+        
+        <!-- Amounts in XAF -->
+        <div class="amounts-container" style="margin-top: 20px; background: #f0fdf4; border-color: #bbf7d0;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <span style="font-weight: 700; color: #166534;">🇨🇲 CONTREVALEUR EN XAF</span>
+            <span style="background: #166534; color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px;">Taux: 1 CAD = ${exchangeRate} XAF</span>
+          </div>
+          
+          <table class="amount-table">
+            <tr>
+              <td>Montant envoyé</td>
+              <td>${(transaction.amount * exchangeRate).toLocaleString()} XAF</td>
+            </tr>
+            <tr>
+              <td>Frais de transfert</td>
+              <td style="color: #ef4444;">- ${(transaction.sendoFees * exchangeRate).toLocaleString()} XAF</td>
+            </tr>
+            <tr style="border-bottom: none;">
+              <td style="font-weight: 700;">Total débité</td>
+              <td style="font-weight: 700;">${(transaction.totalAmount * exchangeRate).toLocaleString()} XAF</td>
+            </tr>
+          </table>
+        </div>
+        
+        <!-- Amount Received (IMPORTANT: amount sent without fees) -->
+        <div class="amount-received">
+          <span>💰 MONTANT REÇU PAR LE BÉNÉFICIAIRE</span>
+          <strong>${(transaction.amount * exchangeRate).toLocaleString()} XAF</strong>
+        </div>
+        
+        <div style="background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 12px 15px; margin: 20px 0; display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 20px;">ℹ️</span>
+          <span style="color: #9a3412; font-size: 13px;">
+            <strong>Note importante:</strong> Le bénéficiaire reçoit exactement ${(transaction.amount * exchangeRate).toLocaleString()} XAF, 
+            soit l'équivalent du montant envoyé (${transaction.amount.toLocaleString()} CAD) sans déduction des frais. 
+            Les frais de ${transaction.sendoFees.toLocaleString()} CAD (${(transaction.sendoFees * exchangeRate).toLocaleString()} XAF) sont à la charge de l'expéditeur.
+          </span>
+        </div>
+        
+        <!-- Transaction Reference -->
+        <div class="reference-number">
+          📋 Référence de transaction: ${transaction.transactionId}
+        </div>
+        
+        <!-- Footer -->
+        <!-- Footer with Legal Information -->
+          <div class="footer">
+            <div style="background: #f8fafc; padding: 20px; border-radius: 12px; margin-bottom: 20px; text-align: left; border-left: 4px solid #11998e;">
+              <p style="font-size: 12px; color: #1e293b; margin: 0 0 10px 0; line-height: 1.5;">
+                <strong style="color: #0f172a;">Sendo</strong> est enregistrée comme entreprise de services monétaires auprès du Centre d’analyse des opérations et déclarations financières du Canada (CANAFE) sous le numéro d'enregistrement <strong style="color: #0f172a;">C100000856</strong>. Sendo est également titulaire d'un permis délivré par Revenu Québec sous le numéro <strong style="color: #0f172a;">19525</strong>.
+              </p>
+              <p style="font-size: 12px; color: #1e293b; margin: 0 0 5px 0; line-height: 1.5;">
+                Au Cameroun, Sendo opère en partenariat avec <strong style="color: #0f172a;">Maviance</strong>, agrégateur de paiement agréé en Afrique, ainsi qu'avec des banques partenaires pour l'émission de ses cartes Visa.
+              </p>
+            </div>
+            
+            <div style="border-top: 1px solid #e2e8f0; padding-top: 20px; margin-top: 10px;">
+              <p style="font-size: 14px; font-weight: 600; color: #1e293b; margin-bottom: 8px;">
+                CE REÇU EST UN JUSTIFICATIF OFFICIEL DE TRANSFERT
+              </p>
+              <p style="font-size: 12px; color: #475569; margin-bottom: 5px;">
+                Ce document a été généré électroniquement par Sendo le ${emissionDate} à ${moment().format('HH:mm')}.
+              </p>
+              <p style="font-size: 12px; color: #475569; margin-bottom: 15px;">
+                Il est valable sans signature manuscrite conformément aux conditions générales d'utilisation du service.
+              </p>
+              <p style="font-size: 11px; color: #64748b; margin-top: 15px;">
+                Sendo - Transferts d'argent internationaux • support@sendo.com • www.sendo.com
+              </p>
+            </div>
+          </div>
+      </div>
+    </div>
+  </body>
+  </html>
+  `;
+};
+
+// Ajoutez cette fonction pour générer un reçu de souscription de fonds
+const generateFundSubscriptionReceiptHTML = (transaction, userData, logoBase64) => {
+  const logoUrl = logoBase64;
+  const subscriptionDate = moment(transaction.createdAt).format('DD/MM/YYYY HH:mm');
+  const emissionDate = moment().format('DD/MM/YYYY');
+  
+  // Calcul du prorata en fonction de la date de souscription
+  const currentYear = new Date().getFullYear();
+  const startOfYear = new Date(currentYear, 0, 1);
+  const endOfYear = new Date(currentYear, 11, 31);
+  const subscriptionDateTime = new Date(transaction.createdAt);
+  
+  // Calcul du nombre de jours restants dans l'année
+  const daysInYear = 365;
+  const daysPassed = Math.floor((subscriptionDateTime - startOfYear) / (1000 * 60 * 60 * 24));
+  const daysRemaining = daysInYear - daysPassed;
+  const prorataFactor = daysRemaining / daysInYear;
+  
+  // Récupérer les informations du fond depuis la description
+  const fundName = transaction.description?.replace('Souscription : #', '') || 'Sdo Secure Fund';
+  
+  // Taux de rendement annuel (à récupérer depuis les données du fond)
+  const annualReturnRate = 10; // 10% par défaut, à remplacer par la valeur réelle
+  const investmentAmount = transaction.amount;
+  const annualCommission = (investmentAmount * annualReturnRate) / 100;
+  const prorataCommission = annualCommission * prorataFactor;
+  
+  // Date de fin de souscription
+  const subscriptionEndDate = moment(endOfYear).format('DD/MM/YYYY');
+
+  return `
+  <!DOCTYPE html>
+  <html lang="fr">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sendo - Reçu Souscription Fonds Bloqué</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      
+      body {
+        font-family: 'Helvetica', 'Arial', sans-serif;
+        background: linear-gradient(135deg, #2C3E50 0%, #3498db 100%);
+        padding: 30px 20px;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      
+      .receipt {
+        max-width: 850px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 30px 60px rgba(0,0,0,0.1);
+        overflow: hidden;
+      }
+      
+      .receipt-header {
+        background: linear-gradient(135deg, #2C3E50 0%, #3498db 100%);
+        padding: 30px 35px;
+        color: white;
+      }
+      
+      .receipt-header-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+      
+      .logo-container {
+        background: white;
+        padding: 10px;
+        border-radius: 12px;
+        display: inline-block;
+      }
+      
+      .logo {
+        height: 50px;
+        width: auto;
+        display: block;
+      }
+      
+      .receipt-title {
+        text-align: right;
+      }
+      
+      .receipt-title h1 {
+        font-size: 24px;
+        font-weight: 700;
+        margin-bottom: 5px;
+        letter-spacing: 1px;
+      }
+      
+      .receipt-title p {
+        font-size: 14px;
+        opacity: 0.9;
+      }
+      
+      .fund-badge {
+        background: rgba(255,255,255,0.2);
+        padding: 12px 20px;
+        border-radius: 10px;
+        margin-top: 15px;
+      }
+      
+      .fund-badge span {
+        font-size: 16px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      
+      .receipt-body {
+        padding: 35px;
+      }
+      
+      .info-section {
+        background: #f8fafc;
+        padding: 25px;
+        border-radius: 16px;
+        margin-bottom: 25px;
+      }
+      
+      .info-section h2 {
+        color: #1e293b;
+        font-size: 18px;
+        font-weight: 700;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #e2e8f0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      
+      .info-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+      }
+      
+      .info-row {
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 15px;
+      }
+      
+      .info-label {
+        color: #64748b;
+        font-size: 12px;
+        font-weight: 500;
+        margin-bottom: 4px;
+      }
+      
+      .info-value {
+        color: #0f172a;
+        font-size: 16px;
+        font-weight: 600;
+      }
+      
+      .amount-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 25px;
+        border-radius: 16px;
+        margin-bottom: 25px;
+      }
+      
+      .amount-title {
+        font-size: 14px;
+        opacity: 0.9;
+        margin-bottom: 8px;
+      }
+      
+      .amount-number {
+        font-size: 36px;
+        font-weight: 700;
+        margin-bottom: 5px;
+      }
+      
+      .amount-currency {
+        font-size: 18px;
+        opacity: 0.9;
+      }
+      
+      .returns-section {
+        background: #f0f9ff;
+        border: 1px solid #bae6fd;
+        border-radius: 16px;
+        padding: 25px;
+        margin-bottom: 25px;
+      }
+      
+      .returns-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+      
+      .returns-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: #0369a1;
+      }
+      
+      .rate-badge {
+        background: #0369a1;
+        color: white;
+        padding: 6px 15px;
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: 600;
+      }
+      
+      .returns-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+      }
+      
+      .return-item {
+        background: white;
+        padding: 15px;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+      }
+      
+      .return-label {
+        color: #64748b;
+        font-size: 12px;
+        margin-bottom: 5px;
+      }
+      
+      .return-value {
+        color: #0f172a;
+        font-size: 20px;
+        font-weight: 700;
+      }
+      
+      .return-sub {
+        color: #64748b;
+        font-size: 11px;
+        margin-top: 5px;
+      }
+      
+      .prorata-info {
+        background: #fff7ed;
+        border: 1px solid #fed7aa;
+        border-radius: 12px;
+        padding: 15px;
+        margin-top: 15px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      
+      .prorata-info span {
+        color: #9a3412;
+        font-size: 13px;
+      }
+      
+      .subscription-period {
+        background: #f8fafc;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 25px;
+        border: 1px solid #e2e8f0;
+      }
+      
+      .period-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 15px;
+      }
+      
+      .period-header h3 {
+        color: #1e293b;
+        font-size: 16px;
+        font-weight: 600;
+      }
+      
+      .period-dates {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      
+      .date-item {
+        text-align: center;
+      }
+      
+      .date-label {
+        color: #64748b;
+        font-size: 11px;
+        margin-bottom: 4px;
+      }
+      
+      .date-value {
+        color: #0f172a;
+        font-size: 14px;
+        font-weight: 600;
+      }
+      
+      .timeline {
+        flex: 1;
+        margin: 0 20px;
+        position: relative;
+      }
+      
+      .timeline-bar {
+        height: 4px;
+        background: #e2e8f0;
+        border-radius: 2px;
+        position: relative;
+      }
+      
+      .timeline-progress {
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 4px;
+        background: #10b981;
+        border-radius: 2px;
+        width: ${prorataFactor * 100}%;
+      }
+      
+      .footer {
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 2px dashed #cbd5e1;
+      }
+      
+      .legal-info {
+        background: #f8fafc;
+        padding: 20px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+        text-align: left;
+        border-left: 4px solid #2C3E50;
+      }
+      
+      .legal-info p {
+        font-size: 11px;
+        color: #334155;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+      
+      .certification {
+        text-align: center;
+      }
+      
+      .certification p {
+        color: #475569;
+        font-size: 12px;
+        line-height: 1.6;
+      }
+      
+      .reference-number {
+        background: #f1f5f9;
+        padding: 12px 20px;
+        border-radius: 8px;
+        font-family: monospace;
+        font-size: 14px;
+        font-weight: 600;
+        color: #1e293b;
+        margin-top: 15px;
+        text-align: center;
+      }
+      
+      @media print {
+        body {
+          background: white;
+          padding: 0;
+        }
+        .receipt {
+          box-shadow: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="receipt">
+      <!-- Header -->
+      <div class="receipt-header">
+        <div class="receipt-header-top">
+          <div class="logo-container">
+            <img class="logo" src="${logoUrl}" alt="Sendo Logo">
+          </div>
+          <div class="receipt-title">
+            <h1>REÇU DE SOUSCRIPTION</h1>
+            <p>FONDS BLOQUÉ</p>
+          </div>
+        </div>
+        <div class="fund-badge">
+          <span>🔒 ${fundName}</span>
+        </div>
+      </div>
+      
+      <!-- Body -->
+      <div class="receipt-body">
+        <!-- Montant investi -->
+        <div class="amount-card">
+          <div class="amount-title">Montant investi</div>
+          <div class="amount-number">${investmentAmount.toLocaleString()}</div>
+          <div class="amount-currency">XAF</div>
+        </div>
+        
+        <!-- Informations souscripteur -->
+        <div class="info-section">
+          <h2>👤 SOUSCRIPTEUR</h2>
+          <div class="info-grid">
+            <div class="info-row">
+              <span class="info-label">Nom complet</span>
+              <span class="info-value">${userData?.lastname || ''} ${userData?.firstname || ''}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Téléphone</span>
+              <span class="info-value">${userData?.phone || ''}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Email</span>
+              <span class="info-value">${userData?.email || ''}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Pays</span>
+              <span class="info-value">${userData?.country || 'Cameroun'}</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Rendements -->
+        <div class="returns-section">
+          <div class="returns-header">
+            <span class="returns-title"> RENDEMENT ANNUEL</span>
+            <span class="rate-badge">${annualReturnRate}%</span>
+          </div>
+          
+          <div class="returns-grid">
+            <div class="return-item">
+              <div class="return-label">Commission annuelle (pleine)</div>
+              <div class="return-value">${annualCommission.toLocaleString()} XAF</div>
+              <div class="return-sub">Basée sur ${annualReturnRate}% de ${investmentAmount.toLocaleString()} XAF</div>
+            </div>
+            <div class="return-item">
+              <div class="return-label">Commission au prorata</div>
+              <div class="return-value">${prorataCommission.toFixed(0).toLocaleString()} XAF</div>
+              <div class="return-sub">${daysRemaining} jours restants sur ${daysInYear} jours</div>
+            </div>
+          </div>
+          
+          <div class="prorata-info">
+            <span style="font-size: 20px;">⏳</span>
+            <span>
+              <strong>Calcul au prorata temporis :</strong> Souscription le ${subscriptionDate}, 
+              ${daysRemaining} jours de placement en ${currentYear} (${(prorataFactor * 100).toFixed(1)}% de l'année)
+            </span>
+          </div>
+        </div>
+        
+        <!-- Période de blocage -->
+        <div class="subscription-period">
+          <div class="period-header">
+            <span style="font-size: 20px;">📅</span>
+            <h3>PÉRIODE DE BLOCAGE</h3>
+          </div>
+          
+          <div class="period-dates">
+            <div class="date-item">
+              <div class="date-label">Date de souscription</div>
+              <div class="date-value">${subscriptionDate}</div>
+            </div>
+            
+            <div class="timeline">
+              <div class="timeline-bar">
+                <div class="timeline-progress"></div>
+              </div>
+              <div style="display: flex; justify-content: space-between; margin-top: 5px;">
+                <span style="font-size: 10px; color: #64748b;">Début</span>
+                <span style="font-size: 10px; color: #64748b;">Fin</span>
+              </div>
+            </div>
+            
+            <div class="date-item">
+              <div class="date-label">Fin de blocage</div>
+              <div class="date-value">${subscriptionEndDate}</div>
+            </div>
+          </div>
+          
+          <p style="color: #64748b; font-size: 11px; margin-top: 15px; text-align: center; font-style: italic;">
+            * Les fonds sont bloqués jusqu'au 31 décembre ${currentYear}. 
+            La commission sera versée au prorata du temps de placement.
+          </p>
+        </div>
+        
+        <!-- Transaction Reference -->
+        <div class="reference-number">
+          📋 Référence de transaction: ${transaction.transactionId}
+        </div>
+        
+        <!-- Footer with Legal Information -->
+        <div class="footer">
+          <div class="legal-info">
+            <p>
+              <strong>Sendo</strong> est enregistrée comme entreprise de services monétaires auprès du Centre d'analyse des opérations et déclarations financières du Canada (CANAFE) sous le numéro d'enregistrement <strong>C100000856</strong>. Sendo est également titulaire d'un permis délivré par Revenu Québec sous le numéro <strong>19525</strong>.
+            </p>
+            <p>
+              Au Cameroun, Sendo opère en partenariat avec <strong>Maviance</strong>, agrégateur de paiement agréé en Afrique, ainsi qu'avec des banques partenaires pour l'émission de ses cartes Visa.
+            </p>
+          </div>
+          
+          <div class="certification">
+            <p style="font-size: 13px; font-weight: 600; color: #1e293b; margin-bottom: 5px;">
+              CE REÇU EST UN JUSTIFICATIF OFFICIEL DE SOUSCRIPTION
+            </p>
+            <p>
+              Ce document a été généré électroniquement par Sendo le ${emissionDate}.
+            </p>
+            <p style="margin-top: 10px; color: #64748b; font-size: 11px;">
+              Sendo - Transferts d'argent internationaux • support@sendo.com • www.sendo.com
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+  </html>
+  `;
+};
+
+// Mettez à jour la fonction handleDownloadReceipt
+const handleDownloadReceipt = async () => {
+  if (transaction.status !== 'COMPLETED' && transaction.status !== 'FAILED') {
+    Alert.alert(
+      "Reçu indisponible",
+      "Le reçu est uniquement disponible pour les transactions réussies ou échouées"
+    );
+    return;
+  }
+
+  setIsGenerating(true);
+  try {
+    const logoUrl = "https://res.cloudinary.com/dviktmefh/image/upload/v1758140850/WhatsApp_Image_2025-09-17_at_21.26.01_hjgtfa.jpg";
+    
+    // Générer le HTML en fonction du type de transaction
+    let html;
+    if (transaction.description === "Transfert CAM-CA") {
+      html = generateCAMCAReceiptHTML(transaction, userData, userInfos, logoUrl);
+    } else if (transaction.description === "Transfert CA-CAM") {
+      html = generateCACAMReceiptHTML(transaction, userData, userInfos, logoUrl);
+    } else if (transaction.type === 'FUND_SUBSCRIPTION') {
+      html = generateFundSubscriptionReceiptHTML(transaction, userData, logoUrl);
+    } else {
+      html = generateReceiptHTML(transaction, user, getTypeLabel, logoUrl);
+    }
+    
+    const { uri } = await Print.printToFileAsync({ html });
+    
+    // Nom du fichier adapté au type de transaction
+    let fileName = 'Reçu_Sendo';
+    if (transaction.type === 'FUND_SUBSCRIPTION') {
+      fileName = `Souscription_Fonds_${transaction.transactionId}`;
+    } else if (transaction.description === "Transfert CAM-CA") {
+      fileName = `Transfert_CAM-CA_${transaction.transactionId}`;
+    } else if (transaction.description === "Transfert CA-CAM") {
+      fileName = `Transfert_CA-CAM_${transaction.transactionId}`;
+    } else {
+      fileName = `Reçu_Sendo_${transaction.transactionId}`;
+    }
+    
+    const newUri = `${FileSystem.documentDirectory}${fileName}.pdf`;
+    await FileSystem.moveAsync({ from: uri, to: newUri });
+
+    if (await Sharing.isAvailableAsync()) {
+      await Sharing.shareAsync(newUri);
+    } else {
+      Alert.alert("Succès", "Reçu généré avec succès");
+    }
+  } catch (error) {
+    console.error("Error generating receipt:", error);
+    Alert.alert("Erreur", "Échec de génération du reçu. Veuillez réessayer.");
+  } finally {
+    setIsGenerating(false);
+  }
+};
+
+
 
   const generateReceiptHTML = (transaction, user, getTypeLabel, logoBase64) => {
     const displayType = getTransactionDisplayType(transaction);
@@ -626,10 +1928,31 @@ const ReceiptScreen = () => {
       </div>
       ` : ''}
 
-      <div class="footer">
-        Ce reçu a été généré automatiquement le ${moment().format('DD/MM/YYYY HH:mm')}<br>
-        et peut être utilisé comme justificatif de transaction.
+     <div class="footer">
+      <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin-bottom: 20px; text-align: left; border: 1px solid #e2e8f0;">
+        <p style="font-size: 11px; color: #334155; margin: 0 0 10px 0; line-height: 1.5;">
+          <strong>Sendo</strong> est enregistrée comme entreprise de services monétaires auprès du Centre d’analyse des opérations et déclarations financières du Canada (CANAFE) sous le numéro d'enregistrement <strong>C100000856</strong>. Sendo est également titulaire d'un permis délivré par Revenu Québec sous le numéro <strong>19525</strong>.
+        </p>
+        <p style="font-size: 11px; color: #334155; margin: 0 0 5px 0; line-height: 1.5;">
+          Au Cameroun, Sendo opère en partenariat avec <strong>Maviance</strong>, agrégateur de paiement agréé en Afrique, ainsi qu'avec des banques partenaires pour l'émission de ses cartes Visa.
+        </p>
       </div>
+      
+      <div style="border-top: 1px solid #ecf0f1; padding-top: 15px;">
+        <p style="font-size: 13px; font-weight: bold; color: #2c3e50; margin-bottom: 5px;">
+          CE REÇU EST UN JUSTIFICATIF OFFICIEL DE TRANSFERT
+        </p>
+        <p style="font-size: 11px; color: #5f6b7a; margin: 5px 0;">
+          Ce document a été généré électroniquement par Sendo le ${moment().format('DD/MM/YYYY HH:mm')}.
+        </p>
+        <p style="font-size: 11px; color: #5f6b7a; margin: 5px 0 15px 0;">
+          Il est valable sans signature manuscrite conformément aux conditions générales d'utilisation du service.
+        </p>
+        <p style="font-size: 10px; color: #7f8c8d; margin-top: 15px;">
+          Sendo - Transferts d'argent internationaux • support@sendo.com • www.sendo.com
+        </p>
+      </div>
+    </div>
     </body>
     </html>
     `;
@@ -895,10 +2218,12 @@ const ReceiptScreen = () => {
           <Text className="text-green-600 font-semibold my-1">Reçu</Text>
           <Text className="text-gray-600 text-sm">Montant de la transaction: {transaction.amount} {transaction.currency}</Text>
           <Text className="text-gray-600 text-sm">
-            Frais de transaction: ${(transaction.sendoFees || 0)} ${transaction.currency}
+           Frais de transaction: {(transaction.sendoFees || 0).toLocaleString()} {transaction.currency}
           </Text>
 
-          <Text className="text-gray-600 text-sm mb-2">Total: {transaction.totalAmount} {transaction.currency}</Text>
+          <Text className="text-gray-600 text-sm mb-2">
+            Total: {transaction.totalAmount.toLocaleString()} {transaction.currency}
+          </Text>
 
           <Text className="text-green-600 font-semibold mt-2">Détails de la transaction</Text>
           <Text className="text-gray-600 text-sm">
@@ -922,7 +2247,9 @@ const ReceiptScreen = () => {
               <Loader color="white" />
             ) : (
               <Text className="text-white font-bold">
-                {isCAMCATransfer 
+                {transaction.type === 'FUND_SUBSCRIPTION' 
+                  ? 'TÉLÉCHARGER LE REÇU DE SOUSCRIPTION'
+                  : isCAMCATransfer 
                   ? 'TÉLÉCHARGER LE REÇU CAM-CA'
                   : transaction.status === 'COMPLETED'
                   ? 'TÉLÉCHARGER LE REÇU'

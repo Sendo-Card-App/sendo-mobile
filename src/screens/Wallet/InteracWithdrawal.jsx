@@ -68,18 +68,18 @@ const InteracWithdrawal = ({ navigation }) => {
     if (email && email.length > 5) {
       const timer = setTimeout(() => {
         setShowEmailWarning(true);
-      }, 5000); // Show warning after 1 second of typing
+      }, 5000); // Show warning after 5 second of typing
 
       return () => clearTimeout(timer);
     }
   }, [email]);
 
-  // Close email warning after 5 seconds
+  // Close email warning after 15 seconds
   useEffect(() => {
     if (showEmailWarning) {
       const timer = setTimeout(() => {
         setShowEmailWarning(false);
-      }, 10000); // Close after 5 seconds
+      }, 15000); // Close after 15 seconds
       return () => clearTimeout(timer);
     }
   }, [showEmailWarning]);

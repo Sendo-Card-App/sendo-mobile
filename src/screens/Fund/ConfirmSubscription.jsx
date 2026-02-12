@@ -33,7 +33,9 @@ const ConfirmSubscription = () => {
     });
   };
 
-  const handleConfirmSubscription = async () => {
+    
+    const handleConfirmSubscription = async () => {
+   
     try {
       const result = await subscribe({
         fundId: fund.id,
@@ -41,8 +43,8 @@ const ConfirmSubscription = () => {
       }).unwrap();
 
       Alert.alert(
-        t('blockedFunds.subscriptionSuccess'),
-        t('blockedFunds.subscriptionSuccessMessage'),
+        t('blockedFunds.subscriptionSuccess') || 'Souscription réussie',
+        t('blockedFunds.subscriptionSuccessMessage') || 'Votre souscription a été effectuée avec succès',
         [
           {
             text: 'OK',
@@ -51,11 +53,43 @@ const ConfirmSubscription = () => {
         ]
       );
     } catch (error) {
-         console.log("Subscription error:", JSON.stringify(error, null, 2));
+      console.log("Subscription error:", JSON.stringify(error, null, 2));
+      
+      // Analyser la structure de l'erreur
+      let errorMessage = '';
+      
+      // Cas 1: Erreur avec structure { status, message, data }
+      if (error.data?.errors) {
+        // Gérer le cas où data.errors est un tableau
+        if (Array.isArray(error.data.errors)) {
+          errorMessage = error.data.errors.join('\n');
+        } else {
+          errorMessage = error.data.message || error.message || 'Erreur de souscription';
+        }
+      } 
+      // Cas 2: Erreur avec structure directe
+      else if (error.message) {
+        errorMessage = error.message;
+      }
+      // Cas 3: Erreur avec data.message
+      else if (error.data?.message) {
+        errorMessage = error.data.message;
+      }
+      // Cas 4: Erreur avec status et message
+      else if (error.status && error.message) {
+        errorMessage = error.message;
+      }
+      // Cas 5: Fallback - On garde le message en français
+      else {
+        errorMessage = 'Une erreur est survenue lors de la souscription';
+      }
+
+      // Ne PAS traduire - Afficher le message d'erreur exact du backend
+      // Supprimer toute tentative de traduction ou reformulation
       
       Alert.alert(
-        t('blockedFunds.subscriptionError'),
-        error.data?.message || t('blockedFunds.subscriptionErrorMessage'),
+        'Erreur de souscription', // Toujours en français, pas de traduction
+        errorMessage, // Message exact du backend
         [{ text: 'OK' }]
       );
     }
@@ -156,10 +190,6 @@ const ConfirmSubscription = () => {
               <FeatureItem 
                 text="Fonds sécurisés et assurés"
                 icon="shield-checkmark"
-              />
-              <FeatureItem 
-                text="Retrait des commissions possible"
-                icon="cash-outline"
               />
               <FeatureItem 
                 text="Période limitée jusqu'au 31/12"

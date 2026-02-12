@@ -2029,7 +2029,11 @@
     "completedMonths": "{{months}} mois terminés",
     "remainingMonths": "{{months}} mois restants",
     "highYield": "Rendement Élevé",
-    "investInPlan": "Investir dans ce plan"
+    "investInPlan": "Investir dans ce plan",
+     "longTerm": "Long terme",
+    "profitable": "Rentable",
+     "subscriptionPeriod": "Période de souscription",
+    "subscriptionWindow": "Fenêtre de souscription"
   },
   "tabs2": {
     "fundsList": "Fonds Disponibles",
