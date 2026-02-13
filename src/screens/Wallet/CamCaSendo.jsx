@@ -79,8 +79,9 @@ const CamCaSendo = ({ navigation }) => {
     return configItem ? configItem.value : null;
   };
 
-  const SENDO_VALUE_CAD_CA_CAM = getConfigValue('SENDO_VALUE_CAD_CA_CAM');
-  const exchangeRate = SENDO_VALUE_CAD_CA_CAM || 482; 
+  const SENDO_VALUE_CAD_CAM_CA = getConfigValue('SENDO_VALUE_CAD_CAM_CA');
+  const exchangeRate = SENDO_VALUE_CAD_CAM_CA || 482; 
+  // console.log(exchangeRate)
   const TRANSFER_CAM_CA_AVAILABILITY = getConfigValue("TRANSFER_CAM_CA_AVAILABILITY");
 
   // Debounce walletId input
@@ -196,7 +197,7 @@ const CamCaSendo = ({ navigation }) => {
         setFeeError(null);
         
         const response = await getTransferFees(transferAmount).unwrap();
-        
+        //console.log(response)
         if (response.status === 200 && response.data) {
           setTransferFeesXAF(response.data.feesXAF || 0);
           setTransferFeesCAD(response.data.feesCAD || 0);

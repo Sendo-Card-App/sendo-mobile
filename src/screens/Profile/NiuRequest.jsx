@@ -101,7 +101,8 @@ const {
   const niuConfig = configData?.data?.find(item => item.name === "NIU_REQUEST_FEES");
   const feeAmount = Number(niuConfig?.value) || 0;
   const SENDO_VALUE_CAD_CA_CAM = configData?.data?.find(item => item.name === "SENDO_VALUE_CAD_CA_CAM");
-  const feeAmountCAD = feeAmount / (Number(SENDO_VALUE_CAD_CA_CAM?.value) || 1);
+  const rawFeeAmountCAD = feeAmount / (Number(SENDO_VALUE_CAD_CA_CAM?.value) || 1);
+  const feeAmountCAD = Math.round(rawFeeAmountCAD); // Rounds to nearest integer
 
   const {
     data: balanceData,

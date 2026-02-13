@@ -88,6 +88,32 @@ const WalletTransfer = ({ navigation }) => {
     isLoading: isRecipientLoading,
     isError: isRecipientError,
   } = useGetWalletDetailsQuery(debouncedWalletId, { skip: !debouncedWalletId });
+  
+  // Log recipient data for debugging
+  useEffect(() => {
+    if (recipientData) {
+      console.log("Recipient data:", JSON.stringify(recipientData, null, 2));
+    }
+  }, [recipientData]);
+
+  // Check if recipient is in Canada and redirect if necessary
+  useEffect(() => {
+    if (recipientData?.data?.user?.country === "Canada") {
+      // Store the data in navigation params and navigate to CamCaSendo
+      navigation.navigate("CamCaSendo", {
+        recipientData: recipientData.data,
+        senderData: {
+          walletId: userWalletId,
+          balance: balanceData?.data?.balance,
+          currency: balanceData?.data?.currency,
+          country: userProfile?.data?.user?.country
+        }
+      });
+      // Clear the walletId to prevent further processing
+      setWalletId('');
+      setRecipientName('');
+    }
+  }, [recipientData, navigation, userWalletId, balanceData, userProfile]);
 
   useEffect(() => {
     if (recipientData?.data?.user) {

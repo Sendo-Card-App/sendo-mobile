@@ -101,7 +101,7 @@ const HomeScreen = () => {
       pollingInterval: 1000,
     }
   );
-
+// console.log("User Profile in history:", JSON.stringify(history, null, 2));
   const { data: pubs, isLoading: isLoadingPubs } = useGetPubsQuery(undefined, {
     skip: isUpdateRequired || !versionCheckCompleted
   });
@@ -121,6 +121,15 @@ const HomeScreen = () => {
 
   const notifications = notificationsResponse?.data?.items || [];
   const unreadCount = notifications.filter(notification => !notification.readed).length;
+
+    const getExchangeRate = () => {
+      const config = configData?.data;
+      const rate = config?.find(item => item.name === 'SENDO_VALUE_CAD_CAM_CA')?.value;
+      return rate ? parseFloat(rate) : 482; // Default to 482 if not found
+    };
+
+  const exchangeRate = getExchangeRate();
+
 
   // Function to compare version numbers safely
   const compareVersions = (v1, v2) => {
@@ -502,6 +511,78 @@ const HomeScreen = () => {
       default: return type;
     }
   };
+  
+
+   const formatTransactionDisplay = (item) => {
+    let displayAmount = item.amount;
+    let displayCurrency = item.currency;
+    let displayDescription = item.description;
+
+    // Handle CAM-CA transfers (Cameroun -> Canada)
+    if (item.description === "Transfert CAM-CA") {
+      // Convert XAF to CAD
+      const amountInCAD = (item.amount / exchangeRate).toFixed(2);
+      const totalInCAD = (item.totalAmount / exchangeRate).toFixed(2);
+      
+      return {
+        amount: `${amountInCAD} CAD`,
+        total: `${totalInCAD} CAD`,
+        description: "Transfert CAM-CA",
+        showRate: true,
+        rate: exchangeRate
+      };
+    }
+
+    // Handle FUND_SUBSCRIPTION transactions
+    if (item.type === "FUND_SUBSCRIPTION") {
+      return {
+        amount: item.amount,
+        total: item.totalAmount,
+        description: item.description?.replace("Souscription : #", "Fonds: ") || "Souscription de fonds",
+        currency: item.currency,
+        showRate: false
+      };
+    }
+
+    // Handle regular transactions
+    if (
+      item.type === "PAYMENT" ||
+      item.type === "TONTINE_PAYMENT" ||
+      item.type === "VIEW_CARD_DETAILS"
+    ) {
+      displayAmount = item.totalAmount;
+    } else if (
+      item.description?.trim() === "Retrait par SENDO" ||
+      item.description?.trim() === "Dépôt par SENDO"
+    ) {
+      displayAmount = item.totalAmount;
+    }
+
+    // Handle description for certain types
+    if (
+      item.type?.toUpperCase() === "DEPOSIT" &&
+      item.method?.toUpperCase() === "BANK_TRANSFER" &&
+      displayDescription &&
+      (displayDescription.startsWith("http://") || displayDescription.startsWith("https://"))
+    ) {
+      displayDescription = t("home.viewDocument");
+    }
+
+    if (item.type?.toUpperCase() === "TONTINE_PAYMENT" && displayDescription) {
+      displayDescription = displayDescription.replace(/#\d+/, "").trim();
+    }
+
+    return {
+      amount: displayAmount,
+      total: item.totalAmount,
+      description: displayDescription,
+      currency: displayCurrency,
+      showRate: false
+    };
+  };
+
+  
+  
 
   const ReferralSuccessModal = () => (
     <Modal
@@ -917,39 +998,6 @@ const HomeScreen = () => {
         <ScrollView showsVerticalScrollIndicator={false}>
           {history?.data?.transactions?.items?.map((item, index) => {
             const statusColor = getStatusColor(item.status);
-            let description = item.description;
-
-            if (
-              item.type?.toUpperCase() === "DEPOSIT" &&
-              item.method?.toUpperCase() === "BANK_TRANSFER" &&
-              description &&
-              (description.startsWith("http://") || description.startsWith("https://"))
-            ) {
-              description = t("home.viewDocument");
-            }
-
-            if (item.type?.toUpperCase() === "TONTINE_PAYMENT" && description) {
-              description = description.replace(/#\d+/, "").trim();
-            }
-
-            const iconSource = getMethodIcon(item);
-
-            let displayAmount;
-            if (
-              item.type === "PAYMENT" ||
-              item.type === "TONTINE_PAYMENT" ||
-              item.type === "VIEW_CARD_DETAILS"
-            ) {
-              displayAmount = item.totalAmount;
-            } else if (
-              description?.trim() === "Retrait par SENDO" ||
-              description?.trim() === "Dépôt par SENDO"
-            ) {
-              displayAmount = item.totalAmount;
-            } else {
-              displayAmount = item.amount;
-            }
-
             const formattedDate = new Date(item.createdAt).toLocaleString("fr-FR", {
               day: "2-digit",
               month: "short",
@@ -957,6 +1005,9 @@ const HomeScreen = () => {
               hour: "2-digit",
               minute: "2-digit",
             });
+            
+            const iconSource = getMethodIcon(item);
+            const display = formatTransactionDisplay(item);
 
             return (
               <TouchableOpacity
@@ -975,10 +1026,22 @@ const HomeScreen = () => {
                   resizeMode="contain"
                 />
                 <View className="flex-1">
-                  <Text className="text-black font-semibold">{description}</Text>
-                  <Text className="text-black text-sm">
-                    {displayAmount?.toLocaleString()} {item.currency}
-                  </Text>
+                  <Text className="text-black font-semibold">{display.description}</Text>
+                  <View className="flex-row items-center flex-wrap">
+                    <Text className="text-black text-sm">
+                      {display.showRate 
+                        ? display.amount 
+                        : `${typeof display.amount === 'number' ? display.amount.toLocaleString() : display.amount} ${display.currency || ''}`
+                      }
+                    </Text>
+                    {item.type === "FUND_SUBSCRIPTION" && (
+                      <View className="ml-2 bg-green-100 px-2 py-0.5 rounded-full">
+                        <Text className="text-purple-700 text-[10px] font-medium">
+                          Fonds bloqué
+                        </Text>
+                      </View>
+                    )}
+                  </View>
                 </View>
                 <View className="items-end">
                   <Text className={`text-xs font-semibold ${statusColor}`}>

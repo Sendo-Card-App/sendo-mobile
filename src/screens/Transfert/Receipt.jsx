@@ -8,7 +8,7 @@ import {
   Platform,
   StatusBar
 } from "react-native";
-import { AntDesign } from "@expo/vector-icons";
+import { AntDesign,Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Asset } from 'expo-asset';
 import { useNavigation, useRoute } from "@react-navigation/native";
@@ -55,12 +55,41 @@ const ReceiptScreen = () => {
     return configItem ? parseFloat(configItem.value) : null;
   };
 
-  const SENDO_VALUE_CAD_CA_CAM = getConfigValue('SENDO_VALUE_CAD_CA_CAM');
-  const exchangeRate = SENDO_VALUE_CAD_CA_CAM || 482; 
+  const SENDO_VALUE_CAD_CAM_CA = getConfigValue('SENDO_VALUE_CAD_CAM_CA');
+  const exchangeRate = SENDO_VALUE_CAD_CAM_CA || 482; 
 
   // Check if this is a CAM-CA transfer or CA-CAM transfer based on description
   const isCAMCATransfer = transaction?.description === "Transfert CAM-CAM" || transaction?.description === "Transfert CAM-CA";
   const isCACAMTransfer = transaction?.description === "Transfert CA-CAM";;
+
+ 
+const getDisplayAmounts = () => {
+  if (isCAMCATransfer) {
+    // Convert XAF to CAD using the exchange rate
+    const amountInCAD = (transaction.amount / exchangeRate).toFixed(2);
+    const feesInCAD = ((transaction.sendoFees || 0) / exchangeRate).toFixed(2);
+    const totalInCAD = (transaction.totalAmount / exchangeRate).toFixed(2);
+    
+    return {
+      amount: `${amountInCAD} CAD`,
+      fees: `${feesInCAD} CAD`,
+      total: `${totalInCAD} CAD`,
+      exchangeRate: `1 CAD = ${exchangeRate} XAF`
+    };
+  } else {
+    // Normal display in original currency
+    return {
+      amount: `${transaction.amount} ${transaction.currency}`,
+      fees: `${(transaction.sendoFees || 0).toLocaleString()} ${transaction.currency}`,
+      total: `${transaction.totalAmount.toLocaleString()} ${transaction.currency}`,
+      exchangeRate: null
+    };
+  }
+};
+
+const displayAmounts = getDisplayAmounts();
+
+// Then in your JSX, find the amount section (around line 800-820) and replace it with:
 
   if (!transaction) {
     return (
@@ -2130,12 +2159,7 @@ const handleDownloadReceipt = async () => {
               <Text className="text-gray-600 text-sm">
                 Montant en CAD : {((transaction.amount / exchangeRate).toFixed(2))} CAD
               </Text>
-              <Text className="text-gray-600 text-sm">
-                Taux de change : 1 CAD = {exchangeRate} XAF
-              </Text>
-              <Text className="text-gray-600 text-sm mb-2">
-                Référence : {transaction.transactionId}
-              </Text>
+             
             </>
           ) : displayType === 'BANK_TRANSFER' ? (
             <>
@@ -2209,16 +2233,38 @@ const handleDownloadReceipt = async () => {
               </>
             )
           )}
+          {isCAMCATransfer && (
+            <View className="bg-blue-50 p-3 rounded-lg mb-3 border border-blue-200">
+              <View className="flex-row items-center mb-1">
+                <Ionicons name="swap-horizontal" size={16} color="#3b82f6" />
+                <Text className="text-blue-800 font-semibold text-sm ml-1">
+                  Taux de change appliqué
+                </Text>
+              </View>
+              <Text className="text-blue-700 text-sm font-medium">
+                1 CAD = {exchangeRate} XAF
+              </Text>
+            </View>
+          )}
 
+        <View className="bg-gray-50 p-3 rounded-lg">
           <Text className="text-green-600 font-semibold my-1">Reçu</Text>
-          <Text className="text-gray-600 text-sm">Montant de la transaction: {transaction.amount} {transaction.currency}</Text>
-          <Text className="text-gray-600 text-sm">
-           Frais de transaction: {(transaction.sendoFees || 0).toLocaleString()} {transaction.currency}
-          </Text>
-
-          <Text className="text-gray-600 text-sm mb-2">
-            Total: {transaction.totalAmount.toLocaleString()} {transaction.currency}
-          </Text>
+          
+          <View className="flex-row justify-between py-1">
+            <Text className="text-gray-600 text-sm">Montant de la transaction:</Text>
+            <Text className="text-gray-800 font-medium text-sm">{displayAmounts.amount}</Text>
+          </View>
+          
+          <View className="flex-row justify-between py-1">
+            <Text className="text-gray-600 text-sm">Frais de transaction:</Text>
+            <Text className="text-gray-800 font-medium text-sm">{displayAmounts.fees}</Text>
+          </View>
+          
+          <View className="flex-row justify-between py-1 border-t border-gray-200 mt-1 pt-2">
+            <Text className="text-gray-700 font-semibold text-sm">Total:</Text>
+            <Text className="text-green-700 font-bold text-base">{displayAmounts.total}</Text>
+          </View>
+        </View>
 
           <Text className="text-green-600 font-semibold mt-2">Détails de la transaction</Text>
           <Text className="text-gray-600 text-sm">

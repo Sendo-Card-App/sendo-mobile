@@ -141,14 +141,25 @@ const WalletRecharge = () => {
       return;
     }
 
-    if (!trimmedPhone || isNaN(amount) || parseFloat(amount) < 500) {
-      Toast.show({
-        type: "error",
-        text1: "Erreur",
-        text2: "Veuillez entrer un montant valide supérieur à 500 XAF.",
-      });
-      return;
-    }
+    // Validate amount range
+      const numericAmount = parseFloat(
+        amount?.toString().replace(/\s|,/g, "")
+      );
+
+      if (
+        !trimmedPhone ||
+        isNaN(numericAmount) ||
+        numericAmount < 500 ||
+        numericAmount > 490000
+      ) {
+        Toast.show({
+          type: "error",
+          text1: "Erreur",
+          text2:
+            "Le montant doit être compris entre 500 et 490 000 XAF.",
+        });
+        return;
+      }
 
     if (!userWalletId) {
       Toast.show({

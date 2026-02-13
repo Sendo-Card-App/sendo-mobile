@@ -23,9 +23,19 @@ const ConfirmSubscription = () => {
 
   const annualCommission = (amount * fund.annualCommission) / 100;
   
+  // Format current date in French format (DD/MM/YYYY)
+  const getCurrentDate = () => {
+    const today = new Date();
+    const day = String(today.getDate()).padStart(2, '0');
+    const month = String(today.getMonth() + 1).padStart(2, '0'); // January is 0
+    const year = today.getFullYear();
+    
+    return `${day}/${month}/${year}`;
+  };
+  
   const calculateEndDate = () => {
     const currentYear = new Date().getFullYear();
-    const subscriptionEnd = new Date(currentYear, 11, 31);
+    const subscriptionEnd = new Date(currentYear, 11, 31); // December 31st
     return subscriptionEnd.toLocaleDateString('fr-FR', {
       day: '2-digit',
       month: '2-digit',
@@ -33,9 +43,7 @@ const ConfirmSubscription = () => {
     });
   };
 
-    
-    const handleConfirmSubscription = async () => {
-   
+  const handleConfirmSubscription = async () => {
     try {
       const result = await subscribe({
         fundId: fund.id,
@@ -84,12 +92,9 @@ const ConfirmSubscription = () => {
         errorMessage = 'Une erreur est survenue lors de la souscription';
       }
 
-      // Ne PAS traduire - Afficher le message d'erreur exact du backend
-      // Supprimer toute tentative de traduction ou reformulation
-      
       Alert.alert(
-        'Erreur de souscription', // Toujours en français, pas de traduction
-        errorMessage, // Message exact du backend
+        'Erreur de souscription',
+        errorMessage,
         [{ text: 'OK' }]
       );
     }
@@ -166,7 +171,7 @@ const ConfirmSubscription = () => {
             
             <DetailItem 
               label="Date de début"
-              value={`${new Date().getFullYear()}-01-01`}
+              value={getCurrentDate()} // Now shows current date (e.g., "13/02/2026")
               icon="calendar-outline"
               color="#F59E0B"
             />

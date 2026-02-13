@@ -672,7 +672,7 @@
     "debtLabel": "Outstanding Debt",
  "currentBalance": "Current balance",
    "viewNumbers": "View my card numbers",
-   "amountOutOfRange": "The amount must be between 500 and 500,000 XAF",
+   "amountOutOfRange": "The amount must be between 1500 and 500,000 XAF",
    "viewInfo": "View info",
     "freeze": "Freeze",
     "unfreeze": "Unfreeze",

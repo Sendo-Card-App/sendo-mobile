@@ -71,7 +71,7 @@ const DrawerComponent = ({ navigation }) => {
       pollingInterval: 1000, // Refetch every 1 second
     }
   );
-
+//console.log("User Profile:", userProfile);
   const userId = userProfile?.data?.user?.id;
   
     const { data: profilePicture, isLoading: isPictureLoading } = useGetProfilePictureQuery(
@@ -81,6 +81,7 @@ const DrawerComponent = ({ navigation }) => {
   
   const [logout, { isLoading: isLoggingOut }] = useLogoutMutation();
   const isLoading = isProfileLoading || isProfileFetching;
+
    
    useFocusEffect(
       useCallback(() => {
@@ -383,28 +384,29 @@ Utilise mon code lors de ton inscription !`;
 
       {/* Body */}
       <View className="flex-1 mx-8">
-      <View className="border-b border-gray-400 py-3">
-        <Text className="font-bold text-gray-600">
-          {t('drawer.bonus', { amount: SPONSORSHIP_FEES })}
-        </Text>
+      { userProfile?.data?.user?.country === "Cameroon" && (
+        <View className="border-b border-gray-400 py-3">
+          <Text className="font-bold text-gray-600">
+            {t('drawer.bonus', { amount: SPONSORSHIP_FEES })}
+          </Text>
+          <Text className="text-xs text-gray-500 my-2">
+            {t('drawer.bonus_description', { amount: SPONSORSHIP_FEES })}
+          </Text>
 
-        <Text className="text-xs text-gray-500 my-2">
-          {t('drawer.bonus_description', { amount: SPONSORSHIP_FEES })}
-        </Text>
+          <Text className="text-sm text-gray-500">
+            {t('drawer.bonus_code')} {userProfile?.data?.referralCode?.code}
+          </Text>
 
-        <Text className="text-sm text-gray-500">
-          {t('drawer.bonus_code')} {userProfile?.data?.referralCode?.code}
-        </Text>
-
-        <TouchableOpacity onPress={shareReferralCode}>
-          <View className="flex-row items-center mt-2">
-            <EvilIcons name="share-google" size={24} color="#7ddd7d" />
-            <Text className="text-[#7ddd7d] font-bold">
-              {t('drawer.invite_friends')}
-            </Text>
-          </View>
-        </TouchableOpacity>
-      </View>
+          <TouchableOpacity onPress={shareReferralCode}>
+            <View className="flex-row items-center mt-2">
+              <EvilIcons name="share-google" size={24} color="#7ddd7d" />
+              <Text className="text-[#7ddd7d] font-bold">
+                {t('drawer.invite_friends')}
+              </Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+        )}
 
 
         <ScrollView
@@ -473,7 +475,7 @@ Utilise mon code lors de ton inscription !`;
               </Text>
             </View>
           </TouchableOpacity>
-          {userProfile?.data?.country !== "Canada" && (
+          { userProfile?.data?.user?.country === "Cameroon" && (
         <TouchableOpacity
         className="flex-row gap-2 my-2 items-center mb-5"
           onPress={() => navigation2.navigate("PaymentSimulator")}
@@ -509,7 +511,7 @@ Utilise mon code lors de ton inscription !`;
               <Text className="text-sm text-gray-500">{t('drawer.favorite_desc')}</Text>
             </View>
           </TouchableOpacity>
-          {userProfile?.data?.country !== "Canada" && (
+          { userProfile?.data?.user?.country === "Cameroon" && (
 
           <TouchableOpacity
             className="flex-row gap-2 my-2 mb-5 items-center"
@@ -522,7 +524,8 @@ Utilise mon code lors de ton inscription !`;
             </View>
           </TouchableOpacity>
           )}
-          {userProfile?.data?.country !== "Canada" && (
+          
+         { userProfile?.data?.user?.country === "Cameroon" && (
           <TouchableOpacity
             className="flex-row gap-2 my-2 mb-5 items-center"
             onPress={() => navigation2.navigate("WelcomeDemand")}

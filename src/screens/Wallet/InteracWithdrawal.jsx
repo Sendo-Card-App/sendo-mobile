@@ -55,7 +55,7 @@ const InteracWithdrawal = ({ navigation }) => {
   const withdrawalFeePercent = getConfigValue('SENDO_WITHDRAW_INTERAC_FEES') || 0;
   const amountNum = parseFloat(amount) || 0;
   const feeAmount = (amountNum * withdrawalFeePercent) / 100;
-  const netAmount = amountNum - feeAmount;
+  const netAmount = amountNum + feeAmount;
   
   // Get wallet matricule from user profile
   const walletMatricule = userProfile?.data?.user?.wallet?.matricule;
@@ -282,7 +282,7 @@ const InteracWithdrawal = ({ navigation }) => {
                 {t('withdrawal.fee')} ({withdrawalFeePercent}%)
               </Text>
               <Text style={[styles.detailValue, styles.feeText]}>
-                -{feeAmount.toFixed(2)} CAD
+                {feeAmount.toFixed(2)} CAD
               </Text>
             </View>
             
