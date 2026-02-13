@@ -717,7 +717,26 @@
       "unfreezeButton": "Unfreeze",
      
   "inTermination": "Votre carte est en cours de suppression.",
-  "suspended": "Votre carte a été suspendue en raison d'une activité suspecte."
+  "suspended": "Votre carte a été suspendue en raison d'une activité suspecte.",
+   "cardDeleted": "Card Deleted",
+    "terminatedDescription": "Your virtual card has been deleted. You can create a new one to continue using virtual card services.",
+    "whyDeleted": "Why was my card deleted?",
+    "terminatedReasons": "A card may be deleted for several reasons: too many failed payment attempts, request from you, or card expiration.",
+    "whatYouGet": "What you get with a new card:",
+    "newCardFeature1": "New virtual card number",
+    "newCardFeature2": "Secure online payments",
+    "newCardFeature3": "Full control from the app",
+    "newCardFeature4": "Ability to freeze/unfreeze the card",
+    "faq": "Frequently asked questions",
+    "q1": "❓ Is creating a new card free?",
+    "a1": "Check the fees in the app's pricing section.",
+    "q2": "❓ Can I recover my old balance?",
+    "a2": "The balance from your old card has been transferred to your main wallet.",
+    "q3": "❓ How long does it take to create a new card?",
+    "a3": "Creation is instant, you can use it immediately.",
+    "createNewCard": "CREATE A NEW CARD",
+    "returnHome": "Return to home",
+    "needHelp": "Need help? Contact our support"
 },
 "identityVerification": {
 "title": "Identity Verification",
@@ -834,6 +853,7 @@
   },
   "common": {
     "cancel": "Cancel",
+     "checkingVersion": "Checking for updates...",
     "close": "Close",
     "signIn": "Sign In",
      "loading": "Loading...",

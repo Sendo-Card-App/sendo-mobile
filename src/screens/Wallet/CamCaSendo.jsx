@@ -10,6 +10,7 @@ import {
   Modal,
   Linking,
   Alert,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -26,7 +27,6 @@ import { Ionicons, AntDesign, MaterialIcons, FontAwesome } from '@expo/vector-ic
 import { showErrorToast } from '../../utils/errorHandler';
 import Loader from '../../components/Loader';
 
-
 const formatCurrency = (amount, currency = 'XAF') => {
   if (isNaN(amount) || amount === null || amount === undefined) {
     return `0 ${currency}`;
@@ -35,14 +35,12 @@ const formatCurrency = (amount, currency = 'XAF') => {
   const numAmount = parseFloat(amount);
   
   if (currency === 'XAF' || currency === 'FCFA') {
-    // Format XAF with no decimal places and space before FCFA
     const formatted = numAmount.toLocaleString('fr-FR', {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     });
     return `${formatted} FCFA`;
   } else if (currency === 'CAD') {
-    // Format CAD with 2 decimal places and $ symbol
     const formatted = numAmount.toLocaleString('en-CA', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
@@ -50,7 +48,6 @@ const formatCurrency = (amount, currency = 'XAF') => {
     return `$${formatted} CAD`;
   } 
   
-  // Default formatting
   return `${numAmount.toFixed(2)} ${currency}`;
 };
 
@@ -97,99 +94,6 @@ const CamCaSendo = ({ navigation }) => {
   // Use the API mutation for fees
   const [getTransferFees, { isLoading: isCalculatingFees }] = useGetTransferFeesMutation();
 
-  // Calculate conversion and totals
-  const calculateConversion = useCallback(() => {
-    const transferAmount = parseFloat(amount) || 0;
-    
-    if (transferAmount <= 0) {
-      return {
-        amountXAF: 0,
-        amountCAD: 0,
-        totalXAF: 0,
-        totalCAD: 0,
-        feesXAF: 0,
-        feesCAD: 0,
-      };
-    }
-
-    // If user is from Cameroon, they input XAF amount
-    // If user is from Canada, they input CAD amount
-    let amountXAF, amountCAD;
-    
-    if (isCameroon) {
-      amountXAF = transferAmount;
-      amountCAD = exchangeRate ? transferAmount / exchangeRate : 0;
-    } else {
-      amountCAD = transferAmount;
-      amountXAF = exchangeRate ? transferAmount * exchangeRate : 0;
-    }
-    
-    return {
-      amountXAF,
-      amountCAD,
-      totalXAF: amountXAF + transferFeesXAF,
-      totalCAD: amountCAD + transferFeesCAD,
-      feesXAF: transferFeesXAF,
-      feesCAD: transferFeesCAD,
-    };
-  }, [amount, exchangeRate, transferFeesXAF, transferFeesCAD, isCameroon]);
-
-  // Fetch transfer fees when amount changes
-useEffect(() => {
-  const fetchTransferFees = async () => {
-    const transferAmount = parseFloat(amount);
-    
-    if (!amount || isNaN(transferAmount) || transferAmount <= 0) {
-      setTransferFeesXAF(0);
-      setTransferFeesCAD(0);
-      setFeeError(null);
-      return;
-    }
-
-    // For very small amounts, set fees to 0 and skip API call
-    if (transferAmount < 100) { // Minimum 100 XAF or equivalent
-      setTransferFeesXAF(0);
-      setTransferFeesCAD(0);
-      setFeeError(t('wallet_transfer.amount_too_small_for_fees'));
-      return;
-    }
-
-    try {
-      setFeeError(null);
-      
-      const response = await getTransferFees(transferAmount).unwrap();
-      
-      if (response.status === 200 && response.data) {
-        setTransferFeesXAF(response.data.feesXAF || 0);
-        setTransferFeesCAD(response.data.feesCAD || 0);
-      } else {
-        throw new Error(response.message || 'Failed to fetch transfer fees');
-      }
-    } catch (error) {
-      console.log("Error fetching transfer fees:", JSON.stringify(error, null, 2));
-      
-      // Handle the specific error case when no fee tier is found
-      const backendError = error?.data?.data?.errors;
-      if (backendError && Array.isArray(backendError) && backendError[0]?.includes("Aucun palier trouvé")) {
-        setFeeError(t('wallet_transfer.no_fee_tier_found'));
-      } else {
-        // Safely extract error message
-        const errorMessage = error?.data?.message || error?.message || 'Error calculating fees';
-        setFeeError(typeof errorMessage === 'string' ? errorMessage : 'Error calculating fees');
-      }
-      
-      setTransferFeesXAF(0);
-      setTransferFeesCAD(0);
-    }
-  };
-
-  const timer = setTimeout(() => {
-    fetchTransferFees();
-  }, 800);
-
-  return () => clearTimeout(timer);
-}, [amount, getTransferFees, t]);
-
   const { data: userProfile, isLoading: isProfileLoading } = useGetUserProfileQuery();
   const userId = userProfile?.data?.user?.id;
   const userCountry = userProfile?.data?.user?.country;
@@ -234,6 +138,94 @@ useEffect(() => {
 
   const [transferFunds, { isLoading: isTransferring }] = useTransferFundsMutation();
 
+  // Calculate conversion and totals
+  const calculateConversion = useCallback(() => {
+    const transferAmount = parseFloat(amount) || 0;
+    
+    if (transferAmount <= 0) {
+      return {
+        amountXAF: 0,
+        amountCAD: 0,
+        totalXAF: 0,
+        totalCAD: 0,
+        feesXAF: 0,
+        feesCAD: 0,
+      };
+    }
+
+    let amountXAF, amountCAD;
+    
+    if (isCameroon) {
+      amountXAF = transferAmount;
+      amountCAD = exchangeRate ? transferAmount / exchangeRate : 0;
+    } else {
+      amountCAD = transferAmount;
+      amountXAF = exchangeRate ? transferAmount * exchangeRate : 0;
+    }
+    
+    return {
+      amountXAF,
+      amountCAD,
+      totalXAF: amountXAF + transferFeesXAF,
+      totalCAD: amountCAD + transferFeesCAD,
+      feesXAF: transferFeesXAF,
+      feesCAD: transferFeesCAD,
+    };
+  }, [amount, exchangeRate, transferFeesXAF, transferFeesCAD, isCameroon]);
+
+  // Fetch transfer fees when amount changes
+  useEffect(() => {
+    const fetchTransferFees = async () => {
+      const transferAmount = parseFloat(amount);
+      
+      if (!amount || isNaN(transferAmount) || transferAmount <= 0) {
+        setTransferFeesXAF(0);
+        setTransferFeesCAD(0);
+        setFeeError(null);
+        return;
+      }
+
+      if (transferAmount < 100) {
+        setTransferFeesXAF(0);
+        setTransferFeesCAD(0);
+        setFeeError(t('wallet_transfer.amount_too_small_for_fees'));
+        return;
+      }
+
+      try {
+        setFeeError(null);
+        
+        const response = await getTransferFees(transferAmount).unwrap();
+        
+        if (response.status === 200 && response.data) {
+          setTransferFeesXAF(response.data.feesXAF || 0);
+          setTransferFeesCAD(response.data.feesCAD || 0);
+        } else {
+          throw new Error(response.message || 'Failed to fetch transfer fees');
+        }
+      } catch (error) {
+        console.log("Error fetching transfer fees:", JSON.stringify(error, null, 2));
+        
+        const backendError = error?.data?.data?.errors;
+        if (backendError && Array.isArray(backendError) && backendError[0]?.includes("Aucun palier trouvé")) {
+          setFeeError(t('wallet_transfer.no_fee_tier_found'));
+        } else {
+          const errorMessage = error?.data?.message || error?.message || 'Error calculating fees';
+          setFeeError(typeof errorMessage === 'string' ? errorMessage : 'Error calculating fees');
+        }
+        
+        setTransferFeesXAF(0);
+        setTransferFeesCAD(0);
+      }
+    };
+
+    const timer = setTimeout(() => {
+      fetchTransferFees();
+    }, 800);
+
+    return () => clearTimeout(timer);
+  }, [amount, getTransferFees, t]);
+
   const calculateTotalAmount = useCallback(() => {
     const transferAmount = parseFloat(amount) || 0;
     if (isCanada) {
@@ -244,33 +236,26 @@ useEffect(() => {
 
   // --- Service availability check ---
   const checkServiceAvailability = () => {
-    // If config is not loaded yet, assume service is available
     if (isConfigLoading || !configData) {
       return true;
     }
-    
-    // Check if TRANSFER_CAM_CA_AVAILABILITY is set to "1" (available)
     return TRANSFER_CAM_CA_AVAILABILITY === "1";
   };
 
   // --- Check if sender is trying to send to themselves ---
   const checkSelfTransfer = () => {
     if (!userWalletId || !walletId) {
-      return false; // Can't check if either wallet ID is missing
+      return false;
     }
-    
-    // Check if sender's wallet ID matches recipient's wallet ID
     return userWalletId.trim() === walletId.trim();
   };
 
   const handlePreview = () => {
-    // First check if the service is available
     if (!checkServiceAvailability()) {
       setShowUnavailableModal(true);
       return;
     }
 
-    // Check if sender is trying to send to themselves
     if (checkSelfTransfer()) {
       showErrorToast('ACTION_FAILED', 'Vous ne pouvez pas transférer des fonds vers votre propre compte.');
       return;
@@ -278,7 +263,6 @@ useEffect(() => {
 
     if (!validateForm()) return;
     
-    // Check monthly limit for Cameroon users
     if (isOverMonthlyLimit) {
       setShowSFEConnectModal(true);
       return;
@@ -303,7 +287,6 @@ useEffect(() => {
       return false;
     }
 
-    // Check if recipient exists
     if (isRecipientError || !recipientData?.data?.user) {
       showErrorToast('ACTION_FAILED', t('wallet_transfer.invalid_recipient'));
       return false;
@@ -316,7 +299,6 @@ useEffect(() => {
     const transferAmount = parseFloat(amount);
     const totalAmount = calculateTotalAmount();
     
-    // Check if user has sufficient balance
     const currentBalance = balanceData?.data?.balance || 0;
     if (totalAmount > currentBalance) {
       showErrorToast(
@@ -385,12 +367,23 @@ useEffect(() => {
   const isLoading = isProfileLoading || isBalanceLoading || isConfigLoading;
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       {/* FIXED: StatusBar with correct background color */}
-      <StatusBar backgroundColor="#7ddd7d" barStyle="light-content" />
+      <StatusBar 
+        backgroundColor="#7ddd7d" 
+        barStyle="light-content"
+        translucent={false}
+      />
 
-      {/* Header */}
-      <View style={styles.header}>
+      {/* Header - Now with proper StatusBar integration */}
+      <View style={[
+        styles.header,
+        {
+          paddingTop: Platform.OS === 'android' 
+            ? (StatusBar.currentHeight || 25) 
+            : 50
+        }
+      ]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <AntDesign name="left" size={24} color="white" />
         </TouchableOpacity>
@@ -406,8 +399,11 @@ useEffect(() => {
         <View style={styles.headerRight} />
       </View>
 
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-
+      <ScrollView 
+        style={styles.scrollView} 
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Recipient Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
@@ -464,6 +460,7 @@ useEffect(() => {
               onChangeText={setAmount}
             />
           </View>
+
           {/* Fees Display */}
           {amount && parseFloat(amount) > 0 && (
             <View style={styles.feesCard}>
@@ -477,7 +474,6 @@ useEffect(() => {
                 </Text>
               </View>
               
-              {/* In the Fees Display section, update this part: */}
               <View style={styles.feesRow}>
                 <Text style={styles.feesLabel}>Frais de transfert:</Text>
                 {isCalculatingFees ? (
@@ -511,7 +507,8 @@ useEffect(() => {
               </View>
               
               <View style={styles.separator} />
-             <View style={styles.feesRow}>
+              
+              <View style={styles.feesRow}>
                 <View style={styles.totalContainer}>
                   <Text style={styles.totalLabel}>Total à débiter:</Text>
                   <Text style={styles.totalValue}>
@@ -522,9 +519,9 @@ useEffect(() => {
                   </Text>
                   <Text style={styles.convertedTotal}>
                     {isCameroon ? 
-                    formatCurrency(conversion.amountCAD, 'CAD') : 
-                    formatCurrency(conversion.amountXAF, 'FCFA')
-                  }
+                      formatCurrency(conversion.amountCAD, 'CAD') : 
+                      formatCurrency(conversion.amountXAF, 'FCFA')
+                    }
                   </Text>
                 </View>
               </View>
@@ -553,7 +550,8 @@ useEffect(() => {
             {description.length}/255 caractères
           </Text>
         </View>    
-       {/* Preview Button */}
+
+        {/* Preview Button */}
         <TouchableOpacity
           style={[
             styles.previewButton,
@@ -695,8 +693,6 @@ useEffect(() => {
                     </Text>
                   </View>
                 </View>
-
-              
               </View>
 
               {/* Important Notice */}
@@ -754,7 +750,7 @@ useEffect(() => {
               </Text>
               
               <Text style={styles.sfeModalText}>
-                Utilisez l'aplication <Text style={styles.sfeHighlight}>SFE Connect</Text> pour envoyer jusqu'à 10 millions FCFA.
+                Utilisez l'application <Text style={styles.sfeHighlight}>SFE Connect</Text> pour envoyer jusqu'à 10 millions FCFA.
               </Text>
               
               <View style={styles.sfeFeatures}>
@@ -800,7 +796,7 @@ useEffect(() => {
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -813,7 +809,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#7ddd7d',
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 15,
+    paddingBottom: 15,
     paddingHorizontal: 20,
   },
   backButton: {
@@ -876,37 +872,16 @@ const styles = StyleSheet.create({
   },
   currencyLabel: {
     paddingHorizontal: 15,
+    paddingVertical: 15,
     fontSize: 16,
     fontWeight: '600',
     color: '#7ddd7d',
     backgroundColor: '#f8f9fa',
-    height: '100%',
-    textAlignVertical: 'center',
   },
   amountInput: {
     flex: 1,
     padding: 15,
     fontSize: 16,
-  },
-  exchangeRateCard: {
-    backgroundColor: '#e8f4ff',
-    borderRadius: 10,
-    padding: 15,
-    marginTop: 15,
-  },
-  exchangeRateRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  exchangeLabel: {
-    fontSize: 14,
-    color: '#7ddd7d',
-  },
-  exchangeValue: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#0D1C6A',
   },
   feesCard: {
     backgroundColor: '#f8f9fa',
@@ -949,6 +924,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#dee2e6',
     marginVertical: 10,
   },
+  totalContainer: {
+    alignItems: 'flex-end',
+    flex: 1,
+  },
   totalLabel: {
     fontSize: 16,
     fontWeight: 'bold',
@@ -958,6 +937,12 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: '#28a745',
+    marginBottom: 2,
+  },
+  convertedTotal: {
+    fontSize: 12,
+    color: '#666',
+    fontStyle: 'italic',
   },
   textArea: {
     height: 100,
@@ -1006,29 +991,9 @@ const styles = StyleSheet.create({
     color: '#dc3545',
     fontSize: 14,
   },
-  warningCard: {
-    flexDirection: 'row',
-    backgroundColor: '#fff9e6',
-    borderRadius: 10,
-    padding: 15,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: '#ffeaa7',
-  },
-  warningContent: {
-    flex: 1,
-    marginLeft: 10,
-  },
-  warningTitle: {
+  errorText: {
+    color: '#dc3545',
     fontSize: 14,
-    fontWeight: 'bold',
-    color: '#856404',
-    marginBottom: 4,
-  },
-  warningText: {
-    fontSize: 12,
-    color: '#856404',
-    lineHeight: 16,
   },
   previewButton: {
     backgroundColor: '#7ddd7d',
@@ -1055,29 +1020,10 @@ const styles = StyleSheet.create({
   infoText: {
     flex: 1,
     fontSize: 13,
-    color: '#7ddd7d',
+    color: '#0D1C6A',
     marginLeft: 10,
     lineHeight: 18,
   },
-  errorText: {
-    color: '#dc3545',
-    fontSize: 14,
-  },
-  totalContainer: {
-  alignItems: 'flex-end',
-  flex: 1,
-},
-totalValue: {
-  fontSize: 18,
-  fontWeight: 'bold',
-  color: '#28a745',
-  marginBottom: 2,
-},
-convertedTotal: {
-  fontSize: 12,
-  color: '#666',
-  fontStyle: 'italic',
-},
   // Modal Styles
   modalOverlay: {
     flex: 1,
@@ -1297,7 +1243,7 @@ convertedTotal: {
   sfeModalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#7ddd7d',
+    color: '#0D1C6A',
     marginTop: 15,
     textAlign: 'center',
   },
@@ -1312,7 +1258,7 @@ convertedTotal: {
     textAlign: 'center',
   },
   sfeHighlight: {
-    color: '#7ddd7d',
+    color: '#0D1C6A',
     fontWeight: 'bold',
   },
   sfeFeatures: {
@@ -1352,7 +1298,7 @@ convertedTotal: {
     borderColor: '#dee2e6',
   },
   sfeDownloadButton: {
-    backgroundColor: '#7ddd7d',
+    backgroundColor: '#0D1C6A',
   },
   sfeCancelButtonText: {
     color: '#666',

@@ -13,9 +13,10 @@ import {
   Pressable,
   Alert,
   ScrollView,
+  StyleSheet,
 } from "react-native";
 import { Feather } from '@expo/vector-icons';
-import { Ionicons, FontAwesome5,MaterialIcons, Entypo, AntDesign } from "@expo/vector-icons";
+import { Ionicons, FontAwesome5, MaterialIcons, Entypo, AntDesign } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 import { useNavigation } from "@react-navigation/native";
 import CardImg from "../../images/virtual.png";
@@ -37,27 +38,36 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { WebView } from 'react-native-webview';
 import * as ScreenCapture from 'expo-screen-capture';
 
+// Define card status constants for better maintainability
+const CARD_STATUS = {
+  ACTIVE: "ACTIVE",
+  FROZEN: "FROZEN",
+  BLOCKED: "BLOCKED",
+  SUSPENDED: "SUSPENDED",
+  PRE_ACTIVE: "PRE_ACTIVE",
+  IN_TERMINATION: "IN_TERMINATION",
+  TERMINATED: "TERMINATED",
+  PENDING: "PENDING"
+};
+
 const ManageVirtualCard = () => {
   const { t } = useTranslation();
   const { width } = Dimensions.get("screen");
   const navigation = useNavigation();
   const [checking, setChecking] = useState(false);
+  
   const {
     data: cards,
     isLoading: isCardsLoading,
-  } = useGetVirtualCardsQuery(undefined,
-      {
-        pollingInterval: 60000, // refresh every 60s
-      });
-   //console.log("cards Status:", JSON.stringify(cards, null, 2));
-    const { data: userProfile, isLoading: isProfileLoading, refetch } = useGetUserProfileQuery();
+  } = useGetVirtualCardsQuery(undefined, {
+    pollingInterval: 60000,
+  });
+  
+  const { data: userProfile, isLoading: isProfileLoading, refetch } = useGetUserProfileQuery();
 
   const virtualCardFromProfile = userProfile?.data?.user?.virtualCard;
-  //console.log("Virtual Card from Profile:", JSON.stringify(virtualCardFromProfile, null, 2));
   
   const profileCardStatus = virtualCardFromProfile?.status;
-  //console.log("Virtual Card Status from Profile:", profileCardStatus);
-
   const [selectedCardId, setSelectedCardId] = useState(null);
   const [readOnlyMode, setReadOnlyMode] = useState(false);
   const [iframeModalVisible, setIframeModalVisible] = useState(false);
@@ -66,6 +76,7 @@ const ManageVirtualCard = () => {
   const [isLoadingIframe, setIsLoadingIframe] = useState(false);
   const [isLoadingFreeze, setIsLoadingFreeze] = useState(false);
   const [webViewLoading, setWebViewLoading] = useState(true);
+  const [showCreateNewModal, setShowCreateNewModal] = useState(false); // New state for create new card modal
 
   const {
     data: cardDetails,
@@ -73,18 +84,15 @@ const ManageVirtualCard = () => {
     refetch: refetchCardDetails,
   } = useGetVirtualCardDetailsQuery(selectedCardId, {
     skip: !selectedCardId,
-      pollingInterval: 1000, // Refetch every 30 seconds
+    pollingInterval: 1000,
   });
-  // console.log("cardDetails Status:", JSON.stringify(cardDetails, null, 2));
 
   const { data: unlockStatus, isLoading: isUnlockStatusLoading } = useGetUnlockStatusQuery(selectedCardId, {
     skip: !selectedCardId,
-     pollingInterval: 1000,  // Refetch every 30 seconds
+    pollingInterval: 1000,
   });
-    //console.log("Unlock Status:", JSON.stringify(unlockStatus, null, 2));
 
- const [getVirtualCardDetailsHide, { data: hideData, isLoading: isHideLoading, error: hideError }] = useLazyGetVirtualCardDetailsHideQuery();
-    //console.log("cardDetailsHide:", JSON.stringify(cardDetailsHide, null, 2));
+  const [getVirtualCardDetailsHide, { data: hideData, isLoading: isHideLoading, error: hideError }] = useLazyGetVirtualCardDetailsHideQuery();
 
   const [freezeCard] = useFreezeCardMutation();
   const [unfreezeCard] = useUnfreezeCardMutation();
@@ -98,52 +106,46 @@ const ManageVirtualCard = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isProcessingSetting, setIsProcessingSetting] = useState(false);
 
-
-
   const cardData = cardDetails?.data;
-  //console.log(cardData)
   const cardStatus = cardData?.status;
-  //console.log("Card Status:", cardStatus);
-  const isCardFrozen = cardStatus === "FROZEN";
+  const isCardFrozen = cardStatus === CARD_STATUS.FROZEN;
+  const isCardTerminated = profileCardStatus === CARD_STATUS.TERMINATED;
   const rejectionAttempts = cardData?.paymentRejectNumber ?? 0;
-  const limit = 2; // or wherever you get the limit from
+  const limit = 2;
 
   const {
     data: cardTransactions,
     isLoading: isTransactionsLoading,
     refetch: refetchTransactions,
   } = useGetCardTransactionsQuery(cardData?.id, {
-    skip: !cardData?.id,
-     pollingInterval: 1000, 
+    skip: !cardData?.id || isCardTerminated,
+    pollingInterval: 1000, 
   });
- //console.log("Full response:", JSON.stringify(cardTransactions, null, 2));
+
   const {
-  data: balanceData,
-  isLoading: isBalanceLoading,
-  refetch: refetchBalance,
-} = useGetCardBalanceQuery({ idCard: cardData?.id }, {
-  skip: !cardData?.id, 
-});
-//console.log("balanceData Data:", JSON.stringify(balanceData, null, 2));
-const {
-  data: debtsData,
-  isLoading: isDebtsLoading,
-  refetch: refetchDebts,
-} = useGetCardDebtsQuery(cardData?.id, {
-  skip: !cardData?.id,
-   pollingInterval: 1000, 
-});
- //console.log("Debts Data:", JSON.stringify(debtsData, null, 2));
+    data: balanceData,
+    isLoading: isBalanceLoading,
+    refetch: refetchBalance,
+  } = useGetCardBalanceQuery({ idCard: cardData?.id }, {
+    skip: !cardData?.id || isCardTerminated,
+  });
 
- //console.log(balanceData)
- useEffect(() => {
-  if (cards?.data && selectedCardId !== cards.data.cardId) {
-    setSelectedCardId(cards.data.cardId);
-  }
-}, [cards, selectedCardId]);
+  const {
+    data: debtsData,
+    isLoading: isDebtsLoading,
+    refetch: refetchDebts,
+  } = useGetCardDebtsQuery(cardData?.id, {
+    skip: !cardData?.id || isCardTerminated,
+    pollingInterval: 1000, 
+  });
 
+  useEffect(() => {
+    if (cards?.data && selectedCardId !== cards.data.cardId) {
+      setSelectedCardId(cards.data.cardId);
+    }
+  }, [cards, selectedCardId]);
 
- const {
+  const {
     data: configData,
     isLoading: isConfigLoading,
     error: configError,
@@ -156,29 +158,6 @@ const {
 
   const SENDO_VIEW_DETAILS_CARD_FEES = getConfigValue("SENDO_VIEW_DETAILS_CARD_FEES");
 
-//  useFocusEffect(
-//   useCallback(() => {
-//     setChecking(true); // show loader before checking
-
-//     if (!isProfileLoading) {
-//       const virtualCard = userProfile?.data?.virtualCard;
-//       const isCardMissingOrEmpty =
-//         !virtualCard || (typeof virtualCard === "object" && Object.keys(virtualCard).length === 0);
-//       const status = virtualCard?.status;
-
-//       // Allow these statuses to stay on the ManageVirtualCard screen
-//       const allowedStatuses = ["ACTIVE", "PRE_ACTIVE", "FROZEN",  "BLOCKED", "SUPENDED"];
-      
-//       // Only redirect if the card is missing OR if the status is not in allowed list
-//       if (isCardMissingOrEmpty || !allowedStatuses.includes(status)) {
-//         navigation.navigate("OnboardingCard");
-//       }
-//     }
-
-//     setChecking(false); // hide loader after check
-//   }, [userProfile, isProfileLoading, navigation])
-// );
-
   if (checking || isProfileLoading) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
@@ -187,17 +166,16 @@ const {
     );
   }
 
+  // Handle TERMINATED status - Show custom interface
   useEffect(() => {
-    if (profileCardStatus === "TERMINATED") {
-      setModalType("TERMINATED");
-      setModalMessage("Votre carte a été supprimée. Voulez-vous en créer une nouvelle ?");
-      setModalVisible(true);
-    } else if (profileCardStatus === "IN_TERMINATION") {
+    if (isCardTerminated) {
+      setShowCreateNewModal(true);
+    } else if (profileCardStatus === CARD_STATUS.IN_TERMINATION) {
       Alert.alert(
         "Suppression en cours",
         "Votre carte est en cours de suppression. Certaines fonctionnalités peuvent être limitées."
       );
-    } else if (profileCardStatus === "SUSPENDED") {
+    } else if (profileCardStatus === CARD_STATUS.SUSPENDED) {
       Alert.alert(
         "Carte suspendue",
         "Votre carte a été suspendue en raison d'une activité suspecte."
@@ -205,18 +183,18 @@ const {
     }
   }, [profileCardStatus]);
 
- const debouncedHandleFreezeUnfreeze = async () => {
-  if (isProcessingFreeze) return; // prevent multiple simultaneous calls
+  const debouncedHandleFreezeUnfreeze = async () => {
+    if (isProcessingFreeze) return;
 
-  try {
-    setIsProcessingFreeze(true); // start processing
-    await handleFreezeUnfreeze(); // call your API
-  } catch (err) {
-    console.error(err);
-  } finally {
-    setIsProcessingFreeze(false); // always reset flag
-  }
-};
+    try {
+      setIsProcessingFreeze(true);
+      await handleFreezeUnfreeze();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsProcessingFreeze(false);
+    }
+  };
  
   // Prevent screenshots when modal is visible
   useEffect(() => {
@@ -250,50 +228,46 @@ const {
   }, [iframeModalVisible]);
 
   const showModal = (type, title, message = "") => {
-  setModalType(type);
-  setModalMessage(message ? `${title}: ${message}` : title);
-  setModalVisible(true);
-};
+    setModalType(type);
+    setModalMessage(message ? `${title}: ${message}` : title);
+    setModalVisible(true);
+  };
 
+  const handleFreezeUnfreeze = async () => {
+    const cardId = cardData?.cardId;
+    if (!cardId) return;
 
-const handleFreezeUnfreeze = async () => {
-  const cardId = cardData?.cardId;
-  const cardStatus = cardData?.status; //  get status
-  if (!cardId) return;
-
-  //  Handle PRE_ACTIVE and non-active cases before doing API calls
-   if (cardStatus === "PRE_ACTIVE") {
-    setPreActiveModalVisible(true);
-    return;
-  }
-
-  setIsLoadingFreeze(true);
-
-  try {
-    if (isCardFrozen) {
-      const response = await unfreezeCard(cardId).unwrap();
-      showModal("success", `${response?.message || ""}`);
-    } else {
-      const response = await freezeCard(cardId).unwrap();
-      showModal("success", `${response?.message || ""}`);
+    if (cardStatus === CARD_STATUS.PRE_ACTIVE) {
+      setPreActiveModalVisible(true);
+      return;
     }
 
-    refetchCardDetails();
-  } catch (err) {
-    let errorMessage = "Erreur lors de l'opération.";
-    if (err?.data?.message) {
-      errorMessage = err.data.message;
-    } else if (err?.error) {
-      errorMessage = err.error;
+    setIsLoadingFreeze(true);
+
+    try {
+      if (isCardFrozen) {
+        const response = await unfreezeCard(cardId).unwrap();
+        showModal("success", `${response?.message || ""}`);
+      } else {
+        const response = await freezeCard(cardId).unwrap();
+        showModal("success", `${response?.message || ""}`);
+      }
+
+      refetchCardDetails();
+    } catch (err) {
+      let errorMessage = "Erreur lors de l'opération.";
+      if (err?.data?.message) {
+        errorMessage = err.data.message;
+      } else if (err?.error) {
+        errorMessage = err.error;
+      }
+      showModal("error", errorMessage);
+    } finally {
+      setIsLoadingFreeze(false);
     }
-    showModal("error", errorMessage);
-  } finally {
-    setIsLoadingFreeze(false); // Stop loading
-  }
-};
+  };
 
-
-const handleShowCardDetails = async () => {
+  const handleShowCardDetails = async () => {
     try {
       const balance = balanceData?.data?.balance ?? 0;
 
@@ -305,8 +279,7 @@ const handleShowCardDetails = async () => {
         return;
       }
 
-      if (cardStatus === "ACTIVE") {
-        // Show alert and wait for user response
+      if (cardStatus === CARD_STATUS.ACTIVE) {
         Alert.alert(
           "Frais d'affichage",
           `Attention! ${SENDO_VIEW_DETAILS_CARD_FEES} XAF des frais seront déduits de **votre carte Sendo** à chaque fois que vous consulterez les détails. Souhaitez-vous continuer?`,
@@ -314,23 +287,21 @@ const handleShowCardDetails = async () => {
             { 
               text: "Annuler", 
               style: "cancel",
-              onPress: () => {
-                setIsLoadingIframe(false); // Ensure loader stops if user cancels
-              }
+              onPress: () => setIsLoadingIframe(false)
             },
             {
               text: "Continuer",
               onPress: async () => {
-                await handleCardDetailsRequest(false); // false for not read-only
+                await handleCardDetailsRequest(false);
               },
             },
           ]
         );
-      } else if (cardStatus === "FROZEN") {
-        await handleCardDetailsRequest(true); // true for read-only
-      } else if (cardStatus === "BLOCKED") {
+      } else if (cardStatus === CARD_STATUS.FROZEN) {
+        await handleCardDetailsRequest(true);
+      } else if (cardStatus === CARD_STATUS.BLOCKED) {
         showModal("error", "Votre carte a été bloquée");
-      } else if (cardStatus === "PRE_ACTIVE") {
+      } else if (cardStatus === CARD_STATUS.PRE_ACTIVE) {
         setPreActiveModalVisible(true);
       } else {
         showModal("error", "Les détails de la carte ne sont disponibles que lorsque la carte est active ou verrouillée");
@@ -342,169 +313,140 @@ const handleShowCardDetails = async () => {
     }
   };
 
-// Separate function to handle the API request
-const handleCardDetailsRequest = async (isReadOnly) => {
-  setIsLoadingIframe(true);
-  
-  try {
-    //console.log("Sending request with cardId:", selectedCardId);
+  const handleCardDetailsRequest = async (isReadOnly) => {
+    setIsLoadingIframe(true);
     
-    // Use the lazy query hook correctly
-    const response = await getVirtualCardDetailsHide(selectedCardId).unwrap();
-    
-    //console.log("response Data:", JSON.stringify(response, null, 2));
-    
-    // Handle different response structures
-    if (response.error || response.status >= 400) {
-      const errorMsg = response.error?.data?.message ||
-                       response.error?.data?.data?.errors?.[0] ||
-                       response.message ||
-                       "Impossible de charger les détails de la carte";
-      showModal("error", errorMsg);
-      return;
-    }
-    
-    // Check for link in different possible response structures
-    const link = response.data?.data?.link || response.data?.link || response.link;
-    
-    if (link) {
-      setIframeUrl(link);
-      setIframeModalVisible(true);
-      setWebViewLoading(true);
-      setReadOnlyMode(isReadOnly);
-    } else {
-      showModal("error", "Impossible de charger les détails de la carte");
-    }
-  } catch (error) {
-    //console.log("API call failed:", JSON.stringify(error, null, 2));
-    
-    // Handle different error structures
-    if (error?.status === 500 && error?.data?.status === 500) {
-      showModal("error", "Les détails de la carte ne sont pas disponibles pour le moment. Merci de réessayer.");
-    } else {
-      // Handle other error structures
-      const errorMsg = error?.data?.message ||
-                       error?.data?.data?.errors?.[0] ||
-                       error?.message ||
-                       "Erreur de connexion au serveur";
+    try {
+      const response = await getVirtualCardDetailsHide(selectedCardId).unwrap();
       
-      showModal("error", errorMsg);
+      if (response.error || response.status >= 400) {
+        const errorMsg = response.error?.data?.message ||
+                         response.error?.data?.data?.errors?.[0] ||
+                         response.message ||
+                         "Impossible de charger les détails de la carte";
+        showModal("error", errorMsg);
+        return;
+      }
+      
+      const link = response.data?.data?.link || response.data?.link || response.link;
+      
+      if (link) {
+        setIframeUrl(link);
+        setIframeModalVisible(true);
+        setWebViewLoading(true);
+        setReadOnlyMode(isReadOnly);
+      } else {
+        showModal("error", "Impossible de charger les détails de la carte");
+      }
+    } catch (error) {
+      if (error?.status === 500 && error?.data?.status === 500) {
+        showModal("error", "Les détails de la carte ne sont pas disponibles pour le moment. Merci de réessayer.");
+      } else {
+        const errorMsg = error?.data?.message ||
+                         error?.data?.data?.errors?.[0] ||
+                         error?.message ||
+                         "Erreur de connexion au serveur";
+        
+        showModal("error", errorMsg);
+      }
+    } finally {
+      setIsLoadingIframe(false);
     }
-  } finally {
-    setIsLoadingIframe(false);
-  }
-};
+  };
 
   const ActionItem = ({ icon, label, onPress, disabled = false }) => (
-  <TouchableOpacity 
-    onPress={disabled ? null : onPress} 
-    className="items-center flex-1" 
-    disabled={disabled}
-  >
-    <View className={`p-3 rounded-full ${disabled ? 'bg-gray-100' : 'bg-gray-200'}`}>
-      {disabled ? (
-        <ActivityIndicator size="small" color="#333" />
-      ) : (
-        <Ionicons name={icon} size={24} color="#333" />
-      )}
-    </View>
-    <Text className={`text-xs mt-2 text-center ${disabled ? 'text-gray-400' : 'text-black'}`}>
-      {label}
-    </Text>
-  </TouchableOpacity>
-);
+    <TouchableOpacity 
+      onPress={disabled ? null : onPress} 
+      className="items-center flex-1" 
+      disabled={disabled}
+    >
+      <View className={`p-3 rounded-full ${disabled ? 'bg-gray-100' : 'bg-gray-200'}`}>
+        {disabled ? (
+          <ActivityIndicator size="small" color="#333" />
+        ) : (
+          <Ionicons name={icon} size={24} color="#333" />
+        )}
+      </View>
+      <Text className={`text-xs mt-2 text-center ${disabled ? 'text-gray-400' : 'text-black'}`}>
+        {label}
+      </Text>
+    </TouchableOpacity>
+  );
 
   const TransactionItem = ({ item, navigation }) => {
-  const isCashIn = item.type === "DEPOSIT";
+    const isCashIn = item.type === "DEPOSIT";
 
-  // Choose icon depending on type
-  const getIcon = () => {
-    switch (item.type) {
-      case "DEPOSIT":
-        return (
-          <Ionicons
-            name="arrow-down-circle-outline"
-            size={20}
-            color="#7ddd7d"
-          />
-        );
-      case "PAYMENT":
-        return <Entypo name="credit-card" size={20} color="#f39c12" />;
-      case "VIEW_CARD_DETAILS":
-        return <MaterialIcons name="visibility" size={20} color="#7ddd7d" />;
-      default:
-        return <Ionicons name="swap-horizontal" size={20} color="#95a5a6" />;
-    }
-  };
-
-  // Format date in French
-  const formattedDate = new Date(item.createdAt).toLocaleDateString("fr-FR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-
-  // Translate status
-  const getStatusLabel = () => {
-    switch (item.status) {
-      case "COMPLETED":
-        return "Succès";
-      case "PENDING":
-        return "En cours de traitement";
-      case "FAILED":
-        return "Échec";
-      default:
-        return item.status;
-    }
-  };
-
-  return (
-    <TouchableOpacity
-      className="flex-row justify-between items-center py-3 border-b border-gray-200"
-      onPress={() =>
-        navigation.navigate("TransactionDetails", { transaction: item })
+    const getIcon = () => {
+      switch (item.type) {
+        case "DEPOSIT":
+          return <Ionicons name="arrow-down-circle-outline" size={20} color="#7ddd7d" />;
+        case "PAYMENT":
+          return <Entypo name="credit-card" size={20} color="#f39c12" />;
+        case "VIEW_CARD_DETAILS":
+          return <MaterialIcons name="visibility" size={20} color="#7ddd7d" />;
+        default:
+          return <Ionicons name="swap-horizontal" size={20} color="#95a5a6" />;
       }
-    >
-      {/* Left side: icon + details */}
-      <View className="flex-row items-center gap-2 flex-1">
-        <View className="bg-gray-100 p-2 rounded-full">{getIcon()}</View>
-        <View className="flex-1">
-          <Text className="font-semibold flex-wrap">
-            {item.description || "Transaction"}
-          </Text>
-          <Text className="text-xs text-gray-500">{formattedDate}</Text>
-          <Text
-            className={`text-xs ${
+    };
+
+    const formattedDate = new Date(item.createdAt).toLocaleDateString("fr-FR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+    const getStatusLabel = () => {
+      switch (item.status) {
+        case "COMPLETED":
+          return "Succès";
+        case "PENDING":
+          return "En cours de traitement";
+        case "FAILED":
+          return "Échec";
+        default:
+          return item.status;
+      }
+    };
+
+    return (
+      <TouchableOpacity
+        className="flex-row justify-between items-center py-3 border-b border-gray-200"
+        onPress={() => navigation.navigate("TransactionDetails", { transaction: item })}
+      >
+        <View className="flex-row items-center gap-2 flex-1">
+          <View className="bg-gray-100 p-2 rounded-full">{getIcon()}</View>
+          <View className="flex-1">
+            <Text className="font-semibold flex-wrap">
+              {item.description || "Transaction"}
+            </Text>
+            <Text className="text-xs text-gray-500">{formattedDate}</Text>
+            <Text className={`text-xs ${
               item.status === "COMPLETED"
                 ? "text-green-600"
                 : item.status === "PENDING"
                 ? "text-gray-500"
                 : "text-red-600"
-            }`}
-          >
-            {getStatusLabel()}
-          </Text>
+            }`}>
+              {getStatusLabel()}
+            </Text>
+          </View>
         </View>
-      </View>
 
-      {/* Right side: amount */}
-      <Text
-        className={`font-bold ${
+        <Text className={`font-bold ${
           item.status === "PENDING"
             ? "text-gray-400"
             : isCashIn
             ? "text-green-600"
             : "text-red-500"
-        }`}
-      >
-        {isCashIn ? "+" : "-"}
-        {item.totalAmount.toLocaleString("fr-FR")} {item.currency || "FCFA"}
-      </Text>
-    </TouchableOpacity>
-  );
-};
+        }`}>
+          {isCashIn ? "+" : "-"}
+          {item.totalAmount.toLocaleString("fr-FR")} {item.currency || "FCFA"}
+        </Text>
+      </TouchableOpacity>
+    );
+  };
 
   const handleRefresh = () => {
     refetchTransactions();
@@ -518,11 +460,93 @@ const handleCardDetailsRequest = async (isReadOnly) => {
     );
   }
 
+  // 🚀 TERMINATED CARD INTERFACE - Full screen dedicated interface for terminated cards
+  if (isCardTerminated) {
+    return (
+      <View className="flex-1 bg-white">
+        <SafeAreaView className="bg-[#7ddd7d] rounded-b-2xl">
+          <StatusBar backgroundColor="#7ddd7d" barStyle="light-content" />
+          <View className="flex-row items-center justify-between px-4 py-3 bg-[#7ddd7d] rounded-b-2xl">
+            <TouchableOpacity
+              onPress={() => navigation.reset({
+                index: 0,
+                routes: [{ name: "MainTabs" }],
+              })}
+              className="p-1"
+            >
+              <AntDesign name="left" size={24} color="white" />
+            </TouchableOpacity>
+            <Text className="text-2xl font-bold text-white text-center flex-1">
+              {t('manageVirtualCard.cardDeleted') || "Carte supprimée"}
+            </Text>
+            <TouchableOpacity onPress={() => navigation.openDrawer()} className="p-1">
+              <Ionicons name="menu-outline" size={28} color="#fff" />
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
+
+        <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+          <View className="px-4 pt-8">
+            {/* Terminated Card Visual */}
+            <View className="items-center mb-8">
+              <View className="w-32 h-32 bg-red-100 rounded-full items-center justify-center mb-4">
+                <Ionicons name="card-outline" size={60} color="#EF4444" />
+              </View>
+              <Text className="text-3xl font-bold text-gray-800 text-center mb-2">
+                {t('manageVirtualCard.cardDeleted') || "Carte supprimée"}
+              </Text>
+              <Text className="text-base text-gray-600 text-center px-4 mb-6">
+                {t('manageVirtualCard.terminatedDescription') || 
+                  "Votre carte virtuelle a été supprimée. Vous pouvez en créer une nouvelle pour continuer à utiliser les services de carte virtuelle."}
+              </Text>
+            </View>
+
+            {/* Information Cards */}
+            <View className="bg-gray-50 rounded-xl p-5 mb-6 border border-gray-200">
+              <View className="flex-row items-center mb-3">
+                <View className="w-8 h-8 bg-yellow-100 rounded-full items-center justify-center mr-3">
+                  <Ionicons name="information-outline" size={20} color="#F59E0B" />
+                </View>
+                <Text className="text-lg font-semibold text-gray-800">
+                  {t('manageVirtualCard.whyDeleted') || "Pourquoi ma carte a-t-elle été supprimée ?"}
+                </Text>
+              </View>
+              <Text className="text-gray-600 ml-11">
+                {t('manageVirtualCard.terminatedReasons') || 
+                  "Une carte peut être supprimée pour plusieurs raisons : trop de tentatives de paiement échouées, demande de votre part, ou expiration de la carte."}
+              </Text>
+            </View>
+
+            {/* Action Buttons */}
+            <View className="px-4 pb-8">
+              <TouchableOpacity
+                className="bg-[#7ddd7d] py-5 px-6 rounded-xl mb-4 shadow-lg flex-row items-center justify-center"
+                onPress={() => navigation.navigate("CreateVirtualCard")}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="add-circle-outline" size={24} color="white" style={{ marginRight: 10 }} />
+                <Text className="text-white font-bold text-lg text-center">
+                  {t('manageVirtualCard.createNewCard') || "CRÉER UNE NOUVELLE CARTE"}
+                </Text>
+              </TouchableOpacity>
+
+
+              <Text className="text-xs text-gray-400 text-center mt-6">
+                {t('manageVirtualCard.needHelp') || "Besoin d'aide ? Contactez notre support"}
+              </Text>
+            </View>
+          </View>
+        </ScrollView>
+      </View>
+    );
+  }
+
+  // Normal card display for non-terminated cards
   return (
     <View className="flex-1 bg-white">
-      <SafeAreaView className="bg-[#7ddd7d]  rounded-b-2xl">
-         <StatusBar backgroundColor="#7ddd7d" barStyle="light-content" />
-        <View className="flex-row items-center justify-between px-4 bg-[#7ddd7d]  border-b border-gray-200 rounded-b-2xl">
+      <SafeAreaView className="bg-[#7ddd7d] rounded-b-2xl">
+        <StatusBar backgroundColor="#7ddd7d" barStyle="light-content" />
+        <View className="flex-row items-center justify-between px-4 bg-[#7ddd7d] border-b border-gray-200 rounded-b-2xl">
           <TouchableOpacity
             onPress={() =>
               navigation.reset({
@@ -548,52 +572,44 @@ const handleCardDetailsRequest = async (isReadOnly) => {
           {/* Card Display */}
           <View className="relative rounded-2xl overflow-hidden mt-2" style={{ height: width / 1.66 }}>
             <Image source={CardImg} className="w-full h-full absolute" resizeMode="contain" />
-            {(isCardFrozen || profileCardStatus === "BLOCKED") && (
+            {(isCardFrozen || profileCardStatus === CARD_STATUS.BLOCKED) && (
               <View className="absolute inset-0 bg-[#d7f0f7] bg-opacity-60 z-10 justify-center items-center">
                 <FontAwesome5 
-                  name={profileCardStatus === "BLOCKED" ? "ban" : "snowflake"} 
+                  name={profileCardStatus === CARD_STATUS.BLOCKED ? "ban" : "snowflake"} 
                   size={50} 
-                  color={profileCardStatus === "BLOCKED" ? "#ff6b6b" : "#a0e1f5"} 
+                  color={profileCardStatus === CARD_STATUS.BLOCKED ? "#ff6b6b" : "#a0e1f5"} 
                 />
-                {profileCardStatus === "BLOCKED" && (
+                {profileCardStatus === CARD_STATUS.BLOCKED && (
                   <Text className="text-white font-bold mt-2">BLOQUÉE</Text>
                 )}
               </View>
             )}
 
             <View className="flex-1 justify-between px-5 py-4">
-             <View className="mt-2">
-              <Text className="text-white text-sm mb-1">{t('manageVirtualCard.currentBalance')}</Text>
-               <TouchableOpacity
-                onPress={() => {
-                  if (showBalance) {
-                    setShowBalance(false);
-                  } else {
-                    navigation.navigate("Auth", {
-                      screen: "PinCode",
-                      params: {
-                        onSuccess: () => {
-                          setShowBalance(true);  // Reveal balance after successful pin
-                            // Automatically hide balance after 20s
-                            setTimeout(() => {
-                              setShowBalance(false);
-                            }, 20000);
-                          return Promise.resolve();
+              <View className="mt-2">
+                <Text className="text-white text-sm mb-1">{t('manageVirtualCard.currentBalance')}</Text>
+                <TouchableOpacity
+                  onPress={() => {
+                    if (showBalance) {
+                      setShowBalance(false);
+                    } else {
+                      navigation.navigate("Auth", {
+                        screen: "PinCode",
+                        params: {
+                          onSuccess: () => {
+                            setShowBalance(true);
+                            setTimeout(() => setShowBalance(false), 20000);
+                            return Promise.resolve();
+                          },
+                          showBalance: true,
                         },
-                        showBalance: true,
-                      },
-                    });
-                  }
-                }}
-                className="px-3 py-1 rounded-full self-start flex-row items-center space-x-2"
-              >
-                <Feather
-                  name={showBalance ? "eye" : "eye-off"}
-                  size={20}
-                  color="#fff"
-                />
-              </TouchableOpacity>
-
+                      });
+                    }
+                  }}
+                  className="px-3 py-1 rounded-full self-start flex-row items-center space-x-2"
+                >
+                  <Feather name={showBalance ? "eye" : "eye-off"} size={20} color="#fff" />
+                </TouchableOpacity>
               </View>
 
               <View className="mt-3">
@@ -610,156 +626,120 @@ const handleCardDetailsRequest = async (isReadOnly) => {
               </View>
             </View>
           </View>
-          
 
-         
-          {/* Actions */}
-          {profileCardStatus !== "TERMINATED" && (
+          {/* Rejection Attempts */}
+          {!isCardTerminated && rejectionAttempts > 0 && (
             <View className="mb-1 mt-2">
-              {rejectionAttempts > 0 && (
-                <View className="mb-4">
-                  {/* Progress Bar */}
-                  <View className="flex-row space-x-1 mb-2">
-                    {[...Array(limit)].map((_, index) => (
-                      <View
-                        key={index}
-                        className={`h-1.5 flex-1 rounded-full ${
-                          index < rejectionAttempts ? "bg-red-500" : "bg-gray-300"
-                        }`}
-                      />
-                    ))}
-                  </View>
-
-                  {/* Failure Counter */}
-                  <Text className="text-sm text-gray-800 font-medium">
-                    <Text className="font-semibold text-red-600">
-                      Compteur d'échecs : {rejectionAttempts}/{limit}
-                    </Text>{" "}
-                    tentative(s) de paiement échouées sur votre carte.
-                  </Text>
-
+              <View className="flex-row space-x-1 mb-2">
+                {[...Array(limit)].map((_, index) => (
                   <View
-                    className={`mt-2 p-3 rounded-md border-l-4 ${
-                      rejectionAttempts >= limit
-                        ? "bg-red-100 border-red-500"
-                        : "bg-yellow-50 border-yellow-400"
+                    key={index}
+                    className={`h-1.5 flex-1 rounded-full ${
+                      index < rejectionAttempts ? "bg-red-500" : "bg-gray-300"
                     }`}
-                  >
-                    {isUnlockStatusLoading ? (
-                      <ActivityIndicator size="small" color="#7ddd7d" />
-                    ) : (
-                      <Text
-                        className={`text-sm ${
-                          rejectionAttempts >= limit ? "text-red-800" : "text-yellow-800"
-                        }`}
-                      >
-                        Cette carte sera supprimée après{" "}
-                        <Text className="font-semibold text-red-600">
-                          {limit} paiements échoués
-                        </Text>
-                        . Déposez de l'argent pour éviter la suppression et effectuez vos paiements.{" "}
-                        <Text
-                          className="text-blue-700 underline"
-                          onPress={() =>
-                            navigation.navigate("CardAction", {
-                              cardId: cardData?.id,
-                              action: "recharge",
-                            })
-                          }
-                        >
-                          Recharger maintenant!
-                        </Text>
-                      </Text>
-                    )}
-                  </View>
-                </View>
-              )}
+                  />
+                ))}
+              </View>
+
+              <Text className="text-sm text-gray-800 font-medium">
+                <Text className="font-semibold text-red-600">
+                  Compteur d'échecs : {rejectionAttempts}/{limit}
+                </Text>{" "}
+                tentative(s) de paiement échouées sur votre carte.
+              </Text>
+
+              <View className={`mt-2 p-3 rounded-md border-l-4 ${
+                rejectionAttempts >= limit
+                  ? "bg-red-100 border-red-500"
+                  : "bg-yellow-50 border-yellow-400"
+              }`}>
+                {isUnlockStatusLoading ? (
+                  <ActivityIndicator size="small" color="#7ddd7d" />
+                ) : (
+                  <Text className={`text-sm ${
+                    rejectionAttempts >= limit ? "text-red-800" : "text-yellow-800"
+                  }`}>
+                    Cette carte sera supprimée après{" "}
+                    <Text className="font-semibold text-red-600">
+                      {limit} paiements échoués
+                    </Text>
+                    . Déposez de l'argent pour éviter la suppression et effectuez vos paiements.{" "}
+                    <Text
+                      className="text-blue-700 underline"
+                      onPress={() =>
+                        navigation.navigate("CardAction", {
+                          cardId: cardData?.id,
+                          action: "recharge",
+                        })
+                      }
+                    >
+                      Recharger maintenant!
+                    </Text>
+                  </Text>
+                )}
+              </View>
             </View>
           )}
 
-          {/* 🔸 Action Buttons */}
-          {profileCardStatus !== "TERMINATED" && profileCardStatus !== "BLOCKED" ? (
-  <View className="flex flex-row justify-between mt-1">
-    {/* 👁 View Info */}
-    <TouchableOpacity
-      className="flex flex-1 bg-gray-100 mx-1 py-1 px-4 rounded-xl flex-col items-center justify-center"
-      onPress={handleShowCardDetails}
-      disabled={isProcessing || isLoadingIframe || isHideLoading}
-    >
-      {isProcessing || isLoadingIframe ? (
-        <ActivityIndicator size="small" color="#7ddd7d" />
-      ) : (
-        <Ionicons name="eye-outline" size={24} color="#333" />
-      )}
-      <Text className="mt-2 text-center text-sm">
-        {t("manageVirtualCard.viewInfo")}
-      </Text>
-    </TouchableOpacity>
-
-    {/* ❄️ Freeze / Unfreeze */}
-    <TouchableOpacity
-      className="flex flex-1 bg-gray-100 mx-1 py-1 px-4 rounded-xl flex-col items-center justify-center"
-      onPress={debouncedHandleFreezeUnfreeze}
-      disabled={isProcessingFreeze || isLoadingFreeze}
-    >
-      {isProcessingFreeze || isLoadingFreeze ? (
-        <ActivityIndicator size="small" color="#7ddd7d" />
-      ) : (
-        <Ionicons name="snow-outline" size={24} color="#333" />
-      )}
-      <Text className="mt-2 text-center text-sm">
-        {isCardFrozen
-          ? t("manageVirtualCard.unfreeze")
-          : t("manageVirtualCard.freeze")}
-      </Text>
-    </TouchableOpacity>
-
-    {/* ⚙️ Settings */}
-    <TouchableOpacity
-      className="flex flex-1 bg-gray-100 mx-1 py-1 px-3 rounded-xl flex-col items-center justify-center"
-      onPress={() => {
-        if (!isProcessingSetting) {
-          navigation.navigate("CardSettings", {
-            cardName: cardData?.cardName,
-            cardId: cardData?.cardId,
-            balanceData: balanceData?.data?.balance,
-          });
-        }
-      }}
-      disabled={isProcessingSetting}
-    >
-      <Ionicons name="settings-outline" size={24} color="#333" />
-      <Text className="mt-2 text-center text-sm">
-        {t("manageVirtualCard.settings")}
-      </Text>
-    </TouchableOpacity>
-  </View>
-) : null}
-
-
-            {/* 🚫 TERMINATED Message */}
-            {!cardData ? (
-              <View className="mt-6 bg-red-100 rounded-xl p-4">
-                <Text className="text-red-600 font-semibold text-center">
-                  {t("manageVirtualCard.terminatedMessage")}
-                </Text>
-                 <View className="mt-6 bg-red-100 rounded-xl p-4">
+          {/* Action Buttons */}
+          {!isCardTerminated && profileCardStatus !== CARD_STATUS.BLOCKED && (
+            <View className="flex flex-row justify-between mt-1">
               <TouchableOpacity
-                className="bg-green-600 py-3 px-4 rounded-md self-center"
-                onPress={() => navigation.navigate("CreateVirtualCard")}
+                className="flex flex-1 bg-gray-100 mx-1 py-1 px-4 rounded-xl flex-col items-center justify-center"
+                onPress={handleShowCardDetails}
+                disabled={isProcessing || isLoadingIframe || isHideLoading}
               >
-                <Text className="text-white font-bold text-center">{t('manageVirtualCard.createNew')}</Text>
+                {isProcessing || isLoadingIframe ? (
+                  <ActivityIndicator size="small" color="#7ddd7d" />
+                ) : (
+                  <Ionicons name="eye-outline" size={24} color="#333" />
+                )}
+                <Text className="mt-2 text-center text-sm">
+                  {t("manageVirtualCard.viewInfo")}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                className="flex flex-1 bg-gray-100 mx-1 py-1 px-4 rounded-xl flex-col items-center justify-center"
+                onPress={debouncedHandleFreezeUnfreeze}
+                disabled={isProcessingFreeze || isLoadingFreeze}
+              >
+                {isProcessingFreeze || isLoadingFreeze ? (
+                  <ActivityIndicator size="small" color="#7ddd7d" />
+                ) : (
+                  <Ionicons name="snow-outline" size={24} color="#333" />
+                )}
+                <Text className="mt-2 text-center text-sm">
+                  {isCardFrozen
+                    ? t("manageVirtualCard.unfreeze")
+                    : t("manageVirtualCard.freeze")}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                className="flex flex-1 bg-gray-100 mx-1 py-1 px-3 rounded-xl flex-col items-center justify-center"
+                onPress={() => {
+                  if (!isProcessingSetting) {
+                    navigation.navigate("CardSettings", {
+                      cardName: cardData?.cardName,
+                      cardId: cardData?.cardId,
+                      balanceData: balanceData?.data?.balance,
+                    });
+                  }
+                }}
+                disabled={isProcessingSetting}
+              >
+                <Ionicons name="settings-outline" size={24} color="#333" />
+                <Text className="mt-2 text-center text-sm">
+                  {t("manageVirtualCard.settings")}
+                </Text>
               </TouchableOpacity>
             </View>
-              </View>
-            ) : null}
-
-
+          )}
 
           {/* Balance + Actions */}
-        {profileCardStatus !== "TERMINATED" && profileCardStatus !== "BLOCKED" ? (
+          {!isCardTerminated && profileCardStatus !== CARD_STATUS.BLOCKED && (
             <>
-              {/* Balance and Action Buttons */}
               <View className="mt-4 bg-gray-100 rounded-xl p-4">
                 <View className="flex-row items-center justify-between">
                   <View className="flex-1">
@@ -798,7 +778,8 @@ const handleCardDetailsRequest = async (isReadOnly) => {
                   </TouchableOpacity>
                 </View>
               </View>
-             {/*  Debts Dropdown - Only show if there are debts or loading */}
+
+              {/* Debts Dropdown */}
               {((debtsData?.data?.length > 0) || isDebtsLoading) && (
                 <View className="mt-2 px-4">
                   <TouchableOpacity
@@ -825,9 +806,7 @@ const handleCardDetailsRequest = async (isReadOnly) => {
                             key={debt.id}
                             className="flex-row justify-between border-b border-gray-200 py-2"
                           >
-                            <Text className="text-sm text-gray-600">
-                              {debt.intitule}
-                            </Text>
+                            <Text className="text-sm text-gray-600">{debt.intitule}</Text>
                             <Text className="text-sm font-semibold text-red-500">
                               {debt.amount?.toLocaleString("fr-FR")} XAF
                             </Text>
@@ -843,96 +822,45 @@ const handleCardDetailsRequest = async (isReadOnly) => {
                 </View>
               )}
             </>
-          ) : (
-            <View className="mt-6 bg-red-100 rounded-xl p-4">
-              <TouchableOpacity
-                className="bg-green-600 py-3 px-4 rounded-md self-center"
-                onPress={() => navigation.navigate("CreateVirtualCard")}
-              >
-                <Text className="text-white font-bold text-center">{t('manageVirtualCard.createNew')}</Text>
-              </TouchableOpacity>
-            </View>
           )}
 
-         {/* Transactions */}
-          <View className="mt-2 mb-2">
-            <View className="flex-row justify-between items-center mb-2">
-              <Text className="font-bold text-gray-700">{t('manageVirtualCard.history')}</Text>
-              <TouchableOpacity onPress={() => navigation.navigate("HistoryCard")}>
-                <Text className="font-bold text-gray-700">voir tout</Text>
-              </TouchableOpacity>
-            </View>
+          {/* Transactions */}
+          {!isCardTerminated && (
+            <View className="mt-2 mb-2">
+              <View className="flex-row justify-between items-center mb-2">
+                <Text className="font-bold text-gray-700">{t('manageVirtualCard.history')}</Text>
+                <TouchableOpacity onPress={() => navigation.navigate("HistoryCard")}>
+                  <Text className="font-bold text-gray-700">voir tout</Text>
+                </TouchableOpacity>
+              </View>
 
-            {isTransactionsLoading ? (
-              <ActivityIndicator size="small" color="#7ddd7d" />
-            ) : (
-              <ScrollView 
-                style={{ maxHeight: 400 }} // You can adjust this height as needed
-                showsVerticalScrollIndicator={true}
-                nestedScrollEnabled={true}
-              >
-                <FlatList
-                  data={cardTransactions?.data?.transactions?.items || []}
-                  renderItem={({ item }) => <TransactionItem item={item} navigation={navigation} />}
-                  keyExtractor={(item) => item.transactionId || item.id.toString()}
-                  ListEmptyComponent={
-                    <Text className="text-center py-4 text-gray-500">
-                      {t('manageVirtualCard.empty')}
-                    </Text>
-                  }
-                  showsVerticalScrollIndicator={false}
-                  scrollEnabled={false}
-                  nestedScrollEnabled={true}
-                />
-              </ScrollView>
-            )}
-          </View>
-        </View>
-      </ScrollView>
-
-      {/* Modal for TERMINATED or error/success */}
-      <Modal
-        transparent
-        visible={modalVisible}
-        animationType="fade"
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View className="flex-1 justify-center items-center bg-transparent bg-opacity-40">
-          <View className="bg-white p-6 rounded-xl w-4/5">
-            <View className="items-center mb-4">
-              {modalType === "terminated" ? (
-                <Ionicons name="alert-circle" size={48} color="#f39c12" />
-              ) : modalType === "success" ? (
-                <Ionicons name="checkmark-circle" size={48} color="#7ddd7d" />
+              {isTransactionsLoading ? (
+                <ActivityIndicator size="small" color="#7ddd7d" />
               ) : (
-                <Ionicons name="close-circle" size={48} color="#ff6b6b" />
+                <ScrollView 
+                  style={{ maxHeight: 400 }}
+                  showsVerticalScrollIndicator={true}
+                  nestedScrollEnabled={true}
+                >
+                  <FlatList
+                    data={cardTransactions?.data?.transactions?.items || []}
+                    renderItem={({ item }) => <TransactionItem item={item} navigation={navigation} />}
+                    keyExtractor={(item) => item.transactionId || item.id.toString()}
+                    ListEmptyComponent={
+                      <Text className="text-center py-4 text-gray-500">
+                        {t('manageVirtualCard.empty')}
+                      </Text>
+                    }
+                    showsVerticalScrollIndicator={false}
+                    scrollEnabled={false}
+                    nestedScrollEnabled={true}
+                  />
+                </ScrollView>
               )}
             </View>
-            <Text className="text-center mb-4">{modalMessage}</Text>
-            <Pressable
-              className="bg-[#7ddd7d] py-3 rounded-md mb-2"
-              onPress={() => {
-                setModalVisible(false);
-                if (modalType === "TERMINATED") {
-                  navigation.navigate("CreateVirtualCard");
-                }
-              }}
-            >
-              <Text className="text-white text-center font-bold">
-                {modalType === "TERMINATED" ? "Créer une nouvelle carte" : "OK"}
-              </Text>
-            </Pressable>
-            {modalType === "TERMINATED" && (
-              <Pressable
-                className="py-2"
-                onPress={() => setModalVisible(false)}
-              >
-                <Text className="text-center text-gray-500">  {t('manageVirtualCard.cancel')}</Text>
-              </Pressable>
-            )}
-          </View>
+          )}
         </View>
-      </Modal>
+      </ScrollView>
 
       {/* Modal for PRE_ACTIVE card */}
       <Modal
@@ -959,14 +887,9 @@ const handleCardDetailsRequest = async (isReadOnly) => {
                 });
               }}
             >
-              <Text className="text-white text-center font-bold">
-                Recharger maintenant
-              </Text>
+              <Text className="text-white text-center font-bold">Recharger maintenant</Text>
             </Pressable>
-            <Pressable
-              className="py-2"
-              onPress={() => setPreActiveModalVisible(false)}
-            >
+            <Pressable className="py-2" onPress={() => setPreActiveModalVisible(false)}>
               <Text className="text-center text-gray-500">Annuler</Text>
             </Pressable>
           </View>
@@ -981,7 +904,6 @@ const handleCardDetailsRequest = async (isReadOnly) => {
         onRequestClose={() => setIframeModalVisible(false)}
       >
         <View className="flex-1 bg-white">
-          {/* Header with close button */}
           <View className="flex-row justify-between items-center mt-10 p-4 border-b border-gray-200">
             <Text className="text-lg font-bold">Détails de la carte</Text>
             <TouchableOpacity onPress={() => setIframeModalVisible(false)}>
@@ -989,7 +911,6 @@ const handleCardDetailsRequest = async (isReadOnly) => {
             </TouchableOpacity>
           </View>
           
-          {/* WebView/Iframe container */}
           <View className="flex-1">
             {iframeUrl ? (
               <>
