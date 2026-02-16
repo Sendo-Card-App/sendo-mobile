@@ -43,7 +43,7 @@ const ConfirmSubscription = () => {
     });
   };
 
-  const handleConfirmSubscription = async () => {
+const handleConfirmSubscription = async () => {
     try {
       const result = await subscribe({
         fundId: fund.id,
@@ -66,28 +66,32 @@ const ConfirmSubscription = () => {
       // Analyser la structure de l'erreur
       let errorMessage = '';
       
-      // Cas 1: Erreur avec structure { status, message, data }
-      if (error.data?.errors) {
-        // Gérer le cas où data.errors est un tableau
-        if (Array.isArray(error.data.errors)) {
-          errorMessage = error.data.errors.join('\n');
-        } else {
-          errorMessage = error.data.message || error.message || 'Erreur de souscription';
-        }
-      } 
-      // Cas 2: Erreur avec structure directe
-      else if (error.message) {
-        errorMessage = error.message;
+      // CAS 1: Erreur avec la structure spécifique que vous avez montrée
+      // { status: 500, data: { status: 500, message: "Erreur de souscription", data: { errors: ["Solde insuffisant"] } } }
+      if (error.data?.data?.errors && Array.isArray(error.data.data.errors)) {
+        errorMessage = error.data.data.errors.join('\n');
       }
-      // Cas 3: Erreur avec data.message
+      // CAS 2: Erreur avec data.errors (tableau)
+      else if (error.data?.errors && Array.isArray(error.data.errors)) {
+        errorMessage = error.data.errors.join('\n');
+      }
+      // CAS 3: Erreur avec data.message
       else if (error.data?.message) {
         errorMessage = error.data.message;
       }
-      // Cas 4: Erreur avec status et message
-      else if (error.status && error.message) {
+      // CAS 4: Erreur avec data.data.message (structure imbriquée)
+      else if (error.data?.data?.message) {
+        errorMessage = error.data.data.message;
+      }
+      // CAS 5: Erreur avec message direct
+      else if (error.message) {
         errorMessage = error.message;
       }
-      // Cas 5: Fallback - On garde le message en français
+      // CAS 6: Erreur avec status et message
+      else if (error.status && error.error) {
+        errorMessage = error.error;
+      }
+      // CAS 7: Fallback - On garde le message en français
       else {
         errorMessage = 'Une erreur est survenue lors de la souscription';
       }

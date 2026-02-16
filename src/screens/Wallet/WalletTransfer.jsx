@@ -35,6 +35,9 @@ const WalletTransfer = ({ navigation }) => {
   const [debouncedWalletId, setDebouncedWalletId] = useState('');
   const [pendingTransferData, setPendingTransferData] = useState(null);
   const [showUnavailableModal, setShowUnavailableModal] = useState(false);
+  const [showCanadaRecipientModal, setShowCanadaRecipientModal] = useState(false);
+  const [pendingRecipientData, setPendingRecipientData] = useState(null);
+
 
   // Debounce walletId input
   useEffect(() => {
@@ -96,24 +99,28 @@ const WalletTransfer = ({ navigation }) => {
     }
   }, [recipientData]);
 
-  // Check if recipient is in Canada and redirect if necessary
   useEffect(() => {
-    if (recipientData?.data?.user?.country === "Canada") {
-      // Store the data in navigation params and navigate to CamCaSendo
-      navigation.navigate("CamCaSendo", {
-        recipientData: recipientData.data,
-        senderData: {
-          walletId: userWalletId,
-          balance: balanceData?.data?.balance,
-          currency: balanceData?.data?.currency,
-          country: userProfile?.data?.user?.country
-        }
-      });
-      // Clear the walletId to prevent further processing
-      setWalletId('');
-      setRecipientName('');
+    if (recipientData?.data?.user?.country === "Canada" && !showCanadaRecipientModal) {
+      // Store the recipient data and show confirmation modal
+      setPendingRecipientData(recipientData.data);
+      setShowCanadaRecipientModal(true);
     }
-  }, [recipientData, navigation, userWalletId, balanceData, userProfile]);
+  }, [recipientData]);
+
+  // Add this useEffect for the 5-second timer
+useEffect(() => {
+  let timer;
+  if (showCanadaRecipientModal) {
+    timer = setTimeout(() => {
+      handleConfirmCanadaTransfer();
+    }, 5000); // 5 seconds
+  }
+  return () => {
+    if (timer) {
+      clearTimeout(timer);
+    }
+  };
+}, [showCanadaRecipientModal]);
 
   useEffect(() => {
     if (recipientData?.data?.user) {
@@ -152,6 +159,34 @@ const WalletTransfer = ({ navigation }) => {
       return false;
     }
     return userWalletId.trim() === walletId.trim();
+  };
+
+   const handleConfirmCanadaTransfer = () => {
+    if (pendingRecipientData) {
+      // Navigate to CamCaSendo with the stored data
+      navigation.navigate("CamCaSendo", {
+        recipientData: pendingRecipientData,
+        senderData: {
+          walletId: userWalletId,
+          balance: balanceData?.data?.balance,
+          currency: balanceData?.data?.currency,
+          country: userProfile?.data?.user?.country
+        }
+      });
+      // Clear states
+      setWalletId('');
+      setRecipientName('');
+      setPendingRecipientData(null);
+      setShowCanadaRecipientModal(false);
+    }
+  };
+
+  const handleCancelCanadaTransfer = () => {
+    // Clear recipient data and hide modal
+    setWalletId('');
+    setRecipientName('');
+    setPendingRecipientData(null);
+    setShowCanadaRecipientModal(false);
   };
 
   const handlePinVerified = async () => {
@@ -383,6 +418,52 @@ const WalletTransfer = ({ navigation }) => {
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
+
+     {/* Canada Recipient Confirmation Modal */}
+      <Modal
+        visible={showCanadaRecipientModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={handleCancelCanadaTransfer}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={[styles.modalIconContainer, { backgroundColor: '#4CAF50' }]}>
+              <Ionicons name="globe-outline" size={48} color="white" />
+            </View>
+            
+            <Text style={styles.modalTitle}>
+              Transfert international détecté
+            </Text>
+            
+            <Text style={styles.modalMessage}>
+              Vous êtes en train d'effectuer un transfert vers le{' '}
+              <Text style={styles.boldText}>Canada</Text>.
+            </Text>
+
+            <Text style={styles.modalSubMessage}>
+              Ce type d'opération est considéré comme un{' '}
+              <Text style={styles.boldText}>transfert international</Text>.
+            </Text>
+
+            <Text style={styles.timerText}>
+              Vous allez être redirigé vers le module correspondant dans{' '}
+              <Text style={styles.boldText}>5 secondes</Text> afin de finaliser votre 
+              opération en toute sécurité.
+            </Text>
+            
+            <View style={styles.modalButtonContainer}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.okButton]}
+                onPress={handleConfirmCanadaTransfer}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.modalButtonText}>OK</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       {/* Service Unavailable Modal */}
       <Modal
@@ -633,6 +714,102 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: '600',
+  },
+   infoBox: {
+    backgroundColor: '#f5f5f5',
+    borderRadius: 10,
+    padding: 15,
+    width: '100%',
+    marginBottom: 20,
+  },
+  infoBoxTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 8,
+  },
+  infoBoxText: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 4,
+  },
+  modalSubMessage: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 20,
+    fontStyle: 'italic',
+  },
+// Add these new styles or update existing ones
+modalIconContainer: {
+  width: 80,
+  height: 80,
+  borderRadius: 40,
+  backgroundColor: '#4CAF50', // Changed to match image
+  justifyContent: 'center',
+  alignItems: 'center',
+  marginBottom: 20,
+},
+modalTitle: {
+  fontSize: 22,
+  fontWeight: 'bold',
+  color: '#333',
+  textAlign: 'center',
+  marginBottom: 15,
+},
+modalMessage: {
+  fontSize: 16,
+  color: '#666',
+  textAlign: 'center',
+  lineHeight: 22,
+  marginBottom: 8,
+},
+modalSubMessage: {
+  fontSize: 16,
+  color: '#666',
+  textAlign: 'center',
+  lineHeight: 22,
+  marginBottom: 15,
+},
+timerText: {
+  fontSize: 16,
+  color: '#666',
+  textAlign: 'center',
+  lineHeight: 22,
+  marginBottom: 25,
+  paddingHorizontal: 10,
+},
+boldText: {
+  fontWeight: 'bold',
+  color: '#333',
+},
+modalButtonContainer: {
+  width: '100%',
+  marginTop: 5,
+},
+modalButton: {
+  paddingVertical: 15,
+  borderRadius: 10,
+  alignItems: 'center',
+},
+okButton: {
+  backgroundColor: '#4CAF50',
+  width: '100%',
+},
+modalButtonText: {
+  color: 'white',
+  fontSize: 18,
+  fontWeight: '600',
+},
+  modalButtonContainer: {
+    width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  modalButton: {
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
   },
 });
 

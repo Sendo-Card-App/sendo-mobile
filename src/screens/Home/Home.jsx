@@ -89,7 +89,7 @@ const HomeScreen = () => {
   } = useGetUserProfileQuery(undefined, {
     skip: isUpdateRequired || !versionCheckCompleted // Skip if update required or version not checked
   });
-  
+
   const userId = userProfile?.data?.user?.id;
   const referralCode = userProfile?.data?.referralCode;
   const isReferralCodeUsed = referralCode?.isUsed;
@@ -513,73 +513,110 @@ const HomeScreen = () => {
   };
   
 
-   const formatTransactionDisplay = (item) => {
-    let displayAmount = item.amount;
-    let displayCurrency = item.currency;
-    let displayDescription = item.description;
-
-    // Handle CAM-CA transfers (Cameroun -> Canada)
-    if (item.description === "Transfert CAM-CA") {
-      // Convert XAF to CAD
+const formatTransactionDisplay = (item) => {
+  let displayAmount = item.amount;
+  let displayCurrency = item.currency;
+  let displayDescription = item.description;
+  
+  // Get user country
+  const userCountry = userProfile?.data?.user?.country;
+  
+  // Handle CAM-CA transfers (Cameroun -> Canada) - CAS SPÉCIAL
+  if (item.description === "Transfert CAM-CA") {
+    // Pour les utilisateurs au Cameroun: garder en XAF
+    if (userCountry === "Cameroon") {
+      return {
+        amount: item.amount,  // Garder le nombre pour le formatage standard
+        total: item.totalAmount,
+        description: "Transfert CAM-CA",
+        currency: "FCFA",  // Forcer la devise FCFA
+        showRate: true,
+        rate: exchangeRate,
+        isSpecialCase: true,
+        formattedAmount: `${item.amount.toLocaleString('fr-FR')} XAF`
+      };
+    }
+    
+    // Pour les utilisateurs au Canada: convertir en CAD
+    if (userCountry === "Canada") {
       const amountInCAD = (item.amount / exchangeRate).toFixed(2);
       const totalInCAD = (item.totalAmount / exchangeRate).toFixed(2);
       
       return {
-        amount: `${amountInCAD} CAD`,
-        total: `${totalInCAD} CAD`,
+        amount: parseFloat(amountInCAD), // Convertir en nombre pour le formatage standard
+        total: parseFloat(totalInCAD),
         description: "Transfert CAM-CA",
+        currency: "CAD",  // Forcer la devise CAD
         showRate: true,
-        rate: exchangeRate
+        rate: exchangeRate,
+        isSpecialCase: true,
+        formattedAmount: `${amountInCAD} CAD`
       };
     }
-
-    // Handle FUND_SUBSCRIPTION transactions
-    if (item.type === "FUND_SUBSCRIPTION") {
-      return {
-        amount: item.amount,
-        total: item.totalAmount,
-        description: item.description?.replace("Souscription : #", "Fonds: ") || "Souscription de fonds",
-        currency: item.currency,
-        showRate: false
-      };
-    }
-
-    // Handle regular transactions
-    if (
-      item.type === "PAYMENT" ||
-      item.type === "TONTINE_PAYMENT" ||
-      item.type === "VIEW_CARD_DETAILS"
-    ) {
-      displayAmount = item.totalAmount;
-    } else if (
-      item.description?.trim() === "Retrait par SENDO" ||
-      item.description?.trim() === "Dépôt par SENDO"
-    ) {
-      displayAmount = item.totalAmount;
-    }
-
-    // Handle description for certain types
-    if (
-      item.type?.toUpperCase() === "DEPOSIT" &&
-      item.method?.toUpperCase() === "BANK_TRANSFER" &&
-      displayDescription &&
-      (displayDescription.startsWith("http://") || displayDescription.startsWith("https://"))
-    ) {
-      displayDescription = t("home.viewDocument");
-    }
-
-    if (item.type?.toUpperCase() === "TONTINE_PAYMENT" && displayDescription) {
-      displayDescription = displayDescription.replace(/#\d+/, "").trim();
-    }
-
+    
+    // Fallback - garder le format original
     return {
-      amount: displayAmount,
+      amount: item.amount,
       total: item.totalAmount,
-      description: displayDescription,
-      currency: displayCurrency,
-      showRate: false
+      description: item.description,
+      currency: item.currency,
+      showRate: false,
+      isSpecialCase: false
     };
+  }
+
+  // === TOUTES LES AUTRES TRANSACTIONS RESTENT IDENTIQUES ===
+  
+  // Handle FUND_SUBSCRIPTION transactions
+  if (item.type === "FUND_SUBSCRIPTION") {
+    return {
+      amount: item.amount,
+      total: item.totalAmount,
+      description: item.description?.replace("Souscription : #", "Fonds: ") || "Souscription de fonds",
+      currency: item.currency,
+      showRate: false,
+      isSpecialCase: false
+    };
+  }
+
+  // Handle regular transactions where totalAmount should be used
+  if (
+    item.type === "PAYMENT" ||
+    item.type === "TONTINE_PAYMENT" ||
+    item.type === "VIEW_CARD_DETAILS"
+  ) {
+    displayAmount = item.totalAmount;
+  } else if (
+    item.description?.trim() === "Retrait par SENDO" ||
+    item.description?.trim() === "Dépôt par SENDO"
+  ) {
+    displayAmount = item.totalAmount;
+  }
+
+  // Handle description for certain types
+  if (
+    item.type?.toUpperCase() === "DEPOSIT" &&
+    item.method?.toUpperCase() === "BANK_TRANSFER" &&
+    displayDescription &&
+    (displayDescription.startsWith("http://") || displayDescription.startsWith("https://"))
+  ) {
+    displayDescription = t("home.viewDocument");
+  }
+
+  if (item.type?.toUpperCase() === "TONTINE_PAYMENT" && displayDescription) {
+    displayDescription = displayDescription.replace(/#\d+/, "").trim();
+  }
+
+  // Format standard pour toutes les autres transactions
+  return {
+    amount: displayAmount,
+    total: item.totalAmount,
+    description: displayDescription,
+    currency: displayCurrency,
+    showRate: false,
+    isSpecialCase: false
   };
+};
 
   
   
@@ -996,62 +1033,73 @@ const HomeScreen = () => {
         <Text className="text-black text-center mt-4">{t("home.noTransactions")}</Text>
       ) : (
         <ScrollView showsVerticalScrollIndicator={false}>
-          {history?.data?.transactions?.items?.map((item, index) => {
-            const statusColor = getStatusColor(item.status);
-            const formattedDate = new Date(item.createdAt).toLocaleString("fr-FR", {
-              day: "2-digit",
-              month: "short",
-              year: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
-            });
-            
-            const iconSource = getMethodIcon(item);
-            const display = formatTransactionDisplay(item);
+        {history?.data?.transactions?.items?.map((item, index) => {
+        const statusColor = getStatusColor(item.status);
+        const formattedDate = new Date(item.createdAt).toLocaleString("fr-FR", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+        
+        const iconSource = getMethodIcon(item);
+        const display = formatTransactionDisplay(item);
 
-            return (
-              <TouchableOpacity
-                key={index}
-                className="flex-row items-center mb-4 border-b border-gray-300 pb-2"
-                onPress={() =>
-                  navigation.navigate("Receipt", {
-                    transaction: item,
-                    user: userProfile?.data?.user,
-                  })
-                }
-              >
-                <Image
-                  source={iconSource}
-                  className="w-10 h-10 mr-3 rounded-full"
-                  resizeMode="contain"
-                />
-                <View className="flex-1">
-                  <Text className="text-black font-semibold">{display.description}</Text>
-                  <View className="flex-row items-center flex-wrap">
+        return (
+          <TouchableOpacity
+            key={index}
+            className="flex-row items-center mb-4 border-b border-gray-300 pb-2"
+            onPress={() =>
+              navigation.navigate("Receipt", {
+                transaction: item,
+                user: userProfile?.data?.user,
+              })
+            }
+          >
+            <Image
+              source={iconSource}
+              className="w-10 h-10 mr-3 rounded-full"
+              resizeMode="contain"
+            />
+            <View className="flex-1">
+              <Text className="text-black font-semibold">{display.description}</Text>
+              <View className="flex-row items-center flex-wrap">
+                {/* CAS SPÉCIAL: Transfert CAM-CA */}
+                {display.isSpecialCase ? (
+                  <>
                     <Text className="text-black text-sm">
-                      {display.showRate 
-                        ? display.amount 
-                        : `${typeof display.amount === 'number' ? display.amount.toLocaleString() : display.amount} ${display.currency || ''}`
+                      {display.formattedAmount || 
+                        `${typeof display.amount === 'number' ? display.amount.toLocaleString() : display.amount} ${display.currency || ''}`
                       }
+                    </Text>
+                  </>
+                ) : (
+                  /* TOUTES LES AUTRES TRANSACTIONS: Format standard */
+                  <>
+                    <Text className="text-black text-sm">
+                      {`${typeof display.amount === 'number' ? display.amount.toLocaleString() : display.amount} ${display.currency || ''}`}
                     </Text>
                     {item.type === "FUND_SUBSCRIPTION" && (
                       <View className="ml-2 bg-green-100 px-2 py-0.5 rounded-full">
                         <Text className="text-purple-700 text-[10px] font-medium">
-                          Fonds bloqué
+                            {t("home.fund")}
                         </Text>
                       </View>
                     )}
-                  </View>
-                </View>
-                <View className="items-end">
-                  <Text className={`text-xs font-semibold ${statusColor}`}>
-                    {t(`transactionStatus.${item.status?.toUpperCase()}`)}
-                  </Text>
-                  <Text className="text-gray-500 text-[10px] mt-1">{formattedDate}</Text>
-                </View>
-              </TouchableOpacity>
-            );
-          })}
+                  </>
+                )}
+              </View>
+            </View>
+            <View className="items-end">
+              <Text className={`text-xs font-semibold ${statusColor}`}>
+                {t(`transactionStatus.${item.status?.toUpperCase()}`)}
+              </Text>
+              <Text className="text-gray-500 text-[10px] mt-1">{formattedDate}</Text>
+            </View>
+          </TouchableOpacity>
+        );
+      })}
         </ScrollView>
       )}
 

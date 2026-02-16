@@ -65,6 +65,7 @@ const CamCaSendo = ({ navigation }) => {
   const [showSummary, setShowSummary] = useState(false);
   const [showSFEConnectModal, setShowSFEConnectModal] = useState(false);
   const [showUnavailableModal, setShowUnavailableModal] = useState(false);
+  const [formattedExchangeRate, setFormattedExchangeRate] = useState('');
 
   // Configuration
   const {
@@ -91,6 +92,16 @@ const CamCaSendo = ({ navigation }) => {
     }, 500);
     return () => clearTimeout(timer);
   }, [walletId]);
+
+   useEffect(() => {
+    if (exchangeRate) {
+      if (isCameroon) {
+        setFormattedExchangeRate(`1 CAD = ${exchangeRate.toLocaleString('fr-FR')} FCFA`);
+      } else {
+        setFormattedExchangeRate(`1 FCFA = ${(1/exchangeRate).toFixed(4)} CAD`);
+      }
+    }
+  }, [exchangeRate, isCameroon]);
 
   // Use the API mutation for fees
   const [getTransferFees, { isLoading: isCalculatingFees }] = useGetTransferFeesMutation();
@@ -524,6 +535,11 @@ const CamCaSendo = ({ navigation }) => {
                       formatCurrency(conversion.amountXAF, 'FCFA')
                     }
                   </Text>
+                  <View style={styles.exchangeRateDetail}>
+                    <Text style={styles.exchangeRateDetailText}>
+                      Taux appliqué: 1 CAD = {exchangeRate.toLocaleString('fr-FR')} FCFA
+                    </Text>
+                  </View>
                 </View>
               </View>
             </View>
@@ -642,6 +658,13 @@ const CamCaSendo = ({ navigation }) => {
                   </View>
                 </View>
 
+                 <View style={styles.summaryRow}>
+                    <Text style={styles.summaryLabel}>Taux de change:</Text>
+                    <Text style={styles.summaryValue}>
+                      1 CAD = {exchangeRate.toLocaleString('fr-FR')} FCFA
+                    </Text>
+                  </View>
+
                 <View style={styles.summarySection}>
                   <Text style={styles.summarySectionTitle}>Montants</Text>
                   <View style={styles.summaryRow}>
@@ -740,7 +763,7 @@ const CamCaSendo = ({ navigation }) => {
         <View style={styles.sfeModalOverlay}>
           <View style={styles.sfeModalContent}>
             <View style={styles.sfeModalHeader}>
-              <FontAwesome name="exchange" size={40} color="#0D1C6A" />
+              <FontAwesome name="exchange" size={40} color="#7ddd7d" />
               <Text style={styles.sfeModalTitle}>Transfert important détecté</Text>
             </View>
             
@@ -1244,7 +1267,7 @@ const styles = StyleSheet.create({
   sfeModalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#0D1C6A',
+    color: '#7ddd7d',
     marginTop: 15,
     textAlign: 'center',
   },
@@ -1259,7 +1282,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   sfeHighlight: {
-    color: '#0D1C6A',
+    color: '#7ddd7d',
     fontWeight: 'bold',
   },
   sfeFeatures: {
@@ -1299,7 +1322,7 @@ const styles = StyleSheet.create({
     borderColor: '#dee2e6',
   },
   sfeDownloadButton: {
-    backgroundColor: '#0D1C6A',
+    backgroundColor: '#7ddd7d',
   },
   sfeCancelButtonText: {
     color: '#666',
@@ -1311,6 +1334,40 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     marginLeft: 8,
+  },
+   exchangeRateDetail: {
+    marginTop: 5,
+    padding: 5,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 5,
+  },
+  exchangeRateDetailText: {
+    fontSize: 11,
+    color: '#666',
+    fontStyle: 'italic',
+  },
+  summaryExchangeRateCard: {
+    backgroundColor: '#e8f5e8',
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 15,
+    alignItems: 'center',
+  },
+  summaryExchangeRateText: {
+    fontSize: 14,
+    color: '#2d5016',
+    marginTop: 5,
+  },
+  summaryExchangeRateValue: {
+    fontSize: 16,
+    color: '#7ddd7d',
+    fontWeight: 'bold',
+    marginTop: 2,
+  },
+  receiveHighlight: {
+    color: '#28a745',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
 });
 

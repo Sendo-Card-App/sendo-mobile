@@ -55,7 +55,7 @@ const InteracWithdrawal = ({ navigation }) => {
   const withdrawalFeePercent = getConfigValue('SENDO_WITHDRAW_INTERAC_FEES') || 0;
   const amountNum = parseFloat(amount) || 0;
   const feeAmount = (amountNum * withdrawalFeePercent) / 100;
-  const netAmount = amountNum + feeAmount;
+  const netAmount = amountNum - feeAmount;
   
   // Get wallet matricule from user profile
   const walletMatricule = userProfile?.data?.user?.wallet?.matricule;
@@ -290,7 +290,7 @@ const InteracWithdrawal = ({ navigation }) => {
             
             <View style={styles.detailRow}>
               <Text style={styles.netLabel}>{t('withdrawal.amount_received')}</Text>
-              <Text style={styles.netValue}>{netAmount.toFixed(2)} CAD</Text>
+              <Text style={styles.netValue}>{amountNum.toFixed(2)} CAD</Text>
             </View>
           </View>
         )}
@@ -598,7 +598,7 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   netValue: {
-    fontSize: 18,
+    fontSize: 13,
     fontWeight: 'bold',
     color: '#28a745',
   },
