@@ -60,7 +60,7 @@ const ManageVirtualCard = () => {
     data: cards,
     isLoading: isCardsLoading,
   } = useGetVirtualCardsQuery(undefined, {
-    pollingInterval: 60000,
+    pollingInterval: 1000,
   });
   
   const { data: userProfile, isLoading: isProfileLoading, refetch } = useGetUserProfileQuery();

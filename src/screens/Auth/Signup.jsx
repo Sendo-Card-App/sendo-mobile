@@ -31,12 +31,13 @@ import Loader from "../../components/Loader";
 import DateTimePicker from '@react-native-community/datetimepicker';
 
 const Signup = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const [register, { isLoading }] = useRegisterMutation();
   const [emailSend] = useEmailSendMutation();
   const { error, isSignupSuccess } = useSelector((state) => state.auth);
+  const [languageModalVisible, setLanguageModalVisible] = useState(false);
 
   // Hardcoded countries array with only Cameroon and Canada
   const countries = [
@@ -92,6 +93,20 @@ const Signup = () => {
 
   const minDate = calculateMinDate();
   const maxDate = calculateMaxDate();
+
+  const handleLanguageModalToggle = (visible) => {
+    setLanguageModalVisible(visible);
+  };
+
+  const changeLanguage = (lang) => {
+    i18n.changeLanguage(lang);
+    handleLanguageModalToggle(false);
+    Toast.show({
+      type: 'success',
+      text1: t('log.languageChanged'),
+      text2: lang === 'en' ? t('log.english') : t('log.french'),
+    });
+  };
 
   // Filtrage des pays basé sur la recherche
   useEffect(() => {
@@ -265,8 +280,8 @@ const Signup = () => {
     } else {
       Toast.show({
         type: 'error',
-        text1: 'Error',
-        text2: 'Please fill all fields correctly',
+        text1: t('signup.error'),
+        text2: t('signup.fillAllFields'),
       });
     }
   };
@@ -279,8 +294,8 @@ const Signup = () => {
     if (!validateStep(3)) {
       Toast.show({
         type: 'error',
-        text1: 'Error',
-        text2: 'Please fill all fields correctly',
+        text1: t('signup.error'),
+        text2: t('signup.fillAllFields'),
       });
       return;
     }
@@ -319,29 +334,29 @@ const Signup = () => {
       dispatch(signupSuccess(response));
       Toast.show({
         type: 'success',
-        text1: 'Success',
-        text2: 'Account created successfully',
+        text1: t('signup.success'),
+        text2: t('signup.accountCreated'),
       });
     } catch (err) {
       console.error("Registration error:", JSON.stringify(err, null, 2));
       const errorData = {
-        message: err?.data?.message || "Registration failed",
+        message: err?.data?.message || t('signup.registrationFailed'),
         status: err?.status,
         data: err?.data
       };
 
       dispatch(signupFailure(errorData));
 
-      let errorMessage = "Registration failed. Please try again.";
+      let errorMessage = t('signup.registrationFailed');
       if (err?.data?.message) {
-        if (err.data.message.includes("email")) errorMessage = "This email is already used.";
-        else if (err.data.message.includes("phone")) errorMessage = "This phone is already used.";
+        if (err.data.message.includes("email")) errorMessage = t('signup.emailUsed');
+        else if (err.data.message.includes("phone")) errorMessage = t('signup.phoneUsed');
         else errorMessage = err.data.message;
       }
 
       Toast.show({
         type: 'error',
-        text1: 'Error',
+        text1: t('signup.error'),
         text2: errorMessage,
       });
     }
@@ -877,6 +892,19 @@ const Signup = () => {
       <SafeAreaView className="bg-[#181e25] flex-1 items-center justify-center">
         <StatusBar style="light" backgroundColor="#181e25" />
 
+        {/* Language Selector Button */}
+        <TouchableOpacity
+          className="absolute z-10 top-20 right-5"
+          onPress={() => handleLanguageModalToggle(true)}
+        >
+          <View className="flex-row items-center bg-gray-700 px-3 py-2 rounded-full">
+            <Feather name="globe" size={18} color="white" />
+            <Text className="text-white ml-1 font-medium">
+              {i18n.language === 'en' ? 'EN' : 'FR'}
+            </Text>
+          </View>
+        </TouchableOpacity>
+
         <TouchableOpacity className="absolute z-10 top-20 left-5" onPress={() => navigation.goBack()}>
           <AntDesign name="left" size={24} color="white" />
         </TouchableOpacity>
@@ -957,6 +985,38 @@ const Signup = () => {
               />
             )}
           </SafeAreaView>
+        </Modal>
+
+        {/* Language Selection Modal */}
+        <Modal 
+          animationType="slide" 
+          transparent={true} 
+          visible={languageModalVisible}
+          onRequestClose={() => handleLanguageModalToggle(false)}
+        >
+          <View className="flex-1 justify-center items-center bg-black/50">
+            <View className="w-4/5 bg-white rounded-xl p-6">
+              <Text className="text-xl font-bold mb-4 text-center">{t("log.select")}</Text>
+              <TouchableOpacity 
+                onPress={() => changeLanguage("en")}
+                className="py-3 border-b border-gray-200"
+              >
+                <Text className="text-lg text-center">{t("log.en")}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                onPress={() => changeLanguage("fr")}
+                className="py-3 border-b border-gray-200"
+              >
+                <Text className="text-lg text-center">{t("log.fr")}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                onPress={() => handleLanguageModalToggle(false)}
+                className="mt-4"
+              >
+                <Text className="text-red-500 text-lg text-center">{t("log.close")}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </Modal>
 
         {/* Loader Overlay */}

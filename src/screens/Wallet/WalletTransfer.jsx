@@ -190,53 +190,61 @@ useEffect(() => {
   };
 
   const handlePinVerified = async () => {
-    if (isCanada && !checkServiceAvailability()) {
-      setShowUnavailableModal(true);
-      return;
-    }
+  if (isCanada && !checkServiceAvailability()) {
+    setShowUnavailableModal(true);
+    return;
+  }
 
-    const transferAmount = parseFloat(amount);
-    
-    if (checkSelfTransfer()) {
-      showErrorToast('ACTION_FAILED', 'Vous ne pouvez pas transférer des fonds vers votre propre compte.');
-      return;
-    }
+  const transferAmount = parseFloat(amount);
+  
+  if (checkSelfTransfer()) {
+    showErrorToast('ACTION_FAILED', 'Vous ne pouvez pas transférer des fonds vers votre propre compte.');
+    return;
+  }
 
-    if (!walletId || isNaN(transferAmount) || transferAmount <= 0) {
-      showErrorToast('ACTION_FAILED', 'Veuillez fournir un montant supérieur à 0.');
-      return;
-    }
+  if (!walletId || isNaN(transferAmount) || transferAmount <= 0) {
+    showErrorToast('ACTION_FAILED', 'Veuillez fournir un montant supérieur à 0.');
+    return;
+  }
 
-    const totalToDeduct = isCanada ? transferAmount + feeAmount : transferAmount;
-    if (totalToDeduct > (balanceData?.data?.balance || 0)) {
-      showErrorToast('ACTION_FAILED', 'Votre solde est insuffisant pour effectuer ce transfert.');
-      return;
-    }
+  // Check if recipient is from Canada
+  if (recipientData?.data?.user?.country === "Canada") {
+    // Store the recipient data and show confirmation modal
+    setPendingRecipientData(recipientData.data);
+    setShowCanadaRecipientModal(true);
+    return;
+  }
 
-    try {
-      await transferFunds({
-        fromWallet: userWalletId,
-        toWallet: walletId,
-        amount: transferAmount,
-        transfer_description: description,
-      }).unwrap();
+  const totalToDeduct = isCanada ? transferAmount + feeAmount : transferAmount;
+  if (totalToDeduct > (balanceData?.data?.balance || 0)) {
+    showErrorToast('ACTION_FAILED', 'Votre solde est insuffisant pour effectuer ce transfert.');
+    return;
+  }
 
-      navigation.navigate('Success', {
-        message: 'Transfert effectué avec succès !',
-        nextScreen: 'MainTabs',
-      });
-    } catch (error) {
-      console.log("Transfer error:", JSON.stringify(error, null, 2));
-     
-      const status = error?.status;
-      if (status === 503) showErrorToast('SERVICE_UNAVAILABLE');
-      else if (status === 500) showErrorToast('ACTION_FAILED', 'Erreur serveur lors du transfert');
-      else if (status === 400) showErrorToast('ACTION_FAILED', 'Veuillez remplir tous les champs.');
-      else if (status === 403) showErrorToast('KYC Erreur', 'Veuillez soumettre vos KYC.');
-      else if (status === 404) showErrorToast('ACTION_FAILED', 'Portefeuille introuvable');
-      else showErrorToast('ACTION_FAILED', error?.data?.message || 'Une erreur est survenue.');
-    }
-  };
+  try {
+    await transferFunds({
+      fromWallet: userWalletId,
+      toWallet: walletId,
+      amount: transferAmount,
+      transfer_description: description,
+    }).unwrap();
+
+    navigation.navigate('Success', {
+      message: 'Transfert effectué avec succès !',
+      nextScreen: 'MainTabs',
+    });
+  } catch (error) {
+    console.log("Transfer error:", JSON.stringify(error, null, 2));
+   
+    const status = error?.status;
+    if (status === 503) showErrorToast('SERVICE_UNAVAILABLE');
+    else if (status === 500) showErrorToast('ACTION_FAILED', 'Erreur serveur lors du transfert');
+    else if (status === 400) showErrorToast('ACTION_FAILED', 'Veuillez remplir tous les champs.');
+    else if (status === 403) showErrorToast('KYC Erreur', 'Veuillez soumettre vos KYC.');
+    else if (status === 404) showErrorToast('ACTION_FAILED', 'Portefeuille introuvable');
+    else showErrorToast('ACTION_FAILED', error?.data?.message || 'Une erreur est survenue.');
+  }
+};
 
   const isLoading = isProfileLoading || isBalanceLoading;
 

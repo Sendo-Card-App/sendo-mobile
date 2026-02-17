@@ -2233,7 +2233,7 @@ const handleDownloadReceipt = async () => {
               </>
             )
           )}
-          {isCAMCATransfer && (
+          {/* {isCAMCATransfer && (
             <View className="bg-blue-50 p-3 rounded-lg mb-3 border border-blue-200">
               <View className="flex-row items-center mb-1">
                 <Ionicons name="swap-horizontal" size={16} color="#3b82f6" />
@@ -2245,7 +2245,7 @@ const handleDownloadReceipt = async () => {
                 1 CAD = {exchangeRate} XAF
               </Text>
             </View>
-          )}
+          )} */}
 
         <View className="bg-gray-50 p-3 rounded-lg">
           <Text className="text-green-600 font-semibold my-1">Reçu</Text>

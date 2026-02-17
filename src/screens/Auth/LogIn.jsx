@@ -1,6 +1,6 @@
 import 'react-native-get-random-values';
 import React, { useState, useEffect } from "react";
-import { AntDesign } from "@expo/vector-icons";
+import { AntDesign, Feather } from "@expo/vector-icons";
 import Icon from 'react-native-vector-icons/Ionicons';
 import {
   View,
@@ -185,7 +185,7 @@ const Log = () => {
             </TouchableOpacity>
 
             <TouchableOpacity onPress={() => handleLanguageModalToggle(true)}>
-              <Icon name="language" size={24} color="white" />
+               <Feather name="globe" size={18} color="white" />
             </TouchableOpacity>
           </View>
 
