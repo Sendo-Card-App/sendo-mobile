@@ -16,17 +16,19 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AntDesign, EvilIcons, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import * as ImagePicker from 'expo-image-picker';
-import * as FileSystem from 'expo-file-system/legacy'; // Fixed: using legacy API
+import * as FileSystem from 'expo-file-system';
+import { File } from 'expo-file-system';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import AddSecondPhoneModal from '../../components/AddSecondPhoneModal'; 
 import KeyboardAvoidinWrapper from "../../components/KeyboardAvoidinWrapper";
 import {
   useGetUserProfileQuery,
-   useGetProfilePictureQuery,
+  useGetProfilePictureQuery,
   useUpdateProfileMutation,
   useAddSecondPhoneMutation,
   useSendSecondPhoneOtpMutation,
   useVerifySecondPhoneOtpMutation,
-  useSendProfilePictureMutation ,
+  useSendProfilePictureMutation,
 } from "../../services/Auth/authAPI";
 import { useNavigation } from "@react-navigation/native";
 import Loader from "../../components/Loader";
@@ -35,8 +37,7 @@ import { useTranslation } from 'react-i18next';
 import OtpVerificationModal from "../../components/OtpVerificationModal";
 import { useSendNotificationMutation } from "../../services/Notification/notificationApi";
 import { TypesNotification } from "../../utils/constants";
-import { useAppState } from '../../context/AppStateContext'; // Import the hook
-
+import { useAppState } from '../../context/AppStateContext';
 
 const { width, height } = Dimensions.get('window');
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -44,7 +45,7 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const Account = () => {
   const navigation = useNavigation();
   const { t } = useTranslation();
-   const { setIsPickingDocument } = useAppState();
+  const { setIsPickingDocument } = useAppState();
 
   // Animation refs
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -59,20 +60,22 @@ const Account = () => {
   );
 
   const userId = userProfile?.data?.user?.id;
-
+  
   const { data: profilePicture, isLoading: isPictureLoading } = useGetProfilePictureQuery(
     userId,
-    { pollingInterval: 1000 }
+    { pollingInterval: 1000, skip: !userId }
   );
  
   const [updateProfile, { isLoading: isUpdating }] = useUpdateProfileMutation();
   const [addSecondPhone, { isLoading: isAddingPhone }] = useAddSecondPhoneMutation();
   const [sendSecondPhoneOtp, { isLoading: isSendingOtp }] = useSendSecondPhoneOtpMutation();
   const [verifySecondPhoneOtp, { isLoading: isVerifyingOtp }] = useVerifySecondPhoneOtpMutation();
+  const [sendProfilePicture, { isLoading: isUploadingPicture }] = useSendProfilePictureMutation();
   
   const [showSecondPhoneModal, setShowSecondPhoneModal] = useState(false);
   const [secondPhoneNumber, setSecondPhoneNumber] = useState('');
   const [isEditing, setIsEditing] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [formData, setFormData] = useState({
     firstname: "",
     lastname: "",
@@ -82,6 +85,9 @@ const Account = () => {
     region: "",
     city: "",
     district: "",
+    address: "",
+    dateOfBirth: null,
+    placeOfBirth: "",
     picture: null,
   });
   const [originalData, setOriginalData] = useState({});
@@ -90,11 +96,10 @@ const Account = () => {
   const [tempValue, setTempValue] = useState("");
   const [isSecondPhone, setIsSecondPhone] = useState(false);
   const [sendNotification] = useSendNotificationMutation();
-  const [sendProfilePicture] = useSendProfilePictureMutation();
 
   // Initialize animations
   if (cardAnimations.length === 0) {
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 15; i++) {
       cardAnimations.push(new Animated.Value(0));
     }
   }
@@ -106,20 +111,25 @@ const Account = () => {
   );
 
   useEffect(() => {
-    if (userProfile) {
+    if (userProfile?.data?.user) {
+      const user = userProfile.data.user;
       const profileData = {
-        firstname: userProfile.data.user.firstname || "",
-        lastname: userProfile.data.user.lastname || "",
-        phone: userProfile.data.user.phone || "",
-        email: userProfile.data.user.email || "",
-        profession: userProfile.data.user.profession || "",
-        region: userProfile.data.user.region || "",
-        city: userProfile.data.user.city || "",
-        district: userProfile.data.user.district || "",
-        picture: userProfile.data.user.picture 
-          ? { uri: userProfile.data.user.picture } 
+        firstname: user.firstname || "",
+        lastname: user.lastname || "",
+        phone: user.phone || "",
+        email: user.email || "",
+        profession: user.profession || "",
+        region: user.region || "",
+        city: user.city || "",
+        district: user.district || "",
+        address: user.address || "",
+        dateOfBirth: user.dateOfBirth ? new Date(user.dateOfBirth) : null,
+        placeOfBirth: user.placeOfBirth || "",
+        picture: user.picture 
+          ? { uri: user.picture } 
           : null,
       };
+      
       setFormData(profileData);
       setOriginalData(profileData);
     }
@@ -175,6 +185,21 @@ const Account = () => {
     ]).start();
   };
 
+  const formatDate = (date) => {
+    if (!date) return "Not set";
+    return date.toISOString().split('T')[0]; // Returns YYYY-MM-DD format
+  };
+
+  const handleDateChange = (event, selectedDate) => {
+    setShowDatePicker(false);
+    if (selectedDate) {
+      setFormData(prev => ({
+        ...prev,
+        dateOfBirth: selectedDate
+      }));
+    }
+  };
+
   const handleSave = async () => {
     try {
       const requiredFields = ['firstname', 'lastname', 'phone', 'email'];
@@ -189,27 +214,56 @@ const Account = () => {
         return;
       }
 
-      await updateProfile({
-        userId: userProfile.data.id,
-        firstname: formData.firstname,
-        lastname: formData.lastname,
-        phone: formData.phone,
-        email: formData.email,
-        profession: formData.profession || '',
-        region: formData.region || '',
-        city: formData.city || '',
-        district: formData.district || '',
-      }).unwrap();
+      // First update profile data if there are changes
+      const hasProfileChanges = Object.keys(formData).some(key => {
+        if (key === 'picture' || key === 'dateOfBirth') return false;
+        return formData[key] !== originalData[key];
+      });
 
-      if (formData.picture && formData.picture.uri && formData.picture.uri !== originalData.picture?.uri) {
-        const imageData = new FormData();
-        imageData.append('picture', {
+      if (hasProfileChanges) {
+        // Prepare profile data for update - exclude picture and format dateOfBirth
+        const profileUpdateData = {
+          firstname: formData.firstname,
+          lastname: formData.lastname,
+          phone: formData.phone,
+          email: formData.email,
+          profession: formData.profession || '',
+          region: formData.region || '',
+          city: formData.city || '',
+          district: formData.district || '',
+          address: formData.address || '',
+          placeOfBirth: formData.placeOfBirth || '',
+        };
+
+        // Add dateOfBirth if it exists
+        if (formData.dateOfBirth) {
+          profileUpdateData.dateOfBirth = formatDate(formData.dateOfBirth);
+        }
+
+        await updateProfile({
+          userId: userId,
+          ...profileUpdateData
+        }).unwrap();
+      }
+
+      // Then upload picture if changed
+      if (formData.picture && formData.picture.uri && 
+          (!originalData.picture || formData.picture.uri !== originalData.picture.uri)) {
+        
+        // Create FormData for image upload
+        const imageFormData = new FormData();
+        
+        // Get file extension and MIME type
+        const uriParts = formData.picture.uri.split('.');
+        const fileType = uriParts[uriParts.length - 1];
+        
+        imageFormData.append('picture', {
           uri: formData.picture.uri,
-          name: formData.picture.name || `profile_${Date.now()}.png`,
-          type: formData.picture.type || 'image/png',
+          name: formData.picture.name || `profile_${Date.now()}.${fileType}`,
+          type: formData.picture.type || `image/${fileType}`,
         });
 
-        await sendProfilePicture(imageData).unwrap();
+        await sendProfilePicture(imageFormData).unwrap();
       }
 
       Toast.show({
@@ -222,98 +276,98 @@ const Account = () => {
       setIsEditing(false);
 
     } catch (error) {
-      console.log('Failed to upload error:', JSON.stringify(error, null, 2));
+      console.log('Failed to update profile:', JSON.stringify(error, null, 2));
       Toast.show({
         type: "error",
         text1: "Update failed",
-        text2: error?.message || error?.data?.message || "Please try again",
+        text2: error?.data?.message || error?.message || "Please try again",
       });
     }
   };
 
-  const pickImage = async () => {
-    try {
-      // 🚨 Set picking state to true BEFORE opening image picker
-      setIsPickingDocument(true);
-      
-      const [libraryPermission, cameraPermission] = await Promise.all([
-        ImagePicker.requestMediaLibraryPermissionsAsync(),
-        ImagePicker.requestCameraPermissionsAsync()
-      ]);
+const pickImage = async () => {
+  try {
+    setIsPickingDocument(true);
+    
+    const [libraryPermission, cameraPermission] = await Promise.all([
+      ImagePicker.requestMediaLibraryPermissionsAsync(),
+      ImagePicker.requestCameraPermissionsAsync()
+    ]);
 
-      if (!libraryPermission.granted || !cameraPermission.granted) {
-        Toast.show({
-          type: "error",
-          text1: "Permission required",
-          text2: "Please enable camera and gallery access in settings",
-        });
-        setIsPickingDocument(false);
-        return;
-      }
-
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 0.8,
-      });
-
-      if (result.canceled) {
-        setIsPickingDocument(false);
-        return;
-      }
-
-      const selectedImage = result.assets[0];
-      
-      // Fixed: Using legacy API properly
-      const fileInfo = await FileSystem.getInfoAsync(selectedImage.uri, { size: true });
-      if (fileInfo.size > MAX_FILE_SIZE) {
-        Toast.show({
-          type: "error",
-          text1: "File too large",
-          text2: "Please select an image smaller than 5MB",
-        });
-        setIsPickingDocument(false);
-        return;
-      }
-
-      const filename = selectedImage.uri.split('/').pop();
-      const fileExtension = filename?.split('.').pop() || 'jpg';
-      const uniqueFilename = `${Date.now()}.${fileExtension}`;
-
-      const imageData = {
-        uri: selectedImage.uri,
-        name: uniqueFilename,
-        type: `image/${fileExtension}`,
-      };
-
-      setFormData(prev => ({
-        ...prev,
-        picture: imageData
-      }));
-
-      animateProfileImage();
-
-      // 🚨 Reset picking state after successful selection
-      setIsPickingDocument(false);
-
-      Toast.show({
-        type: "success",
-        text1: "Image selected",
-        text2: "Don't forget to save your changes",
-      });
-
-    } catch (error) {
-      console.error("Image picker error:", error);
-      // 🚨 Reset picking state on error too
-      setIsPickingDocument(false);
+    if (!libraryPermission.granted || !cameraPermission.granted) {
       Toast.show({
         type: "error",
-        text1: "Error",
-        text2: "Failed to select image",
+        text1: "Permission required",
+        text2: "Please enable camera and gallery access in settings",
       });
+      setIsPickingDocument(false);
+      return;
     }
-  };
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+
+    if (result.canceled) {
+      setIsPickingDocument(false);
+      return;
+    }
+
+    const selectedImage = result.assets[0];
+    
+    // ✅ Correct way: Create a File instance from expo-file-system
+    const file = new File(selectedImage.uri);
+    
+    // Get file info using the File instance methods
+    const fileInfo = await file.info();
+    
+    // Check if file exists and get its size
+    if (fileInfo.exists && fileInfo.size > MAX_FILE_SIZE) {
+      Toast.show({
+        type: "error",
+        text1: "File too large",
+        text2: "Please select an image smaller than 5MB",
+      });
+      setIsPickingDocument(false);
+      return;
+    }
+
+    const filename = selectedImage.uri.split('/').pop();
+    const fileExtension = filename?.split('.').pop() || 'jpg';
+
+    const imageData = {
+      uri: selectedImage.uri,
+      name: `profile_${Date.now()}.${fileExtension}`,
+      type: `image/${fileExtension}`,
+    };
+
+    setFormData(prev => ({
+      ...prev,
+      picture: imageData
+    }));
+
+    animateProfileImage();
+    setIsPickingDocument(false);
+
+    Toast.show({
+      type: "success",
+      text1: "Image selected",
+      text2: "Don't forget to save your changes",
+    });
+
+  } catch (error) {
+    console.error("Image picker error:", error);
+    setIsPickingDocument(false);
+    Toast.show({
+      type: "error",
+      text1: "Error",
+      text2: "Failed to select image",
+    });
+  }
+};
 
   const handleFieldChange = (field, value) => {
     setFormData((prev) => ({
@@ -411,7 +465,11 @@ const Account = () => {
 
   return (
     <SafeAreaView className="flex-1 bg-[#181e25]">
-      <StatusBar backgroundColor="#7ddd7d" barStyle="light-content" />
+      <StatusBar 
+        backgroundColor="transparent" 
+        barStyle="light-content" 
+        translucent={true}
+      />
       
       {/* Animated Header */}
       <Animated.View
@@ -447,8 +505,6 @@ const Account = () => {
         </View>
       </Animated.View>
 
-     
-
       <KeyboardAvoidinWrapper>
         <ScrollView 
           className="flex-1"
@@ -480,9 +536,14 @@ const Account = () => {
                   <TouchableOpacity
                     className="absolute bottom-2 right-20 bg-[#7ddd7d] rounded-full p-3 shadow-2xl"
                     onPress={pickImage}
+                    disabled={isUploadingPicture}
                     activeOpacity={0.8}
                   >
-                    <EvilIcons name="camera" size={28} color="white" />
+                    {isUploadingPicture ? (
+                      <Loader small white />
+                    ) : (
+                      <EvilIcons name="camera" size={28} color="white" />
+                    )}
                   </TouchableOpacity>
                 )}
               </View>
@@ -519,7 +580,9 @@ const Account = () => {
                   ) : (
                     <View className="bg-gray-50 rounded-2xl p-4 border border-gray-200">
                       <Text className="text-gray-800 text-lg">
-                        {userProfile ? `${userProfile.data.user.firstname} ${userProfile.data.user.lastname}` : "Data not available"}
+                        {userProfile?.data?.user ? 
+                          `${userProfile.data.user.firstname} ${userProfile.data.user.lastname}` : 
+                          "Data not available"}
                       </Text>
                     </View>
                   )}
@@ -618,10 +681,103 @@ const Account = () => {
                 </View>
               ))}
 
+              {/* Address */}
+              {renderAnimatedCard(4, (
+                <View className="mb-6">
+                  <View className="flex-row items-center mb-3">
+                    <MaterialIcons name="location-on" size={20} color="#7ddd7d" />
+                    <Text className="text-gray-800 font-bold text-lg ml-2">
+                      Address
+                    </Text>
+                  </View>
+                  {isEditing ? (
+                    <TextInput
+                      value={formData.address}
+                      onChangeText={(text) => handleFieldChange("address", text)}
+                      placeholder="Address"
+                      className="bg-gray-50 rounded-2xl p-4 border border-gray-200 text-gray-800"
+                      placeholderTextColor="#9CA3AF"
+                    />
+                  ) : (
+                    <View className="bg-gray-50 rounded-2xl p-4 border border-gray-200">
+                      <Text className="text-gray-800 text-lg">
+                        {userProfile?.data?.user?.address || "Not set"}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              ))}
+
+              {/* Date of Birth */}
+              {renderAnimatedCard(5, (
+                <View className="mb-6">
+                  <View className="flex-row items-center mb-3">
+                    <MaterialIcons name="cake" size={20} color="#7ddd7d" />
+                    <Text className="text-gray-800 font-bold text-lg ml-2">
+                      {t("signup.DOB")}
+                    </Text>
+                  </View>
+                  {isEditing ? (
+                    <>
+                      <TouchableOpacity
+                        onPress={() => setShowDatePicker(true)}
+                        className="bg-gray-50 rounded-2xl p-4 border border-gray-200"
+                      >
+                        <Text className={`text-lg ${formData.dateOfBirth ? 'text-gray-800' : 'text-gray-400'}`}>
+                          {formData.dateOfBirth ? formatDate(formData.dateOfBirth) : "Select date of birth"}
+                        </Text>
+                      </TouchableOpacity>
+                      {showDatePicker && (
+                        <DateTimePicker
+                          value={formData.dateOfBirth || new Date()}
+                          mode="date"
+                          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                          onChange={handleDateChange}
+                          maximumDate={new Date()}
+                        />
+                      )}
+                    </>
+                  ) : (
+                    <View className="bg-gray-50 rounded-2xl p-4 border border-gray-200">
+                      <Text className="text-gray-800 text-lg">
+                        {userProfile?.data?.user?.dateOfBirth || "Not set"}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              ))}
+
+              {/* Place of Birth */}
+              {renderAnimatedCard(6, (
+                <View className="mb-6">
+                  <View className="flex-row items-center mb-3">
+                    <MaterialIcons name="place" size={20} color="#7ddd7d" />
+                    <Text className="text-gray-800 font-bold text-lg ml-2">
+                     {t("signup.pob")}
+                    </Text>
+                  </View>
+                  {isEditing ? (
+                    <TextInput
+                      value={formData.placeOfBirth}
+                      onChangeText={(text) => handleFieldChange("placeOfBirth", text)}
+                      placeholder="Place of birth"
+                      className="bg-gray-50 rounded-2xl p-4 border border-gray-200 text-gray-800"
+                      placeholderTextColor="#9CA3AF"
+                    />
+                  ) : (
+                    <View className="bg-gray-50 rounded-2xl p-4 border border-gray-200">
+                      <Text className="text-gray-800 text-lg">
+                        {userProfile?.data?.user?.placeOfBirth || "Not set"}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              ))}
+
               {/* Additional Fields */}
               {isEditing ? (
                 <>
-                  {renderAnimatedCard(4, (
+                  {renderAnimatedCard(7, (
                     <TextInput
                       placeholder="Profession"
                       value={formData.profession}
@@ -630,7 +786,7 @@ const Account = () => {
                       placeholderTextColor="#9CA3AF"
                     />
                   ))}
-                  {renderAnimatedCard(5, (
+                  {renderAnimatedCard(8, (
                     <TextInput
                       placeholder="Region"
                       value={formData.region}
@@ -639,7 +795,7 @@ const Account = () => {
                       placeholderTextColor="#9CA3AF"
                     />
                   ))}
-                  {renderAnimatedCard(6, (
+                  {renderAnimatedCard(9, (
                     <TextInput
                       placeholder="City"
                       value={formData.city}
@@ -648,7 +804,7 @@ const Account = () => {
                       placeholderTextColor="#9CA3AF"
                     />
                   ))}
-                  {renderAnimatedCard(7, (
+                  {renderAnimatedCard(10, (
                     <TextInput
                       placeholder="District"
                       value={formData.district}
@@ -662,7 +818,7 @@ const Account = () => {
                 <>
                   {['profession', 'region', 'city', 'district'].map((field, index) => (
                     <React.Fragment key={field}>
-                      {renderAnimatedCard(4 + index, (
+                      {renderAnimatedCard(11 + index, (
                         <View className="mb-6">
                           <Text className="text-gray-800 font-bold text-lg mb-2 capitalize">
                             {t(`account.${field}`) || field}
@@ -680,14 +836,14 @@ const Account = () => {
               )}
 
               {/* Save Button */}
-              {isEditing && renderAnimatedCard(8, (
+              {isEditing && renderAnimatedCard(14, (
                 <TouchableOpacity
                   className="bg-[#7ddd7d] p-5 rounded-2xl items-center shadow-2xl mt-6"
                   onPress={handleSave}
-                  disabled={isUpdating}
+                  disabled={isUpdating || isUploadingPicture}
                   activeOpacity={0.8}
                 >
-                  {isUpdating ? (
+                  {(isUpdating || isUploadingPicture) ? (
                     <Loader small white />
                   ) : (
                     <Text className="text-white font-bold text-xl">

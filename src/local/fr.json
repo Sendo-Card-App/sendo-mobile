@@ -1977,6 +1977,8 @@
     "welcome": "Bonjour {{name}}",
     "investmentPlans": "Plans d'Investissement",
     "subscribe": "Investissez maintenant",
+    
+     "avgReturn": "Rendement annuel",
     "mySubscriptions": "Mes Souscriptions",
      "interestEarned": "Intérêts accumulés",
     "investmentAmount": "Montant d'investissement",

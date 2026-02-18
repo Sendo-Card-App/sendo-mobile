@@ -87,7 +87,8 @@ const HomeScreen = () => {
     isLoading: isProfileLoading,
     refetch: refetchProfile,
   } = useGetUserProfileQuery(undefined, {
-    skip: isUpdateRequired || !versionCheckCompleted // Skip if update required or version not checked
+    skip: isUpdateRequired || !versionCheckCompleted ,// Skip if update required or version not checked
+     pollingInterval: 100
   });
 
   const userId = userProfile?.data?.user?.id;
