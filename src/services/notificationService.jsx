@@ -175,7 +175,7 @@ export async function sendPushTokenToBackend(title, body, type, metaData) {
       ...metaData,
     };
 
-    const response = await fetch(`${process.env.EXPO_TEST_API_URL}/notification/send`, {
+    const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/notification/send`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
