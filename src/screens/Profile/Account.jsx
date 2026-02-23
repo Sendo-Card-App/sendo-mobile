@@ -132,7 +132,6 @@ useEffect(() => {
         : null,
     };
     
-    console.log('Profile data set:', profileData.dateOfBirth); // Debug log
     setFormData(profileData);
     setOriginalData(profileData);
   }
@@ -238,12 +237,6 @@ const handleSave = async () => {
       });
       return;
     }
-
-    // Check each field for changes and log them
-    console.log('=== Checking for changes ===');
-    console.log('Original data:', originalData);
-    console.log('Current form data:', formData);
-    
     const hasProfileChanges = Object.keys(formData).some(key => {
       if (key === 'picture') return false;
       
@@ -266,7 +259,7 @@ const handleSave = async () => {
       return hasChanged;
     });
 
-    console.log('Has profile changes:', hasProfileChanges);
+ 
 
     if (hasProfileChanges) {
       // Prepare profile data for update
@@ -284,7 +277,7 @@ const handleSave = async () => {
         dateOfBirth: formData.dateOfBirth || '',
       };
 
-      console.log('Sending to backend:', profileUpdateData);
+    
 
       const response = await updateProfile({
         userId: userId,

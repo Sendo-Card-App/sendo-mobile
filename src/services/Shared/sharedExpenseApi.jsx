@@ -15,7 +15,7 @@ const TAG_TYPES = {
 export const sharedExpenseApi = createApi({
   reducerPath: 'sharedExpenseApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: process.env.EXPO_PUBLIC_API_URL,
+    baseUrl: process.env.EXPO_TEST_API_URL,
     prepareHeaders: (headers, { getState }) => {
       const { accessToken } = getState().auth;
       const { passcode } = getState().passcode;
