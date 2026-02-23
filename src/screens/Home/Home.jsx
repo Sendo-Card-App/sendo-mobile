@@ -44,11 +44,12 @@ const HomeScreen = () => {
   const [showBalance, setShowBalance] = useState(false);
   const [hasAcceptedTerms, setHasAcceptedTerms] = useState(null);
   const flatListRef = useRef(null);
+  const confettiRef = useRef(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [createToken] = useCreateTokenMutation();
   const [showKycModal, setShowKycModal] = useState(false);
   const [kycCheckInterval, setKycCheckInterval] = useState(null);
-   const [showReferralSuccessModal, setShowReferralSuccessModal] = useState(false);
+  const [showReferralSuccessModal, setShowReferralSuccessModal] = useState(false);
   const [hasShownReferralSuccess, setHasShownReferralSuccess] = useState(false);
 
   const fadeAnim = useState(new Animated.Value(0))[0];
