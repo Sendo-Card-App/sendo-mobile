@@ -19,6 +19,7 @@ import { useTranslation } from 'react-i18next';
 // Import bank images
 import ecobank from '../../images/ecobank.jpeg';
 import bange from '../../images/bange.png';
+import access from '../../images/access.png';
 
 const BankTransferDetails = () => {
   const navigation = useNavigation();
@@ -56,6 +57,12 @@ const BankTransferDetails = () => {
       name: 'Ecobank',
       image: ecobank,
       description: 'Réseau panafricain'
+    },
+        {
+      id: 'accessbank',
+      name: 'Access Bank',
+      image: access,
+      description: 'Transferts rapides et sécurisés'
     }
   ];
 

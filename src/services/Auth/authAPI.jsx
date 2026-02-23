@@ -14,6 +14,7 @@ const AUTH_ENDPOINTS = {
   CREATE_PASSCODE: '/users/send-passcode',
   MY_PROFILE: '/users/me',
   USER_PROFILE: '/users',
+  USER_PICTURE: '/users/send-picture',
   LOGOUT: '/auth/logout',
 };
 

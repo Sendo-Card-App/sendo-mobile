@@ -12,6 +12,7 @@ import { transferApi } from '../services/Transfer/transferApi';
 import { chatApi } from '../services/Chat/ChatApi';
 import { cardApi } from '../services/Card/cardApi'; 
 import { fundRequestApi } from '../services/Fund/fundApi';
+import { fundSubscriptionApi } from '../services/Fund/fundSubscriptionApi';
 import { sharedExpenseApi } from '../services/Shared/sharedExpenseApi';
 import { contactsApi } from '../services/Contact/contactsApi';
 import { tontineApi } from '../services/Tontine/tontineApi';
@@ -35,6 +36,7 @@ export const store = configureStore({
     [transferApi.reducerPath]: transferApi.reducer,
     [sharedExpenseApi.reducerPath]: sharedExpenseApi.reducer,
     [fundRequestApi.reducerPath]: fundRequestApi.reducer,
+    [fundSubscriptionApi.reducerPath]: fundSubscriptionApi.reducer,
     [tontineApi.reducerPath]: tontineApi.reducer,
     [pubApi.reducerPath]: pubApi.reducer,
     [cardApi.reducerPath]: cardApi.reducer, 
@@ -52,6 +54,7 @@ export const store = configureStore({
       transferApi.middleware,
       sharedExpenseApi.middleware,
       fundRequestApi.middleware,
+      fundSubscriptionApi.middleware,
       tontineApi.middleware,
       pubApi.middleware,
       cardApi.middleware

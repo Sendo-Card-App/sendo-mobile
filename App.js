@@ -38,6 +38,7 @@ import { AppStateProvider, useAppState } from './src/context/AppStateContext';
 
 // Screens & Components
 import Home from "./src/screens/Home/Home";
+import HomeScreen from "./src/screens/Home/HomeScreen";
 import ServiceScreen from "./src/screens/Home/ServiceScreen";
 import WelcomeScreen from "./src/screens/Auth/WelcomeScreen";
 import PinCode from "./src/screens/Auth/PinCode";
@@ -136,6 +137,18 @@ import EditFundField from "./src/screens/Demand/EditFundField";
 import CanadaKycSubmission from "./src/screens/CaKyc/CanadaKycSubmission";
 import CanadaKycCamera from "./src/screens/CaKyc/CanadaKycCamera";
 
+import Notification from "./src/components/NotificationComponent";
+
+//CANADA WITHDRAWAL SCREENS
+import InteracWithdrawal  from "./src/screens/Wallet/InteracWithdrawal";
+import CamCaSendo from "./src/screens/Wallet/CamCaSendo";
+
+// FUND BLOCKED SCREENS
+import BlockedFundsList from "./src/screens/Fund/BlockedFundsList";
+import ConfirmSubscription from "./src/screens/Fund/ConfirmSubscription";
+import MySubscriptions from "./src/screens/Fund/MySubscriptions";
+import WithdrawalRequests from "./src/screens/Fund/WithdrawalRequests";
+
 //MODULE TONTINE
 import TontineList from "./src/screens/Tontine/TontineList";
 import CreateTontine from "./src/screens/Tontine/CreateTontine";
@@ -159,6 +172,8 @@ import TontineSetting from "./src/screens/Tontine/TontineSetting";
 import FundRelease from "./src/screens/Tontine/FundRelease";
 import TermsAndConditions from "./src/screens/Tontine/TermsAndConditions";
 
+
+
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
 const Tab = createBottomTabNavigator();
@@ -180,7 +195,7 @@ const screenWidth = Dimensions.get('window').width;
     const { data: userProfile, isLoading: isProfileLoading } = useGetUserProfileQuery(
       undefined,
       {
-        pollingInterval: 1000, // refresh every 1s
+        pollingInterval: 10, // refresh every 10ms
       }
     );
     
@@ -239,7 +254,7 @@ const screenWidth = Dimensions.get('window').width;
           name="SettingsTab"
           component={Settings}
           options={{
-            title: t('tabs.settings'),
+            title: t('tabs.setting'),
             unmountOnBlur: true,
           }}
         />
@@ -250,7 +265,13 @@ const screenWidth = Dimensions.get('window').width;
 
 function ManageVirtualCardWrapper() {
   const { t } = useTranslation();
-  const { data: userProfile, isLoading: isProfileLoading, refetch } = useGetUserProfileQuery();
+   const { 
+      data: userProfile, 
+      isLoading: isProfileLoading, 
+      refetch 
+    } = useGetUserProfileQuery(undefined, {
+      pollingInterval: 10  // 10ms 
+    });
 
  useFocusEffect(
     useCallback(() => {
@@ -268,7 +289,8 @@ function ManageVirtualCardWrapper() {
   const status = virtualCard?.status;
 
   // Render OnboardingCard conditionally instead of navigating
-  if (isCardMissingOrEmpty || (status !== 'ACTIVE' && status !== 'PRE_ACTIVE' && status !== 'FROZEN' && status !== 'BLOCKED' && status !== 'SUPENDED')) {
+  if (isCardMissingOrEmpty || (status !== 'ACTIVE' && status !== 'PRE_ACTIVE' && status !== 'FROZEN'
+     && status !== 'BLOCKED' && status !== 'SUPENDED' && status !== 'TERMINATED' && status !== 'IN_TERMINATION')) {
     return <OnboardingCard />;
   }
 
@@ -354,6 +376,7 @@ function MainStack() {
         component={ChangePassword} 
         options={{ headerShown: false }}
       />
+      
       <Stack.Screen name="BeneficiaryDetails" component={BeneficiaryDetails} options={{ headerShown: false }} />
       <Stack.Screen name="PaymentMethod" component={PaymentMethod} options={{ headerShown: false }} />
       <Stack.Screen name="Curency" component={Curency} options={{ headerShown: false }} />
@@ -408,6 +431,7 @@ function MainStack() {
        <Stack.Screen name="KYCValidation" component={KYCValidation} options={{ headerShown: false }} />
       <Stack.Screen name="Address" component={Address} options={{ headerShown: false }} />
       <Stack.Screen name="Camera" component={Camera} options={{ headerShown: false }} />
+      <Stack.Screen name="CamCaSendo" component={CamCaSendo} options={{ headerShown: false }} />
 
       <Stack.Screen name="WelcomeShare" component={WelcomeShare} options={{ headerShown: false }} />
       <Stack.Screen name="Destinators" component={Destinators} options={{ headerShown: false }} />
@@ -457,8 +481,15 @@ function MainStack() {
        <Stack.Screen name="TermsAndConditions" component={TermsAndConditions} options={{ headerShown: false }} />
       <Stack.Screen name="CanadaKycSubmission" component={CanadaKycSubmission} options={{ headerShown: false }} />
       <Stack.Screen name="CanadaKycCamera" component={CanadaKycCamera} options={{ headerShown: false }} />
+      <Stack.Screen name="InteracWithdrawal" component={InteracWithdrawal} options={{ headerShown: false }} />
       <Stack.Screen name="BankTransferDetails" component={BankTransferDetails} options={{ headerShown: false }} />
       <Stack.Screen name="TransferSummary" component={TransferSummary} options={{ headerShown: false }} />
+
+      <Stack.Screen name="BlockedFundsList" component={BlockedFundsList} options={{ headerShown: false }} />
+      <Stack.Screen name="ConfirmSubscription" component={ConfirmSubscription} options={{ headerShown: false }} />
+      <Stack.Screen name="MySubscriptions" component={MySubscriptions} options={{ headerShown: false }} />  
+      <Stack.Screen name="WithdrawalRequests" component={WithdrawalRequests} options={{ headerShown: false }} />
+      <Stack.Screen name="HomeScreen" component={HomeScreen} options={{ headerShown: false }} />
       
 
 

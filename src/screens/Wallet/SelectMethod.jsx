@@ -73,6 +73,13 @@ if (userProfile?.data?.user?.country === "Cameroon") {
       action: () => setShowServiceModal(true),
       color: '#0D1C6A',
     },
+     {
+      id: 'CAM-CA',
+      title: t('select_method.transfer_to_cam_ca'),
+      icon: <AntDesign name="swap" size={40} color="#0D1C6A" />,
+      action: () => navigation.navigate("CamCaSendo"),
+      color: '#0f5f43',
+    },
   ];
 }
 

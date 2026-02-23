@@ -22,6 +22,7 @@ const BankDepositRecharge = ({ navigation }) => {
     isLoading: isProfileLoading,
     refetch: refetchProfile,
   } = useGetUserProfileQuery();
+   // console.log("User Profile in BankDepositRecharge:", JSON.stringify(userProfile, null, 2));
 
   const pickFile = async () => {
     if (isPickingDocument) return;

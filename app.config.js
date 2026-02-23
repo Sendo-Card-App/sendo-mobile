@@ -33,7 +33,7 @@ module.exports = {
     android: {
       adaptiveIcon: {
         foregroundImage: "./assets/logo.png",
-        backgroundColor: "#181e25"
+        backgroundColor: "#ffffff"
       },
       permissions: [
         "android.permission.CAMERA",

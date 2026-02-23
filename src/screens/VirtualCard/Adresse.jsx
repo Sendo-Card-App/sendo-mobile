@@ -1,8 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Image, ScrollView, ImageBackground, Dimensions } from 'react-native';
-import TopLogo from "../../images/TopLogo.png";
-import BG from "../../images/BG.jpg";
-import { AntDesign, Ionicons } from "@expo/vector-icons";
+import { View, Text, TouchableOpacity, Image, Dimensions } from 'react-native';
 import { StatusBar } from "expo-status-bar";
 import { useDispatch } from 'react-redux';
 import { setAddressProof } from '../../features/Kyc/kycReducer';
@@ -22,10 +19,16 @@ const Addresse = ({ navigation }) => {
   };
 
   return (
-    <ImageBackground source={BG} style={{ flex: 1 }} resizeMode="cover">
-      {/* Main Content - Centering the Box */}
+    <View style={{ flex: 1, }}>
+      
+      {/* Status Bar */}
+      <StatusBar 
+        style="dark" 
+        backgroundColor="#7ddd7d" 
+      />
+
       <View className="flex-1 justify-center items-center">
-        <View className="bg-white bg-opacity-80 p-6 rounded-lg shadow-lg w-11/12 max-w-md">
+        <View className="bg-white p-6 rounded-lg shadow-lg w-11/12 max-w-md">
           <Image
             source={require("../../images/Localisation.png")}
             style={{
@@ -35,14 +38,14 @@ const Addresse = ({ navigation }) => {
             }}
             resizeMode="contain"
           />
+          
           <Text className="text-gray-700 text-center leading-5 mb-6">
             {t('address_verification.security_message')}
           </Text>
           
-          {/* Action Buttons - Kept in English as requested */}
           <View className="flex-row justify-between">
             <TouchableOpacity 
-              onPress={() =>navigation.navigate("KycResume")}
+              onPress={() => navigation.navigate("KycResume")}
               className="bg-gray-200 px-6 py-3 rounded-lg flex-1 mr-2"
             >
               <Text className="text-gray-800 font-medium text-center">CANCEL</Text>
@@ -57,7 +60,7 @@ const Addresse = ({ navigation }) => {
           </View>
         </View>
       </View>
-    </ImageBackground>
+    </View>
   );
 };
 

@@ -5,9 +5,11 @@ import {
   TouchableOpacity,
   Image,
   ScrollView,
-   LayoutAnimation,
+  LayoutAnimation,
   UIManager,
   Platform,
+  Modal,
+  StyleSheet,
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
@@ -42,25 +44,27 @@ const ConfirmeTheTransfer = () => {
   const [showPinModal, setShowPinModal] = useState(false);
   const [initTransfer, { isLoading }] = useInitTransferMutation();
   const { t } = useTranslation();
-   const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const [showUnavailableModal, setShowUnavailableModal] = useState(false);
 
   const toggleExpand = () => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setExpanded(!expanded);
   };
+  
   const {
-      data: configData,
-      isLoading: isConfigLoading,
-      error: configError
-    } = useGetConfigQuery(undefined, {
-      pollingInterval: 1000,
-    });
-  
-     const getConfigValue = (name) => {
-      const configItem = configData?.data?.find(item => item.name === name);
-        return configItem ? configItem.value : null;
-      };
-  
+    data: configData,
+    isLoading: isConfigLoading,
+    error: configError
+  } = useGetConfigQuery(undefined, {
+    pollingInterval: 1000,
+  });
+
+  const getConfigValue = (name) => {
+    const configItem = configData?.data?.find(item => item.name === name);
+    return configItem ? configItem.value : null;
+  };
+
   const route = useRoute();
   const {
     formData,
@@ -71,13 +75,13 @@ const ConfirmeTheTransfer = () => {
     provider,
     fromCurrency,
     toCurrency,
-      cadRealTimeValue,
-} = route.params;
+    cadRealTimeValue,
+  } = route.params;
 
   const fullName = formData.fullname || '';
-const nameParts = fullName.trim().split(' ');
-const firstname = nameParts[0] || '';
-const lastname = nameParts.slice(1).join(' ') || '';
+  const nameParts = fullName.trim().split(' ');
+  const firstname = nameParts[0] || '';
+  const lastname = nameParts.slice(1).join(' ') || '';
 
   const providerImage =
     provider === "Orange Money"
@@ -86,72 +90,88 @@ const lastname = nameParts.slice(1).join(' ') || '';
       ? mtn
       : null;
 
+  const TRANSFER_FEES = getConfigValue('TRANSFER_FEES');
+  const TRANSFER_CA_CAM_AVAILABILITY = getConfigValue("TRANSFER_CA_CAM_AVAILABILITY");
+  const transferFeeCAD = parseFloat(TRANSFER_FEES || "0");
+  const transferFeeXAF = transferFeeCAD * parseFloat(cadRealTimeValue || "0");
+  const totalDebitedCAD = parseFloat(amount || "0") + transferFeeCAD;
+  const totalDebitedXAF = parseFloat(convertedAmount || "0") + transferFeeXAF;
 
-      const TRANSFER_FEES = getConfigValue('TRANSFER_FEES');
-      const transferFeeCAD = parseFloat(TRANSFER_FEES || "0");
-      const transferFeeXAF = transferFeeCAD * parseFloat(cadRealTimeValue || "0");
-      const totalDebitedCAD = parseFloat(amount || "0") + transferFeeCAD;
-      const totalDebitedXAF = parseFloat(convertedAmount || "0") + transferFeeXAF;
+  // --- Service availability check ---
+  const checkServiceAvailability = () => {
+    // If config is not loaded yet, assume service is available
+    if (isConfigLoading || !configData) {
+      return true;
+    }
+    
+    // Check if TRANSFER_CA_CAM_AVAILABILITY is set to "1" (available)
+    return TRANSFER_CA_CAM_AVAILABILITY === "1";
+  };
 
+  const handleConfirmPress = () => {
+    // First check if the service is available
+    if (!checkServiceAvailability()) {
+      setShowUnavailableModal(true);
+      return;
+    }
 
-const handleConfirmPress = () => {
-  navigation.navigate('Auth', {
-    screen: 'PinCode',
-    params: {
-      onSuccess: async (pin) => {
-        try {
-          const response = await initTransfer({
-            firstname,
-            lastname,
-            phone: formData.phone,
-            country: formData.country,
-            address: formData.address,
-            description: formData.description,
-            amount: convertedAmount,
-            provider,
-            pin,
-          }).unwrap();
+    navigation.navigate('Auth', {
+      screen: 'PinCode',
+      params: {
+        onSuccess: async (pin) => {
+          try {
+            const response = await initTransfer({
+              firstname,
+              lastname,
+              phone: formData.phone,
+              country: formData.country,
+              address: formData.address,
+              description: formData.description,
+              amount: convertedAmount,
+              provider,
+              pin,
+            }).unwrap();
 
-          console.log(response)
+            console.log(response)
 
-          if (response.status === 200 && response.data) {
-            Toast.show({
-              type: "success",
-              text1: "Transfert initié",
-              text2: "Veuillez suivre l'évolution du statut dans l'historique.",
-            });
+            if (response.status === 200 && response.data) {
+              Toast.show({
+                type: "success",
+                text1: "Transfert initié",
+                text2: "Veuillez suivre l'évolution du statut dans l'historique.",
+              });
 
-            navigation.navigate("Success", { result: response.data });
-          } else {
-            throw new Error(response.message || "Une erreur est survenue.");
-          }
-        } catch (error) {
-          console.log("Error de la transcation CA-CAM:", JSON.stringify(error, null, 2));
-          const status = error?.status || error?.data?.status;
-          const detaila = error?.data?.data?.detaila;
-          const responseCode = detaila?.response;
-          const devMsg = detaila?.devMsg;
-          const customerMsgs = detaila?.customerMsg;
-          const frCustomerMsg = customerMsgs?.find((msg) => msg.language === "fr")?.content;
+              navigation.navigate("Success", { result: response.data });
+            } else {
+              throw new Error(response.message || "Une erreur est survenue.");
+            }
+          } catch (error) {
+            console.log("Error de la transcation CA-CAM:", JSON.stringify(error, null, 2));
+            const status = error?.status || error?.data?.status;
+            const detaila = error?.data?.data?.detaila;
+            const responseCode = detaila?.response;
+            const devMsg = detaila?.devMsg;
+            const customerMsgs = detaila?.customerMsg;
+            const frCustomerMsg = customerMsgs?.find((msg) => msg.language === "fr")?.content;
 
-          if (status === 500 && responseCode === 40002) {
-            Toast.show({
-              type: "error",
-              text1: "Erreur technique",
-              text2: frCustomerMsg || devMsg || "Une erreur technique est survenue.",
-            });
-          } else {
-            Toast.show({
-              type: "error",
-              text1: "Erreur",
-              text2: error.message || "Une erreur est survenue.",
-            });
+            if (status === 500 && responseCode === 40002) {
+              Toast.show({
+                type: "error",
+                text1: "Erreur technique",
+                text2: frCustomerMsg || devMsg || "Une erreur technique est survenue.",
+              });
+            } else {
+              Toast.show({
+                type: "error",
+                text1: "Erreur",
+                text2: error.message || "Une erreur est survenue.",
+              });
+            }
           }
         }
       }
-    }
-  });
-};
+    });
+  };
 
   return (
     <View className="bg-[#181e25] flex-1 pt-0 relative">
@@ -211,7 +231,7 @@ const handleConfirmPress = () => {
                 </Text>
 
                 <Text className="text-yellow-900 text-sm text-left">
-                   {t("confirmeTheTransfer.extraInfo4")}
+                  {t("confirmeTheTransfer.extraInfo4")}
                 </Text>
 
                 <Text className="text-yellow-900 text-sm text-left">
@@ -226,7 +246,7 @@ const handleConfirmPress = () => {
           {[
             {
               label: t("confirmeTheTransfer.fullname"),
-             value: `${firstname} ${lastname}`,
+              value: `${firstname} ${lastname}`,
             },
             { label: t("confirmeTheTransfer.phone"), value: formData.phone },
             { label: t("confirmeTheTransfer.country"), value: formData.country },
@@ -247,7 +267,7 @@ const handleConfirmPress = () => {
               label: t("confirmeTheTransfer.convertedAmount"),
               value: `${convertedAmount} ${toCurrency}`,
             },
-          {
+            {
               label: t("confirmeTheTransfer.totalDebited"),
               value: (
                 <View className=" px-3 py-2 rounded-xl items-center">
@@ -332,8 +352,104 @@ const handleConfirmPress = () => {
           {t("confirmeTheTransfer.secureData")}
         </Text>
       </View>
+
+      {/* Service Unavailable Modal */}
+      <Modal
+        visible={showUnavailableModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowUnavailableModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalIconContainer}>
+              <Ionicons name="warning-outline" size={48} color="#ff6b6b" />
+            </View>
+            
+            <Text style={styles.modalTitle}>
+              Service Temporarily Unavailable
+            </Text>
+            
+            <Text style={styles.modalMessage}>
+              The Canada to Cameroon transfer service is currently unavailable. Please try again later or contact support for assistance.
+            </Text>
+            
+            <View style={styles.modalButtonContainer}>
+              <TouchableOpacity
+                style={styles.modalButton}
+                onPress={() => setShowUnavailableModal(false)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.modalButtonText}>OK</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContainer: {
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 24,
+    width: '90%',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  modalIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#fff5f5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  modalMessage: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 24,
+  },
+  modalButtonContainer: {
+    width: '100%',
+  },
+  modalButton: {
+    backgroundColor: '#ff6b6b',
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  modalButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+});
 
 export default ConfirmeTheTransfer;
