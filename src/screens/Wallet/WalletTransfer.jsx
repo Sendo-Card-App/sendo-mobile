@@ -28,6 +28,7 @@ import Loader from '../../components/Loader';
 const WalletTransfer = ({ navigation }) => {
   const { t } = useTranslation();
   const [amount, setAmount] = useState('');
+  const [xafAmount, setXafAmount] = useState('');
   const [walletId, setWalletId] = useState('');
   const [description, setDescription] = useState('');
   const [userWalletId, setUserWalletId] = useState('');
@@ -37,7 +38,7 @@ const WalletTransfer = ({ navigation }) => {
   const [showUnavailableModal, setShowUnavailableModal] = useState(false);
   const [showCanadaRecipientModal, setShowCanadaRecipientModal] = useState(false);
   const [pendingRecipientData, setPendingRecipientData] = useState(null);
-
+  const [activeInput, setActiveInput] = useState('cad'); // 'cad' or 'xaf'
 
   // Debounce walletId input
   useEffect(() => {
@@ -81,7 +82,48 @@ const WalletTransfer = ({ navigation }) => {
   const feePercentage = SENDO_TO_SENDO_TRANSFER_FEES ? parseFloat(SENDO_TO_SENDO_TRANSFER_FEES) : 0;
   const cadToXafRate = SENDO_VALUE_CAD_CA_CAM ? parseFloat(SENDO_VALUE_CAD_CA_CAM) : 1;
 
+  // Conversion functions
+  const convertCadToXaf = (cadValue) => {
+    const numericValue = parseFloat(cadValue) || 0;
+    return numericValue * cadToXafRate;
+  };
+
+  const convertXafToCad = (xafValue) => {
+    const numericValue = parseFloat(xafValue) || 0;
+    return numericValue / cadToXafRate;
+  };
+
+  // Handle CAD amount change
+  const handleCadAmountChange = (text) => {
+    const cleanedText = text.replace(/[^0-9.]/g, '');
+    setAmount(cleanedText);
+    setActiveInput('cad');
+
+    if (cleanedText && !isNaN(cleanedText)) {
+      const converted = convertCadToXaf(cleanedText);
+      setXafAmount(converted.toFixed(2));
+    } else {
+      setXafAmount('');
+    }
+  };
+
+  // Handle XAF amount change
+  const handleXafAmountChange = (text) => {
+    const cleanedText = text.replace(/[^0-9.]/g, '');
+    setXafAmount(cleanedText);
+    setActiveInput('xaf');
+
+    if (cleanedText && !isNaN(cleanedText)) {
+      const converted = convertXafToCad(cleanedText);
+      setAmount(converted.toFixed(2));
+    } else {
+      setAmount('');
+    }
+  };
+
+  // Derived values based on active input
   const transferAmount = parseFloat(amount) || 0;
+  const transferXafAmount = parseFloat(xafAmount) || 0;
   const feeAmount = isCanada ? (transferAmount * feePercentage) / 100 : 0;
   const totalAmount = isCanada ? transferAmount + feeAmount : transferAmount;
   const amountInXAF = isCanada ? transferAmount * cadToXafRate : transferAmount;
@@ -113,7 +155,7 @@ useEffect(() => {
   if (showCanadaRecipientModal) {
     timer = setTimeout(() => {
       handleConfirmCanadaTransfer();
-    }, 5000); // 5 seconds
+    }, 15000); // 15 seconds
   }
   return () => {
     if (timer) {
@@ -347,18 +389,61 @@ useEffect(() => {
             </>
           )}
 
-          {/* Amount */}
-          <Text style={styles.inputLabel}>
-            {isCanada ? 'Montant (CAD)' : t('wallet_transfer.amount')}
-          </Text>
-          <TextInput
-            style={styles.input}
-            keyboardType="numeric"
-            placeholder={t('wallet_transfer.amount_placeholder')}
-            placeholderTextColor="#999"
-            value={amount}
-            onChangeText={setAmount}
-          />
+          {/* Amount Section - Modified for dual input */}
+          {isCanada ? (
+            <>
+              <Text style={styles.inputLabel}>Montant à envoyer</Text>
+              
+              {/* CAD Input */}
+              <View style={[styles.amountInputContainer, activeInput === 'cad' && styles.activeInput]}>
+                <TextInput
+                  style={styles.amountInput}
+                  keyboardType="numeric"
+                  placeholder="Montant en CAD"
+                  placeholderTextColor="#999"
+                  value={amount}
+                  onChangeText={handleCadAmountChange}
+                  onFocus={() => setActiveInput('cad')}
+                />
+                <Text style={styles.currencyLabel}>CAD</Text>
+              </View>
+
+              {/* Conversion Arrow */}
+              <View style={styles.conversionArrowContainer}>
+                <Ionicons name="arrow-down" size={20} color="#7ddd7d" />
+                <Text style={styles.conversionRateText}>
+                  1 CAD = {cadToXafRate.toFixed(2)} XAF
+                </Text>
+                <Ionicons name="arrow-down" size={20} color="#7ddd7d" />
+              </View>
+
+              {/* XAF Input */}
+              <View style={[styles.amountInputContainer, activeInput === 'xaf' && styles.activeInput]}>
+                <TextInput
+                  style={styles.amountInput}
+                  keyboardType="numeric"
+                  placeholder="Montant en XAF"
+                  placeholderTextColor="#999"
+                  value={xafAmount}
+                  onChangeText={handleXafAmountChange}
+                  onFocus={() => setActiveInput('xaf')}
+                />
+                <Text style={styles.currencyLabel}>XAF</Text>
+              </View>
+            </>
+          ) : (
+            <>
+              <Text style={styles.inputLabel}>{t('wallet_transfer.amount')}</Text>
+              <TextInput
+                style={styles.input}
+                keyboardType="numeric"
+                placeholder={t('wallet_transfer.amount_placeholder')}
+                placeholderTextColor="#999"
+                value={amount}
+                onChangeText={setAmount}
+              />
+            </>
+          )}
 
           {/* Fee for Canadians */}
           {isCanada && feePercentage > 0 && amount && !isNaN(transferAmount) && transferAmount > 0 && (
@@ -367,7 +452,7 @@ useEffect(() => {
                 {t('wallet_transfer.fee_information')}
               </Text>
               <Text style={styles.feeText}>
-                {t('wallet_transfer.transfer_amount')}: {balanceData?.data?.currency} {transferAmount.toFixed(2)}
+                Montant envoyé: {balanceData?.data?.currency} {transferAmount.toFixed(2)}
               </Text>
               <Text style={styles.feeText}>
                 {t('wallet_transfer.transfer_fee')}: {feePercentage}% ({balanceData?.data?.currency} {feeAmount.toFixed(2)})
@@ -380,8 +465,13 @@ useEffect(() => {
                   {t('wallet_transfer.recipient_will_receive')}:
                 </Text>
                 <Text style={styles.receiveText}>
-                  {amountInXAF.toFixed(2)} XAF (1 CAD = {cadToXafRate.toFixed(2)} XAF)
+                  {amountInXAF.toFixed(2)} XAF
                 </Text>
+                {xafAmount && (
+                  <Text style={styles.receiveText}>
+                    (Basé sur le taux: 1 CAD = {cadToXafRate.toFixed(2)} XAF)
+                  </Text>
+                )}
               </View>
             </View>
           )}
@@ -410,10 +500,10 @@ useEffect(() => {
                 },
               })
             }
-            disabled={isTransferring || isLoading || !userWalletId || !walletId}
+            disabled={isTransferring || isLoading || !userWalletId || !walletId || !amount}
             style={[
               styles.transferButton,
-              (isTransferring || isLoading || !userWalletId || !walletId) && styles.buttonDisabled
+              (isTransferring || isLoading || !userWalletId || !walletId || !amount) && styles.buttonDisabled
             ]}
           >
             {isTransferring ? (
@@ -456,7 +546,7 @@ useEffect(() => {
 
             <Text style={styles.timerText}>
               Vous allez être redirigé vers le module correspondant dans{' '}
-              <Text style={styles.boldText}>5 secondes</Text> afin de finaliser votre 
+              <Text style={styles.boldText}>15 secondes</Text> afin de finaliser votre 
               opération en toute sécurité.
             </Text>
             
@@ -602,6 +692,53 @@ const styles = StyleSheet.create({
     height: 100,
     textAlignVertical: 'top',
   },
+  // New styles for dual amount inputs
+  amountInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 10,
+    paddingHorizontal: 15,
+    marginBottom: 20,
+    backgroundColor: '#fff',
+    height: 55,
+  },
+  activeInput: {
+    borderColor: '#7ddd7d',
+    borderWidth: 2,
+    shadowColor: '#7ddd7d',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 3,
+  },
+  amountInput: {
+    flex: 1,
+    fontSize: 16,
+    color: '#333',
+  },
+  currencyLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#666',
+    marginLeft: 10,
+    paddingLeft: 10,
+    borderLeftWidth: 1,
+    borderLeftColor: '#E0E0E0',
+  },
+  conversionArrowContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 5,
+  },
+  conversionRateText: {
+    fontSize: 14,
+    color: '#666',
+    marginHorizontal: 10,
+    fontWeight: '500',
+  },
   feeCard: {
     backgroundColor: '#e8f5e8',
     borderRadius: 10,
@@ -690,134 +827,61 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#fff5f5',
+    backgroundColor: '#4CAF50',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 20,
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: 'bold',
     color: '#333',
     textAlign: 'center',
-    marginBottom: 12,
+    marginBottom: 15,
   },
   modalMessage: {
     fontSize: 16,
     color: '#666',
     textAlign: 'center',
     lineHeight: 22,
-    marginBottom: 24,
+    marginBottom: 8,
+  },
+  modalSubMessage: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 15,
+  },
+  timerText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 25,
+    paddingHorizontal: 10,
+  },
+  boldText: {
+    fontWeight: 'bold',
+    color: '#333',
   },
   modalButtonContainer: {
     width: '100%',
+    marginTop: 5,
   },
   modalButton: {
-    backgroundColor: '#ff6b6b',
-    paddingVertical: 14,
-    borderRadius: 12,
+    paddingVertical: 15,
+    borderRadius: 10,
     alignItems: 'center',
+  },
+  okButton: {
+    backgroundColor: '#4CAF50',
+    width: '100%',
   },
   modalButtonText: {
     color: 'white',
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600',
-  },
-   infoBox: {
-    backgroundColor: '#f5f5f5',
-    borderRadius: 10,
-    padding: 15,
-    width: '100%',
-    marginBottom: 20,
-  },
-  infoBoxTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 8,
-  },
-  infoBoxText: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 4,
-  },
-  modalSubMessage: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 20,
-    fontStyle: 'italic',
-  },
-// Add these new styles or update existing ones
-modalIconContainer: {
-  width: 80,
-  height: 80,
-  borderRadius: 40,
-  backgroundColor: '#4CAF50', // Changed to match image
-  justifyContent: 'center',
-  alignItems: 'center',
-  marginBottom: 20,
-},
-modalTitle: {
-  fontSize: 22,
-  fontWeight: 'bold',
-  color: '#333',
-  textAlign: 'center',
-  marginBottom: 15,
-},
-modalMessage: {
-  fontSize: 16,
-  color: '#666',
-  textAlign: 'center',
-  lineHeight: 22,
-  marginBottom: 8,
-},
-modalSubMessage: {
-  fontSize: 16,
-  color: '#666',
-  textAlign: 'center',
-  lineHeight: 22,
-  marginBottom: 15,
-},
-timerText: {
-  fontSize: 16,
-  color: '#666',
-  textAlign: 'center',
-  lineHeight: 22,
-  marginBottom: 25,
-  paddingHorizontal: 10,
-},
-boldText: {
-  fontWeight: 'bold',
-  color: '#333',
-},
-modalButtonContainer: {
-  width: '100%',
-  marginTop: 5,
-},
-modalButton: {
-  paddingVertical: 15,
-  borderRadius: 10,
-  alignItems: 'center',
-},
-okButton: {
-  backgroundColor: '#4CAF50',
-  width: '100%',
-},
-modalButtonText: {
-  color: 'white',
-  fontSize: 18,
-  fontWeight: '600',
-},
-  modalButtonContainer: {
-    width: '100%',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  modalButton: {
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: 'center',
   },
 });
 

@@ -91,7 +91,7 @@ const WithdrawalRequests = () => {
         return { 
           color: '#10B981', 
           bg: '#D1FAE5', 
-          icon: 'checkmark-circle', 
+          icon: ' checkmark-circle', 
           label: 'Complété',
           progress: '✅'
         };

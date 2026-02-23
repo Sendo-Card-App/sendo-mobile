@@ -17,10 +17,10 @@
     "production": {
       "autoIncrement": true,
       "android": {
-        "buildType": "app-bundle"  
+        "buildType": "apk"  
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://api.sf-e.ca/api "
+        "EXPO_PUBLIC_API_URL": "https://api.sf-e.ca/api"
       }
     }
   },

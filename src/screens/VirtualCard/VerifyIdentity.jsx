@@ -50,11 +50,11 @@ const VerifyIdentity = ({ navigation }) => {
 
   const handleNextPress = () => {
     const country = userProfile?.data?.user?.country;
-    if (country === "Canada") {
-      navigation.navigate("CanadaKycSubmission");
-    } else {
-      navigation.navigate("KycResume");
-    }
+    // if (country === "Canada") {
+    //   navigation.navigate("CanadaKycSubmission");
+    // } else {
+    //   navigation.navigate("KycResume");
+    // }
   };
 
   if (isProfileLoading || loadingDocuments) {

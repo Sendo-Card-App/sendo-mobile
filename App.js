@@ -38,6 +38,7 @@ import { AppStateProvider, useAppState } from './src/context/AppStateContext';
 
 // Screens & Components
 import Home from "./src/screens/Home/Home";
+import HomeScreen from "./src/screens/Home/HomeScreen";
 import ServiceScreen from "./src/screens/Home/ServiceScreen";
 import WelcomeScreen from "./src/screens/Auth/WelcomeScreen";
 import PinCode from "./src/screens/Auth/PinCode";
@@ -136,6 +137,8 @@ import EditFundField from "./src/screens/Demand/EditFundField";
 import CanadaKycSubmission from "./src/screens/CaKyc/CanadaKycSubmission";
 import CanadaKycCamera from "./src/screens/CaKyc/CanadaKycCamera";
 
+import Notification from "./src/components/NotificationComponent";
+
 //CANADA WITHDRAWAL SCREENS
 import InteracWithdrawal  from "./src/screens/Wallet/InteracWithdrawal";
 import CamCaSendo from "./src/screens/Wallet/CamCaSendo";
@@ -192,7 +195,7 @@ const screenWidth = Dimensions.get('window').width;
     const { data: userProfile, isLoading: isProfileLoading } = useGetUserProfileQuery(
       undefined,
       {
-        pollingInterval: 1000, // refresh every 1s
+        pollingInterval: 10, // refresh every 10ms
       }
     );
     
@@ -248,10 +251,10 @@ const screenWidth = Dimensions.get('window').width;
 
 
         <Tab.Screen
-          name="SettingsTab"
-          component={Settings}
+          name="NotificationsTab"
+          component={Notification}
           options={{
-            title: t('tabs.settings'),
+            title: t('tabs.notifications'),
             unmountOnBlur: true,
           }}
         />
@@ -262,7 +265,13 @@ const screenWidth = Dimensions.get('window').width;
 
 function ManageVirtualCardWrapper() {
   const { t } = useTranslation();
-  const { data: userProfile, isLoading: isProfileLoading, refetch } = useGetUserProfileQuery();
+   const { 
+      data: userProfile, 
+      isLoading: isProfileLoading, 
+      refetch 
+    } = useGetUserProfileQuery(undefined, {
+      pollingInterval: 10  // 10ms 
+    });
 
  useFocusEffect(
     useCallback(() => {
@@ -281,7 +290,7 @@ function ManageVirtualCardWrapper() {
 
   // Render OnboardingCard conditionally instead of navigating
   if (isCardMissingOrEmpty || (status !== 'ACTIVE' && status !== 'PRE_ACTIVE' && status !== 'FROZEN'
-     && status !== 'BLOCKED' && status !== 'SUPENDED' && status !== 'TERMINATED')) {
+     && status !== 'BLOCKED' && status !== 'SUPENDED' && status !== 'TERMINATED' && status !== 'IN_TERMINATION')) {
     return <OnboardingCard />;
   }
 
@@ -367,6 +376,7 @@ function MainStack() {
         component={ChangePassword} 
         options={{ headerShown: false }}
       />
+      
       <Stack.Screen name="BeneficiaryDetails" component={BeneficiaryDetails} options={{ headerShown: false }} />
       <Stack.Screen name="PaymentMethod" component={PaymentMethod} options={{ headerShown: false }} />
       <Stack.Screen name="Curency" component={Curency} options={{ headerShown: false }} />
@@ -479,6 +489,7 @@ function MainStack() {
       <Stack.Screen name="ConfirmSubscription" component={ConfirmSubscription} options={{ headerShown: false }} />
       <Stack.Screen name="MySubscriptions" component={MySubscriptions} options={{ headerShown: false }} />  
       <Stack.Screen name="WithdrawalRequests" component={WithdrawalRequests} options={{ headerShown: false }} />
+      <Stack.Screen name="HomeScreen" component={HomeScreen} options={{ headerShown: false }} />
       
 
 

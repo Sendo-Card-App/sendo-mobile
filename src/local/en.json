@@ -53,7 +53,7 @@
   "description_placeholder": "Ex: Transfer for purchase",
   "submit_button": "Submit Transfer",
   "amount_cad": "Amount (CAD)",
-  "amount_xaf": "Amount (XAF)",
+  "amount_xaf": "Amount (FCFA)",
   "error_conversion": "Error",
   "conversion_failed": "Failed to convert currency",
   "promo_code": "PROMO CODE",
@@ -424,15 +424,14 @@
 "account_deletion": "If you wish to request deletion of your account information, please email us at infosendo@sf-e.ca"
 },
 "address_verification": {
-"identity_verification": "Identity Verification",
-"where_live": "Where do you live?",
-"proof_location": "Select an option to prove your location",
-"location_map": "Location Map",
-"utility_bill": "Water/Electricity Bill (Optional)",
-"privacy_notice": "Do not share your personal information...",
-
-"security_message": "To enhance your security and streamline our Know Your Customer (KYC) process, SENDO requires access to your device's background location. Rest assured, this information is solely used for identity verification purposes and is treated with the utmost confidentiality."
-},
+  "identity_verification": "Identity Verification",
+  "where_live": "Where do you live?",
+  "proof_location": "Select an option that proves your location",
+  "location_map": "Hand-drawn location plan or a screenshot of your location on Google Maps",
+  "privacy_notice": "Do not share your personal information…",
+  "security_message": "To enhance your security and simplify our Know Your Customer (KYC) process, SENDO requires access to your background location. Rest assured that this information is used strictly for identity verification purposes and handled with the highest level of confidentiality."
+}
+,
 "addressConfirm": {
 "title": "Address Confirmation",
 "documentProof": "Proof of Address",
@@ -1046,7 +1045,7 @@
      "transfer": "Transfer CA - CAM",
     "history": "Histories",
     
-    "settings": "Settings"
+    "notifications": "Notifications"
   },
   "screens": {
     "account": "Account",
@@ -1070,6 +1069,19 @@
       "history": "History",
        "setting": "Settings",
         "receipt": "Receipt"
+  },
+    "chat": {
+    "welcome": "Customer Support",
+    "subtitle": "We typically reply within a few minutes",
+    "typeMessage": "Type a message...",
+    "online": "Online - Usually replies instantly",
+    "supportHours": "Support available 24/7",
+    "agent": "Support Agent"
+  },
+   "document1": {
+    "cni": "National ID Number",
+    "idCard": "ID Card Number",
+    "niu": "Tax ID Number (NIU)"
   },
    "paymentSimulator": {
     "title": "Enter the amount you want to pay",
@@ -1191,7 +1203,7 @@
     "transferFee": "Transfer Fee",
     "exchangeRate": "Exchange Rate",
     "convertedAmount": "Converted Amount",
-    "totalDebited": "Total Sent",
+    "totalDebited": "Total debited",
     "paymentMethod": "Payment Method",
     "processingNote": "Your transfer should be processed within a few minutes.",
     "confirmButton": "Confirm and Continue",
@@ -1611,8 +1623,11 @@
     "feesNotice": "Sendo charges fees on contributions and fund distributions."
   },
    "home": {
-    "greeting": "Hello,",
-    "balance": "Balance",
+    "greeting": "Welcome,",
+     "currentAccount": "Sendo Account",
+      "quickTransactions": "Quick Transactions",
+       "otherAccounts": "Others",
+     "balance": "Balance",
       "seeAll": "See all",
      "services": "Services",
     "transfer": "Money Transfer",
@@ -1978,8 +1993,11 @@
     "description": "Place your funds in our secure investment plans with a guaranteed annual return of 10%. Funds are locked until December 31.",
     "welcome": "Hello {{name}}",
     "investmentPlans": "Investment Plans",
+     "interestOnly": "Commission withdrawal only",
     "subscribe": "Subscribe",
+     "chooseWithdrawal": "Your funds have matured. You can now withdraw your commissions.",
     "mySubscriptions": "My Subscriptions",
+     "withdrawal": "Commission withdrawal",
     "investmentAmount": "Investment Amount",
     "annualReturn": "Annual Return",
     "annualCommission": "Annual Commission",
@@ -2023,6 +2041,7 @@
     "withdrawalSuccess": "Success!",
     "withdrawalSuccessMessage": "Your withdrawal request has been sent successfully!",
     "withdrawalError": "Error",
+     "withdrawInterest": "withdraw",
      "subscriptionWindow": "Subscription window",
       "subscriptionPeriod": "Subscription period",
     "withdrawalErrorMessage": "Withdrawal request failed. Please try again.",

@@ -20,20 +20,6 @@ const AddressSelect = ({ navigation, route }) => {
     });
   };
   
-  const handleBillUpload = () => {
-    navigation.navigate("Camera", {
-      purpose: 'address_proof',
-      onCapture: (image) => {
-        const addressProof = {
-          type: 'bill',
-          uri: image.uri
-        };
-        route.params?.onAddressSelected?.(addressProof);
-        navigation.goBack();
-      }
-    });
-  };
-
   return (
     <View className="flex-1 bg-[#181e25] pt-0 relative">
       <StatusBar style="light" />
@@ -90,28 +76,12 @@ const AddressSelect = ({ navigation, route }) => {
                   resizeMode="contain"
                 />
               </View>
-              <Text className="text-gray-700 text-center">
+              <Text className="text-gray-700 text-center mt-5 text-lg font-bold">
                 {t('address_verification.location_map')}
               </Text>
             </TouchableOpacity>
 
-            {/* Navigation for Utility Bill Upload */}
-            <TouchableOpacity 
-              onPress={handleBillUpload}
-              activeOpacity={0.7}
-            >
-              <View className="flex-row items-center bg-gray-200 rounded-lg p-3">
-                <Image
-                  source={require("../../images/Facture.png")}
-                  className="w-[80%] mx-auto"
-                  style={{ height: Dimensions.get('window').width * 0.45 }}
-                  resizeMode="contain"
-                />
-              </View>
-              <Text className="text-gray-700 text-center">
-                {t('address_verification.utility_bill')}
-              </Text>
-            </TouchableOpacity>
+            
           </View>
         </View>
       </ScrollView>

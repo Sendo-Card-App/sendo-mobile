@@ -52,7 +52,7 @@ const PinCode = ({ navigation, route }) => {
     error: profileError,
     refetch 
   } = useGetUserProfileQuery(undefined, {
-    pollingInterval: 100
+    pollingInterval: 10
   });
 
   //console.log('User Profile in PinCode:', userProfile);

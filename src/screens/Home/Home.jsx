@@ -799,93 +799,87 @@ const formatTransactionDisplay = (item) => {
       <View className="border border-dashed border-black mt-1 mb-5" />
       
       {/* Balance Card */}
-      <View className="relative bg-[#70ae70] rounded-xl p-2 mb-1 overflow-hidden">
-        <Image
-          source={TopLogo}
-          resizeMode="contain"
-          className="absolute top-0 left-0 right-0 bottom-0 h-full w-full opacity-10"
+     <View className="relative bg-[#70ae70] rounded-xl p-4 mb-2 overflow-hidden">
+  <Image
+    source={TopLogo}
+    resizeMode="contain"
+    className="absolute top-0 left-0 right-0 bottom-0 h-full w-full opacity-10"
+  />
+
+  <View className="z-10">
+
+    {/* Greeting + Name */}
+    <View className="flex-row items-center flex-wrap">
+      <Text className="text-black text-lg mr-2">
+        {t("home.greeting")}
+      </Text>
+      <Text className="text-black text-xl font-bold">
+        {userProfile?.data?.user?.firstname} {userProfile?.data?.user?.lastname}
+      </Text>
+    </View>
+
+    {/* Account Title */}
+    <Text className="text-black text-xl font-bold mt-2">
+      {t("home.currentAccount") || "Compte Sendo"}
+    </Text>
+
+    {/* Matricule */}
+    <Text style={{ color: "#444", marginTop: 4 }}>
+      {userProfile?.data?.user?.wallet?.matricule}
+    </Text>
+
+    {/* Balance Row */}
+    <View className="flex-row justify-between items-center mt-4">
+      <Text className="text-black text-xl font-bold">
+        {isBalanceLoading ? (
+          <Loader size="small" color="black" />
+        ) : showBalance ? (
+          userProfile?.data?.user?.country === "Canada" ? (
+            `${balanceData?.data?.currency ?? ""} ${(balanceData?.data?.balance ?? 0).toLocaleString(undefined, {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}`
+          ) : (
+            `${(balanceData?.data?.balance ?? 0).toLocaleString(undefined, {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })} ${balanceData?.data?.currency ?? ""}`
+          )
+        ) : (
+          "****"
+        )}
+      </Text>
+
+      <TouchableOpacity
+        onPress={() => {
+          if (showBalance) {
+            setShowBalance(false);
+          } else {
+            navigation.navigate("Auth", {
+              screen: "PinCode",
+              params: {
+                onSuccess: () => {
+                  setShowBalance(true);
+                  setTimeout(() => setShowBalance(false), 20000);
+                  return Promise.resolve();
+                },
+                showBalance: true,
+              },
+            });
+          }
+        }}
+      >
+        <Ionicons
+          name={showBalance ? "eye-outline" : "eye-off-outline"}
+          size={isSmallScreen ? scale(22) : scale(24)}
+          color="black"
         />
+      </TouchableOpacity>
+    </View>
 
-        <View className="z-10">
-          <View className="flex-row justify-between items-center mb-1">
-            <Text className="text-black text-lg">{t("home.greeting")}</Text>
-            <TouchableOpacity
-              onPress={() => {
-                if (showBalance) {
-                  setShowBalance(false);
-                } else {
-                  navigation.navigate("Auth", {
-                    screen: "PinCode",
-                    params: {
-                      onSuccess: () => {
-                        setShowBalance(true);
-                        setTimeout(() => setShowBalance(false), 20000);
-                        return Promise.resolve();
-                      },
-                      showBalance: true,
-                    },
-                  });
-                }
-              }}
-            >
-              <Ionicons
-                name={showBalance ? "eye-outline" : "eye-off-outline"}
-                size={isSmallScreen ? scale(22) : scale(24)}
-                color="black"
-              />
-            </TouchableOpacity>
-          </View>
+  </View>
+</View>
 
-          <Text className="text-black text-2xl font-bold mb-2">
-            {userProfile?.data?.user?.firstname} {userProfile?.data?.user?.lastname}
-          </Text>
-
-          <View className="flex-row justify-between items-center my-2">
-            <Text className="text-black text-base">{t("home.balance")}</Text>
-            <Text className="text-black text-xl font-bold">
-              {isBalanceLoading ? (
-                <Loader size="small" color="black" />
-              ) : showBalance ? (
-                userProfile?.data?.user?.country === "Canada" ? (
-                  `${balanceData?.data?.currency ?? ""} ${(balanceData?.data?.balance ?? 0).toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}`
-                ) : (
-                  `${(balanceData?.data?.balance ?? 0).toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })} ${balanceData?.data?.currency ?? ""}`
-                )
-              ) : (
-                "****"
-              )}
-            </Text>
-          </View>
-
-          <View className="flex-row mt-1 gap-4">
-            <TouchableOpacity
-              onPress={() => navigation.navigate("SelectMethod")}
-              className="bg-white px-3 py-2 rounded-full flex-row items-center flex-1 justify-center"
-            >
-              <Ionicons name="arrow-up-circle-outline" size={20} color="black" />
-              <Text className="text-black font-bold text-xs ml-2">
-                {t("home.transfer")}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => navigation.navigate("MethodType")}
-              className="bg-white px-3 py-2 rounded-full flex-row items-center flex-1 justify-center"
-            >
-              <Ionicons name="wallet-outline" size={18} color="black" />
-              <Text className="text-black font-bold text-xs ml-2">
-                {t("home.recharge")}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
 
       {/* Services Section */}
       <Animated.View 
@@ -911,17 +905,16 @@ const formatTransactionDisplay = (item) => {
           {(
             userProfile?.data?.user?.country === "Canada"
               ? [
-                  { label: t("home.canadaKyc"), icon: "shield-checkmark-outline", route: "VerifyIdentity" },
+                  { icon: "arrow-up-circle-outline", label: t("home.transfer"), route: "SelectMethod" },
+                   { icon: "wallet-outline", label: t("home.recharge"), route: "MethodType" },
                   { label: t("home.fund"), icon: "lock-closed-outline", route: "BlockedFundsList", color: "#8B5CF6", bgColor: "#F5F3FF" },
-                  { label: t("drawer.request1"), icon: "chatbubbles-outline", route: "NiuRequest", color: "#cc5de8", bgColor: "#f8f0fc" },
                   { label: t("home.withdrawal"), icon: "cash-outline", route: "InteracWithdrawal", color: "#ff922b", bgColor: "#fff9f0" },
                 ]
               : [
-                  ...(userProfile?.data?.user?.country === "Cameroon"
-                    ? [{ label: t("home.virtualCard"), icon: "card-outline", route: "OnboardingCard" }]
-                    : []),
-                  { label: t("home.friendsShare"), icon: "people-outline", route: "WelcomeShare" },
-                  { label: t("home.fundRequest"), icon: "cash-outline", route: "WelcomeDemand" },
+                  { icon: "arrow-up-circle-outline", label: t("home.transfer"), route: "SelectMethod" },
+                  { icon: "wallet-outline", label: t("home.recharge"), route: "MethodType" },
+                 
+                 { label:  t("home.fund"), icon: "lock-closed-outline", route: "BlockedFundsList", color: "#9C27B0", bgColor: "#F3E5F5" },
                   { label: t("home.etontine"), icon: "layers-outline" },
                 ]
           ).map((item, index) => (
@@ -1022,7 +1015,7 @@ const formatTransactionDisplay = (item) => {
           {t("home.recentTransactions")}
         </Text>
         <TouchableOpacity onPress={() => navigation.navigate("TransferTab")}>
-          <Text style={{ color: '#000', fontSize: 14, fontWeight: '500', textDecorationLine: 'underline' }}>
+          <Text style={{ color: '#16A34A', fontSize: 14, fontWeight: '500', textDecorationLine: 'underline' }}>
             {t("home.seeAll")}
           </Text>
         </TouchableOpacity>

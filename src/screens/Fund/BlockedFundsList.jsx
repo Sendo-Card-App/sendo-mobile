@@ -257,21 +257,7 @@ const renderFundItem = ({ item, index }) => {
         </View>
 
         {/* Welcome Section - Design épuré */}
-        <View className="bg-gray-50 rounded-2xl p-4 mb-2">
-          <View className="flex-row items-center">
-            <View className="flex-1">
-              <Text className="text-gray-800 font-bold text-lg">
-                👋 {t('blockedFunds.welcome', { name: userName }) || `Bonjour ${userName}`}
-              </Text>
-              <Text className="text-gray-600 text-sm mt-1">
-                {t('blockedFunds.description')}
-              </Text>
-            </View>
-            <View className="bg-gray-200 p-3 rounded-xl">
-              <MaterialIcons name="trending-up" size={24} color="#2C3E50" />
-            </View>
-          </View>
-        </View>
+       
 
         {/* Stats Bar - Design épuré */}
         <View className="flex-row justify-between mt-2">

@@ -54,6 +54,7 @@ const ServiceScreen = () => {
         { label: t("home.withdrawal"), icon: "cash-outline", route: "InteracWithdrawal", color: "#ff922b", bgColor: "#fff9f0" },
         { label: t("drawer.request1"), icon: "chatbubbles-outline", route: "NiuRequest", color: "#cc5de8", bgColor: "#f8f0fc" },
         { label: t("serviceScreen.support") || "Support", icon: "headset-outline", route: "ChatScreen", color: "#8B5CF6", bgColor: "#F5F3FF" },
+        
       ];
     }
 

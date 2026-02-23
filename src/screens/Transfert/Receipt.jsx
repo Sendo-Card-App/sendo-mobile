@@ -38,7 +38,7 @@ const ReceiptScreen = () => {
   const { data: userInfos, isLoading: isUserLoading, error: userError } = useGetUserByIdQuery(idToFetch, {
     skip: !idToFetch,
   });
-
+  //console.log("Fetched user info for receipt:", userInfos);
   const [isGenerating, setIsGenerating] = React.useState(false);
   const { t } = useTranslation();
   
@@ -1759,7 +1759,7 @@ const handleDownloadReceipt = async () => {
     ) {
       counterpartName = isSender
         ? `${transaction.receiver?.firstname ?? ''} ${transaction.receiver?.lastname ?? ''}`
-        : `${userInfos?.data?.firstname ?? ''} ${userInfos?.data?.lastname ?? ''}`;
+        : `${userInfos?.data?.user?.firstname ?? ''} ${userInfos?.data?.user?.lastname ?? ''}`;
     } else {
       counterpartName = `${transaction.receiver?.firstname ?? ''} ${transaction.receiver?.lastname ?? ''}`;
     }
@@ -2149,7 +2149,7 @@ const handleDownloadReceipt = async () => {
                 <Text className="font-semibold">
                   {isSender
                     ? `${transaction.receiver?.firstname || ''} ${transaction.receiver?.lastname || ''}`
-                    : `${userInfos?.data?.firstname || ''} ${userInfos?.data?.lastname || ''}`
+                    : `${userInfos?.data?.user?.firstname || ''} ${userInfos?.data?.user?.lastname || ''}`
                   }
                 </Text>
               </Text>
@@ -2189,8 +2189,8 @@ const handleDownloadReceipt = async () => {
                 {transaction.type === 'WALLET_TO_WALLET' && (
                   <Text className="text-gray-800 font-semibold text-sm mb-2">
                     {isSender
-                      ? `${transaction.receiver?.firstname || userInfos?.data?.firstname || ''} ${transaction.receiver?.lastname || userInfos?.data?.lastname || ''} a reçu votre transaction.`
-                      : `${userInfos?.data?.firstname || ''} ${userInfos?.data?.lastname || ''} vous a envoyé une transaction.`
+                      ? `${transaction.receiver?.firstname || userInfos?.data?.user?.firstname || ''} ${transaction.receiver?.lastname || userInfos?.data?.user?.lastname || ''} a reçu votre transaction.`
+                      : `${userInfos?.data?.user?.firstname || ''} ${userInfos?.data?.user?.lastname || ''} vous a envoyé une transaction.`
                     }
                   </Text>
                 )}
@@ -2205,7 +2205,7 @@ const handleDownloadReceipt = async () => {
                       ? (
                           isSender
                             ? `${transaction.receiver?.firstname ?? ''} ${transaction.receiver?.lastname ?? ''}`
-                            : `${userInfos?.data?.firstname ?? ''} ${userInfos?.data?.lastname ?? ''}`
+                            : `${userInfos?.data?.user?.firstname ?? ''} ${userInfos?.data?.user?.lastname ?? ''}`
                         )
                       : (
                           `${transaction.receiver?.firstname ?? ''} ${transaction.receiver?.lastname ?? ''}`

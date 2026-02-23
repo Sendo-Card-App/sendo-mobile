@@ -134,7 +134,7 @@ const KycResume = ({ navigation }) => {
     { 
       id: "5", 
       name: t('kyc_resume.address_proof'), 
-      route: "Addresse", 
+      route: "AddressSelect", 
       completed: !!addressProof,
       icon: "home-map-marker",
       required: true

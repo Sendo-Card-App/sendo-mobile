@@ -86,7 +86,7 @@ const Account = () => {
     city: "",
     district: "",
     address: "",
-    dateOfBirth: null,
+    dateOfBirth: "",
     placeOfBirth: "",
     picture: null,
   });
@@ -110,30 +110,33 @@ const Account = () => {
     }, [refetch])
   );
 
-  useEffect(() => {
-    if (userProfile?.data?.user) {
-      const user = userProfile.data.user;
-      const profileData = {
-        firstname: user.firstname || "",
-        lastname: user.lastname || "",
-        phone: user.phone || "",
-        email: user.email || "",
-        profession: user.profession || "",
-        region: user.region || "",
-        city: user.city || "",
-        district: user.district || "",
-        address: user.address || "",
-        dateOfBirth: user.dateOfBirth ? new Date(user.dateOfBirth) : null,
-        placeOfBirth: user.placeOfBirth || "",
-        picture: user.picture 
-          ? { uri: user.picture } 
-          : null,
-      };
-      
-      setFormData(profileData);
-      setOriginalData(profileData);
-    }
-  }, [userProfile]);
+useEffect(() => {
+  if (userProfile?.data?.user) {
+    const user = userProfile.data.user;
+    console.log('Raw user date from backend:', user.dateOfBirth); // Debug log
+    
+    const profileData = {
+      firstname: user.firstname || "",
+      lastname: user.lastname || "",
+      phone: user.phone || "",
+      email: user.email || "",
+      profession: user.profession || "",
+      region: user.region || "",
+      city: user.city || "",
+      district: user.district || "",
+      address: user.address || "",
+      dateOfBirth: user.dateOfBirth || "", // Keep as is from backend
+      placeOfBirth: user.placeOfBirth || "",
+      picture: user.picture 
+        ? { uri: user.picture } 
+        : null,
+    };
+    
+    console.log('Profile data set:', profileData.dateOfBirth); // Debug log
+    setFormData(profileData);
+    setOriginalData(profileData);
+  }
+}, [userProfile]);
 
   useEffect(() => {
     // Animate content on mount
@@ -185,105 +188,152 @@ const Account = () => {
     ]).start();
   };
 
-  const formatDate = (date) => {
-    if (!date) return "Not set";
-    return date.toISOString().split('T')[0]; // Returns YYYY-MM-DD format
-  };
-
-  const handleDateChange = (event, selectedDate) => {
-    setShowDatePicker(false);
-    if (selectedDate) {
-      setFormData(prev => ({
-        ...prev,
-        dateOfBirth: selectedDate
-      }));
-    }
-  };
-
-  const handleSave = async () => {
-    try {
-      const requiredFields = ['firstname', 'lastname', 'phone', 'email'];
-      const missingFields = requiredFields.filter(field => !formData[field]);
-
-      if (missingFields.length > 0) {
-        Toast.show({
-          type: "error",
-          text1: "Missing information",
-          text2: `Please fill in: ${missingFields.join(', ')}`,
-        });
-        return;
+    const formatDate = (date) => {
+      if (!date) return "Not set";
+      
+      // If it's already a string, return it as is (DD/MM/YYYY)
+      if (typeof date === 'string') {
+        return date;
       }
-
-      // First update profile data if there are changes
-      const hasProfileChanges = Object.keys(formData).some(key => {
-        if (key === 'picture' || key === 'dateOfBirth') return false;
-        return formData[key] !== originalData[key];
-      });
-
-      if (hasProfileChanges) {
-        // Prepare profile data for update - exclude picture and format dateOfBirth
-        const profileUpdateData = {
-          firstname: formData.firstname,
-          lastname: formData.lastname,
-          phone: formData.phone,
-          email: formData.email,
-          profession: formData.profession || '',
-          region: formData.region || '',
-          city: formData.city || '',
-          district: formData.district || '',
-          address: formData.address || '',
-          placeOfBirth: formData.placeOfBirth || '',
-        };
-
-        // Add dateOfBirth if it exists
-        if (formData.dateOfBirth) {
-          profileUpdateData.dateOfBirth = formatDate(formData.dateOfBirth);
-        }
-
-        await updateProfile({
-          userId: userId,
-          ...profileUpdateData
-        }).unwrap();
+      
+      // If it's a Date object, format it to DD/MM/YYYY
+      if (date instanceof Date) {
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        return `${day}/${month}/${year}`;
       }
+      
+      return "Not set";
+    };
 
-      // Then upload picture if changed
-      if (formData.picture && formData.picture.uri && 
-          (!originalData.picture || formData.picture.uri !== originalData.picture.uri)) {
-        
-        // Create FormData for image upload
-        const imageFormData = new FormData();
-        
-        // Get file extension and MIME type
-        const uriParts = formData.picture.uri.split('.');
-        const fileType = uriParts[uriParts.length - 1];
-        
-        imageFormData.append('picture', {
-          uri: formData.picture.uri,
-          name: formData.picture.name || `profile_${Date.now()}.${fileType}`,
-          type: formData.picture.type || `image/${fileType}`,
-        });
+ const handleDateChange = (event, selectedDate) => {
+  setShowDatePicker(false);
+  if (selectedDate) {
+    // Format date as DD/MM/YYYY for backend
+    const day = String(selectedDate.getDate()).padStart(2, '0');
+    const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+    const year = selectedDate.getFullYear();
+    const formattedDate = `${day}/${month}/${year}`;
+    
+    console.log('Date changed to:', formattedDate); // Debug log
+    
+    setFormData(prev => ({
+      ...prev,
+      dateOfBirth: formattedDate
+    }));
+  }
+};
 
-        await sendProfilePicture(imageFormData).unwrap();
-      }
+const handleSave = async () => {
+  try {
+    const requiredFields = ['firstname', 'lastname', 'phone', 'email'];
+    const missingFields = requiredFields.filter(field => !formData[field]);
 
-      Toast.show({
-        type: "success",
-        text1: "Profile updated",
-        text2: "Your changes have been saved",
-      });
-
-      await refetch();
-      setIsEditing(false);
-
-    } catch (error) {
-      console.log('Failed to update profile:', JSON.stringify(error, null, 2));
+    if (missingFields.length > 0) {
       Toast.show({
         type: "error",
-        text1: "Update failed",
-        text2: error?.data?.message || error?.message || "Please try again",
+        text1: "Missing information",
+        text2: `Please fill in: ${missingFields.join(', ')}`,
       });
+      return;
     }
-  };
+
+    // Check each field for changes and log them
+    console.log('=== Checking for changes ===');
+    console.log('Original data:', originalData);
+    console.log('Current form data:', formData);
+    
+    const hasProfileChanges = Object.keys(formData).some(key => {
+      if (key === 'picture') return false;
+      
+      const original = originalData[key];
+      const current = formData[key];
+      
+      // Special handling for date comparison
+      if (key === 'dateOfBirth') {
+        const hasChanged = original !== current;
+        if (hasChanged) {
+          console.log(`Date changed from "${original}" to "${current}"`);
+        }
+        return hasChanged;
+      }
+      
+      const hasChanged = original !== current;
+      if (hasChanged) {
+        console.log(`Field "${key}" changed from "${original}" to "${current}"`);
+      }
+      return hasChanged;
+    });
+
+    console.log('Has profile changes:', hasProfileChanges);
+
+    if (hasProfileChanges) {
+      // Prepare profile data for update
+      const profileUpdateData = {
+        firstname: formData.firstname,
+        lastname: formData.lastname,
+        phone: formData.phone,
+        email: formData.email,
+        profession: formData.profession || '',
+        region: formData.region || '',
+        city: formData.city || '',
+        district: formData.district || '',
+        address: formData.address || '',
+        placeOfBirth: formData.placeOfBirth || '',
+        dateOfBirth: formData.dateOfBirth || '',
+      };
+
+      console.log('Sending to backend:', profileUpdateData);
+
+      const response = await updateProfile({
+        userId: userId,
+        ...profileUpdateData
+      }).unwrap();
+      
+      console.log('Update response:', response);
+    } else {
+      console.log('No profile changes detected');
+    }
+
+    // Then upload picture if changed
+    if (formData.picture && formData.picture.uri && 
+        (!originalData.picture || formData.picture.uri !== originalData.picture.uri)) {
+      
+      console.log('Uploading picture...');
+      const imageFormData = new FormData();
+      
+      const uriParts = formData.picture.uri.split('.');
+      const fileType = uriParts[uriParts.length - 1];
+      
+      imageFormData.append('picture', {
+        uri: formData.picture.uri,
+        name: formData.picture.name || `profile_${Date.now()}.${fileType}`,
+        type: formData.picture.type || `image/${fileType}`,
+      });
+
+      await sendProfilePicture(imageFormData).unwrap();
+      console.log('Picture uploaded');
+    }
+
+    Toast.show({
+      type: "success",
+      text1: "Profile updated",
+      text2: "Your changes have been saved",
+    });
+
+    await refetch();
+    setIsEditing(false);
+
+  } catch (error) {
+    console.log('Failed to update profile:', JSON.stringify(error, null, 2));
+    Toast.show({
+      type: "error",
+      text1: "Update failed",
+      text2: error?.data?.message || error?.message || "Please try again",
+    });
+  }
+};
 
 const pickImage = async () => {
   try {
@@ -709,43 +759,58 @@ const pickImage = async () => {
               ))}
 
               {/* Date of Birth */}
-              {renderAnimatedCard(5, (
-                <View className="mb-6">
-                  <View className="flex-row items-center mb-3">
-                    <MaterialIcons name="cake" size={20} color="#7ddd7d" />
-                    <Text className="text-gray-800 font-bold text-lg ml-2">
-                      {t("signup.DOB")}
+            {renderAnimatedCard(5, (
+              <View className="mb-6">
+                <View className="flex-row items-center mb-3">
+                  <MaterialIcons name="cake" size={20} color="#7ddd7d" />
+                  <Text className="text-gray-800 font-bold text-lg ml-2">
+                    {t("signup.DOB")}
+                  </Text>
+                </View>
+                {isEditing ? (
+                  <>
+                    <TouchableOpacity
+                      onPress={() => setShowDatePicker(true)}
+                      className="bg-gray-50 rounded-2xl p-4 border border-gray-200"
+                    >
+                      <Text className={`text-lg ${formData.dateOfBirth ? 'text-gray-800' : 'text-gray-400'}`}>
+                        {formData.dateOfBirth ? formatDate(formData.dateOfBirth) : "Select date of birth"}
+                      </Text>
+                    </TouchableOpacity>
+                  {showDatePicker && (
+                    <DateTimePicker
+                      value={(() => {
+                        // If we have a date of birth, use it
+                        if (formData.dateOfBirth) {
+                          // If it's a string in DD/MM/YYYY format
+                          if (typeof formData.dateOfBirth === 'string' && formData.dateOfBirth.includes('/')) {
+                            const [day, month, year] = formData.dateOfBirth.split('/');
+                            return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                          }
+                          // If it's already a Date object, use it
+                          if (formData.dateOfBirth instanceof Date) {
+                            return formData.dateOfBirth;
+                          }
+                        }
+                        // If no valid date of birth, use a default date
+                        return new Date(2000, 0, 1);
+                      })()}
+                      mode="date"
+                      display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                      onChange={handleDateChange}
+                      maximumDate={new Date()}
+                    />
+                  )}
+                  </>
+                ) : (
+                  <View className="bg-gray-50 rounded-2xl p-4 border border-gray-200">
+                    <Text className="text-gray-800 text-lg">
+                      {userProfile?.data?.user?.dateOfBirth || "Not set"}
                     </Text>
                   </View>
-                  {isEditing ? (
-                    <>
-                      <TouchableOpacity
-                        onPress={() => setShowDatePicker(true)}
-                        className="bg-gray-50 rounded-2xl p-4 border border-gray-200"
-                      >
-                        <Text className={`text-lg ${formData.dateOfBirth ? 'text-gray-800' : 'text-gray-400'}`}>
-                          {formData.dateOfBirth ? formatDate(formData.dateOfBirth) : "Select date of birth"}
-                        </Text>
-                      </TouchableOpacity>
-                      {showDatePicker && (
-                        <DateTimePicker
-                          value={formData.dateOfBirth || new Date()}
-                          mode="date"
-                          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                          onChange={handleDateChange}
-                          maximumDate={new Date()}
-                        />
-                      )}
-                    </>
-                  ) : (
-                    <View className="bg-gray-50 rounded-2xl p-4 border border-gray-200">
-                      <Text className="text-gray-800 text-lg">
-                        {userProfile?.data?.user?.dateOfBirth || "Not set"}
-                      </Text>
-                    </View>
-                  )}
-                </View>
-              ))}
+                )}
+              </View>
+            ))}
 
               {/* Place of Birth */}
               {renderAnimatedCard(6, (
@@ -774,66 +839,90 @@ const pickImage = async () => {
                 </View>
               ))}
 
+        
               {/* Additional Fields */}
-              {isEditing ? (
-                <>
-                  {renderAnimatedCard(7, (
-                    <TextInput
-                      placeholder="Profession"
-                      value={formData.profession}
-                      onChangeText={(text) => handleFieldChange("profession", text)}
-                      className="bg-gray-50 rounded-2xl p-4 border border-gray-200 text-gray-800 mb-4"
-                      placeholderTextColor="#9CA3AF"
-                    />
-                  ))}
-                  {renderAnimatedCard(8, (
-                    <TextInput
-                      placeholder="Region"
-                      value={formData.region}
-                      onChangeText={(text) => handleFieldChange("region", text)}
-                      className="bg-gray-50 rounded-2xl p-4 border border-gray-200 text-gray-800 mb-4"
-                      placeholderTextColor="#9CA3AF"
-                    />
-                  ))}
-                  {renderAnimatedCard(9, (
-                    <TextInput
-                      placeholder="City"
-                      value={formData.city}
-                      onChangeText={(text) => handleFieldChange("city", text)}
-                      className="bg-gray-50 rounded-2xl p-4 border border-gray-200 text-gray-800 mb-4"
-                      placeholderTextColor="#9CA3AF"
-                    />
-                  ))}
-                  {renderAnimatedCard(10, (
-                    <TextInput
-                      placeholder="District"
-                      value={formData.district}
-                      onChangeText={(text) => handleFieldChange("district", text)}
-                      className="bg-gray-50 rounded-2xl p-4 border border-gray-200 text-gray-800 mb-4"
-                      placeholderTextColor="#9CA3AF"
-                    />
-                  ))}
-                </>
-              ) : (
-                <>
-                  {['profession', 'region', 'city', 'district'].map((field, index) => (
-                    <React.Fragment key={field}>
-                      {renderAnimatedCard(11 + index, (
-                        <View className="mb-6">
-                          <Text className="text-gray-800 font-bold text-lg mb-2 capitalize">
-                            {t(`account.${field}`) || field}
-                          </Text>
-                          <View className="bg-gray-50 rounded-2xl p-4 border border-gray-200">
-                            <Text className="text-gray-800 text-lg">
-                              {userProfile?.data?.user?.[field] || "Not set"}
+                {isEditing ? (
+                  <>
+                    {renderAnimatedCard(7, (
+                      <View className="mb-4">
+                        <Text className="text-gray-700 font-semibold mb-2 ml-1">
+                          {t('account.profession') || 'Profession'}
+                        </Text>
+                        <TextInput
+                          placeholder={t('account.enterProfession') || "Enter profession"}
+                          value={formData.profession}
+                          onChangeText={(text) => handleFieldChange("profession", text)}
+                          className="bg-gray-50 rounded-2xl p-4 border border-gray-200 text-gray-800"
+                          placeholderTextColor="#9CA3AF"
+                        />
+                      </View>
+                    ))}
+                    
+                    {renderAnimatedCard(8, (
+                      <View className="mb-4">
+                        <Text className="text-gray-700 font-semibold mb-2 ml-1">
+                          {t('account.region') || 'Region'}
+                        </Text>
+                        <TextInput
+                          placeholder={t('account.enterRegion') || "Enter region"}
+                          value={formData.region}
+                          onChangeText={(text) => handleFieldChange("region", text)}
+                          className="bg-gray-50 rounded-2xl p-4 border border-gray-200 text-gray-800"
+                          placeholderTextColor="#9CA3AF"
+                        />
+                      </View>
+                    ))}
+                    
+                    {renderAnimatedCard(9, (
+                      <View className="mb-4">
+                        <Text className="text-gray-700 font-semibold mb-2 ml-1">
+                          {t('account.city') || 'City'}
+                        </Text>
+                        <TextInput
+                          placeholder={t('account.enterCity') || "Enter city"}
+                          value={formData.city}
+                          onChangeText={(text) => handleFieldChange("city", text)}
+                          className="bg-gray-50 rounded-2xl p-4 border border-gray-200 text-gray-800"
+                          placeholderTextColor="#9CA3AF"
+                        />
+                      </View>
+                    ))}
+                    
+                    {renderAnimatedCard(10, (
+                      <View className="mb-4">
+                        <Text className="text-gray-700 font-semibold mb-2 ml-1">
+                          {t('account.district') || 'District'}
+                        </Text>
+                        <TextInput
+                          placeholder={t('account.enterDistrict') || "Enter district"}
+                          value={formData.district}
+                          onChangeText={(text) => handleFieldChange("district", text)}
+                          className="bg-gray-50 rounded-2xl p-4 border border-gray-200 text-gray-800"
+                          placeholderTextColor="#9CA3AF"
+                        />
+                      </View>
+                    ))}
+                  </>
+                ) : (
+                  <>
+                    {['profession', 'region', 'city', 'district'].map((field, index) => (
+                      <React.Fragment key={field}>
+                        {renderAnimatedCard(11 + index, (
+                          <View className="mb-6">
+                            <Text className="text-gray-800 font-bold text-lg mb-2 capitalize">
+                              {t(`account.${field}`) || field}
                             </Text>
+                            <View className="bg-gray-50 rounded-2xl p-4 border border-gray-200">
+                              <Text className="text-gray-800 text-lg">
+                                {userProfile?.data?.user?.[field] || "Not set"}
+                              </Text>
+                            </View>
                           </View>
-                        </View>
-                      ))}
-                    </React.Fragment>
-                  ))}
-                </>
-              )}
+                        ))}
+                      </React.Fragment>
+                    ))}
+                  </>
+                )}
 
               {/* Save Button */}
               {isEditing && renderAnimatedCard(14, (

@@ -415,7 +415,7 @@ const InteracWithdrawal = ({ navigation }) => {
                 <View style={styles.summaryItem}>
                   <Text style={styles.summaryLabel}>{t('withdrawal.amount_received')}</Text>
                   <Text style={[styles.summaryValue, styles.summaryNet]}>
-                    {netAmount.toFixed(2)} CAD
+                    {amountNum.toFixed(2)} CAD
                   </Text>
                 </View>
               </View>

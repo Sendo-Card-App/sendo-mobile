@@ -117,19 +117,53 @@ const MySubscriptions = () => {
           },
         ]
       );
-    } catch (error) {
-      console.error('Withdrawal error:', error);
-      Alert.alert(
-        t('blockedFunds.withdrawalError'),
-        error.data?.message || t('blockedFunds.withdrawalErrorMessage'),
-        [{ 
+    }catch (error) {
+          console.log("Subscription error:", JSON.stringify(error, null, 2));
+          
+          // Analyser la structure de l'erreur
+          let errorMessage = '';
+          
+          // CAS 1: Erreur avec la structure spécifique que vous avez montrée
+          // { status: 500, data: { status: 500, message: "Erreur de souscription", data: { errors: ["Solde insuffisant"] } } }
+          if (error.data?.data?.errors && Array.isArray(error.data.data.errors)) {
+            errorMessage = error.data.data.errors.join('\n');
+          }
+          // CAS 2: Erreur avec data.errors (tableau)
+          else if (error.data?.errors && Array.isArray(error.data.errors)) {
+            errorMessage = error.data.errors.join('\n');
+          }
+          // CAS 3: Erreur avec data.message
+          else if (error.data?.message) {
+            errorMessage = error.data.message;
+          }
+          // CAS 4: Erreur avec data.data.message (structure imbriquée)
+          else if (error.data?.data?.message) {
+            errorMessage = error.data.data.message;
+          }
+          // CAS 5: Erreur avec message direct
+          else if (error.message) {
+            errorMessage = error.message;
+          }
+          // CAS 6: Erreur avec status et message
+          else if (error.status && error.error) {
+            errorMessage = error.error;
+          }
+          // CAS 7: Fallback - On garde le message en français
+          else {
+            errorMessage = 'Une erreur est survenue lors de la souscription';
+          }
+    
+          Alert.alert(
+            t('blockedFunds.withdrawalError'),
+            errorMessage,
+           [{ 
           text: 'OK',
           onPress: () => {
             setWithdrawModalVisible(true);
           }
         }]
-      );
-    }
+          );
+        }
   };
 
   const confirmWithdrawal = () => {
@@ -210,8 +244,8 @@ const MySubscriptions = () => {
         <View className="mb-4">
           <View className="flex-row justify-between items-center mb-2">
             <Text className="text-gray-700 font-medium">{t('blockedFunds.investmentAmount')}</Text>
-            <Text className="text-2xl font-bold text-gray-900">
-              {item.amount.toLocaleString()} <Text className="text-lg">{item.currency}</Text>
+            <Text className="text-xl font-bold text-gray-900">
+              {item.amount.toLocaleString()} <Text className="text-sm">{item.currency}</Text>
             </Text>
           </View>
           

@@ -37,7 +37,7 @@ const documentTypeMap = {
 };
 
 const documentIcons = {
-  ID_PROOF: "id-card",
+  ID_PROOF: "file-text",
   ADDRESS_PROOF: "home",
   SELFIE: "camera",
 };
@@ -53,7 +53,8 @@ const DocumentCard = ({
   item, 
   onView, 
   onResubmit, 
-  uploading 
+  uploading,
+  isCanadianUser 
 }) => {
   const { t } = useTranslation();
   const iconName = documentIcons[item.id] || "file-text";
@@ -66,7 +67,7 @@ const DocumentCard = ({
       <View className="flex-row justify-between items-start mb-4">
         <View className="flex-row items-center flex-1">
           <View className={`w-12 h-12 rounded-xl ${config.bgColor} items-center justify-center mr-3`}>
-            <Feather name={iconName} size={24} color={config.color} />
+            <AntDesign name={iconName} size={24} color={config.color} />
           </View>
           <View className="flex-1">
             <Text className="font-bold text-lg text-gray-900" numberOfLines={1}>
@@ -99,7 +100,9 @@ const DocumentCard = ({
         <View className="bg-gray-50 rounded-xl p-4 mb-4">
           {item.documentNumber && (
             <View className="flex-row justify-between py-2 border-b border-gray-100">
-              <Text className="text-gray-600 font-medium">CNI numero</Text>
+              <Text className="text-gray-600 font-medium">
+                {isCanadianUser ? t('document1.idCard') : t('document1.cni')}
+              </Text>
               <Text className="text-gray-900 font-semibold">{item.documentNumber}</Text>
             </View>
           )}
@@ -641,6 +644,7 @@ const KYCValidation = () => {
             onView={openImageViewer}
             onResubmit={handleResubmit}
             uploading={uploading}
+            isCanadianUser={isCanadianUser} 
           />
         ))}
       </ScrollView>

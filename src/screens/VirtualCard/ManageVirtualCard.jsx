@@ -46,9 +46,10 @@ const CARD_STATUS = {
   SUSPENDED: "SUSPENDED",
   PRE_ACTIVE: "PRE_ACTIVE",
   IN_TERMINATION: "IN_TERMINATION",
-  TERMINATED: "TERMINATED",
+  TERMINATED: ["TERMINATED", "FAILED_TERMINATION"],
   PENDING: "PENDING"
 };
+
 
 const ManageVirtualCard = () => {
   const { t } = useTranslation();
@@ -86,7 +87,7 @@ const ManageVirtualCard = () => {
     skip: !selectedCardId,
     pollingInterval: 1000,
   });
-
+  // console.log("Card Details API Response:", cardDetails);
   const { data: unlockStatus, isLoading: isUnlockStatusLoading } = useGetUnlockStatusQuery(selectedCardId, {
     skip: !selectedCardId,
     pollingInterval: 1000,

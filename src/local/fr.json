@@ -57,7 +57,7 @@
   "unlock_app": "Déverrouillez l’appli en utilisant votre visage ou votre empreinte",
   "biometric_not_available": "L'authentification biométrique n'est pas disponible",
   "amount_cad": "Montant en $ CAD",
-  "amount_xaf": "Montant en XAF",
+  "amount_xaf": "Montant en FCFA",
   "error_conversion": "Erreur",
   "conversion_failed": "Échec de la conversion de la devise",
   "promo_code": "CODE PROMO",
@@ -333,6 +333,11 @@
     "no_fee_tier_found": "Aucun palier de frais trouvé pour ce montant"
     
   },
+   "document1": {
+    "cni": "Numéro de la CNI",
+    "idCard": "Pièce d'identité",
+    "niu": "NIU"
+  },
   "select_service": "Sélectionnez un service",
   "service_om": "Orange Money",
   "service_mtn": "MTN Mobile Money",
@@ -416,15 +421,14 @@
     "contact_instructions": "Si vous ne pouvez pas nous contacter par téléphone, veuillez nous envoyer un email à infosendo@sf-e.ca",
     "account_deletion": "Si vous souhaitez demander la suppression des informations relatives à votre compte, veuillez nous envoyer un email à infosendo@sf-e.ca"
   },
-  "address_verification": {
-    "identity_verification": "Vérification de l'identité",
-    "where_live": "Où habitez-vous ?",
-    "proof_location": "Sélectionnez une option qui prouve votre localisation",
-    "location_map": "Plan de localisation",
-    "utility_bill": "Facture d'eau / électricité (Optionnel)",
-    "privacy_notice": "Ne partagez pas vos informations personnelles…",
-    "security_message": "Pour renforcer votre sécurité et simplifier notre processus de Connaissance Client (KYC), SENDO nécessite l'accès à votre localisation en arrière-plan. Soyez assuré que ces informations sont uniquement utilisées à des fins de vérification d'identité et traitées avec la plus stricte confidentialité."
-  },
+"address_verification": {
+  "identity_verification": "Vérification de l'identité",
+  "where_live": "Où habitez-vous ?",
+  "proof_location": "Sélectionnez l'option",
+  "location_map": "Plan de localisation dessiné à la main ou capture de votre localisation sur Google Maps",
+  "privacy_notice": "Ne partagez pas vos informations personnelles…",
+  "security_message": "Pour renforcer votre sécurité et simplifier notre processus de Connaissance Client (KYC), SENDO nécessite l'accès à votre localisation en arrière-plan. Soyez assuré que ces informations sont uniquement utilisées à des fins de vérification d'identité et traitées avec la plus stricte confidentialité."
+},
   "addressConfirm": {
     "title": "Confirmation d'adresse",
     "documentProof": "Justificatif de domicile",
@@ -1038,7 +1042,7 @@
     "cards": "Mes Cartes",
     "history": "Historiques",
      "transfer": "Transfert CA - CAM",
-    "settings": "Paramètres"
+    "notifications": "Notifications"
   },
   "screens": {
     "account": "Compte",
@@ -1075,6 +1079,14 @@
     "disclaimer": "Le taux inclut les frais bancaires d’achat de devise et sont mis à jour régulièrement, donc il peut différer des sites de conversion.",
     "rechargeButton": "Recharger ma carte",
     "closeButton": "Fermer"
+  },
+   "chat": {
+    "welcome": "Support Client",
+    "subtitle": "Nous répondons généralement en quelques minutes",
+    "typeMessage": "Écrivez un message...",
+    "online": "En ligne - Répond généralement instantanément",
+    "supportHours": "Support disponible 24/7",
+    "agent": "Agent de support"
   },
   "walletConfirm": {
     "title": "Recharge de votre Wallet",
@@ -1183,7 +1195,7 @@
     "transferFee": "Frais de transfert",
     "exchangeRate": "Taux de change",
     "convertedAmount": "Montant converti",
-    "totalDebited": "Total envoyé",
+    "totalDebited": "Total débité",
     "paymentMethod": "Méthode de paiement",
     "processingNote": "Votre transfert devrait passer d’ici quelques minutes.",
     "confirmButton": "Confirmer et continuer",
@@ -1617,7 +1629,10 @@
     "feesNotice": "Sendo prélève des frais lors des contributions et distribution des fonds."
   },
   "home": {
-    "greeting": "Bonjour,",
+     "greeting": "Bienvenue,",
+     "currentAccount": "Compte Sendo",
+      "quickTransactions": " Transaction Rapide",
+       "otherAccounts": "Autres",
     "balance": "Solde",
      "seeAll": "Voir tout",
      "services": "Services",
@@ -1689,7 +1704,7 @@
   },
   "kyc": {
     "my_kyc": "Mes KYC",
-    "id_proof": "CNI (ou passeport ou permis de conduire)",
+    "id_proof": "Pièce d'identité",
     "address_proof": "Plan de Localisation",
       "selfie": "Selfie",
     "niu_proof": "NIU",
@@ -1976,8 +1991,7 @@
     "description": "Placez vos fonds dans nos plans d'investissement sécurisés avec un rendement annuel garanti de 10%. Les fonds sont bloqués jusqu'au 31 décembre.",
     "welcome": "Bonjour {{name}}",
     "investmentPlans": "Plans d'Investissement",
-    "subscribe": "Investissez maintenant",
-    
+    "subscribe": "Investissez maintenant", 
      "avgReturn": "Rendement annuel",
     "mySubscriptions": "Mes Souscriptions",
      "interestEarned": "Intérêts accumulés",
@@ -2028,6 +2042,7 @@
     "withdrawalSuccess": "Succès!",
     "withdrawalSuccessMessage": "Votre demande de retrait a été envoyée avec succès!",
     "withdrawalError": "Erreur",
+      "withdrawInterest": "Retirer",
     "withdrawalErrorMessage": "Échec de la demande de retrait. Veuillez réessayer.",
     "interestOnlyDescription": "Retirer uniquement les intérêts accumulés",
     "fullWithdrawalDescription": "Retirer l'intégralité du fonds (annule l'investissement)",
@@ -2038,6 +2053,9 @@
     "totalCommission": "Commission totale",
     "maturedInvestments": "Investissements matures",
     "withdrawCommission": "Retirer commission",
+    "interestOnly": "Retirer commissions seulement",
+     "withdrawal": "Retrait des commissions",
+      "chooseWithdrawal": "Vos fonds sont arrivés à maturité. Vous pouvez retirer vos commissions.",
      "fullWithdrawal": "Retirer fonds complets",
       "withdrawalType": "Type de retrait",
     "withdrawCommissionOnly": "Retirer commissions seulement",
