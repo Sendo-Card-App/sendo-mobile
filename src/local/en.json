@@ -52,8 +52,8 @@
   "description_label": "Description (optional)",
   "description_placeholder": "Ex: Transfer for purchase",
   "submit_button": "Submit Transfer",
-  "amount_cad": "Amount (CAD)",
-  "amount_xaf": "Amount (FCFA)",
+  "amount_cad": "0",
+  "amount_xaf": "0",
   "error_conversion": "Error",
   "conversion_failed": "Failed to convert currency",
   "promo_code": "PROMO CODE",
@@ -315,6 +315,7 @@
     "loading_recipient": "Searching beneficiary...",
     "recipient_info": "Beneficiary information",
     "recipient_not_found": "Beneficiary not found",
+     "amount_below_minimum": "Minimum amount required: {{min}}",
     "recipient_required": "Please enter recipient account number",
     "invalid_recipient": "Invalid recipient account number",
     "amount": "Amount",
@@ -738,7 +739,12 @@
     "a3": "Creation is instant, you can use it immediately.",
     "createNewCard": "CREATE A NEW CARD",
     "returnHome": "Return to home",
-    "needHelp": "Need help? Contact our support"
+    "needHelp": "Need help? Contact our support",
+     "fees": "fee",
+    "totalToPay": "Total to pay",
+    "netToReceive": "Net to receive",
+     "depositDetails": "Deposit Details",
+      "withdrawalDetails": "Withdrawal Details"
 },
 "identityVerification": {
 "title": "Identity Verification",
@@ -1045,7 +1051,7 @@
      "transfer": "Transfer CA - CAM",
     "history": "Histories",
     
-    "notifications": "Notifications"
+    "setting": "Settings"
   },
   "screens": {
     "account": "Account",

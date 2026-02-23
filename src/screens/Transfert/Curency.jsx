@@ -238,6 +238,8 @@ const {
 
         <View style={styles.amountContainer}>
           {/* Source Currency Input */}
+         <View style={styles.amountContainer}>
+          {/* Source Currency Input */}
           <View style={[
             styles.amountInputContainer,
             activeInput === 'source' && styles.activeInput
@@ -254,7 +256,43 @@ const {
             <Text style={styles.currencyLabel}>
               {isToCameroon ? 'CAD' : 'XAF'}
             </Text>
+            
+            {/* Show loader overlay only when loading and this input is active */}
+            {isLoading && activeInput === 'source' && (
+              <View style={styles.inputLoaderOverlay}>
+                <Loader size="small" color="#7ddd7d" />
+              </View>
+            )}
           </View>
+
+          <Image source={ArrowGoRound} style={styles.arrowIcon} />
+
+          {/* Target Currency Input */}
+          <View style={[
+            styles.amountInputContainer,
+            activeInput === 'target' && styles.activeInput
+          ]}>
+            <TextInput
+              keyboardType="decimal-pad"
+              placeholder={isToCameroon ? t('amount_xaf') : t('amount_cad')}
+              placeholderTextColor="#aaa"
+              style={styles.amountInput}
+              value={convertedAmount}
+              onChangeText={handleTargetAmountChange}
+              onFocus={() => setActiveInput('target')}
+            />
+            <Text style={styles.currencyLabel}>
+              {isToCameroon ? 'XAF' : 'CAD'}
+            </Text>
+            
+            {/* Show loader overlay only when loading and this input is active */}
+            {isLoading && activeInput === 'target' && (
+              <View style={styles.inputLoaderOverlay}>
+                <Loader size="small" color="#7ddd7d" />
+              </View>
+            )}
+          </View>
+        </View>
 
           <Image source={ArrowGoRound} style={styles.arrowIcon} />
 

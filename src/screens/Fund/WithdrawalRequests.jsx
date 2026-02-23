@@ -52,6 +52,7 @@ const WithdrawalRequests = () => {
   const totalPages = withdrawalData?.data?.totalPages || 1;
   const totalItems = withdrawalData?.data?.totalItems || 0;
 
+  // console.log('Withdrawal Requests:', withdrawalRequests);
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
     try {
@@ -334,6 +335,11 @@ const WithdrawalRequests = () => {
                   <DetailRow 
                     label="Montant investi"
                     value={`${selectedRequest.fundSubscription?.amount?.toLocaleString()} ${selectedRequest.fundSubscription?.currency || 'CAD'}`}
+                    icon="cash-outline"
+                  />
+                   <DetailRow 
+                    label="Interrêts générés"
+                    value={`${selectedRequest.fundSubscription?.interestAmount?.toLocaleString()} ${selectedRequest.fundSubscription?.currency || 'CAD'}`}
                     icon="cash-outline"
                   />
                   <DetailRow 

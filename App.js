@@ -251,10 +251,10 @@ const screenWidth = Dimensions.get('window').width;
 
 
         <Tab.Screen
-          name="NotificationsTab"
-          component={Notification}
+          name="SettingsTab"
+          component={Settings}
           options={{
-            title: t('tabs.notifications'),
+            title: t('tabs.setting'),
             unmountOnBlur: true,
           }}
         />

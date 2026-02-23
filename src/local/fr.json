@@ -56,8 +56,8 @@
   "biometrics": "Biométriques",
   "unlock_app": "Déverrouillez l’appli en utilisant votre visage ou votre empreinte",
   "biometric_not_available": "L'authentification biométrique n'est pas disponible",
-  "amount_cad": "Montant en $ CAD",
-  "amount_xaf": "Montant en FCFA",
+  "amount_cad": "0",
+  "amount_xaf": "0",
   "error_conversion": "Erreur",
   "conversion_failed": "Échec de la conversion de la devise",
   "promo_code": "CODE PROMO",
@@ -302,6 +302,7 @@
     "recipient_id": "Numéro de compte du bénéficiaire",
     "recipient_placeholder": "Entrez le matricule du bénéficiaire",
     "recipient_name": "Nom du bénéficiaire",
+      "amount_below_minimum": "Montant minimum requis : {{min}}",
     "loading_recipient": "Recherche du bénéficiaire...",
     "recipient_info": "Informations du bénéficiaire",
     "recipient_not_found": "Bénéficiaire non trouvé",
@@ -734,7 +735,12 @@
     "a3": "La création est instantanée, vous pourrez l'utiliser immédiatement.",
     "createNewCard": "CRÉER UNE NOUVELLE CARTE",
     "returnHome": "Retour à l'accueil",
-    "needHelp": "Besoin d'aide ? Contactez notre support"
+    "needHelp": "Besoin d'aide ? Contactez notre support",
+     "fees": "frais",
+    "totalToPay": "Total à payer",
+    "netToReceive": "Net à recevoir",
+     "depositDetails": "Détails du dépôt",
+      "withdrawalDetails": "Détails du retrait"
   },
   "identityVerification": {
     "title": "Vérification de l'identité",
@@ -1042,7 +1048,7 @@
     "cards": "Mes Cartes",
     "history": "Historiques",
      "transfer": "Transfert CA - CAM",
-    "notifications": "Notifications"
+    "setting": "Paramètres"
   },
   "screens": {
     "account": "Compte",

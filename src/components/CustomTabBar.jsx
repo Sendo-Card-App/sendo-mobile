@@ -133,10 +133,10 @@ function CustomTabBar({ state, descriptors, navigation }) {
           label = t('tabs.cards');
           break;
           
-        case 'NotificationsTab':
-          iconName = isFocused ? 'notifications' : 'notifications-outline'; // Better for user profile/settings
-          // Alternatives: 'cog', 'options', 'menu'
-          label = t('tabs.notifications');
+        case 'SettingsTab':
+          iconName = isFocused ? 'cog' : 'cog-outline'; // Better for user profile/settings
+          // Alternatives: 'options', 'menu'
+          label = t('tabs.setting');
           break;
           
         default:
@@ -162,15 +162,6 @@ function CustomTabBar({ state, descriptors, navigation }) {
                 size={24}
                 color={isFocused ? Colors.primary : Colors.text}
               />
-
-              {/* Notification badge */}
-              {route.name === 'NotificationsTab' && unreadCount > 0 && (
-                <View style={styles.notificationBadge}>
-                  <Text style={styles.notificationBadgeText}>
-                    {unreadCount > 9 ? '9+' : unreadCount}
-                  </Text>
-                </View>
-              )}
             </View>
 
               <Text
@@ -274,25 +265,7 @@ const styles = StyleSheet.create({
     borderRadius: 3,
     backgroundColor: '#fff',
   },
-  notificationBadge: {
-  position: 'absolute',
-  top: -6,
-  right: -10,
-  minWidth: 16,
-  height: 16,
-  borderRadius: 8,
-  backgroundColor: '#FF3B30', // iOS red
-  alignItems: 'center',
-  justifyContent: 'center',
-  paddingHorizontal: 4,
-},
 
-notificationBadgeText: {
-  color: '#fff',
-  fontSize: 10,
-  fontWeight: 'bold',
-  lineHeight: 12,
-},
 
 });
 

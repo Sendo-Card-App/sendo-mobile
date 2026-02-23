@@ -65,6 +65,7 @@ const CamCaSendo = ({ navigation }) => {
   const [showSummary, setShowSummary] = useState(false);
   const [showSFEConnectModal, setShowSFEConnectModal] = useState(false);
   const [showUnavailableModal, setShowUnavailableModal] = useState(false);
+  const [showMinAmountAlert, setShowMinAmountAlert] = useState(false);
   const [formattedExchangeRate, setFormattedExchangeRate] = useState('');
 
   // Configuration
@@ -81,9 +82,13 @@ const CamCaSendo = ({ navigation }) => {
   };
 
   const SENDO_VALUE_CAD_CA_CAM = getConfigValue('SENDO_VALUE_CAD_CA_CAM');
-  const exchangeRate = SENDO_VALUE_CAD_CA_CAM || 450; 
-  // console.log(exchangeRate)
+  const exchangeRate = SENDO_VALUE_CAD_CA_CAM ? parseFloat(SENDO_VALUE_CAD_CA_CAM) : 450; 
+  
   const TRANSFER_CAM_CA_AVAILABILITY = getConfigValue("TRANSFER_CAM_CA_AVAILABILITY");
+  
+  // Minimum amount for transfer from Cameroon
+  const MIN_AMOUNT_TO_TRANSFER_FROM_CAMEROON = getConfigValue("MIN_AMOUNT_TO_TRANSFER_FROM_CAMEROON");
+  const minAmountCameroon = MIN_AMOUNT_TO_TRANSFER_FROM_CAMEROON ? parseFloat(MIN_AMOUNT_TO_TRANSFER_FROM_CAMEROON) : 1000;
 
   // Debounce walletId input
   useEffect(() => {
@@ -115,6 +120,9 @@ const CamCaSendo = ({ navigation }) => {
   // Monthly limit check for Cameroon users
   const MONTHLY_LIMIT_XAF = 1000000; // 1 million XAF
   const isOverMonthlyLimit = isCameroon && parseFloat(amount) > MONTHLY_LIMIT_XAF;
+
+  // Minimum amount check for Cameroon users
+  const isBelowMinAmount = isCameroon && parseFloat(amount) > 0 && parseFloat(amount) < minAmountCameroon;
 
   const {
     data: balanceData,
@@ -197,10 +205,11 @@ const CamCaSendo = ({ navigation }) => {
         return;
       }
 
-      if (transferAmount < 100) {
+      // Check minimum amount for Cameroon users
+      if (isCameroon && transferAmount < minAmountCameroon) {
         setTransferFeesXAF(0);
         setTransferFeesCAD(0);
-        setFeeError(t('wallet_transfer.amount_too_small_for_fees'));
+        setFeeError(t('wallet_transfer.amount_below_minimum', { min: formatCurrency(minAmountCameroon, 'FCFA') }));
         return;
       }
 
@@ -208,7 +217,7 @@ const CamCaSendo = ({ navigation }) => {
         setFeeError(null);
         
         const response = await getTransferFees(transferAmount).unwrap();
-        //console.log(response)
+        
         if (response.status === 200 && response.data) {
           setTransferFeesXAF(response.data.feesXAF || 0);
           setTransferFeesCAD(response.data.feesCAD || 0);
@@ -236,7 +245,7 @@ const CamCaSendo = ({ navigation }) => {
     }, 800);
 
     return () => clearTimeout(timer);
-  }, [amount, getTransferFees, t]);
+  }, [amount, getTransferFees, t, isCameroon, minAmountCameroon]);
 
   const calculateTotalAmount = useCallback(() => {
     const transferAmount = parseFloat(amount) || 0;
@@ -284,13 +293,21 @@ const CamCaSendo = ({ navigation }) => {
   };
 
   const validateForm = () => {
+    const numericAmount = parseFloat(amount);
+
     if (!walletId) {
       showErrorToast('ACTION_FAILED', t('wallet_transfer.recipient_required'));
       return false;
     }
 
-    if (!amount || parseFloat(amount) <= 0) {
+    if (!amount || numericAmount <= 0) {
       showErrorToast('ACTION_FAILED', t('wallet_transfer.amount_required'));
+      return false;
+    }
+
+    // Check minimum amount for Cameroon users
+    if (isCameroon && numericAmount < minAmountCameroon) {
+      setShowMinAmountAlert(true);
       return false;
     }
 
@@ -473,6 +490,16 @@ const CamCaSendo = ({ navigation }) => {
             />
           </View>
 
+          {/* Minimum Amount Info for Cameroon Users */}
+          {isCameroon && (
+            <View style={styles.minAmountInfo}>
+              <Ionicons name="information-circle-outline" size={16} color="#666" />
+              <Text style={styles.minAmountText}>
+                Montant minimum: {formatCurrency(minAmountCameroon, 'FCFA')}
+              </Text>
+            </View>
+          )}
+
           {/* Fees Display */}
           {amount && parseFloat(amount) > 0 && (
             <View style={styles.feesCard}>
@@ -493,11 +520,7 @@ const CamCaSendo = ({ navigation }) => {
                 ) : feeError ? (
                   <View style={styles.feesValueContainer}>
                     <Text style={styles.errorText}>
-                      {feeError === t('wallet_transfer.amount_too_small_for_fees') 
-                        ? t('wallet_transfer.amount_too_small_for_fees')
-                        : feeError === t('wallet_transfer.no_fee_tier_found')
-                        ? t('wallet_transfer.no_fee_tier_found')
-                        : t('wallet_transfer.fee_error')}
+                      {feeError}
                     </Text>
                   </View>
                 ) : (
@@ -572,10 +595,10 @@ const CamCaSendo = ({ navigation }) => {
         <TouchableOpacity
           style={[
             styles.previewButton,
-            (isLoading || !walletId || isCalculatingFees || feeError) ? styles.buttonDisabled : null
+            (isLoading || !walletId || isCalculatingFees || feeError || isBelowMinAmount) ? styles.buttonDisabled : null
           ]}
           onPress={handlePreview}
-          disabled={isLoading || !walletId || isCalculatingFees || feeError}
+          disabled={isLoading || !walletId || isCalculatingFees || feeError || isBelowMinAmount}
         >
           <Text style={styles.previewButtonText}>Aperçu du transfert</Text>
         </TouchableOpacity>
@@ -614,6 +637,40 @@ const CamCaSendo = ({ navigation }) => {
               <TouchableOpacity
                 style={styles.unavailableModalButton}
                 onPress={() => setShowUnavailableModal(false)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.unavailableModalButtonText}>OK</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Minimum Amount Alert Modal */}
+      <Modal
+        visible={showMinAmountAlert}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowMinAmountAlert(false)}
+      >
+        <View style={styles.unavailableModalOverlay}>
+          <View style={styles.unavailableModalContainer}>
+            <View style={[styles.unavailableModalIconContainer, { backgroundColor: '#fff5f5' }]}>
+              <Ionicons name="alert-circle-outline" size={48} color="#ff6b6b" />
+            </View>
+            
+            <Text style={styles.unavailableModalTitle}>
+              Montant minimum requis
+            </Text>
+            
+            <Text style={styles.unavailableModalMessage}>
+              Le montant minimum pour un transfert depuis le Cameroun est de {formatCurrency(minAmountCameroon, 'FCFA')}.
+            </Text>
+            
+            <View style={styles.unavailableModalButtonContainer}>
+              <TouchableOpacity
+                style={[styles.unavailableModalButton, { backgroundColor: '#7ddd7d' }]}
+                onPress={() => setShowMinAmountAlert(false)}
                 activeOpacity={0.7}
               >
                 <Text style={styles.unavailableModalButtonText}>OK</Text>
@@ -906,6 +963,18 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 15,
     fontSize: 16,
+  },
+  minAmountInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+    paddingHorizontal: 5,
+  },
+  minAmountText: {
+    fontSize: 12,
+    color: '#666',
+    marginLeft: 5,
+    fontStyle: 'italic',
   },
   feesCard: {
     backgroundColor: '#f8f9fa',
