@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useCallback, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -13,11 +13,32 @@ import { useTranslation } from 'react-i18next';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 import { Colors } from '../constants/colors';
+import { useGetUserProfileQuery, useCreateTokenMutation } from "../services/Auth/authAPI";
+import { useGetNotificationsQuery } from '../services/Notification/notificationApi';
 
 function CustomTabBar({ state, descriptors, navigation }) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const scaleValue = new Animated.Value(1);
+   const [isUpdateRequired, setIsUpdateRequired] = useState(false); // Gatekeeper state
+
+  const {
+    data: userProfile,
+    isLoading: isProfileLoading,
+    refetch: refetchProfile,
+  } = useGetUserProfileQuery(undefined, {
+    skip: isUpdateRequired ,// Skip if update required or version not checked
+     pollingInterval: 10
+  });
+
+  const userId = userProfile?.data?.user?.id;
+   const { data: notificationsResponse } = useGetNotificationsQuery({ userId }, {
+    skip: !userId || isUpdateRequired 
+  });
+
+  const notifications = notificationsResponse?.data?.items || [];
+  const unreadCount = notifications.filter(notification => !notification.readed).length;
+
 
   const animateButton = () => {
     Animated.sequence([
@@ -113,9 +134,9 @@ function CustomTabBar({ state, descriptors, navigation }) {
           break;
           
         case 'SettingsTab':
-          iconName = isFocused ? 'settings' : 'settings-outline'; // Better for user profile/settings
-          // Alternatives: 'cog', 'options', 'menu'
-          label = t('tabs.settings');
+          iconName = isFocused ? 'cog' : 'cog-outline'; // Better for user profile/settings
+          // Alternatives: 'options', 'menu'
+          label = t('tabs.setting');
           break;
           
         default:
@@ -135,11 +156,14 @@ function CustomTabBar({ state, descriptors, navigation }) {
             activeOpacity={0.7}
           >
             <View style={styles.tabButtonContent}>
+             <View style={{ position: 'relative' }}>
               <Ionicons
                 name={iconName}
                 size={24}
                 color={isFocused ? Colors.primary : Colors.text}
               />
+            </View>
+
               <Text
                 style={[
                   styles.tabLabel,
@@ -241,6 +265,8 @@ const styles = StyleSheet.create({
     borderRadius: 3,
     backgroundColor: '#fff',
   },
+
+
 });
 
 export default CustomTabBar;

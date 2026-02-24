@@ -9,9 +9,11 @@ import {
   Alert,
   Platform,
   BackHandler,
+  Dimensions,
+  StatusBar,
 } from "react-native";
 import Loader from "../../components/Loader";
-import { Ionicons, Feather, AntDesign } from "@expo/vector-icons";
+import { Ionicons, Feather, AntDesign, MaterialIcons, FontAwesome5 } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
 import * as ImagePicker from "expo-image-picker";
@@ -20,7 +22,9 @@ import { useUpdateKycDocumentMutation } from "../../services/Kyc/kycApi";
 import { useAppState } from '../../context/AppStateContext';
 import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
 
-// Define camera types locally as fallback
+const { width } = Dimensions.get("window");
+
+// Define camera types
 const CameraType = {
   back: 'back',
   front: 'front'
@@ -32,14 +36,125 @@ const documentTypeMap = {
   SELFIE: "kyc.selfie",
 };
 
-// Move ImageViewer outside as a separate component to prevent recreation
+const documentIcons = {
+  ID_PROOF: "file-text",
+  ADDRESS_PROOF: "home",
+  SELFIE: "camera",
+};
+
+const statusConfig = {
+  APPROVED: { color: "#10B981", bgColor: "#D1FAE5", icon: "check-circle", text: "kyc.approved" },
+  REJECTED: { color: "#EF4444", bgColor: "#FEE2E2", icon: "x-circle", text: "kyc.rejected" },
+  PENDING: { color: "#F59E0B", bgColor: "#FEF3C7", icon: "clock", text: "kyc.pending" },
+};
+
+// Document Card Component
+const DocumentCard = ({ 
+  item, 
+  onView, 
+  onResubmit, 
+  uploading,
+  isCanadianUser 
+}) => {
+  const { t } = useTranslation();
+  const iconName = documentIcons[item.id] || "file-text";
+  const status = item.status || "PENDING";
+  const config = statusConfig[status] || statusConfig.PENDING;
+
+  return (
+    <View className="bg-white rounded-2xl p-5 mb-4 shadow-lg border border-gray-100">
+      {/* Header */}
+      <View className="flex-row justify-between items-start mb-4">
+        <View className="flex-row items-center flex-1">
+          <View className={`w-12 h-12 rounded-xl ${config.bgColor} items-center justify-center mr-3`}>
+            <AntDesign name={iconName} size={24} color={config.color} />
+          </View>
+          <View className="flex-1">
+            <Text className="font-bold text-lg text-gray-900" numberOfLines={1}>
+              {item.title}
+            </Text>
+            <View className="flex-row items-center mt-1">
+              <Feather name={config.icon} size={14} color={config.color} />
+              <Text className={`ml-1 text-sm font-medium`} style={{ color: config.color }}>
+                {t(config.text)}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Action Buttons */}
+        <View className="flex-row">
+          {item.urls.length > 0 && (
+            <TouchableOpacity
+              onPress={() => onView(item.urls, 0)}
+              className="w-10 h-10 bg-gray-100 rounded-full items-center justify-center ml-2"
+            >
+              <Feather name="eye" size={18} color="#4B5563" />
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+
+      {/* Document Details */}
+      {(item.documentNumber || item.taxIdNumber || item.expirationDate) && (
+        <View className="bg-gray-50 rounded-xl p-4 mb-4">
+          {item.documentNumber && (
+            <View className="flex-row justify-between py-2 border-b border-gray-100">
+              <Text className="text-gray-600 font-medium">
+                {isCanadianUser ? t('document1.idCard') : t('document1.cni')}
+              </Text>
+              <Text className="text-gray-900 font-semibold">{item.documentNumber}</Text>
+            </View>
+          )}
+          
+          {item.taxIdNumber && (
+            <View className="flex-row justify-between py-2 border-b border-gray-100">
+              <Text className="text-gray-600 font-medium">NIU </Text>
+              <Text className="text-gray-900 font-semibold">{item.taxIdNumber}</Text>
+            </View>
+          )}
+        </View>
+      )}
+
+      {/* Rejection Reason */}
+      {item.rejected && item.rejectionReason && (
+        <View className="bg-red-50 border-l-4 border-red-500 p-3 rounded-r-lg mb-4">
+          <View className="flex-row items-start">
+            <Feather name="alert-circle" size={18} color="#EF4444" />
+            <Text className="ml-2 text-red-700 font-medium flex-1">
+              {item.rejectionReason}
+            </Text>
+          </View>
+        </View>
+      )}
+      {/* Resubmit Button */}
+      {item.rejected && (
+        <TouchableOpacity
+          onPress={() => onResubmit(item)}
+          disabled={uploading}
+          className={`bg-red-500 py-4 rounded-xl flex-row items-center justify-center shadow-lg ${uploading ? 'opacity-70' : ''}`}
+        >
+          {uploading ? (
+            <Loader size="small" color="white" />
+          ) : (
+            <>
+              <Feather name="refresh-cw" size={20} color="white" />
+              <Text className="text-white font-bold text-base ml-2">
+                {t("kyc.resubmit") || "Resubmit Document"}
+              </Text>
+            </>
+          )}
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+};
+
+// Image Viewer Component
 const ImageViewer = ({ visibleImages, currentIndex, onClose, onIndexChange }) => {
   if (!visibleImages || !Array.isArray(visibleImages) || visibleImages.length === 0) {
     return null;
   }
-
-  const currentImage = visibleImages[currentIndex];
-  if (!currentImage) return null;
 
   return (
     <Modal
@@ -47,53 +162,135 @@ const ImageViewer = ({ visibleImages, currentIndex, onClose, onIndexChange }) =>
       transparent
       animationType="fade"
       onRequestClose={onClose}
+      statusBarTranslucent
     >
-      <View className="flex-1 bg-black/90 justify-center items-center px-5">
-        <TouchableOpacity 
-          className="absolute top-10 right-5 z-10"
-          onPress={onClose}
-        >
-          <Feather name="x" size={30} color="white" />
-        </TouchableOpacity>
-
-        <Image
-          source={{ uri: currentImage }}
-          style={{
-            width: "100%",
-            height: "70%",
-            resizeMode: "contain",
-            borderRadius: 10,
-          }}
-          onError={() => {
-            Alert.alert("Error", "Failed to load image");
-          }}
-        />
-
-        {/* Controls */}
-        <View className="flex-row justify-between items-center mt-4 w-full px-10">
-          <TouchableOpacity
-            onPress={() => onIndexChange(currentIndex > 0 ? currentIndex - 1 : visibleImages.length - 1)}
-            className="p-2 bg-white rounded-full"
-            disabled={visibleImages.length <= 1}
-          >
-            <Feather name="chevron-left" size={24} color={visibleImages.length <= 1 ? "#ccc" : "#000"} />
+      <View className="flex-1 bg-black/95">
+        {/* Header */}
+        <View className="flex-row justify-between items-center pt-12 px-5 pb-4">
+          <TouchableOpacity onPress={onClose} className="p-2">
+            <Feather name="x" size={28} color="white" />
           </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => onIndexChange(currentIndex < visibleImages.length - 1 ? currentIndex + 1 : 0)}
-            className="p-2 bg-white rounded-full"
-            disabled={visibleImages.length <= 1}
-          >
-            <Feather name="chevron-right" size={24} color={visibleImages.length <= 1 ? "#ccc" : "#000"} />
-          </TouchableOpacity>
-        </View>
-
-        {/* Image counter */}
-        {visibleImages.length > 1 && (
-          <Text className="text-white mt-4">
+          <Text className="text-white font-bold text-lg">
             {currentIndex + 1} / {visibleImages.length}
           </Text>
+          <View style={{ width: 40 }} />
+        </View>
+
+        {/* Image */}
+        <View className="flex-1 justify-center items-center px-4">
+          <Image
+            source={{ uri: visibleImages[currentIndex] }}
+            style={{
+              width: width - 32,
+              height: (width - 32) * 0.75,
+              resizeMode: "contain",
+              borderRadius: 12,
+            }}
+            onError={() => Alert.alert("Error", "Failed to load image")}
+          />
+        </View>
+
+        {/* Navigation Controls */}
+        {visibleImages.length > 1 && (
+          <View className="flex-row justify-between items-center px-10 py-6">
+            <TouchableOpacity
+              onPress={() => onIndexChange(currentIndex > 0 ? currentIndex - 1 : visibleImages.length - 1)}
+              className="w-14 h-14 bg-white/20 rounded-full items-center justify-center"
+            >
+              <Feather name="chevron-left" size={28} color="white" />
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              onPress={() => onIndexChange(currentIndex < visibleImages.length - 1 ? currentIndex + 1 : 0)}
+              className="w-14 h-14 bg-white/20 rounded-full items-center justify-center"
+            >
+              <Feather name="chevron-right" size={28} color="white" />
+            </TouchableOpacity>
+          </View>
         )}
+      </View>
+    </Modal>
+  );
+};
+
+// Camera Modal Component
+const CameraModal = ({ 
+  visible, 
+  onClose, 
+  onTakePicture, 
+  cameraType, 
+  onCameraTypeChange 
+}) => {
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
+    >
+      <View className="flex-1 bg-black/90 justify-end">
+        <View className="bg-white rounded-t-3xl p-6">
+          <View className="flex-row justify-between items-center mb-6">
+            <Text className="text-2xl font-bold text-gray-900">Take Photo</Text>
+            <TouchableOpacity onPress={onClose} className="p-2">
+              <Feather name="x" size={24} color="#6B7280" />
+            </TouchableOpacity>
+          </View>
+
+          <Text className="text-gray-600 mb-6 text-center">
+            Select camera to use for capturing document
+          </Text>
+
+          {/* Camera Type Selection */}
+          <View className="flex-row justify-between mb-8">
+            <TouchableOpacity
+              onPress={() => onCameraTypeChange(CameraType.back)}
+              className={`flex-1 mx-2 p-4 rounded-2xl items-center justify-center ${cameraType === CameraType.back ? 'bg-blue-500' : 'bg-gray-100'}`}
+            >
+              <MaterialIcons 
+                name="camera-rear" 
+                size={32} 
+                color={cameraType === CameraType.back ? 'white' : '#4B5563'} 
+              />
+              <Text className={`mt-2 font-semibold ${cameraType === CameraType.back ? 'text-white' : 'text-gray-700'}`}>
+                Back Camera
+              </Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              onPress={() => onCameraTypeChange(CameraType.front)}
+              className={`flex-1 mx-2 p-4 rounded-2xl items-center justify-center ${cameraType === CameraType.front ? 'bg-blue-500' : 'bg-gray-100'}`}
+            >
+              <MaterialIcons 
+                name="camera-front" 
+                size={32} 
+                color={cameraType === CameraType.front ? 'white' : '#4B7280'} 
+              />
+              <Text className={`mt-2 font-semibold ${cameraType === CameraType.front ? 'text-white' : 'text-gray-700'}`}>
+                Front Camera
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Action Buttons */}
+          <TouchableOpacity
+            onPress={onTakePicture}
+            className="bg-gradient-to-r from-green-500 to-emerald-600 py-4 rounded-xl mb-3"
+          >
+            <Text className="text-white font-bold text-center text-lg">
+              Capture Document
+            </Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            onPress={onClose}
+            className="py-4 rounded-xl border-2 border-gray-300"
+          >
+            <Text className="text-gray-700 font-semibold text-center text-lg">
+              Cancel
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </Modal>
   );
@@ -103,26 +300,22 @@ const KYCValidation = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { documents } = route.params || { documents: [] };
-
- // console.log("KYCValidation documents:", documents);
   const { t } = useTranslation();
-  const [loading, setLoading] = useState(false);
+  
   const [visibleImages, setVisibleImages] = useState(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [cameraModalVisible, setCameraModalVisible] = useState(false);
   const [cameraType, setCameraType] = useState(CameraType.back);
   const [selectedDocument, setSelectedDocument] = useState(null);
   const [uploading, setUploading] = useState(false);
-  const [cameraAvailable, setCameraAvailable] = useState(true);
   
   const [updateKycDocument] = useUpdateKycDocumentMutation();
   const { setIsPickingDocument } = useAppState();
   
-  const { data: userProfile, isLoading: isProfileLoading } = useGetUserProfileQuery(undefined, { 
-    pollingInterval: 1000 // Refetch every 1 second
+  const { data: userProfile } = useGetUserProfileQuery(undefined, { 
+    pollingInterval: 1000
   });
 
-  // Check if user is from Canada
   const isCanadianUser = userProfile?.data?.user?.country === "Canada";
 
   // Handle Android back button
@@ -142,115 +335,100 @@ const KYCValidation = () => {
     return () => backHandler.remove();
   }, [visibleImages, cameraModalVisible]);
 
-  // Check camera availability (removed permission check)
-  useEffect(() => {
-    let isMounted = true;
-
-    const checkCameraAvailability = async () => {
-      try {
-        if (isMounted) {
-          setCameraAvailable(true);
-        }
-      } catch (error) {
-        console.error("Camera availability check error:", error);
-        if (isMounted) {
-          setCameraAvailable(true);
-        }
-      }
-    };
-
-    checkCameraAvailability();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  // Safe document grouping with error handling
+  // Document grouping logic (same as before)
   const groupedDocs = useCallback(() => {
     try {
       if (!documents || !Array.isArray(documents)) return {};
-      return documents.reduce((acc, doc) => {
+      
+      const grouped = documents.reduce((acc, doc) => {
         if (doc && doc.type) {
           if (!acc[doc.type]) acc[doc.type] = [];
           acc[doc.type].push(doc);
         }
         return acc;
       }, {});
+      
+      Object.keys(grouped).forEach(type => {
+        grouped[type].sort((a, b) => {
+          if (a.status === "REJECTED" && b.status !== "REJECTED") return -1;
+          if (a.status !== "REJECTED" && b.status === "REJECTED") return 1;
+          return new Date(b.createdAt) - new Date(a.createdAt);
+        });
+      });
+      
+      return grouped;
     } catch (error) {
       console.error("Error grouping documents:", error);
       return {};
     }
   }, [documents]);
 
-  const hasRejectedDoc = documents?.some((doc) => doc?.status === "REJECTED") || false;
-
-  // Filter document types based on user's country
   const getFilteredDocumentTypes = () => {
     const allTypes = Object.keys(documentTypeMap);
-    
     if (isCanadianUser) {
       return allTypes.filter(type => type !== "ADDRESS_PROOF");
     }
-    
     return allTypes;
   };
 
-  const kycItems = getFilteredDocumentTypes().map((type) => {
-    const docList = groupedDocs()[type] || [];
-    const firstDoc = docList[0];
+  const getDocumentsByType = (type) => groupedDocs()[type] || [];
+  const hasRejectedDocument = (type) => getDocumentsByType(type).some(doc => doc.status === "REJECTED");
+  const getRejectedDocument = (type) => getDocumentsByType(type).find(doc => doc.status === "REJECTED");
+  const getPrimaryDocument = (type) => {
+    const docs = getDocumentsByType(type);
+    if (docs.length === 0) return null;
+    const rejectedDoc = docs.find(doc => doc.status === "REJECTED");
+    return rejectedDoc || docs[0];
+  };
 
-    let status = null;
-    let statusColor = "";
+  const kycItems = getFilteredDocumentTypes().map((type) => {
+    const allDocs = getDocumentsByType(type);
+    const primaryDoc = getPrimaryDocument(type);
+    const isRejected = hasRejectedDocument(type);
+    const rejectedDoc = getRejectedDocument(type);
+
+    let status = "PENDING";
     let rejectionReason = "";
+    let displayDoc = primaryDoc;
     
-    if (firstDoc) {
-      if (firstDoc.status === "APPROVED") {
-        status = t("kyc.approved");
-        statusColor = "text-green-500";
-      } else if (firstDoc.status === "REJECTED") {
-        status = t("kyc.rejected");
-        statusColor = "text-red-500";
-        rejectionReason = firstDoc.rejectionReason || "";
-      } else {
-        status = t("kyc.pending");
-        statusColor = "text-yellow-500";
-      }
+    if (isRejected && rejectedDoc) {
+      displayDoc = rejectedDoc;
+      status = "REJECTED";
+      rejectionReason = rejectedDoc.rejectionReason || "";
+    } else if (primaryDoc) {
+      status = primaryDoc.status || "PENDING";
+      rejectionReason = primaryDoc.rejectionReason || "";
     }
+
+    const allUrls = allDocs.filter(doc => doc?.url).map((doc) => doc.url);
 
     return {
       id: type,
       title: t(documentTypeMap[type] || type),
       status,
-      statusColor,
-      urls: docList.filter(doc => doc?.url).map((doc) => doc.url),
-      hasDoc: !!firstDoc,
-      rejected: firstDoc?.status === "REJECTED",
+      urls: allUrls,
+      hasDoc: !!primaryDoc,
+      rejected: isRejected,
       rejectionReason,
-      publicId: firstDoc?.publicId,
-      documentNumber: firstDoc?.idDocumentNumber,
-      expirationDate: firstDoc?.expirationDate,
-      taxIdNumber: firstDoc?.taxIdNumber,
+      publicId: (isRejected && rejectedDoc?.publicId) || primaryDoc?.publicId,
+      documentNumber: displayDoc?.idDocumentNumber,
+      expirationDate: displayDoc?.expirationDate,
+      taxIdNumber: displayDoc?.taxIdNumber,
+      allDocuments: allDocs,
     };
   });
 
-  // Open image viewer
   const openImageViewer = (images, index = 0) => {
-    console.log("Opening image viewer with:", images);
     setVisibleImages(images);
     setCurrentIndex(index);
   };
 
-  // Close image viewer
   const closeImageViewer = () => {
     setVisibleImages(null);
     setCurrentIndex(0);
   };
 
-  // Handle index change in image viewer
-  const handleIndexChange = (newIndex) => {
-    setCurrentIndex(newIndex);
-  };
+  const handleIndexChange = (newIndex) => setCurrentIndex(newIndex);
 
   const safeImagePickerOperation = async (operation, errorMessage) => {
     try {
@@ -267,9 +445,7 @@ const KYCValidation = () => {
       console.error("Image picker error:", error);
       Alert.alert("Error", errorMessage);
     } finally {
-      setTimeout(() => {
-        setIsPickingDocument(false);
-      }, 200);
+      setTimeout(() => setIsPickingDocument(false), 200);
     }
   };
 
@@ -279,7 +455,7 @@ const KYCValidation = () => {
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [4, 3],
-        quality: 0.7,
+        quality: 0.8,
         exif: false,
       }),
       "Failed to take picture"
@@ -292,7 +468,7 @@ const KYCValidation = () => {
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [4, 3],
-        quality: 0.7,
+        quality: 0.8,
         exif: false,
       }),
       "Failed to pick image"
@@ -302,7 +478,6 @@ const KYCValidation = () => {
   const pickDocument = async () => {
     try {
       setIsPickingDocument(true);
-      
       const result = await DocumentPicker.getDocumentAsync({
         type: "application/pdf",
         copyToCacheDirectory: false,
@@ -315,9 +490,7 @@ const KYCValidation = () => {
       console.error("Document picker error:", error);
       Alert.alert("Error", "Failed to pick document");
     } finally {
-      setTimeout(() => {
-        setIsPickingDocument(false);
-      }, 200);
+      setTimeout(() => setIsPickingDocument(false), 200);
     }
   };
 
@@ -331,8 +504,8 @@ const KYCValidation = () => {
     
     try {
       const formData = new FormData();
-      
       let fileUri = uri;
+      
       if (Platform.OS === "ios" && uri.startsWith('file://')) {
         fileUri = uri.replace("file://", "");
       }
@@ -348,7 +521,6 @@ const KYCValidation = () => {
       });
 
       const encodedPublicId = encodeURIComponent(publicId);
-
       const response = await updateKycDocument({
         publicId: encodedPublicId,
         formData
@@ -379,7 +551,7 @@ const KYCValidation = () => {
       setCameraModalVisible(true);
     } else if (item.id === "ADDRESS_PROOF") {
       Alert.alert(
-        "Select Document Type",
+        "Upload Address Proof",
         "Choose how to provide your address proof",
         [
           {
@@ -398,11 +570,12 @@ const KYCValidation = () => {
             text: "Cancel",
             style: "cancel",
           },
-        ]
+        ],
+        { cancelable: true }
       );
     } else {
       Alert.alert(
-        "Select Option",
+        "Upload Document",
         "Choose how to provide your document",
         [
           {
@@ -417,107 +590,62 @@ const KYCValidation = () => {
             text: "Cancel",
             style: "cancel",
           },
-        ]
+        ],
+        { cancelable: true }
       );
     }
   };
 
-  // Format date for display
-  const formatDate = (dateString) => {
-    if (!dateString) return "N/A";
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString();
-    } catch (error) {
-      return dateString;
-    }
-  };
+  // Calculate KYC completion percentage
+  const approvedCount = kycItems.filter(item => item.status === "APPROVED").length;
+  const completionPercentage = kycItems.length > 0 
+    ? Math.round((approvedCount / kycItems.length) * 100) 
+    : 0;
 
   return (
-    <View className="flex-1 bg-[#7ddd7d]">
+    <View className="flex-1 bg-gray-50">
+      <StatusBar barStyle="dark-content" backgroundColor="#7ddd7d" />
+      
       {/* Header */}
-      <View className="flex-row items-center justify-between pt-12 pb-4 px-5 bg-[#7ddd7d]">
-        <TouchableOpacity onPress={() => navigation.navigate("MainTabs")}>
-          <AntDesign name="left" size={24} color="white" />
-        </TouchableOpacity>
-        <Text className="text-lg font-bold text-black">
-          {t("kyc.my_kyc")}
-        </Text>
-        <TouchableOpacity onPress={() => navigation.openDrawer()}>
-          <Ionicons name="menu-outline" size={24} color="white" />
-        </TouchableOpacity>
+      <View className="bg-[#7ddd7d] pt-12 pb-6 px-5">
+        <View className="flex-row justify-between items-center mb-6">
+          <TouchableOpacity 
+            onPress={() => navigation.navigate("MainTabs")}
+            className="w-10 h-10 bg-white/20 rounded-full items-center justify-center"
+          >
+            <AntDesign name="left" size={20} color="white" />
+          </TouchableOpacity>
+          
+          <Text className="text-2xl font-bold text-white">
+            {t("kyc.my_kyc") || "KYC Verification"}
+          </Text>
+          
+          <TouchableOpacity 
+            onPress={() => navigation.openDrawer()}
+            className="w-10 h-10 bg-white/20 rounded-full items-center justify-center"
+          >
+            <Ionicons name="menu-outline" size={22} color="white" />
+          </TouchableOpacity>
+        </View>
       </View>
 
-      <View className="h-2 bg-white" />
-
-      {/* KYC Items */}
-      <ScrollView className="flex-1 bg-white px-4" showsVerticalScrollIndicator={false}>
+      {/* Documents List */}
+      <ScrollView 
+        className="flex-1 px-5 pt-6" 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 30 }}
+      >
+        <Text className="text-xl font-bold text-gray-900 mb-4"> Documents</Text>
+        
         {kycItems.map((item) => (
-          <View
+          <DocumentCard
             key={item.id}
-            className="bg-gray-100 rounded-xl p-4 mb-4 shadow-sm"
-          >
-            <View className="flex-row justify-between items-center">
-              <View className="flex-1">
-                <View className="flex-row items-center mb-1">
-                  <Feather name="file-text" size={16} color="black" />
-                  <Text className="ml-2 font-semibold text-sm text-black flex-1" numberOfLines={2}>
-                    {item.title}
-                  </Text>
-                </View>
-
-                {item.status && (
-                  <Text className={`${item.statusColor} text-sm font-medium`}>
-                    {item.status}
-                  </Text>
-                )}
-
-                {/* Display document details */}
-                {item.documentNumber && (
-                  <Text className="text-xs text-gray-600 mt-1">
-                    Document Number: {item.documentNumber}
-                  </Text>
-                )}
-                {item.taxIdNumber && (
-                  <Text className="text-xs text-gray-600 mt-1">
-                    Tax ID: {item.taxIdNumber}
-                  </Text>
-                )}
-
-                {item.rejected && item.rejectionReason && (
-                  <Text className="text-red-500 text-xs mt-1">
-                    Reason: {item.rejectionReason}
-                  </Text>
-                )}
-              </View>
-
-              {/* Eye icon */}
-              <View className="flex-row gap-2">
-                {item.urls.length > 0 && (
-                  <TouchableOpacity
-                    onPress={() => openImageViewer(item.urls, 0)}
-                    className="p-2 bg-green-500 rounded-full"
-                  >
-                    <Feather name="eye" size={16} color="white" />
-                  </TouchableOpacity>
-                )}
-              </View>
-            </View>
-
-            {item.rejected && (
-              <View className="bg-white p-4 border-t border-gray-200 mt-2">
-                <TouchableOpacity
-                  onPress={() => handleResubmit(item)}
-                  className="bg-red-600 py-3 rounded-full"
-                  disabled={uploading}
-                >
-                  <Text className="text-center text-white font-bold">
-                    {uploading ? "Uploading..." : t("kyc.resubmit") || "Soumettre à nouveau"}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
+            item={item}
+            onView={openImageViewer}
+            onResubmit={handleResubmit}
+            uploading={uploading}
+            isCanadianUser={isCanadianUser} 
+          />
         ))}
       </ScrollView>
 
@@ -529,64 +657,24 @@ const KYCValidation = () => {
         onIndexChange={handleIndexChange}
       />
 
-      {/* Camera Selection Modal */}
-      <Modal
+      {/* Camera Modal */}
+      <CameraModal
         visible={cameraModalVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setCameraModalVisible(false)}
-      >
-        <View className="flex-1 bg-black/80 justify-center items-center">
-          <View className="bg-white p-6 rounded-xl w-5/6">
-            <Text className="text-lg font-bold text-center mb-4">
-              Select Camera
-            </Text>
-            
-            <View className="flex-row justify-between mb-6">
-              <TouchableOpacity
-                onPress={() => setCameraType(CameraType.back)}
-                className={`p-4 rounded-lg ${cameraType === CameraType.back ? 'bg-blue-500' : 'bg-gray-200'}`}
-              >
-                <Text className={`font-medium ${cameraType === CameraType.back ? 'text-white' : 'text-black'}`}>
-                  Back Camera
-                </Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity
-                onPress={() => setCameraType(CameraType.front)}
-                className={`p-4 rounded-lg ${cameraType === CameraType.front ? 'bg-blue-500' : 'bg-gray-200'}`}
-              >
-                <Text className={`font-medium ${cameraType === CameraType.front ? 'text-white' : 'text-black'}`}>
-                  Front Camera
-                </Text>
-              </TouchableOpacity>
-            </View>
-            
-            <View className="flex-row justify-between">
-              <TouchableOpacity
-                onPress={takePicture}
-                className="bg-green-500 px-6 py-3 rounded-lg flex-1 mr-2"
-              >
-                <Text className="text-white font-bold text-center">Take Photo</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity
-                onPress={() => setCameraModalVisible(false)}
-                className="bg-red-500 px-6 py-3 rounded-lg flex-1 ml-2"
-              >
-                <Text className="text-white font-bold text-center">Cancel</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+        onClose={() => setCameraModalVisible(false)}
+        onTakePicture={takePicture}
+        cameraType={cameraType}
+        onCameraTypeChange={setCameraType}
+      />
 
-      {/* Global Loading Overlay */}
+      {/* Uploading Overlay */}
       {uploading && (
-        <View className="absolute inset-0 justify-center items-center bg-black/50">
-          <View className="bg-white p-6 rounded-xl items-center">
-            <Loader size="large" />
-            <Text className="text-black mt-4 font-medium">Uploading document...</Text>
+        <View className="absolute inset-0 bg-black/50 justify-center items-center">
+          <View className="bg-white rounded-2xl p-8 items-center w-4/5">
+            <Loader size="large" color="#7ddd7d" />
+            <Text className="text-gray-900 font-bold text-xl mt-6">Uploading Document</Text>
+            <Text className="text-gray-600 text-center mt-2">
+              Please wait while we upload your document...
+            </Text>
           </View>
         </View>
       )}

@@ -152,7 +152,7 @@ const OnboardingCardScreen = () => {
         navigation.replace("CreateVirtualCard");
       }, 100);
     } else if (
-      ["ACTIVE", "PRE_ACTIVE", "FROZEN", "BLOCKED", "SUPENDED"].includes(finalStatus)
+      ["ACTIVE", "PRE_ACTIVE", "FROZEN", "BLOCKED", "SUSPENDED", "TERMINATED", "IN_TERMINATION"].includes(finalStatus)
     ) {
       // User already has a card → manage it
       setTimeout(() => {

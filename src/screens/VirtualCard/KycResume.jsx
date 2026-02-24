@@ -134,7 +134,7 @@ const KycResume = ({ navigation }) => {
     { 
       id: "5", 
       name: t('kyc_resume.address_proof'), 
-      route: "Addresse", 
+      route: "AddressSelect", 
       completed: !!addressProof,
       icon: "home-map-marker",
       required: true
@@ -286,7 +286,7 @@ const KycResume = ({ navigation }) => {
       dispatch(setSubmissionStatus('failed'));
       
       // Enhanced error extraction
-      let errorMessage = t('kyc_resume.general_error');
+      let errorMessage = t('Error');
       
       if (error?.data?.data?.errors?.[0]) {
         errorMessage = error.data.data.errors[0];

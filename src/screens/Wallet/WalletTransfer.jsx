@@ -9,8 +9,9 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Modal,
+  StyleSheet,
 } from 'react-native';
-import { SafeAreaView } from "react-native-safe-area-context";
 import {
   useGetBalanceQuery,
   useTransferFundsMutation,
@@ -27,12 +28,17 @@ import Loader from '../../components/Loader';
 const WalletTransfer = ({ navigation }) => {
   const { t } = useTranslation();
   const [amount, setAmount] = useState('');
+  const [xafAmount, setXafAmount] = useState('');
   const [walletId, setWalletId] = useState('');
   const [description, setDescription] = useState('');
   const [userWalletId, setUserWalletId] = useState('');
   const [recipientName, setRecipientName] = useState('');
   const [debouncedWalletId, setDebouncedWalletId] = useState('');
   const [pendingTransferData, setPendingTransferData] = useState(null);
+  const [showUnavailableModal, setShowUnavailableModal] = useState(false);
+  const [showCanadaRecipientModal, setShowCanadaRecipientModal] = useState(false);
+  const [pendingRecipientData, setPendingRecipientData] = useState(null);
+  const [activeInput, setActiveInput] = useState('cad'); // 'cad' or 'xaf'
 
   // Debounce walletId input
   useEffect(() => {
@@ -71,10 +77,53 @@ const WalletTransfer = ({ navigation }) => {
 
   const SENDO_TO_SENDO_TRANSFER_FEES = getConfigValue('SENDO_TO_SENDO_TRANSFER_FEES');
   const SENDO_VALUE_CAD_CA_CAM = getConfigValue('SENDO_VALUE_CAD_CA_CAM');
+  const TRANSFER_CA_CAM_AVAILABILITY = getConfigValue("TRANSFER_CA_CAM_AVAILABILITY");
+  
   const feePercentage = SENDO_TO_SENDO_TRANSFER_FEES ? parseFloat(SENDO_TO_SENDO_TRANSFER_FEES) : 0;
-  const cadToXafRate = SENDO_VALUE_CAD_CA_CAM ? parseFloat(CAD_SENDO_VALUE) : 1;
+  const cadToXafRate = SENDO_VALUE_CAD_CA_CAM ? parseFloat(SENDO_VALUE_CAD_CA_CAM) : 1;
 
+  // Conversion functions
+  const convertCadToXaf = (cadValue) => {
+    const numericValue = parseFloat(cadValue) || 0;
+    return numericValue * cadToXafRate;
+  };
+
+  const convertXafToCad = (xafValue) => {
+    const numericValue = parseFloat(xafValue) || 0;
+    return numericValue / cadToXafRate;
+  };
+
+  // Handle CAD amount change
+  const handleCadAmountChange = (text) => {
+    const cleanedText = text.replace(/[^0-9.]/g, '');
+    setAmount(cleanedText);
+    setActiveInput('cad');
+
+    if (cleanedText && !isNaN(cleanedText)) {
+      const converted = convertCadToXaf(cleanedText);
+      setXafAmount(converted.toFixed(2));
+    } else {
+      setXafAmount('');
+    }
+  };
+
+  // Handle XAF amount change
+  const handleXafAmountChange = (text) => {
+    const cleanedText = text.replace(/[^0-9.]/g, '');
+    setXafAmount(cleanedText);
+    setActiveInput('xaf');
+
+    if (cleanedText && !isNaN(cleanedText)) {
+      const converted = convertXafToCad(cleanedText);
+      setAmount(converted.toFixed(2));
+    } else {
+      setAmount('');
+    }
+  };
+
+  // Derived values based on active input
   const transferAmount = parseFloat(amount) || 0;
+  const transferXafAmount = parseFloat(xafAmount) || 0;
   const feeAmount = isCanada ? (transferAmount * feePercentage) / 100 : 0;
   const totalAmount = isCanada ? transferAmount + feeAmount : transferAmount;
   const amountInXAF = isCanada ? transferAmount * cadToXafRate : transferAmount;
@@ -84,6 +133,36 @@ const WalletTransfer = ({ navigation }) => {
     isLoading: isRecipientLoading,
     isError: isRecipientError,
   } = useGetWalletDetailsQuery(debouncedWalletId, { skip: !debouncedWalletId });
+  
+  // Log recipient data for debugging
+  useEffect(() => {
+    if (recipientData) {
+      console.log("Recipient data:", JSON.stringify(recipientData, null, 2));
+    }
+  }, [recipientData]);
+
+  useEffect(() => {
+    if (recipientData?.data?.user?.country === "Canada" && !showCanadaRecipientModal) {
+      // Store the recipient data and show confirmation modal
+      setPendingRecipientData(recipientData.data);
+      setShowCanadaRecipientModal(true);
+    }
+  }, [recipientData]);
+
+  // Add this useEffect for the 5-second timer
+useEffect(() => {
+  let timer;
+  if (showCanadaRecipientModal) {
+    timer = setTimeout(() => {
+      handleConfirmCanadaTransfer();
+    }, 15000); // 15 seconds
+  }
+  return () => {
+    if (timer) {
+      clearTimeout(timer);
+    }
+  };
+}, [showCanadaRecipientModal]);
 
   useEffect(() => {
     if (recipientData?.data?.user) {
@@ -103,92 +182,172 @@ const WalletTransfer = ({ navigation }) => {
 
   const [transferFunds, { isLoading: isTransferring }] = useTransferFundsMutation();
 
-  const handlePinVerified = async () => {
-    const transferAmount = parseFloat(amount);
-    if (!walletId || isNaN(transferAmount) || transferAmount <= 0) {
-      showErrorToast('ACTION_FAILED', 'Veuillez fournir un montant supérieur à 0.');
-      return;
+  // --- Service availability check ---
+  const checkServiceAvailability = () => {
+    if (!isCanada) {
+      return true;
     }
-
-    const totalToDeduct = isCanada ? transferAmount + feeAmount : transferAmount;
-    if (totalToDeduct > (balanceData?.data?.balance || 0)) {
-      showErrorToast('ACTION_FAILED', 'Votre solde est insuffisant pour effectuer ce transfert.');
-      return;
+    
+    if (isConfigLoading || !configData) {
+      return true;
     }
+    
+    return TRANSFER_CA_CAM_AVAILABILITY === "1";
+  };
 
-    try {
-      await transferFunds({
-        fromWallet: userWalletId,
-        toWallet: walletId,
-        amount: transferAmount,
-        transfer_description: description,
-      }).unwrap();
+  // --- Check if sender is trying to send to themselves ---
+  const checkSelfTransfer = () => {
+    if (!userWalletId || !walletId) {
+      return false;
+    }
+    return userWalletId.trim() === walletId.trim();
+  };
 
-      navigation.navigate('Success', {
-        message: 'Transfert effectué avec succès !',
-        nextScreen: 'MainTabs',
+   const handleConfirmCanadaTransfer = () => {
+    if (pendingRecipientData) {
+      // Navigate to CamCaSendo with the stored data
+      navigation.navigate("CamCaSendo", {
+        recipientData: pendingRecipientData,
+        senderData: {
+          walletId: userWalletId,
+          balance: balanceData?.data?.balance,
+          currency: balanceData?.data?.currency,
+          country: userProfile?.data?.user?.country
+        }
       });
-    } catch (error) {
-      console.log("Transfer error:", JSON.stringify(error, null, 2));
-     
-      const status = error?.status;
-      if (status === 503) showErrorToast('SERVICE_UNAVAILABLE');
-      else if (status === 500) showErrorToast('ACTION_FAILED', 'Erreur serveur lors du transfert');
-      else if (status === 400) showErrorToast('ACTION_FAILED', 'Veuillez remplir tous les champs.');
-      else if (status === 403) showErrorToast('KYC Erreur', 'Veuillez soumettre vos KYC.');
-      else if (status === 404) showErrorToast('ACTION_FAILED', 'Portefeuille introuvable');
-      else showErrorToast('ACTION_FAILED', error?.data?.message || 'Une erreur est survenue.');
+      // Clear states
+      setWalletId('');
+      setRecipientName('');
+      setPendingRecipientData(null);
+      setShowCanadaRecipientModal(false);
     }
   };
+
+  const handleCancelCanadaTransfer = () => {
+    // Clear recipient data and hide modal
+    setWalletId('');
+    setRecipientName('');
+    setPendingRecipientData(null);
+    setShowCanadaRecipientModal(false);
+  };
+
+  const handlePinVerified = async () => {
+  if (isCanada && !checkServiceAvailability()) {
+    setShowUnavailableModal(true);
+    return;
+  }
+
+  const transferAmount = parseFloat(amount);
+  
+  if (checkSelfTransfer()) {
+    showErrorToast('ACTION_FAILED', 'Vous ne pouvez pas transférer des fonds vers votre propre compte.');
+    return;
+  }
+
+  if (!walletId || isNaN(transferAmount) || transferAmount <= 0) {
+    showErrorToast('ACTION_FAILED', 'Veuillez fournir un montant supérieur à 0.');
+    return;
+  }
+
+  // Check if recipient is from Canada
+  if (recipientData?.data?.user?.country === "Canada") {
+    // Store the recipient data and show confirmation modal
+    setPendingRecipientData(recipientData.data);
+    setShowCanadaRecipientModal(true);
+    return;
+  }
+
+  const totalToDeduct = isCanada ? transferAmount + feeAmount : transferAmount;
+  if (totalToDeduct > (balanceData?.data?.balance || 0)) {
+    showErrorToast('ACTION_FAILED', 'Votre solde est insuffisant pour effectuer ce transfert.');
+    return;
+  }
+
+  try {
+    await transferFunds({
+      fromWallet: userWalletId,
+      toWallet: walletId,
+      amount: transferAmount,
+      transfer_description: description,
+    }).unwrap();
+
+    navigation.navigate('Success', {
+      message: 'Transfert effectué avec succès !',
+      nextScreen: 'MainTabs',
+    });
+  } catch (error) {
+    console.log("Transfer error:", JSON.stringify(error, null, 2));
+   
+    const status = error?.status;
+    if (status === 503) showErrorToast('SERVICE_UNAVAILABLE');
+    else if (status === 500) showErrorToast('ACTION_FAILED', 'Erreur serveur lors du transfert');
+    else if (status === 400) showErrorToast('ACTION_FAILED', 'Veuillez remplir tous les champs.');
+    else if (status === 403) showErrorToast('KYC Erreur', 'Veuillez soumettre vos KYC.');
+    else if (status === 404) showErrorToast('ACTION_FAILED', 'Portefeuille introuvable');
+    else showErrorToast('ACTION_FAILED', error?.data?.message || 'Une erreur est survenue.');
+  }
+};
 
   const isLoading = isProfileLoading || isBalanceLoading;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
-      <StatusBar backgroundColor="#7ddd7d" barStyle="light-content" />
+    <View style={styles.container}>
+      {/* FIXED: StatusBar with correct configuration */}
+      <StatusBar 
+        backgroundColor="#7ddd7d" 
+        barStyle="light-content"
+        translucent={false}
+      />
 
-      {/* Header */}
-      <View style={{
-        backgroundColor: '#7ddd7d',
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 20,
-        paddingBottom: 15,
-        paddingHorizontal: 15,
-      }}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 40 }}>
+      {/* Header - Fixed with proper StatusBar integration */}
+      <View style={[
+        styles.header,
+        {
+          paddingTop: Platform.OS === 'android' 
+            ? (StatusBar.currentHeight || 25) 
+            : 50,
+          height: Platform.OS === 'android' 
+            ? 70 + (StatusBar.currentHeight || 25)
+            : 90,
+        }
+      ]}>
+        <TouchableOpacity 
+          onPress={() => navigation.goBack()} 
+          style={styles.backButton}
+        >
           <AntDesign name="left" size={24} color="white" />
         </TouchableOpacity>
 
-        <Text style={{
-          color: '#fff',
-          fontSize: 20,
-          fontWeight: 'bold',
-          textAlign: 'center',
-          flex: 1,
-        }}>
+        <Text style={styles.headerTitle}>
           {t('screens.walletTransfer')}
         </Text>
-        <View style={{ width: 40 }} />
+        
+        <View style={styles.headerRight} />
       </View>
 
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView contentContainerStyle={{ paddingHorizontal: '5%', paddingBottom: 50 }}>
+      <KeyboardAvoidingView 
+        style={styles.keyboardView} 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+      >
+        <ScrollView 
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
           {/* Balance */}
-          <View style={{ backgroundColor: '#F1F1F1', borderRadius: 10, padding: 15, marginVertical: 20 }}>
-            <Text style={{ fontSize: 16, color: '#666' }}>{t('wallet_transfer.available_balance')}</Text>
+          <View style={styles.balanceCard}>
+            <Text style={styles.balanceLabel}>{t('wallet_transfer.available_balance')}</Text>
             {isLoading ? (
               <ActivityIndicator size="small" color="#0D1C6A" />
             ) : isBalanceError ? (
-              <Text style={{ color: 'red' }}>{t('wallet_transfer.balance_error')}</Text>
+              <Text style={styles.errorText}>{t('wallet_transfer.balance_error')}</Text>
             ) : (
               <>
-                <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#0D1C6A' }}>
+                <Text style={styles.balanceValue}>
                   {isCanada ? `${balanceData?.data?.currency} ` : ''}{balanceData?.data?.balance?.toFixed(2) || '0.00'}{!isCanada ? ` ${balanceData?.data?.currency}` : ''}
                 </Text>
                 {userWalletId && (
-                  <Text style={{ fontSize: 14, color: '#666', marginTop: 5 }}>
+                  <Text style={styles.matriculeText}>
                     {t('wallet_transfer.your_matricule')}: {userWalletId}
                   </Text>
                 )}
@@ -197,36 +356,25 @@ const WalletTransfer = ({ navigation }) => {
           </View>
 
           {/* Recipient */}
-          <Text style={{ fontSize: 16, color: '#666', marginBottom: 5 }}>{t('wallet_transfer.recipient_id')}</Text>
+          <Text style={styles.inputLabel}>{t('wallet_transfer.recipient_id')}</Text>
           <TextInput
-            style={{
-              borderWidth: 1,
-              borderColor: '#E0E0E0',
-              borderRadius: 10,
-              padding: 15,
-              fontSize: 16,
-              marginBottom: 20,
-              backgroundColor: '#fff',
-            }}
+            style={styles.input}
             placeholder={t('wallet_transfer.recipient_placeholder')}
+            placeholderTextColor="#999"
             value={walletId}
             onChangeText={setWalletId}
           />
 
           {walletId && (
             <>
-              <Text style={{ fontSize: 16, color: '#666', marginBottom: 5 }}>{t('wallet_transfer.recipient_name')}</Text>
-              <View style={{ position: 'relative', marginBottom: 20 }}>
+              <Text style={styles.inputLabel}>{t('wallet_transfer.recipient_name')}</Text>
+              <View style={styles.recipientContainer}>
                 <TextInput
-                  style={{
-                    borderWidth: 1,
-                    borderColor: '#E0E0E0',
-                    borderRadius: 10,
-                    padding: 15,
-                    fontSize: 16,
-                    backgroundColor: '#f9f9f9',
-                    color: isRecipientError ? 'red' : '#333',
-                  }}
+                  style={[
+                    styles.input,
+                    styles.recipientInput,
+                    isRecipientError && styles.recipientError
+                  ]}
                   value={
                     isRecipientLoading
                       ? t('wallet_transfer.loading_recipient')
@@ -235,81 +383,106 @@ const WalletTransfer = ({ navigation }) => {
                   editable={false}
                 />
                 {isRecipientLoading && (
-                  <Loader size="small" color="#0D1C6A" style={{ position: 'absolute', right: 15, top: 15 }} />
+                  <Loader size="small" color="#0D1C6A" style={styles.recipientLoader} />
                 )}
               </View>
             </>
           )}
 
-          {/* Amount */}
-        <Text style={{ fontSize: 16, color: '#666', marginBottom: 5 }}>
-          {isCanada ? 'Montant (CAD)' : t('wallet_transfer.amount')}
-        </Text>
-          <TextInput
-            style={{
-              borderWidth: 1,
-              borderColor: '#E0E0E0',
-              borderRadius: 10,
-              padding: 15,
-              fontSize: 16,
-              marginBottom: 20,
-              backgroundColor: '#fff',
-            }}
-            keyboardType="numeric"
-            placeholder={t('wallet_transfer.amount_placeholder')}
-            value={amount}
-            onChangeText={setAmount}
-          />
+          {/* Amount Section - Modified for dual input */}
+          {isCanada ? (
+            <>
+              <Text style={styles.inputLabel}>Montant à envoyer</Text>
+              
+              {/* CAD Input */}
+              <View style={[styles.amountInputContainer, activeInput === 'cad' && styles.activeInput]}>
+                <TextInput
+                  style={styles.amountInput}
+                  keyboardType="numeric"
+                  placeholder="Montant en CAD"
+                  placeholderTextColor="#999"
+                  value={amount}
+                  onChangeText={handleCadAmountChange}
+                  onFocus={() => setActiveInput('cad')}
+                />
+                <Text style={styles.currencyLabel}>CAD</Text>
+              </View>
+
+              {/* Conversion Arrow */}
+              <View style={styles.conversionArrowContainer}>
+                <Ionicons name="arrow-down" size={20} color="#7ddd7d" />
+                <Text style={styles.conversionRateText}>
+                  1 CAD = {cadToXafRate.toFixed(2)} XAF
+                </Text>
+                <Ionicons name="arrow-down" size={20} color="#7ddd7d" />
+              </View>
+
+              {/* XAF Input */}
+              <View style={[styles.amountInputContainer, activeInput === 'xaf' && styles.activeInput]}>
+                <TextInput
+                  style={styles.amountInput}
+                  keyboardType="numeric"
+                  placeholder="Montant en XAF"
+                  placeholderTextColor="#999"
+                  value={xafAmount}
+                  onChangeText={handleXafAmountChange}
+                  onFocus={() => setActiveInput('xaf')}
+                />
+                <Text style={styles.currencyLabel}>XAF</Text>
+              </View>
+            </>
+          ) : (
+            <>
+              <Text style={styles.inputLabel}>{t('wallet_transfer.amount')}</Text>
+              <TextInput
+                style={styles.input}
+                keyboardType="numeric"
+                placeholder={t('wallet_transfer.amount_placeholder')}
+                placeholderTextColor="#999"
+                value={amount}
+                onChangeText={setAmount}
+              />
+            </>
+          )}
 
           {/* Fee for Canadians */}
           {isCanada && feePercentage > 0 && amount && !isNaN(transferAmount) && transferAmount > 0 && (
-            <View style={{
-              backgroundColor: '#e8f5e8',
-              borderRadius: 10,
-              padding: 15,
-              marginBottom: 20,
-              borderLeftWidth: 4,
-              borderLeftColor: '#7ddd7d'
-            }}>
-              <Text style={{ fontSize: 14, color: '#2d5016', fontWeight: 'bold', marginBottom: 5 }}>
+            <View style={styles.feeCard}>
+              <Text style={styles.feeTitle}>
                 {t('wallet_transfer.fee_information')}
               </Text>
-              <Text style={{ fontSize: 14, color: '#2d5016', marginBottom: 3 }}>
-                {t('wallet_transfer.transfer_amount')}: {balanceData?.data?.currency} {transferAmount.toFixed(2)}
+              <Text style={styles.feeText}>
+                Montant envoyé: {balanceData?.data?.currency} {transferAmount.toFixed(2)}
               </Text>
-              <Text style={{ fontSize: 14, color: '#2d5016', marginBottom: 3 }}>
+              <Text style={styles.feeText}>
                 {t('wallet_transfer.transfer_fee')}: {feePercentage}% ({balanceData?.data?.currency} {feeAmount.toFixed(2)})
               </Text>
-              <Text style={{ fontSize: 16, color: '#2d5016', fontWeight: 'bold', marginTop: 5, marginBottom: 5 }}>
+              <Text style={styles.totalText}>
                 {t('wallet_transfer.total_amount')}: {balanceData?.data?.currency} {totalAmount.toFixed(2)}
               </Text>
-              <View style={{ borderTopWidth: 1, borderTopColor: '#7ddd7d', paddingTop: 8, marginTop: 8 }}>
-                <Text style={{ fontSize: 14, color: '#2d5016', fontWeight: 'bold', marginBottom: 3 }}>
+              <View style={styles.feeDivider}>
+                <Text style={styles.receiveTitle}>
                   {t('wallet_transfer.recipient_will_receive')}:
                 </Text>
-                <Text style={{ fontSize: 14, color: '#2d5016' }}>
-                  {amountInXAF.toFixed(2)} XAF (1 CAD = {cadToXafRate.toFixed(2)} XAF)
+                <Text style={styles.receiveText}>
+                  {amountInXAF.toFixed(2)} XAF
                 </Text>
+                {xafAmount && (
+                  <Text style={styles.receiveText}>
+                    (Basé sur le taux: 1 CAD = {cadToXafRate.toFixed(2)} XAF)
+                  </Text>
+                )}
               </View>
             </View>
           )}
 
           {/* Description */}
-          <Text style={{ fontSize: 16, color: '#666', marginBottom: 5 }}>{t('wallet_transfer.description')}</Text>
+          <Text style={styles.inputLabel}>{t('wallet_transfer.description')}</Text>
           <TextInput
-            style={{
-              borderWidth: 1,
-              borderColor: '#E0E0E0',
-              borderRadius: 10,
-              padding: 15,
-              fontSize: 16,
-              marginBottom: 20,
-              height: 100,
-              textAlignVertical: 'top',
-              backgroundColor: '#fff',
-            }}
+            style={[styles.input, styles.textArea]}
             multiline
             placeholder={t('wallet_transfer.description_placeholder')}
+            placeholderTextColor="#999"
             value={description}
             maxLength={255}
             onChangeText={text => setDescription(text.slice(0, 255))}
@@ -327,28 +500,389 @@ const WalletTransfer = ({ navigation }) => {
                 },
               })
             }
-            disabled={isTransferring || isLoading || !userWalletId}
-            style={{
-              backgroundColor: '#7ddd7d',
-              padding: 15,
-              borderRadius: 10,
-              alignItems: 'center',
-              marginTop: 10,
-              opacity: (isTransferring || isLoading || !userWalletId) ? 0.7 : 1,
-            }}
+            disabled={isTransferring || isLoading || !userWalletId || !walletId || !amount}
+            style={[
+              styles.transferButton,
+              (isTransferring || isLoading || !userWalletId || !walletId || !amount) && styles.buttonDisabled
+            ]}
           >
             {isTransferring ? (
               <Loader color="#fff" />
             ) : (
-              <Text style={{ color: '#fff', fontSize: 18, fontWeight: 'bold' }}>
+              <Text style={styles.transferButtonText}>
                 {t('wallet_transfer.transfer_button')}
               </Text>
             )}
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+
+     {/* Canada Recipient Confirmation Modal */}
+      <Modal
+        visible={showCanadaRecipientModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={handleCancelCanadaTransfer}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={[styles.modalIconContainer, { backgroundColor: '#4CAF50' }]}>
+              <Ionicons name="globe-outline" size={48} color="white" />
+            </View>
+            
+            <Text style={styles.modalTitle}>
+              Transfert international détecté
+            </Text>
+            
+            <Text style={styles.modalMessage}>
+              Vous êtes en train d'effectuer un transfert vers le{' '}
+              <Text style={styles.boldText}>Canada</Text>.
+            </Text>
+
+            <Text style={styles.modalSubMessage}>
+              Ce type d'opération est considéré comme un{' '}
+              <Text style={styles.boldText}>transfert international</Text>.
+            </Text>
+
+            <Text style={styles.timerText}>
+              Vous allez être redirigé vers le module correspondant dans{' '}
+              <Text style={styles.boldText}>15 secondes</Text> afin de finaliser votre 
+              opération en toute sécurité.
+            </Text>
+            
+            <View style={styles.modalButtonContainer}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.okButton]}
+                onPress={handleConfirmCanadaTransfer}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.modalButtonText}>OK</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Service Unavailable Modal */}
+      <Modal
+        visible={showUnavailableModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowUnavailableModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalIconContainer}>
+              <Ionicons name="warning-outline" size={48} color="#ff6b6b" />
+            </View>
+            
+            <Text style={styles.modalTitle}>
+              Canada to Cameroon Transfer Service Temporarily Unavailable
+            </Text>
+            
+            <Text style={styles.modalMessage}>
+              The Canada to Cameroon transfer service is currently unavailable. Please try again later or contact support for assistance.
+            </Text>
+            
+            <View style={styles.modalButtonContainer}>
+              <TouchableOpacity
+                style={styles.modalButton}
+                onPress={() => setShowUnavailableModal(false)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.modalButtonText}>OK</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  header: {
+    backgroundColor: '#7ddd7d',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingBottom: 15,
+    paddingHorizontal: 15,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerTitle: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    flex: 1,
+  },
+  headerRight: {
+    width: 40,
+  },
+  keyboardView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: '5%',
+    paddingBottom: 50,
+    paddingTop: 10,
+  },
+  balanceCard: {
+    backgroundColor: '#F1F1F1',
+    borderRadius: 10,
+    padding: 15,
+    marginVertical: 20,
+  },
+  balanceLabel: {
+    fontSize: 16,
+    color: '#666',
+    marginBottom: 5,
+  },
+  balanceValue: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#0D1C6A',
+  },
+  matriculeText: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 5,
+  },
+  inputLabel: {
+    fontSize: 16,
+    color: '#666',
+    marginBottom: 5,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 10,
+    padding: 15,
+    fontSize: 16,
+    marginBottom: 20,
+    backgroundColor: '#fff',
+  },
+  recipientContainer: {
+    position: 'relative',
+    marginBottom: 20,
+  },
+  recipientInput: {
+    marginBottom: 0,
+    backgroundColor: '#f9f9f9',
+  },
+  recipientError: {
+    color: '#dc3545',
+  },
+  recipientLoader: {
+    position: 'absolute',
+    right: 15,
+    top: 15,
+  },
+  textArea: {
+    height: 100,
+    textAlignVertical: 'top',
+  },
+  // New styles for dual amount inputs
+  amountInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 10,
+    paddingHorizontal: 15,
+    marginBottom: 20,
+    backgroundColor: '#fff',
+    height: 55,
+  },
+  activeInput: {
+    borderColor: '#7ddd7d',
+    borderWidth: 2,
+    shadowColor: '#7ddd7d',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 3,
+  },
+  amountInput: {
+    flex: 1,
+    fontSize: 16,
+    color: '#333',
+  },
+  currencyLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#666',
+    marginLeft: 10,
+    paddingLeft: 10,
+    borderLeftWidth: 1,
+    borderLeftColor: '#E0E0E0',
+  },
+  conversionArrowContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 5,
+  },
+  conversionRateText: {
+    fontSize: 14,
+    color: '#666',
+    marginHorizontal: 10,
+    fontWeight: '500',
+  },
+  feeCard: {
+    backgroundColor: '#e8f5e8',
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 20,
+    borderLeftWidth: 4,
+    borderLeftColor: '#7ddd7d',
+  },
+  feeTitle: {
+    fontSize: 14,
+    color: '#2d5016',
+    fontWeight: 'bold',
+    marginBottom: 5,
+  },
+  feeText: {
+    fontSize: 14,
+    color: '#2d5016',
+    marginBottom: 3,
+  },
+  totalText: {
+    fontSize: 16,
+    color: '#2d5016',
+    fontWeight: 'bold',
+    marginTop: 5,
+    marginBottom: 5,
+  },
+  feeDivider: {
+    borderTopWidth: 1,
+    borderTopColor: '#7ddd7d',
+    paddingTop: 8,
+    marginTop: 8,
+  },
+  receiveTitle: {
+    fontSize: 14,
+    color: '#2d5016',
+    fontWeight: 'bold',
+    marginBottom: 3,
+  },
+  receiveText: {
+    fontSize: 14,
+    color: '#2d5016',
+  },
+  transferButton: {
+    backgroundColor: '#7ddd7d',
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  buttonDisabled: {
+    opacity: 0.7,
+  },
+  transferButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  errorText: {
+    color: '#dc3545',
+    fontSize: 14,
+  },
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContainer: {
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 24,
+    width: '90%',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  modalIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#4CAF50',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#333',
+    textAlign: 'center',
+    marginBottom: 15,
+  },
+  modalMessage: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 8,
+  },
+  modalSubMessage: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 15,
+  },
+  timerText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 25,
+    paddingHorizontal: 10,
+  },
+  boldText: {
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  modalButtonContainer: {
+    width: '100%',
+    marginTop: 5,
+  },
+  modalButton: {
+    paddingVertical: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  okButton: {
+    backgroundColor: '#4CAF50',
+    width: '100%',
+  },
+  modalButtonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+});
 
 export default WalletTransfer;

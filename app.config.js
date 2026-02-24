@@ -9,7 +9,7 @@ module.exports = {
   expo: {
     name: "Sendo",
     slug: "sendo",
-    version: "1.2.7",
+    version: "1.3.0",
     owner: "sfesendo",
     orientation: "portrait",
     icon: "./assets/icon-sendo.png",
@@ -33,7 +33,7 @@ module.exports = {
     android: {
       adaptiveIcon: {
         foregroundImage: "./assets/logo.png",
-        backgroundColor: "#181e25"
+        backgroundColor: "#ffffff"
       },
       permissions: [
         "android.permission.CAMERA",

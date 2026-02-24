@@ -21,7 +21,7 @@ import Loader from '../../components/Loader';
 import HomeImage from '../../images/HomeImage2.png';
 import button from '../../images/ButtomLogo.png';
 import ArrowGoRound from '../../images/ArrowGoRound.png';
-import person from '../../images/person.png';
+import bank from '../../images/bank.png';
 import mtn from '../../images/mtn.png';
 import om from '../../images/om.png';
 
@@ -58,70 +58,139 @@ const {
   const [error, setError] = useState(null);
   const [showAlert, setShowAlert] = useState(false);
   const [showMaxAmountAlert, setShowMaxAmountAlert] = useState(false);
+  const [activeInput, setActiveInput] = useState('source'); // 'source' or 'target'
 
   const isToCameroon = countryName === 'Cameroon';
   const TRANSFER_FEES = parseFloat(getConfigValue('TRANSFER_FEES'));
   const SENDO_VALUE_CAD_CA_CAM = parseFloat(getConfigValue('SENDO_VALUE_CAD_CA_CAM'));
   const MIN_AMOUNT_TO_TRANSFER_FROM_CANADA = parseFloat(getConfigValue('MIN_AMOUNT_TO_TRANSFER_FROM_CANADA'));
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (amount && !isNaN(amount)) {
-        setIsLoading(true);
-        try {
-          const numericAmount = parseFloat(amount);
-          if (isNaN(numericAmount)) {
-            setError(t('invalid_amount'));
-            return;
-          }
-
-          let result;
-          let total;
-          let feeConverted;
-
-          if (isToCameroon) {
-            result = numericAmount * cadRealTimeValue;
-            feeConverted = TRANSFER_FEES * cadRealTimeValue;
-            total = result + feeConverted;
-          } else {
-            result = numericAmount / cadRealTimeValue;
-            feeConverted = TRANSFER_FEES;
-            total = result + feeConverted;
-          }
-
-          setConvertedAmount(result.toFixed(2));
-          setTransferFee(feeConverted.toFixed(2));
-          setTotalAmount(total.toFixed(2));
-          setError(null);
-        } catch (err) {
-          setError(t('conversion_failed'));
-        } finally {
-          setIsLoading(false);
-        }
-      } else {
-        setConvertedAmount('');
-        setTransferFee(0);
-        setTotalAmount('');
-        setError(null);
-      }
-    }, 100);
-
-    return () => clearTimeout(timer);
-  }, [amount, cadRealTimeValue, TRANSFER_FEES]);
-
-  const handleAmountChange = (text) => {
-    const cleanedText = text.replace(/[^0-9.]/g, '');
-    setAmount(cleanedText);
+  // Conversion functions
+  const convertSourceToTarget = (sourceValue) => {
+    const numericAmount = parseFloat(sourceValue) || 0;
+    if (isToCameroon) {
+      // CAD to XAF
+      return numericAmount * cadRealTimeValue;
+    } else {
+      // XAF to CAD
+      return numericAmount / cadRealTimeValue;
+    }
   };
 
+  const convertTargetToSource = (targetValue) => {
+    const numericAmount = parseFloat(targetValue) || 0;
+    if (isToCameroon) {
+      // XAF to CAD
+      return numericAmount / cadRealTimeValue;
+    } else {
+      // CAD to XAF
+      return numericAmount * cadRealTimeValue;
+    }
+  };
+
+  // Calculate fees based on source amount
+  const calculateFees = (sourceAmount) => {
+    const numericSource = parseFloat(sourceAmount) || 0;
+    let feeConverted;
+
+    if (isToCameroon) {
+      feeConverted = TRANSFER_FEES * cadRealTimeValue;
+    } else {
+      feeConverted = TRANSFER_FEES;
+    }
+
+    return feeConverted;
+  };
+
+  // Calculate total amount
+  const calculateTotal = (sourceAmount, convertedAmt) => {
+    const numericSource = parseFloat(sourceAmount) || 0;
+    const numericConverted = parseFloat(convertedAmt) || 0;
+    
+    if (isToCameroon) {
+      // Total in XAF = converted amount + fee in XAF
+      return numericConverted + (TRANSFER_FEES * cadRealTimeValue);
+    } else {
+      // Total in CAD = converted amount + fee in CAD
+      return numericConverted + TRANSFER_FEES;
+    }
+  };
+
+  // Handle source amount change (CAD when sending to Cameroon, XAF when sending from Cameroon)
+  const handleSourceAmountChange = (text) => {
+    const cleanedText = text.replace(/[^0-9.]/g, '');
+    setAmount(cleanedText);
+    setActiveInput('source');
+
+    if (cleanedText && !isNaN(cleanedText)) {
+      setIsLoading(true);
+      try {
+        const converted = convertSourceToTarget(cleanedText);
+        const feeConverted = calculateFees(cleanedText);
+        const total = calculateTotal(cleanedText, converted);
+
+        setConvertedAmount(converted.toFixed(2));
+        setTransferFee(feeConverted.toFixed(2));
+        setTotalAmount(total.toFixed(2));
+        setError(null);
+      } catch (err) {
+        setError(t('conversion_failed'));
+      } finally {
+        setIsLoading(false);
+      }
+    } else {
+      setConvertedAmount('');
+      setTransferFee(0);
+      setTotalAmount('');
+      setError(null);
+    }
+  };
+
+  // Handle target amount change (XAF when sending to Cameroon, CAD when sending from Cameroon)
+  const handleTargetAmountChange = (text) => {
+    const cleanedText = text.replace(/[^0-9.]/g, '');
+    setConvertedAmount(cleanedText);
+    setActiveInput('target');
+
+    if (cleanedText && !isNaN(cleanedText)) {
+      setIsLoading(true);
+      try {
+        const sourceConverted = convertTargetToSource(cleanedText);
+        const feeConverted = calculateFees(sourceConverted);
+        const total = calculateTotal(sourceConverted, cleanedText);
+
+        setAmount(sourceConverted.toFixed(2));
+        setTransferFee(feeConverted.toFixed(2));
+        setTotalAmount(total.toFixed(2));
+        setError(null);
+      } catch (err) {
+        setError(t('conversion_failed'));
+      } finally {
+        setIsLoading(false);
+      }
+    } else {
+      setAmount('');
+      setTransferFee(0);
+      setTotalAmount('');
+      setError(null);
+    }
+  };
+
+  // Clean up effect - we'll use the handlers directly now
+  useEffect(() => {
+    // This effect is now empty because we handle conversions directly in the handlers
+  }, []);
+
   const handleNext = () => {
-    const numericTotal = parseFloat(totalAmount);
-    if (numericTotal > 500000) {
+    const numericSource = parseFloat(amount);
+    const numericConverted = parseFloat(convertedAmount);
+    
+    if (numericConverted > 500000) {
       setShowMaxAmountAlert(true);
       return;
     }
     
-    if (isToCameroon && parseFloat(convertedAmount) < MIN_AMOUNT_TO_TRANSFER_FROM_CANADA) {
+    if (isToCameroon && numericConverted < MIN_AMOUNT_TO_TRANSFER_FROM_CANADA) {
       setShowAlert(true);
       return;
     }
@@ -168,31 +237,86 @@ const {
         </View>
 
         <View style={styles.amountContainer}>
-          <View style={styles.amountInputContainer}>
+          {/* Source Currency Input */}
+         <View style={styles.amountContainer}>
+          {/* Source Currency Input */}
+          <View style={[
+            styles.amountInputContainer,
+            activeInput === 'source' && styles.activeInput
+          ]}>
             <TextInput
               keyboardType="decimal-pad"
               placeholder={isToCameroon ? t('amount_cad') : t('amount_xaf')}
               placeholderTextColor="#aaa"
               style={styles.amountInput}
               value={amount}
-              onChangeText={handleAmountChange}
+              onChangeText={handleSourceAmountChange}
+              onFocus={() => setActiveInput('source')}
             />
+            <Text style={styles.currencyLabel}>
+              {isToCameroon ? 'CAD' : 'XAF'}
+            </Text>
+            
+            {/* Show loader overlay only when loading and this input is active */}
+            {isLoading && activeInput === 'source' && (
+              <View style={styles.inputLoaderOverlay}>
+                <Loader size="small" color="#7ddd7d" />
+              </View>
+            )}
           </View>
 
           <Image source={ArrowGoRound} style={styles.arrowIcon} />
 
-          <View style={styles.amountInputContainer}>
-            {isLoading ? (
+          {/* Target Currency Input */}
+          <View style={[
+            styles.amountInputContainer,
+            activeInput === 'target' && styles.activeInput
+          ]}>
+            <TextInput
+              keyboardType="decimal-pad"
+              placeholder={isToCameroon ? t('amount_xaf') : t('amount_cad')}
+              placeholderTextColor="#aaa"
+              style={styles.amountInput}
+              value={convertedAmount}
+              onChangeText={handleTargetAmountChange}
+              onFocus={() => setActiveInput('target')}
+            />
+            <Text style={styles.currencyLabel}>
+              {isToCameroon ? 'XAF' : 'CAD'}
+            </Text>
+            
+            {/* Show loader overlay only when loading and this input is active */}
+            {isLoading && activeInput === 'target' && (
+              <View style={styles.inputLoaderOverlay}>
+                <Loader size="small" color="#7ddd7d" />
+              </View>
+            )}
+          </View>
+        </View>
+
+          <Image source={ArrowGoRound} style={styles.arrowIcon} />
+
+          {/* Target Currency Input */}
+          <View style={[
+            styles.amountInputContainer,
+            activeInput === 'target' && styles.activeInput
+          ]}>
+            {isLoading && activeInput === 'source' ? (
               <Loader size="small" color="#7ddd7d" style={{ flex: 1 }} />
             ) : (
               <TextInput
+                keyboardType="decimal-pad"
                 placeholder={isToCameroon ? t('amount_xaf') : t('amount_cad')}
                 placeholderTextColor="#aaa"
                 style={styles.amountInput}
                 value={convertedAmount}
-                editable={false}
+                onChangeText={handleTargetAmountChange}
+                onFocus={() => setActiveInput('target')}
               />
             )}
+            <Text style={styles.currencyLabel}>
+              {isToCameroon ? 'XAF' : 'CAD'}
+            </Text>
           </View>
         </View>
 
@@ -215,9 +339,9 @@ const {
             {t('fast_and_free')}
           </Text>
           <View style={styles.paymentMethods}>
-            <Image source={person} style={styles.paymentMethodIcon} />
-            <Image source={mtn} style={styles.paymentMethodIcon} />
+            <Image source={bank} style={styles.paymentMethodIcon} />
             <Image source={om} style={styles.paymentMethodIcon} />
+            <Image source={mtn} style={styles.paymentMethodIcon} />
           </View>
         </View>
 
@@ -344,11 +468,26 @@ const styles = StyleSheet.create({
     height: 50,
     backgroundColor: 'white'
   },
+  activeInput: {
+    borderColor: '#7ddd7d',
+    borderWidth: 2,
+    shadowColor: '#7ddd7d',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 3,
+  },
   amountInput: {
     flex: 1,
     color: 'black',
     height: '100%',
     paddingHorizontal: 10
+  },
+  currencyLabel: {
+    color: '#666',
+    fontSize: 14,
+    fontWeight: '500',
+    marginRight: 10
   },
   arrowIcon: {
     width: 24,
@@ -407,6 +546,12 @@ const styles = StyleSheet.create({
     color: '#2e7d32',
     fontSize: 16,
     fontWeight: 'bold'
+  },
+  totalRow: {
+    borderTopWidth: 1,
+    borderTopColor: '#c8e6c9',
+    paddingTop: 10,
+    marginTop: 5
   },
   divider: {
     borderColor: '#ddd',

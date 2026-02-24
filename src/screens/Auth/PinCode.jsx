@@ -46,13 +46,16 @@ const PinCode = ({ navigation, route }) => {
     biometricEnabled
   } = useSelector(state => state.passcode);
   
-  const { 
+ const { 
     data: userProfile, 
     isLoading: isProfileLoading, 
     error: profileError,
     refetch 
-  } = useGetUserProfileQuery();
-  // console.log('User Profile in PinCode:', userProfile);
+  } = useGetUserProfileQuery(undefined, {
+    pollingInterval: 10
+  });
+
+  //console.log('User Profile in PinCode:', userProfile);
   const userId = userProfile?.data?.user?.id;
   const { data: serverTokenData } = useGetTokenMutation(userId, {
     skip: !userId

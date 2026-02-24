@@ -7,6 +7,7 @@ const WALLET_ENDPOINTS = {
   RECHARGE: '/mobile-money/neero/init/deposit',
   WITHDRAWAL: '/mobile-money/neero/init/withdrawal',
   HISTORY: '/wallet/transactions',
+  REQUEST_WITHDRAWAL: '/wallet/request-withdrawal', 
 };
 
 const TAG_TYPES = {
@@ -42,7 +43,7 @@ export const walletApi = createApi({
   }
 
   // ✅ Only add passcode for getBalance or other specific endpoints
-  const passcodeRequiredEndpoints = ['getBalance', 'rechargeWallet', 'transferFunds', 'withdrawalWallet', 'simulatePayment', 'initTransfer', 'bankrecharge', 'initTransferToDestinataire'];
+  const passcodeRequiredEndpoints = ['getBalance', 'rechargeWallet', 'transferFunds', 'withdrawalWallet', 'simulatePayment', 'initTransfer', 'bankrecharge', 'initTransferToDestinataire', 'requestWithdrawal'];
 
   if (passcodeRequiredEndpoints.includes(endpoint)) {
     if (passcode) {
@@ -136,6 +137,15 @@ export const walletApi = createApi({
       }),
       providesTags: [TAG_TYPES.WALLET],
     }),
+
+    requestWithdrawal: builder.mutation({
+      query: (payload) => ({
+        url: WALLET_ENDPOINTS.REQUEST_WITHDRAWAL,
+        method: 'POST',
+        body: payload,
+      }),
+      invalidatesTags: [TAG_TYPES.WALLET],
+    }),
     bankrecharge: builder.mutation({
       query: (formData) => ({
         url: '/wallet/recharge',
@@ -162,6 +172,14 @@ export const walletApi = createApi({
       invalidatesTags: [TAG_TYPES.TRANSFERS],
     }),
 
+    getTransferFees: builder.mutation({
+      query: (amount) => ({
+        url: '/merchant/fees-amount',
+        method: 'POST',
+        body: { amount },
+      }),
+    }),
+
     initTransferToDestinataire: builder.mutation({
       query: ({ destinataireId, amount, description = '' }) => ({
         url: '/transfer-money/init-to-know-destinataire',
@@ -176,7 +194,8 @@ export const walletApi = createApi({
 
 export const {
   useGetBalanceQuery,
- useBankrechargeMutation,
+  useBankrechargeMutation,
+  useRequestWithdrawalMutation,
   useRechargeWalletMutation,
   useWithdrawalWalletMutation,
   useTransferFundsMutation,
@@ -185,6 +204,7 @@ export const {
   useCheckTransactionStatusQuery,
   useGetWalletDetailsQuery,
   useGetTransfersQuery,
-   useInitTransferMutation,
+  useInitTransferMutation,
+  useGetTransferFeesMutation,
    useInitTransferToDestinataireMutation,
 } = walletApi;

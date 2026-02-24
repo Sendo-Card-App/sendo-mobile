@@ -407,7 +407,7 @@ const handleFinalSubmission = async () => {
       );
     }
 
-    console.log('📑 Final documents array:', JSON.stringify(documents, null, 2));
+    //console.log('📑 Final documents array:', JSON.stringify(documents, null, 2));
     console.log('📁 Total files to upload:', files.length);
 
     // Log each file for debugging

@@ -60,6 +60,7 @@
     "react-native": "0.81.4",
     "react-native-communications": "^2.2.1",
     "react-native-country-picker-modal": "^2.0.0",
+    "react-native-device-info": "^15.0.1",
     "react-native-dotenv": "^3.4.11",
     "react-native-draggable-flatlist": "^4.0.3",
     "react-native-dropdown-select-list": "^2.0.5",
@@ -89,7 +90,8 @@
     "react-redux": "^9.2.0",
     "socket.io-client": "^4.8.1",
     "tailwindcss": "^3.4.17",
-    "three": "^0.166.1"
+    "three": "^0.166.1",
+    "expo-application": "~7.0.8"
   },
   "devDependencies": {
     "@babel/core": "^7.26.0",

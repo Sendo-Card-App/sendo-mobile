@@ -5,6 +5,8 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
+  Modal,
+  StyleSheet,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { Ionicons, AntDesign } from "@expo/vector-icons";
@@ -30,6 +32,7 @@ const WalletWithdrawal = () => {
   const [amount, setAmount] = useState("");
   const [userWalletId, setUserWalletId] = useState("");
   const [checkParams, setCheckParams] = useState(null);
+  const [showUnavailableModal, setShowUnavailableModal] = useState(false);
 
   const { data: userProfile } = useGetUserProfileQuery();
   const userId = userProfile?.data?.user?.id;
@@ -64,6 +67,7 @@ const WalletWithdrawal = () => {
     "SENDO_WITHDRAWAL_PERCENTAGE"
   );
   const SENDO_WITHDRAWAL_FEES = getConfigValue("SENDO_WITHDRAWAL_FEES");
+  const WITHDRAWAL_MOBILE_AVAILABILITY = getConfigValue("WITHDRAWAL_MOBILE_AVAILABILITY");
 
   useEffect(() => {
     const profile = userProfile?.data?.user;
@@ -84,6 +88,17 @@ const WalletWithdrawal = () => {
     }
   }, [statusData]);
 
+  // --- Service availability check ---
+  const checkServiceAvailability = () => {
+    // If config is not loaded yet, assume service is available
+    if (isConfigLoading || !configData) {
+      return true;
+    }
+    
+    // Check if WITHDRAWAL_MOBILE_AVAILABILITY is set to "1" (available)
+    return WITHDRAWAL_MOBILE_AVAILABILITY === "1";
+  };
+
   // --- Net withdrawal calculation ---
   const calculateNetWithdrawal = () => {
     if (!amount || isNaN(amount)) return 0;
@@ -103,6 +118,12 @@ const WalletWithdrawal = () => {
 
   // --- Handle withdrawal ---
   const handleWithdrawal = async () => {
+    // First check if mobile withdrawal service is available
+    if (!checkServiceAvailability()) {
+      setShowUnavailableModal(true);
+      return;
+    }
+
     const trimmedPhone = phone.trim();
     const normalizedPhone = trimmedPhone.startsWith("+237")
       ? trimmedPhone
@@ -164,7 +185,7 @@ const WalletWithdrawal = () => {
           transactionId,
         });
         
-         navigation.navigate("WalletOk", {
+        navigation.navigate("WalletOk", {
           status: "PENDING",
           transactionId,
           type,
@@ -258,7 +279,6 @@ const WalletWithdrawal = () => {
             {/* Net Withdrawal Preview */}
             {amount && !isNaN(amount) && (
               <View className="mt-6 mb-2 bg-gray-100 rounded-xl p-4">
-               
                 <Text className="text-l text-gray-500 text-center mt-1">
                   ({t("walletWithdrawal.feesNote")}: {SENDO_WITHDRAWAL_PERCENTAGE || 0}% + {SENDO_WITHDRAWAL_FEES || 0} XAF)
                 </Text>
@@ -270,13 +290,13 @@ const WalletWithdrawal = () => {
           <TouchableOpacity
             onPress={() =>
               navigation.navigate("Auth", {
-              screen: "PinCode",
-              params: {
-                onSuccess: async () => {
-                  await handleWithdrawal();
+                screen: "PinCode",
+                params: {
+                  onSuccess: async () => {
+                    await handleWithdrawal();
+                  },
                 },
-              },
-            })
+              })
             }
             activeOpacity={0.8}
             className="bg-[#7ddd7d] py-4 px-10 rounded-full self-center shadow-lg w-11/12 mt-4 flex-row justify-center items-center"
@@ -287,7 +307,6 @@ const WalletWithdrawal = () => {
               shadowOpacity: 0.3,
               shadowRadius: 4,
             }}
-           
           >
             {isWithdrawing ? (
               <Loader size="small" />
@@ -307,10 +326,106 @@ const WalletWithdrawal = () => {
         <Text className="text-sm text-white">{t("walletWithdrawal.securityWarning")}</Text>
       </View>
 
+      {/* Service Unavailable Modal */}
+      <Modal
+        visible={showUnavailableModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowUnavailableModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalIconContainer}>
+              <Ionicons name="warning-outline" size={48} color="#ff6b6b" />
+            </View>
+            
+            <Text style={styles.modalTitle}>
+              Service Temporarily Unavailable
+            </Text>
+            
+            <Text style={styles.modalMessage}>
+              The mobile withdrawal service is currently unavailable. Please try again later or contact support for assistance.
+            </Text>
+            
+            <View style={styles.modalButtonContainer}>
+              <TouchableOpacity
+                style={styles.modalButton}
+                onPress={() => setShowUnavailableModal(false)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.modalButtonText}>OK</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       <StatusBar style="light" />
       <Toast />
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContainer: {
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 24,
+    width: '90%',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  modalIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#fff5f5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  modalMessage: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 24,
+  },
+  modalButtonContainer: {
+    width: '100%',
+  },
+  modalButton: {
+    backgroundColor: '#ff6b6b',
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  modalButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+});
 
 export default WalletWithdrawal;

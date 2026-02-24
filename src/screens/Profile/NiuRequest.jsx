@@ -11,13 +11,12 @@ import {
   Alert,
   ActivityIndicator,
   SafeAreaView,
-  Dimensions
+  Dimensions,
+  Modal
 } from 'react-native';
-import { CheckBox } from 'react-native-elements';
 import { MaterialCommunityIcons, AntDesign, Ionicons, Feather } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
-import { useSelector } from 'react-redux';
 import { useGetBalanceQuery } from '../../services/WalletApi/walletApi';
 import { useGetUserProfileQuery } from "../../services/Auth/authAPI"; 
 import { useNiuResquestMutation, useGetUserRequestsQuery } from "../../services/Kyc/kycApi";
@@ -26,11 +25,196 @@ import Toast from 'react-native-toast-message';
 import * as ImagePicker from 'expo-image-picker';
 import TopLogo from '../../images/TopLogo.png';
 import Loader from "../../components/Loader";
-import PaymentConfirmationModal from '../../components/PaymentConfirmationModal';
 import { useAppState } from '../../context/AppStateContext';
 import { LinearGradient } from 'expo-linear-gradient';
 
 const { width } = Dimensions.get('window');
+
+// Composant PaymentConfirmationModal intégré
+const PaymentConfirmationModal = ({ 
+  visible, 
+  onClose, 
+  onConfirm, 
+  amount, 
+  amountCAD,
+  title, 
+  description, 
+  confirmLabel = 'Confirmer', 
+  cancelLabel = 'Annuler', 
+  currency = 'CAD',
+  balance = 0
+}) => {
+  const navigation = useNavigation();
+  const { t } = useTranslation();
+
+  const handleConfirmPress = () => {
+    onClose();
+    // Naviguer vers l'écran de PIN
+    navigation.navigate("Auth", {
+      screen: "PinCode",
+      params: {
+        onSuccess: async () => {
+          await onConfirm();
+        },
+        showBalance: false,
+      },
+    });
+  };
+
+  const hasSufficientBalance = balance >= amount;
+
+  return (
+    <Modal
+      visible={visible}
+      transparent={true}
+      animationType="fade"
+      onRequestClose={onClose}
+    >
+      <View style={{
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        padding: 20,
+      }}>
+        <View style={{
+          backgroundColor: 'white',
+          borderRadius: 24,
+          padding: 24,
+          width: '100%',
+          maxWidth: 400,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 10 },
+          shadowOpacity: 0.1,
+          shadowRadius: 20,
+          elevation: 10,
+        }}>
+          {/* Header avec icône */}
+          <View style={{ alignItems: 'center', marginBottom: 20 }}>
+            <View style={{
+              width: 80,
+              height: 80,
+              borderRadius: 40,
+              backgroundColor: hasSufficientBalance ? '#10b98120' : '#ef444420',
+              justifyContent: 'center',
+              alignItems: 'center',
+              marginBottom: 16,
+            }}>
+              <Ionicons 
+                name={hasSufficientBalance ? "shield-checkmark" : "alert-circle"} 
+                size={48} 
+                color={hasSufficientBalance ? '#10b981' : '#ef4444'} 
+              />
+            </View>
+            <Text style={{
+              fontSize: 24,
+              fontWeight: 'bold',
+              color: '#1F2937',
+              textAlign: 'center',
+            }}>
+              {title || t('niu.paymentModal.title')}
+            </Text>
+          </View>
+
+          {/* Description */}
+          <Text style={{
+            fontSize: 16,
+            color: '#4B5563',
+            textAlign: 'center',
+            marginBottom: 20,
+            lineHeight: 24,
+          }}>
+            {description || t('niu.paymentModal.message', { amount: amountCAD?.toLocaleString() || amount })}
+          </Text>
+
+          {/* Détails du paiement */}
+          <View style={{
+            backgroundColor: '#F3F4F6',
+            borderRadius: 16,
+            padding: 16,
+            marginBottom: 20,
+          }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
+              <Text style={{ fontSize: 14, color: '#6B7280' }}>{t('niu.paymentModal.amount')}</Text>
+              <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#1F2937' }}>
+                {amountCAD?.toLocaleString()} {currency}
+              </Text>
+            </View>
+            
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
+              <Text style={{ fontSize: 14, color: '#6B7280' }}>{t('niu.paymentModal.balance')}</Text>
+              <Text style={{ 
+                fontSize: 16, 
+                fontWeight: '600', 
+                color: hasSufficientBalance ? '#10b981' : '#ef4444' 
+              }}>
+                {balance?.toLocaleString()} {currency}
+              </Text>
+            </View>
+
+            {!hasSufficientBalance && (
+              <View style={{
+                backgroundColor: '#ef444410',
+                borderRadius: 8,
+                padding: 10,
+                marginTop: 8,
+              }}>
+                <Text style={{ color: '#ef4444', fontSize: 14, textAlign: 'center' }}>
+                  {t('niu.errors.insufficientBalance')}
+                </Text>
+              </View>
+            )}
+          </View>
+
+          {/* Boutons */}
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+            <TouchableOpacity
+              onPress={onClose}
+              style={{
+                flex: 1,
+                paddingVertical: 16,
+                paddingHorizontal: 20,
+                borderRadius: 12,
+                backgroundColor: '#F3F4F6',
+                alignItems: 'center',
+              }}
+            >
+              <Text style={{ color: '#4B5563', fontSize: 16, fontWeight: '600' }}>
+                {cancelLabel}
+              </Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              onPress={handleConfirmPress}
+              disabled={!hasSufficientBalance}
+              style={{
+                flex: 1,
+                paddingVertical: 16,
+                paddingHorizontal: 20,
+                borderRadius: 12,
+                backgroundColor: hasSufficientBalance ? '#10b981' : '#D1D5DB',
+                alignItems: 'center',
+                opacity: hasSufficientBalance ? 1 : 0.5,
+              }}
+            >
+              <Text style={{ color: 'white', fontSize: 16, fontWeight: '600' }}>
+                {confirmLabel}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Message de sécurité */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 16 }}>
+            <Ionicons name="lock-closed" size={14} color="#9CA3AF" />
+            <Text style={{ color: '#9CA3AF', fontSize: 12, marginLeft: 4 }}>
+              {t('niu.security.pinRequired')}
+            </Text>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+};
 
 const NiuRequest = () => {
   const { t } = useTranslation();
@@ -66,19 +250,18 @@ const NiuRequest = () => {
   };
 
   // API Hooks
-const { 
-  data: userProfile, 
-  isLoading: isProfileLoading, 
-  refetch: refetchUserProfile, // Renommé pour plus de clarté
-  isFetching: isProfileFetching 
-} = useGetUserProfileQuery();
+  const { 
+    data: userProfile, 
+    isLoading: isProfileLoading, 
+    refetch: refetchUserProfile,
+    isFetching: isProfileFetching 
+  } = useGetUserProfileQuery();
   
   const userId = userProfile?.data?.user?.id;
   const hasNiuProof = userProfile?.data?.user?.kycDocuments?.some(doc => doc.type === "NIU_PROOF");
 
   const [niuRequest, { isLoading: isSubmitting }] = useNiuResquestMutation();
 
-  
   const {
     data: userRequests,
     isLoading: isRequestsLoading,
@@ -89,19 +272,18 @@ const {
     pollingInterval: 1000,
   });
 
-
-// Ligne ~87-91 :
-const {
-  data: configData,
-  isLoading: isConfigLoading,
-  error: configError,
-  refetch: refetchConfig,
-} = useGetConfigQuery();
+  const {
+    data: configData,
+    isLoading: isConfigLoading,
+    error: configError,
+    refetch: refetchConfig,
+  } = useGetConfigQuery();
   
   const niuConfig = configData?.data?.find(item => item.name === "NIU_REQUEST_FEES");
   const feeAmount = Number(niuConfig?.value) || 0;
   const SENDO_VALUE_CAD_CA_CAM = configData?.data?.find(item => item.name === "SENDO_VALUE_CAD_CA_CAM");
-  const feeAmountCAD = feeAmount / (Number(SENDO_VALUE_CAD_CA_CAM?.value) || 1);
+  const rawFeeAmountCAD = feeAmount / (Number(SENDO_VALUE_CAD_CA_CAM?.value) || 1);
+  const feeAmountCAD = Math.round(rawFeeAmountCAD);
 
   const {
     data: balanceData,
@@ -112,30 +294,27 @@ const {
 
   const balance = balanceData?.data?.balance || 0;
 
-    const refetch = useCallback(() => {
-      if (userId) {
-        refetchUserProfile();
-        refetchRequests();
-        refetchConfig();
-        refetchBalance();
-      }
-    }, [userId, refetchUserProfile, refetchRequests, refetchConfig, refetchBalance]);
+  const refetch = useCallback(() => {
+    if (userId) {
+      refetchUserProfile();
+      refetchRequests();
+      refetchConfig();
+      refetchBalance();
+    }
+  }, [userId, refetchUserProfile, refetchRequests, refetchConfig, refetchBalance]);
 
-    // Et dans useFocusEffect :
-    useFocusEffect(
-      useCallback(() => {
-        refetch();
-      }, [refetch])
-    );
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, [refetch])
+  );
 
-    // Et l'effet d'état de l'application :
-    useEffect(() => {
-      console.log('App State changed:', appState);
-      if (appState === 'active') {
-        // Rafraîchir les données quand l'app devient active
-        refetch();
-      }
-    }, [appState, refetch]);
+  useEffect(() => {
+    console.log('App State changed:', appState);
+    if (appState === 'active') {
+      refetch();
+    }
+  }, [appState, refetch]);
 
   // Demander les permissions au chargement du composant
   useEffect(() => {
@@ -151,8 +330,6 @@ const {
       }
     })();
   }, []);
-
-
 
   useEffect(() => {
     if (configError) {
@@ -171,7 +348,7 @@ const {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [userId, isAppActive]); // AJOUT: Dépendance à isAppActive
+  }, [userId, isAppActive]);
 
   useEffect(() => {
     if (userRequests?.data?.items) {
@@ -264,8 +441,6 @@ const {
 
   // Main Payment Handler
   const handlePaymentConfirmation = async () => {
-    setShowPaymentModal(false);
-
     if (!cniImages.front) {
       showToast('error', t('niu.errors.title'), t('niu.cni.rectoMandatory'));
       return;
@@ -323,8 +498,8 @@ const {
       
       // Refresh data
       setTimeout(() => {
-       refetchRequests(); // Utilisez directement refetchRequests
-        refetchUserProfile(); // Utilisez le nom correct
+        refetchRequests();
+        refetchUserProfile();
         refetchBalance();
       }, 2000);
       
@@ -347,16 +522,12 @@ const {
       return;
     }
 
-    if (balance < feeAmount) {
-      showToast('error', t('niu.errors.title'), t('niu.errors.insufficientBalance'));
-      return;
-    }
-
     if (!userId) {
       showToast('error', t('niu.errors.title'), t('commonNiu.userNotFound'));
       return;
     }
 
+    // Ouvrir le modal de confirmation au lieu de naviguer directement
     setShowPaymentModal(true);
   };
 
@@ -403,99 +574,6 @@ const {
     }
     return null;
   };
-
-  // Loading State
-  if (isConfigLoading || isProfileLoading || isBalanceLoading || isRequestsLoading) {
-    return (
-      <View className="flex-1 justify-center items-center bg-gradient-to-b from-gray-50 to-white">
-        <Loader size="large" />
-        <Text className="mt-4 text-gray-600">{t('commonNiu.loading')}</Text>
-      </View>
-    );
-  }
-
-  // Already Have NIU Screen
-  const hasProcessedNiuRequest = userRequests?.data?.items?.some(
-    req => req.type === 'NIU_REQUEST' && req.status === 'PROCESSED'
-  );
-
-  const shouldShowAlreadyHaveScreen = hasNiuProof || hasProcessedNiuRequest;
-
-  if (shouldShowAlreadyHaveScreen) {
-    return (
-      <SafeAreaView className="flex-1 bg-white">
-        <StatusBar backgroundColor="#7ddd7d" barStyle="light-content" />
-        
-        {/* Header */}
-        <LinearGradient
-          colors={['#7ddd7d', '#10b981']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          className="pt-12 pb-6 px-4"
-        >
-          <View className="flex-row items-center">
-            <TouchableOpacity
-              onPress={() => navigation.goBack()}
-              className="p-2"
-            >
-              <AntDesign name="arrowleft" size={24} color="white" />
-            </TouchableOpacity>
-            <View className="flex-1 items-center">
-              <Image
-                source={TopLogo}
-                style={{ height: 40, width: 80, resizeMode: 'contain' }}
-              />
-            </View>
-            <View style={{ width: 40 }} />
-          </View>
-        </LinearGradient>
-
-        {/* Success Content */}
-        <View className="flex-1 items-center justify-center p-8">
-          <View className="items-center mb-8">
-            <View className="w-32 h-32 rounded-full bg-green-100 items-center justify-center mb-6">
-              <MaterialCommunityIcons
-                name="check-circle"
-                size={80}
-                color="#10b981"
-              />
-            </View>
-            <Text className="text-3xl font-bold text-gray-900 mb-3 text-center">
-              {t('niu.alreadyHave.title')}
-            </Text>
-            <Text className="text-lg text-gray-600 text-center leading-6">
-              {t('niu.alreadyHave.message')}
-            </Text>
-          </View>
-
-          <TouchableOpacity
-            onPress={() => navigation.navigate('MainTabs')}
-            className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl py-4 px-8 w-full shadow-lg"
-            style={{
-              shadowColor: '#10b981',
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.3,
-              shadowRadius: 12,
-              elevation: 8,
-            }}
-          >
-            <Text className="text-white text-center text-lg font-semibold">
-              {t('niu.alreadyHave.backButton')}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  // Main Component Render
-  const steps = [
-    { id: 1, title: t('niu.steps.fees'), icon: 'credit-card' },
-    { id: 2, title: t('niu.steps.kyc'), icon: 'shield-check' },
-    { id: 3, title: t('niu.steps.cniUpload'), icon: 'camera' },
-    { id: 4, title: t('niu.steps.niuNumber'), icon: 'id-card' },
-    { id: 5, title: t('niu.steps.attestation'), icon: 'file-document' },
-  ];
 
   const CniUploadSection = () => (
     <View className="mx-5 mb-6">
@@ -618,16 +696,116 @@ const {
     </View>
   );
 
+  // Loading State
+  if (isConfigLoading || isProfileLoading || isBalanceLoading || isRequestsLoading) {
+    return (
+      <View className="flex-1 justify-center items-center bg-gradient-to-b from-gray-50 to-white">
+        <Loader size="large" />
+        <Text className="mt-4 text-gray-600">{t('commonNiu.loading')}</Text>
+      </View>
+    );
+  }
+
+  // Already Have NIU Screen
+  const hasProcessedNiuRequest = userRequests?.data?.items?.some(
+    req => req.type === 'NIU_REQUEST' && req.status === 'PROCESSED'
+  );
+
+  const shouldShowAlreadyHaveScreen = hasNiuProof || hasProcessedNiuRequest;
+
+  if (shouldShowAlreadyHaveScreen) {
+    return (
+      <View className="flex-1 bg-white">
+        <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
+        
+        <LinearGradient
+          colors={['#7ddd7d', '#10b981']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={{
+            paddingTop: Platform.OS === 'ios' ? 50 : StatusBar.currentHeight + 10,
+            paddingBottom: 15,
+          }}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 15 }}>
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              style={{ padding: 8, width: 40 }}
+            >
+              <AntDesign name="left" size={24} color="white" />
+            </TouchableOpacity>
+            
+            <View style={{ flex: 1, alignItems: 'center' }}>
+              <Image
+                source={TopLogo}
+                style={{ height: 40, width: 80, resizeMode: 'contain' }}
+              />
+            </View>
+            
+            <View style={{ width: 40 }} />
+          </View>
+        </LinearGradient>
+
+        <SafeAreaView style={{ flex: 1 }} edges={['bottom', 'left', 'right']}>
+          <View className="flex-1 items-center justify-center p-8">
+            <View className="items-center mb-8">
+              <View className="w-32 h-32 rounded-full bg-green-100 items-center justify-center mb-6">
+                <MaterialCommunityIcons
+                  name="check-circle"
+                  size={80}
+                  color="#10b981"
+                />
+              </View>
+              <Text className="text-3xl font-bold text-gray-900 mb-3 text-center">
+                {t('niu.alreadyHave.title')}
+              </Text>
+              <Text className="text-lg text-gray-600 text-center leading-6">
+                {t('niu.alreadyHave.message')}
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              onPress={() => navigation.navigate('MainTabs')}
+              className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl py-4 px-8 w-full shadow-lg"
+              style={{
+                shadowColor: '#10b981',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.3,
+                shadowRadius: 12,
+                elevation: 8,
+              }}
+            >
+              <Text className="text-white text-center text-lg font-semibold">
+                {t('niu.alreadyHave.backButton')}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
+      </View>
+    );
+  }
+
+  // Main Component Render
+  const steps = [
+    { id: 1, title: t('niu.steps.fees'), icon: 'credit-card' },
+    { id: 2, title: t('niu.steps.kyc'), icon: 'shield-check' },
+    { id: 3, title: t('niu.steps.cniUpload'), icon: 'camera' },
+    { id: 4, title: t('niu.steps.niuNumber'), icon: 'id-card' },
+    { id: 5, title: t('niu.steps.attestation'), icon: 'file-document' },
+  ];
+
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      <StatusBar backgroundColor="#7ddd7d" barStyle="light-content" />
+    <View className="flex-1 bg-white">
+      <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
       
-      {/* Header */}
       <LinearGradient
         colors={['#7ddd7d', '#10b981']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
-        className="pt-12 pb-6"
+        style={{
+          paddingTop: Platform.OS === 'ios' ? 50 : StatusBar.currentHeight + 10,
+          paddingBottom: 15,
+        }}
       >
         <View className="px-5">
           <View className="flex-row items-center justify-between">
@@ -635,7 +813,7 @@ const {
               onPress={() => navigation.goBack()}
               className="p-2"
             >
-              <AntDesign name="arrowleft" size={24} color="white" />
+              <AntDesign name="left" size={24} color="white" />
             </TouchableOpacity>
             
             <View className="flex-1 items-center">
@@ -651,180 +829,179 @@ const {
         </View>
       </LinearGradient>
 
-      <ScrollView 
-        className="flex-1 bg-gray-50"
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 30 }}
-      >
-        {/* Progress Steps */}
-        <View className="mx-5 mt-6 mb-8">
-          <Text className="text-2xl font-bold text-gray-900 mb-6">
-            {t('niu.request.processTitle')}
-          </Text>
-          
-          <View className="flex-row justify-between mb-2">
-            {steps.map((step, index) => (
-              <View key={step.id} className="items-center">
-                <View className={`w-12 h-12 rounded-full items-center justify-center ${
-                  activeStep >= step.id 
-                    ? 'bg-gradient-to-r from-green-500 to-emerald-600' 
-                    : 'bg-gray-200'
-                }`}>
-                  <MaterialCommunityIcons
-                    name={step.icon}
-                    size={24}
-                    color={activeStep >= step.id ? 'white' : '#9ca3af'}
-                  />
+      <SafeAreaView style={{ flex: 1 }} edges={['bottom', 'left', 'right']}>
+        <ScrollView 
+          className="flex-1 bg-gray-50"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 30 }}
+        >
+          {/* Progress Steps */}
+          <View className="mx-5 mt-6 mb-8">
+            <Text className="text-2xl font-bold text-gray-900 mb-6">
+              {t('niu.request.processTitle')}
+            </Text>
+            
+            <View className="flex-row justify-between mb-2">
+              {steps.map((step, index) => (
+                <View key={step.id} className="items-center">
+                  <View className={`w-12 h-12 rounded-full items-center justify-center ${
+                    activeStep >= step.id 
+                      ? 'bg-gradient-to-r from-green-500 to-emerald-600' 
+                      : 'bg-gray-200'
+                  }`}>
+                    <MaterialCommunityIcons
+                      name={step.icon}
+                      size={24}
+                      color={activeStep >= step.id ? 'white' : '#9ca3af'}
+                    />
+                  </View>
+                  {index < steps.length - 1 && (
+                    <View 
+                      className={`absolute top-6 left-12 w-20 h-0.5 ${
+                        activeStep > step.id ? 'bg-green-500' : 'bg-gray-200'
+                      }`}
+                      style={{ zIndex: -1 }}
+                    />
+                  )}
                 </View>
-                {index < steps.length - 1 && (
-                  <View 
-                    className={`absolute top-6 left-12 w-20 h-0.5 ${
-                      activeStep > step.id ? 'bg-green-500' : 'bg-gray-200'
-                    }`}
-                    style={{ zIndex: -1 }}
-                  />
-                )}
-              </View>
-            ))}
-          </View>
-          
-          <View className="flex-row justify-between">
-            {steps.map(step => (
-              <Text 
-                key={step.id}
-                className={`text-xs font-medium text-center w-12 mt-2 ${
-                  activeStep >= step.id ? 'text-gray-900' : 'text-gray-400'
-                }`}
-                numberOfLines={2}
-              >
-                {step.title}
-              </Text>
-            ))}
-          </View>
-        </View>
-
-        {/* CNI Upload Section */}
-        {!completedSteps[1] &&  <CniUploadSection />}
-
-        {/* Fees Info Card */}
-        <View className="mx-5 mb-6">
-          <View className="bg-white rounded-2xl p-5 shadow-lg border border-gray-100">
-            <View className="flex-row items-center justify-between mb-4">
-              <Text className="text-xl font-bold text-gray-900">
-                {t('niu.request.feesTitle')}
-              </Text>
-              <View className="bg-gradient-to-r from-green-100 to-emerald-100 rounded-full px-3 py-1">
-                <Text className="text-green-700 font-bold">
-                  {feeAmountCAD.toLocaleString()} CAD
-                </Text>
-              </View>
+              ))}
             </View>
             
-            {getStatusMessage()}
-          </View>
-        </View>
-
-        {/* Terms and Conditions */}
-        {!completedSteps[1] && (
-          <View className="mx-5 mb-6">
-            <View className="bg-white rounded-2xl p-5 shadow-lg border border-gray-100">
-              <Text className="text-xl font-bold text-gray-900 mb-4">
-                {t('commonNiu.termsAndConditions')}
-              </Text>
-              
-              <View className="space-y-4">
-                <TouchableOpacity
-                  onPress={() => setTermsAccepted(!termsAccepted)}
-                  className="flex-row items-start"
+            <View className="flex-row justify-between">
+              {steps.map(step => (
+                <Text 
+                  key={step.id}
+                  className={`text-xs font-medium text-center w-12 mt-2 ${
+                    activeStep >= step.id ? 'text-gray-900' : 'text-gray-400'
+                  }`}
+                  numberOfLines={2}
                 >
-                  <View className={`w-6 h-6 rounded border-2 items-center justify-center mr-3 mt-1 ${
-                    termsAccepted 
-                      ? 'bg-green-500 border-green-500' 
-                      : 'border-gray-300'
-                  }`}>
-                    {termsAccepted && (
-                      <Ionicons name="checkmark" size={16} color="white" />
-                    )}
-                  </View>
-                  <Text className="text-gray-700 flex-1">
-                    {t('niu.request.termsAccept')}
-                  </Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity
-                  onPress={() => setPaymentAccepted(!paymentAccepted)}
-                  className="flex-row items-start"
-                >
-                  <View className={`w-6 h-6 rounded border-2 items-center justify-center mr-3 mt-1 ${
-                    paymentAccepted 
-                      ? 'bg-green-500 border-green-500' 
-                      : 'border-gray-300'
-                  }`}>
-                    {paymentAccepted && (
-                      <Ionicons name="checkmark" size={16} color="white" />
-                    )}
-                  </View>
-                  <Text className="text-gray-700 flex-1">
-                    {t('niu.request.paymentAccept')} {feeAmountCAD.toLocaleString()} CAD
-                  </Text>
-                </TouchableOpacity>
-              </View>
+                  {step.title}
+                </Text>
+              ))}
             </View>
           </View>
-        )}
 
-        {/* Action Button */}
-        {!completedSteps[1] && (
-          <View className="mx-5">
-            <TouchableOpacity
-              onPress={handlePayPress}
-              disabled={isSubmitting || uploading || !termsAccepted || !paymentAccepted}
-              className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl py-5 items-center shadow-xl"
-              style={{
-                opacity: (isSubmitting || uploading || !termsAccepted || !paymentAccepted) ? 0.6 : 1,
-                shadowColor: '#10b981',
-                shadowOffset: { width: 0, height: 8 },
-                shadowOpacity: 0.3,
-                shadowRadius: 16,
-                elevation: 12,
-              }}
-            >
-              {(isSubmitting || uploading) ? (
-                <View className="flex-row items-center">
-                  <ActivityIndicator size="small" color="white" />
-                  <Text className="text-white text-lg font-semibold ml-3">
-                    {uploading ? t('commonNiu.uploading') : t('commonNiu.processing')}
-                  </Text>
-                </View>
-              ) : (
-                <View className='p-3 flex-row items-center bg-[#10b981] rounded-2xl'>
-                  <Text className="text-white text-xl font-bold mb-1">
-                    {t('niu.request.payButton')}
-                  </Text>
-                  <Text className="text-white/90 text-base">
+          {/* CNI Upload Section */}
+          {!completedSteps[1] && <CniUploadSection />}
+
+          {/* Fees Info Card */}
+          <View className="mx-5 mb-6">
+            <View className="bg-white rounded-2xl p-5 shadow-lg border border-gray-100">
+              <View className="flex-row items-center justify-between mb-4">
+                <Text className="text-xl font-bold text-gray-900">
+                  {t('niu.request.feesTitle')}
+                </Text>
+                <View className="bg-gradient-to-r from-green-100 to-emerald-100 rounded-full px-3 py-1">
+                  <Text className="text-green-700 font-bold">
                     {feeAmountCAD.toLocaleString()} CAD
                   </Text>
                 </View>
-              )}
-            </TouchableOpacity>
-            
-            {/* Security Badge */}
-            <View className="flex-row items-center justify-center mt-4">
-              <Ionicons name="shield-checkmark" size={20} color="#10b981" />
-              <Text className="text-gray-500 text-sm ml-2">
-                {t('niu.security.message')}
-              </Text>
+              </View>
+              
+              {getStatusMessage()}
             </View>
-            
-            {/* Validation Messages */}
-            {(!termsAccepted || !paymentAccepted) && (
-              <Text className="text-amber-600 text-center mt-4 text-sm">
-                {t('niu.errors.termsNotAccepted')}
-              </Text>
-            )}
           </View>
-        )}
-      </ScrollView>
+
+          {/* Terms and Conditions */}
+          {!completedSteps[1] && (
+            <View className="mx-5 mb-6">
+              <View className="bg-white rounded-2xl p-5 shadow-lg border border-gray-100">
+                <Text className="text-xl font-bold text-gray-900 mb-4">
+                  {t('commonNiu.termsAndConditions')}
+                </Text>
+                
+                <View className="space-y-4">
+                  <TouchableOpacity
+                    onPress={() => setTermsAccepted(!termsAccepted)}
+                    className="flex-row items-start"
+                  >
+                    <View className={`w-6 h-6 rounded border-2 items-center justify-center mr-3 mt-1 ${
+                      termsAccepted 
+                        ? 'bg-green-500 border-green-500' 
+                        : 'border-gray-300'
+                    }`}>
+                      {termsAccepted && (
+                        <Ionicons name="checkmark" size={16} color="white" />
+                      )}
+                    </View>
+                    <Text className="text-gray-700 flex-1">
+                      {t('niu.request.termsAccept')}
+                    </Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity
+                    onPress={() => setPaymentAccepted(!paymentAccepted)}
+                    className="flex-row items-start"
+                  >
+                    <View className={`w-6 h-6 rounded border-2 items-center justify-center mr-3 mt-1 ${
+                      paymentAccepted 
+                        ? 'bg-green-500 border-green-500' 
+                        : 'border-gray-300'
+                    }`}>
+                      {paymentAccepted && (
+                        <Ionicons name="checkmark" size={16} color="white" />
+                      )}
+                    </View>
+                    <Text className="text-gray-700 flex-1">
+                      {t('niu.request.paymentAccept')} {feeAmountCAD.toLocaleString()} CAD
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          )}
+
+          {/* Action Button */}
+          {!completedSteps[1] && (
+            <View className="mx-5">
+              <TouchableOpacity
+                onPress={handlePayPress}
+                disabled={isSubmitting || uploading || !termsAccepted || !paymentAccepted}
+                className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl py-5 items-center shadow-xl"
+                style={{
+                  opacity: (isSubmitting || uploading || !termsAccepted || !paymentAccepted) ? 0.6 : 1,
+                  shadowColor: '#10b981',
+                  shadowOffset: { width: 0, height: 8 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 16,
+                  elevation: 12,
+                }}
+              >
+                {(isSubmitting || uploading) ? (
+                  <View className="flex-row items-center">
+                    <ActivityIndicator size="small" color="white" />
+                    <Text className="text-white text-lg font-semibold ml-3">
+                      {uploading ? t('commonNiu.uploading') : t('commonNiu.processing')}
+                    </Text>
+                  </View>
+                ) : (
+                  <View className='flex-row items-center'>
+                    <Text className="text-white text-xl font-bold">
+                      {t('niu.request.payButton')}
+                    </Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+              
+              {/* Security Badge */}
+              <View className="flex-row items-center justify-center mt-4">
+                <Ionicons name="shield-checkmark" size={20} color="#10b981" />
+                <Text className="text-gray-500 text-sm ml-2">
+                  {t('niu.security.message')}
+                </Text>
+              </View>
+              
+              {/* Validation Messages */}
+              {(!termsAccepted || !paymentAccepted) && (
+                <Text className="text-amber-600 text-center mt-4 text-sm">
+                  {t('niu.errors.termsNotAccepted')}
+                </Text>
+              )}
+            </View>
+          )}
+        </ScrollView>
+      </SafeAreaView>
 
       {/* Payment Confirmation Modal */}
       <PaymentConfirmationModal
@@ -832,6 +1009,7 @@ const {
         onClose={() => setShowPaymentModal(false)}
         onConfirm={handlePaymentConfirmation}
         amount={feeAmount}
+        amountCAD={feeAmountCAD}
         title={t('niu.paymentModal.title')}
         description={t('niu.paymentModal.message', { amount: feeAmountCAD.toLocaleString() })}
         confirmLabel={t('niu.paymentModal.confirm')}
@@ -841,7 +1019,7 @@ const {
       />
 
       <Toast />
-    </SafeAreaView>
+    </View>
   );
 };
 

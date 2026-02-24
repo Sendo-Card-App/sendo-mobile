@@ -14,7 +14,10 @@ import {
   Platform,
   StatusBar,
   Linking,
-  Modal
+  Modal,
+  Animated,
+  Easing,
+  Dimensions
 } from 'react-native';
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from 'react-i18next';
@@ -35,7 +38,9 @@ import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
 import Loader from '../../components/Loader';
 import { getData} from "../../services/storage";
 import { initSocket, getSocket } from '../../utils/socket';
-import { useAppState } from '../../context/AppStateContext'; // Import the hook
+import { useAppState } from '../../context/AppStateContext';
+
+const { width, height } = Dimensions.get('window');
 
 let typingTimeout: NodeJS.Timeout;
 
@@ -91,7 +96,12 @@ const ChatScreen = ({ route, navigation }) => {
   const [uploadAttachments] = useUploadAttachmentsMutation();
   const [keyboardOffset, setKeyboardOffset] = useState(0);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
-  const { setIsPickingDocument } = useAppState(); // Get the setter function
+  const { setIsPickingDocument } = useAppState();
+
+  // Animation values (same as ServiceScreen)
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(50)).current;
+  const scaleAnim = useRef(new Animated.Value(0.9)).current;
 
   const { data: userProfile, isLoading: isProfileLoading } = useGetUserProfileQuery(undefined, {
     pollingInterval: 1000,
@@ -116,6 +126,28 @@ const ChatScreen = ({ route, navigation }) => {
   const [sendMessage] = useSendMessageMutation();
   const [createConversation] = useCreateConversationMutation();
 
+  // Animation effect (same as ServiceScreen)
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 600,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(scaleAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
   useEffect(() => {
     const fetchTokenAndInitSocket = async () => {
       const accessToken = await getData('@authData');
@@ -130,7 +162,6 @@ const ChatScreen = ({ route, navigation }) => {
           console.log("Socket connection opened");
         });
 
-        // Set up event listeners once
         s.on('new_message', handleNewMessage);
         s.on('typing', handleTyping);
         s.on('stop_typing', handleStopTyping);
@@ -170,7 +201,6 @@ const ChatScreen = ({ route, navigation }) => {
     };
   }, []);
 
-  
   // Separate handlers for socket events
   const handleNewMessage = (message: Message) => {
     if (message.conversationId === selectedConversation?.id) {
@@ -217,7 +247,7 @@ const ChatScreen = ({ route, navigation }) => {
 
     return () => {
       socket.emit('leave_conversation', { conversationId: selectedConversation.id });
-      clearInterval(interval); // cleanup
+      clearInterval(interval);
     };
   }, [selectedConversation?.id]);
 
@@ -264,7 +294,6 @@ const ChatScreen = ({ route, navigation }) => {
 
   const pickDocument = async () => {
     try {
-      // 🚨 Set picking state to true BEFORE opening document picker
       setIsPickingDocument(true);
       
       const result = await DocumentPicker.getDocumentAsync({
@@ -279,12 +308,10 @@ const ChatScreen = ({ route, navigation }) => {
         }]);
       }
       
-      // 🚨 Reset picking state after selection
       setIsPickingDocument(false);
       
     } catch (err) {
       console.log('Document picker error:', err);
-      // 🚨 Reset picking state on error too
       setIsPickingDocument(false);
       Toast.show({
         type: 'error',
@@ -296,17 +323,14 @@ const ChatScreen = ({ route, navigation }) => {
 
   const pickImage = async () => {
     try {
-        // 🚨 Set picking state to true BEFORE opening image picker
         setIsPickingDocument(true);
         
-        // Use the Photo Picker API without requiring permanent permissions
         const result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.Images,
             allowsEditing: true,
             quality: 1,
-            // Add these options to limit permission scope
-            allowsMultipleSelection: false, // Set to true if you need multiple images
-            selectionLimit: 1, // Limit to 1 image
+            allowsMultipleSelection: false,
+            selectionLimit: 1,
         });
 
         if (!result.canceled && result.assets[0]) {
@@ -323,12 +347,10 @@ const ChatScreen = ({ route, navigation }) => {
             }]);
         }
         
-        // 🚨 Reset picking state after selection
         setIsPickingDocument(false);
         
     } catch (err) {
         console.log('Image picker error:', err);
-        // 🚨 Reset picking state on error too
         setIsPickingDocument(false);
         Toast.show({
             type: 'error',
@@ -351,7 +373,6 @@ const ChatScreen = ({ route, navigation }) => {
       let currentConversationId = selectedConversation?.id;
       const tempMessageId = `temp-${Date.now()}`;
       
-      // Create temporary message for immediate UI feedback
       const tempMessage: Message = {
         id: tempMessageId,
         content: input.trim() !== '' ? input : '[Attachment]',
@@ -365,17 +386,14 @@ const ChatScreen = ({ route, navigation }) => {
         user: userProfile?.data?.user
       };
 
-      // Add temporary message immediately
       setMessages(prev => [...prev, tempMessage]);
 
-      // Upload attachments first
       let uploadedAttachmentUrls: string[] = [];
       
       if (attachments.length > 0) {
         uploadedAttachmentUrls = await handleUploadAttachments(attachments);
       }
 
-      // Create conversation if needed
       if (!currentConversationId || openConversations.length === 0) {
         const newConv = await createConversation().unwrap();
         currentConversationId = newConv.data.id;
@@ -392,7 +410,6 @@ const ChatScreen = ({ route, navigation }) => {
         clearInterval(interval);
       });
 
-      // Send message through socket
       const payload = {
         conversationId: currentConversationId,
         senderType: 'CUSTOMER',
@@ -410,7 +427,6 @@ const ChatScreen = ({ route, navigation }) => {
       
     } catch (err) {
       console.error("Send error:", err);
-      // Remove temporary message on error
       setMessages(prev => prev.filter(msg => !msg.id.startsWith('temp-')));
       
       Toast.show({
@@ -423,26 +439,21 @@ const ChatScreen = ({ route, navigation }) => {
     }
   };
 
-  // Helper function to get full URLs
   const getFullUrl = (url: string): string => {
     if (!url) return '';
     
-    // If it's already a full URL or data URI, return as is
     if (url.startsWith('http') || url.startsWith('data:')) {
       return url;
     }
     
-    // If it's a relative path, prepend your API base URL
     const baseUrl = 'https://api.sf-e.ca';
     return `${baseUrl}${url.startsWith('/') ? url : '/' + url}`;
   };
 
-  // Format date to show date if not today, otherwise show time
   const formatMessageDate = (dateString: string) => {
     const messageDate = new Date(dateString);
     const today = new Date();
     
-    // Check if message is from today
     if (
       messageDate.getDate() === today.getDate() &&
       messageDate.getMonth() === today.getMonth() &&
@@ -451,7 +462,6 @@ const ChatScreen = ({ route, navigation }) => {
       return messageDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
     
-    // Check if message is from yesterday
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
     if (
@@ -462,7 +472,6 @@ const ChatScreen = ({ route, navigation }) => {
       return `Yesterday ${messageDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
     }
     
-    // Otherwise show full date and time
     return `${messageDate.toLocaleDateString()} ${messageDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
   };
 
@@ -478,14 +487,12 @@ const ChatScreen = ({ route, navigation }) => {
           isTempMessage && styles.tempMessage,
         ]}
       >
-        {/* Afficher le nom de l'expéditeur seulement pour les messages ADMIN */}
         {!isCurrentUser && item.senderType === 'ADMIN' && (
           <Text style={styles.senderName}>
             {item.user?.firstname || 'Admin'}
           </Text>
         )}
 
-        {/* Contenu texte */}
         {item.content !== '[Attachment]' && (
           <Text
             style={[
@@ -497,7 +504,6 @@ const ChatScreen = ({ route, navigation }) => {
           </Text>
         )}
 
-        {/* Attachments */}
         {item.attachments?.map((attachment, index) => {
           const isImage =
             /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(attachment) ||
@@ -543,7 +549,6 @@ const ChatScreen = ({ route, navigation }) => {
           );
         })}
 
-        {/* Date and time */}
         <Text
           style={[
             styles.messageTime,
@@ -551,7 +556,7 @@ const ChatScreen = ({ route, navigation }) => {
           ]}
         >
           {isTempMessage
-            ? 'Envoi...'
+            ? 'Sending...'
             : formatMessageDate(item.createdAt)}
         </Text>
       </View>
@@ -596,44 +601,48 @@ const ChatScreen = ({ route, navigation }) => {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#f8f9fa' }}>
+    <View style={styles.container}>
       <StatusBar backgroundColor="#7ddd7d" barStyle="light-content" />
-      <View
+      
+      {/* Animated Header - Matches ServiceScreen exactly */}
+      <Animated.View
         style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          paddingVertical: 16,
-          paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 40,
-          paddingHorizontal: 12,
-          backgroundColor: '#7ddd7d',
+          opacity: fadeAnim,
+          transform: [
+            { translateY: slideAnim },
+            { scale: scaleAnim }
+          ]
         }}
+        className="bg-[#7ddd7d] pt-12 pb-4 px-6 rounded-b-3xl shadow-lg"
       >
-        {/* Back button */}
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={{ width: 40, alignItems: 'flex-start' }}
-        >
-         <AntDesign name="left" size={24} color="white" />
-        </TouchableOpacity>
+        <View className="flex-row items-center justify-between">
+          <TouchableOpacity 
+            onPress={() => navigation.goBack()}
+            className="w-12 h-12 bg-white/20 rounded-full items-center justify-center"
+            activeOpacity={0.7}
+          >
+            <AntDesign name="left" size={20} color="white" />
+          </TouchableOpacity>
+          
+          <Text className="text-2xl font-bold text-white text-center flex-1 mx-4">
+            {t('screens.chat')}
+          </Text>
+          
+          <View className="w-12 h-12" />
+        </View>
 
-        {/* Centered Title */}
-        <Text
-          style={{
-            flex: 1,
-            textAlign: 'center',
-            fontSize: 18,
-            fontWeight: 'bold',
-            color: 'white',
-          }}
-        >
-          {t('screens.chat')}
-        </Text>
+        {/* Welcome Message */}
+        <View className="mt-4">
+          <Text className="text-white/90 text-lg font-semibold text-center">
+            {t('chat.welcome') || 'Customer Support'}
+          </Text>
+          <Text className="text-white/70 text-center mt-1 text-sm">
+            {t('chat.subtitle') || 'We typically reply within a few minutes'}
+          </Text>
+        </View>
+      </Animated.View>
 
-        {/* Placeholder to keep title centered */}
-        <View style={{ width: 40 }} />
-      </View>
-
+      {/* Messages List */}
       <FlatList
         ref={flatListRef}
         data={messages}
@@ -659,6 +668,7 @@ const ChatScreen = ({ route, navigation }) => {
         </View>
       )}
 
+      {/* Input Container */}
       <View
         style={[
           styles.inputContainer,
@@ -675,11 +685,11 @@ const ChatScreen = ({ route, navigation }) => {
 
         <TextInput
           value={input}
-           onChangeText={text => {
+          onChangeText={text => {
             setInput(text);
-            emitTyping(); // Changed from handleTyping() to emitTyping()
+            emitTyping();
           }}
-          placeholder="Type a message..."
+          placeholder={t('chat.typeMessage') || "Type a message..."}
           style={styles.textInput}
           multiline
           onFocus={() => {
@@ -702,7 +712,7 @@ const ChatScreen = ({ route, navigation }) => {
           {sending ? <ActivityIndicator size="small" color="#fff" /> : <Icon name="send" size={24} color="#fff" />}
         </TouchableOpacity>
       </View>
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -768,7 +778,6 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 18,
     marginBottom: 8,
-    // Ensure proper alignment
     alignSelf: 'flex-start',
   },
   sentMessage: {

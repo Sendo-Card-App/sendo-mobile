@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { AntDesign, Ionicons } from "@expo/vector-icons";
+import { AntDesign, Ionicons, Feather } from "@expo/vector-icons";
 import {
   View,
   Text,
@@ -9,7 +9,8 @@ import {
   StatusBar,
   Linking,
   Platform,
-  AppState
+  AppState,
+  Modal
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
@@ -31,7 +32,7 @@ import { storeData, getData  } from "../../services/storage";
 import { useAppState } from '../../context/AppStateContext';
 
 const SignIn = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const [loginWithEmail, { isLoading }] = useLoginWithEmailMutation();
@@ -44,6 +45,7 @@ const SignIn = () => {
   const [refreshInterval, setRefreshInterval] = useState(null);
   const [emailError, setEmailError] = useState(false);
   const [passwordError, setPasswordError] = useState(false);
+  const [languageModalVisible, setLanguageModalVisible] = useState(false);
   
   const emailInputRef = useRef(null);
   const passwordInputRef = useRef(null);
@@ -155,6 +157,21 @@ const SignIn = () => {
     }
   }, [email, password, setIsPickingDocument]);
 
+  const handleLanguageModalToggle = (visible) => {
+    setLanguageModalVisible(visible);
+    setIsPickingDocument(visible);
+  };
+
+  const changeLanguage = (lang) => {
+    i18n.changeLanguage(lang);
+    handleLanguageModalToggle(false);
+    Toast.show({
+      type: 'success',
+      text1: t('log.languageChanged'),
+      text2: lang === 'en' ? t('log.english') : t('log.french'),
+    });
+  };
+
   const handleSubmit = async () => {
   let hasError = false;
 
@@ -175,8 +192,8 @@ const SignIn = () => {
   if (hasError) {
     Toast.show({
       type: 'error',
-      text1: 'Validation Error',
-      text2: 'Please fill in all required fields',
+      text1: t('signIn.validationError'),
+      text2: t('signIn.fillRequiredFields'),
     });
     return;
   }
@@ -231,12 +248,6 @@ const SignIn = () => {
       
       setIsPickingDocument(false);
       navigation.navigate("PinCode", { setup: true });
-
-      Toast.show({
-        type: 'success',
-        text1: 'Login Successful',
-        text2: response.message || 'Welcome back!',
-      });
     } else {
       throw new Error('Invalid response structure');
     }
@@ -244,10 +255,10 @@ const SignIn = () => {
     console.log("Login error:", err);
     setIsPickingDocument(false);
 
-    let errorMessage = "An error on the server.";
+    let errorMessage = t('signIn.serverError');
 
     if (err?.status === 403) {
-      errorMessage = "Account Not Verified.";
+      errorMessage = t('signIn.accountNotVerified');
       
       // Navigate to OTP verification with email
       navigation.navigate("OtpVerification", { 
@@ -255,11 +266,11 @@ const SignIn = () => {
       });
       
     } else if (err?.status === 500) {
-      errorMessage = "Could not connect. Please try again.";
+      errorMessage = t('signIn.connectionError');
     } else if (err?.status === 401) {
-      errorMessage = "Invalid Email or Password.";
+      errorMessage = t('signIn.invalidCredentials');
     } else if (err?.status === 404) {
-      errorMessage = "User Not Found.";
+      errorMessage = t('signIn.userNotFound');
     } else if (err?.data?.message) {
       errorMessage = err.data.message;
     }
@@ -270,7 +281,7 @@ const SignIn = () => {
     if (err?.status !== 403) {
       Toast.show({
         type: 'error',
-        text1: 'Login Failed',
+        text1: t('signIn.loginFailed'),
         text2: errorMessage,
       });
     }
@@ -295,7 +306,7 @@ const SignIn = () => {
     setIsPickingDocument(true);
     const url = "https://wa.me/message/Y27BBZMTSC36C1";
     Linking.openURL(url).catch(() => {
-      Alert.alert('Erreur', 'Impossible d\'ouvrir WhatsApp. Vérifiez qu\'il est installé.');
+      Alert.alert(t('common.error'), t('signIn.whatsAppError'));
     }).finally(() => {
       setIsPickingDocument(false);
     });
@@ -305,6 +316,20 @@ const SignIn = () => {
     <KeyboardAvoidinWrapper>
       <SafeAreaView className="bg-[#181e25] flex-1 items-center justify-center">
         <StatusBar style="light" backgroundColor="#181e25" />
+        
+        {/* Language Selector Button */}
+        <TouchableOpacity
+          className="absolute z-10 top-20 right-5"
+          onPress={() => handleLanguageModalToggle(true)}
+        >
+          <View className="flex-row items-center bg-gray-700 px-3 py-2 rounded-full">
+             <Feather name="globe" size={18} color="white" />
+            <Text className="text-white ml-1 font-medium">
+              {i18n.language === 'en' ? 'EN' : 'FR'}
+            </Text>
+          </View>
+        </TouchableOpacity>
+
         <TouchableOpacity
           className="absolute z-10 top-20 left-5"
           onPress={handleGoBack}
@@ -354,7 +379,7 @@ const SignIn = () => {
           </View>
           {emailError && (
             <Text className="text-red-500 text-sm mb-2 pl-3">
-              Email is required
+              {t("signIn.emailRequired")}
             </Text>
           )}
 
@@ -401,7 +426,7 @@ const SignIn = () => {
           </View>
           {passwordError && (
             <Text className="text-red-500 text-sm mb-2 pl-3">
-              Password is required
+              {t("signIn.passwordRequired")}
             </Text>
           )}
 
@@ -474,28 +499,37 @@ const SignIn = () => {
           </Text>
         </TouchableOpacity>
 
-        {/* ✅ WhatsApp floating button */}
-        {/* <TouchableOpacity 
-          onPress={handleWhatsAppPress}
-          style={{
-            position: 'absolute',
-            bottom: 30,
-            right: 30,
-            backgroundColor: '#25D366',
-            width: 60,
-            height: 60,
-            borderRadius: 30,
-            justifyContent: 'center',
-            alignItems: 'center',
-            elevation: 5,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.25,
-            shadowRadius: 3.84,
-          }}
+        {/* Language Selection Modal */}
+        <Modal 
+          animationType="slide" 
+          transparent={true} 
+          visible={languageModalVisible}
+          onRequestClose={() => handleLanguageModalToggle(false)}
         >
-          <Ionicons name="logo-whatsapp" size={36} color="white" />
-        </TouchableOpacity> */}
+          <View className="flex-1 justify-center items-center bg-black/50">
+            <View className="w-4/5 bg-white rounded-xl p-6">
+              <Text className="text-xl font-bold mb-4 text-center">{t("log.select")}</Text>
+              <TouchableOpacity 
+                onPress={() => changeLanguage("en")}
+                className="py-3 border-b border-gray-200"
+              >
+                <Text className="text-lg text-center">{t("log.en")}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                onPress={() => changeLanguage("fr")}
+                className="py-3 border-b border-gray-200"
+              >
+                <Text className="text-lg text-center">{t("log.fr")}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                onPress={() => handleLanguageModalToggle(false)}
+                className="mt-4"
+              >
+                <Text className="text-red-500 text-lg text-center">{t("log.close")}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
       </SafeAreaView>
     </KeyboardAvoidinWrapper>
   );
