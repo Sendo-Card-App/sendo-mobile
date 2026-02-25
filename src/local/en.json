@@ -675,6 +675,7 @@
     "debtLabel": "Outstanding Debt",
  "currentBalance": "Current balance",
    "viewNumbers": "View my card numbers",
+    "insufficientForFee": "Amount must be greater than withdrawal fee",
    "amountOutOfRange": "The amount must be between 1500 and 500,000 XAF",
    "viewInfo": "View info",
     "freeze": "Freeze",
@@ -742,7 +743,7 @@
     "needHelp": "Need help? Contact our support",
      "fees": "fee",
     "totalToPay": "Total to pay",
-    "netToReceive": "Net to receive",
+    "netToReceive": "Total to be debited",
      "depositDetails": "Deposit Details",
       "withdrawalDetails": "Withdrawal Details"
 },

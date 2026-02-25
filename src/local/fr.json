@@ -676,6 +676,7 @@
      "currentBalance": "Solde actuel",
   "viewNumbers": "Voir les numéros de ma carte",
   "viewInfo": "Voir les informations",
+   "insufficientForFee": "Le montant doit être supérieur aux frais de retrait",
   "freeze": "Geler",
   "unfreeze": "Dégeler",
   "settings": "Paramètres",
@@ -738,7 +739,7 @@
     "needHelp": "Besoin d'aide ? Contactez notre support",
      "fees": "frais",
     "totalToPay": "Total à payer",
-    "netToReceive": "Net à recevoir",
+    "netToReceive": "Total à débiter",
      "depositDetails": "Détails du dépôt",
       "withdrawalDetails": "Détails du retrait"
   },
