@@ -149,7 +149,11 @@ const Signup = () => {
 
   const isValidPhone = (phone) => /^\d+$/.test(phone);
   const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  const isValidPassword = (password) => password.length >= 8;
+  
+  // Updated password validation with the required regex
+  const isValidPassword = (password) => {
+    return /(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}/.test(password.trim());
+  };
   
   // Function to check if user is at least 18 years old
   const isValidDateOfBirth = (dateStr) => {
@@ -186,7 +190,9 @@ const Signup = () => {
           if (!isValidEmail(value)) error = t("signup.invalidEmail");
           break;
         case "password":
-          if (!isValidPassword(value)) error = t("signup.invalidPassword");
+          if (!isValidPassword(value)) {
+            error = t("signup.invalidPassword") || "Le mot de passe doit contenir au moins une majuscule, un chiffre et un caractère spécial";
+          }
           break;
         case "phone":
           if (!isValidPhone(value)) error = t("signup.invalidPhone");
@@ -269,6 +275,8 @@ const Signup = () => {
                   validateField("address", signupDetails.address) &&
                   validateField("country", signupDetails.country);
       }
+    } else if (step === 3) {
+      isValid = validateField("password", signupDetails.password);
     }
     
     return isValid;
@@ -306,6 +314,16 @@ const Signup = () => {
         type: 'error',
         text1: t('signup.ageErrorTitle') || 'Age Restriction',
         text2: t('signup.ageRestriction') || 'You must be at least 18 years old',
+      });
+      return;
+    }
+
+    // Final password validation
+    if (!isValidPassword(signupDetails.password)) {
+      Toast.show({
+        type: 'error',
+        text1: t('signup.error'),
+        text2: t('signup.invalidPassword') || "Le mot de passe doit contenir au moins une majuscule, un chiffre et un caractère spécial",
       });
       return;
     }
@@ -808,6 +826,29 @@ const Signup = () => {
         <Text className="text-red-500 text-xs mb-4 pl-3">{validationErrors.password}</Text>
       )}
 
+      {/* Password requirements hint */}
+     <View className="mb-3 px-3">
+      <Text className="text-xs text-gray-500 mb-1">{t("signup.passwordRequirements")}</Text>
+      <View className="flex-row flex-wrap">
+        <View className="flex-row items-center mr-3 mb-1">
+          <View className={`w-2 h-2 rounded-full mr-1 ${/(?=.*[A-Z])/.test(signupDetails.password) ? 'bg-green-500' : 'bg-gray-300'}`} />
+          <Text className="text-xs text-gray-600">{t("signup.passwordUppercase")}</Text>
+        </View>
+        <View className="flex-row items-center mr-3 mb-1">
+          <View className={`w-2 h-2 rounded-full mr-1 ${/(?=.*\d)/.test(signupDetails.password) ? 'bg-green-500' : 'bg-gray-300'}`} />
+          <Text className="text-xs text-gray-600">{t("signup.passwordNumber")}</Text>
+        </View>
+        <View className="flex-row items-center mr-3 mb-1">
+          <View className={`w-2 h-2 rounded-full mr-1 ${/(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?])/.test(signupDetails.password) ? 'bg-green-500' : 'bg-gray-300'}`} />
+          <Text className="text-xs text-gray-600">{t("signup.passwordSpecial")}</Text>
+        </View>
+        <View className="flex-row items-center mr-3 mb-1">
+          <View className={`w-2 h-2 rounded-full mr-1 ${signupDetails.password.length >= 8 ? 'bg-green-500' : 'bg-gray-300'}`} />
+          <Text className="text-xs text-gray-600">{t("signup.passwordMinChars")}</Text>
+        </View>
+      </View>
+    </View>
+
       {/* Referral Code Toggle */}
       <TouchableOpacity 
         onPress={toggleReferralCode}
@@ -865,8 +906,8 @@ const Signup = () => {
 
         <TouchableOpacity
           onPress={handleSignup}
-          disabled={isLoading || !isValidDateOfBirth(signupDetails.dateOfBirth)}
-          className={`${isValidDateOfBirth(signupDetails.dateOfBirth) ? 'bg-[#7ddd7d]' : 'bg-gray-400'} rounded-3xl p-4 items-center justify-center flex-1 ml-2 ${isLoading ? "opacity-60" : ""}`}
+          disabled={isLoading || !isValidPassword(signupDetails.password) || !isValidDateOfBirth(signupDetails.dateOfBirth)}
+          className={`${isValidPassword(signupDetails.password) && isValidDateOfBirth(signupDetails.dateOfBirth) ? 'bg-[#7ddd7d]' : 'bg-gray-400'} rounded-3xl p-4 items-center justify-center flex-1 ml-2 ${isLoading ? "opacity-60" : ""}`}
           style={{
             shadowColor: '#000',
             shadowOffset: { width: 0, height: 2 },

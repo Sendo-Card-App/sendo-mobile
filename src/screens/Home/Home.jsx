@@ -523,23 +523,9 @@ const formatTransactionDisplay = (item) => {
   // Get user country
   const userCountry = userProfile?.data?.user?.country;
   
-  // Handle CAM-CA transfers (Cameroun -> Canada) - CAS SPÉCIAL
-  if (item.description === "Transfert CAM-CA") {
-    // Pour les utilisateurs au Cameroun: garder en XAF
-    if (userCountry === "Cameroon") {
-      return {
-        amount: item.amount,  // Garder le nombre pour le formatage standard
-        total: item.totalAmount,
-        description: "Transfert CAM-CA",
-        currency: "FCFA",  // Forcer la devise FCFA
-        showRate: true,
-        rate: exchangeRate,
-        isSpecialCase: true,
-        formattedAmount: `${item.amount.toLocaleString('fr-FR')} XAF`
-      };
-    }
-    
-    // Pour les utilisateurs au Canada: convertir en CAD
+  // Handle CAM-CA transfers (Cameroun -> Canada) - identified by bankName
+  if (item.bankName === "Transfert CAM-CA") {
+    // Pour les utilisateurs au Canada
     if (userCountry === "Canada") {
       const amountInCAD = (item.amount / exchangeRate).toFixed(2);
       const totalInCAD = (item.totalAmount / exchangeRate).toFixed(2);
@@ -547,16 +533,82 @@ const formatTransactionDisplay = (item) => {
       return {
         amount: parseFloat(amountInCAD), // Convertir en nombre pour le formatage standard
         total: parseFloat(totalInCAD),
-        description: "Transfert CAM-CA",
-        currency: "CAD",  // Forcer la devise CAD
+        description: item.bankName, // Use bankName as description
+        currency: "CAD", // Forcer la devise CAD
         showRate: true,
         rate: exchangeRate,
         isSpecialCase: true,
-        formattedAmount: `${amountInCAD} CAD`
+        formattedAmount: `${amountInCAD} CAD`,
+        originalAmount: item.amount,
+        originalCurrency: "XAF"
+      };
+    }
+    
+    // Pour les utilisateurs au Cameroun: garder en XAF
+    if (userCountry === "Cameroon") {
+      return {
+        amount: item.amount, // Garder le nombre pour le formatage standard
+        total: item.totalAmount,
+        description: item.bankName, // Use bankName as description
+        currency: "FCFA", // Forcer la devise FCFA
+        showRate: true,
+        rate: exchangeRate,
+        isSpecialCase: true,
+        formattedAmount: `${item.amount.toLocaleString('fr-FR')} XAF`,
+        originalAmount: item.amount,
+        originalCurrency: "XAF"
       };
     }
     
     // Fallback - garder le format original
+    return {
+      amount: item.amount,
+      total: item.totalAmount,
+      description: item.bankName || item.description,
+      currency: item.currency,
+      showRate: false,
+      isSpecialCase: false
+    };
+  }
+  
+  // Handle CA-CAM transfers (Canada -> Cameroun) - identified by description
+  if (item.description === "Transfert mobile CA-CAM") {
+    // Pour les utilisateurs au Canada
+    if (userCountry === "Canada") {
+      const amountInCAD = (item.amount / exchangeRate).toFixed(2);
+      const totalInCAD = (item.totalAmount / exchangeRate).toFixed(2);
+      
+      return {
+        amount: parseFloat(amountInCAD),
+        total: parseFloat(totalInCAD),
+        description: item.description, // Use description
+        currency: "CAD",
+        showRate: true,
+        rate: exchangeRate,
+        isSpecialCase: true,
+        formattedAmount: `${amountInCAD} CAD`,
+        originalAmount: item.amount,
+        originalCurrency: "XAF"
+      };
+    }
+    
+    // Pour les utilisateurs au Cameroun: garder en XAF
+    if (userCountry === "Cameroon") {
+      return {
+        amount: item.amount,
+        total: item.totalAmount,
+        description: item.description,
+        currency: "FCFA",
+        showRate: true,
+        rate: exchangeRate,
+        isSpecialCase: true,
+        formattedAmount: `${item.amount.toLocaleString('fr-FR')} XAF`,
+        originalAmount: item.amount,
+        originalCurrency: "XAF"
+      };
+    }
+    
+    // Fallback
     return {
       amount: item.amount,
       total: item.totalAmount,
@@ -618,10 +670,7 @@ const formatTransactionDisplay = (item) => {
     showRate: false,
     isSpecialCase: false
   };
-};
-
-  
-  
+};  
 
   const ReferralSuccessModal = () => (
     <Modal
@@ -1028,7 +1077,7 @@ const formatTransactionDisplay = (item) => {
         <Text className="text-black text-center mt-4">{t("home.noTransactions")}</Text>
       ) : (
         <ScrollView showsVerticalScrollIndicator={false}>
-        {history?.data?.transactions?.items?.map((item, index) => {
+       {history?.data?.transactions?.items?.map((item, index) => {
         const statusColor = getStatusColor(item.status);
         const formattedDate = new Date(item.createdAt).toLocaleString("fr-FR", {
           day: "2-digit",
@@ -1060,7 +1109,7 @@ const formatTransactionDisplay = (item) => {
             <View className="flex-1">
               <Text className="text-black font-semibold">{display.description}</Text>
               <View className="flex-row items-center flex-wrap">
-                {/* CAS SPÉCIAL: Transfert CAM-CA */}
+                {/* CAS SPÉCIAL: Transfert CAM-CA ou Transfert mobile CA-CAM */}
                 {display.isSpecialCase ? (
                   <>
                     <Text className="text-black text-sm">

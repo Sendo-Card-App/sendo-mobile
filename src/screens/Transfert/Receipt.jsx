@@ -8,9 +8,8 @@ import {
   Platform,
   StatusBar
 } from "react-native";
-import { AntDesign,Ionicons } from "@expo/vector-icons";
+import { AntDesign, Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Asset } from 'expo-asset';
 import { useNavigation, useRoute } from "@react-navigation/native";
 import moment from "moment";
 import * as Print from 'expo-print';
@@ -57,15 +56,14 @@ const ReceiptScreen = () => {
 
   const SENDO_VALUE_CAD_CAM_CA = getConfigValue('SENDO_VALUE_CAD_CAM_CA');
   const exchangeRate = SENDO_VALUE_CAD_CAM_CA || 482; 
-
+  
   // Check if this is a CAM-CA transfer or CA-CAM transfer based on description
   const isCAMCATransfer = transaction?.description === "Transfert CAM-CAM" || transaction?.description === "Transfert CAM-CA";
-  const isCACAMTransfer = transaction?.description === "Transfert CA-CAM";;
+  const isCACAMTransfer = transaction?.description === "Transfert mobile CA-CAM";
 
- 
 const getDisplayAmounts = () => {
   if (isCAMCATransfer) {
-    // Convert XAF to CAD using the exchange rate
+    // For CAM-CA: amount is in XAF, convert to CAD for display
     const amountInCAD = (transaction.amount / exchangeRate).toFixed(2);
     const feesInCAD = ((transaction.sendoFees || 0) / exchangeRate).toFixed(2);
     const totalInCAD = (transaction.totalAmount / exchangeRate).toFixed(2);
@@ -74,12 +72,31 @@ const getDisplayAmounts = () => {
       amount: `${amountInCAD} CAD`,
       fees: `${feesInCAD} CAD`,
       total: `${totalInCAD} CAD`,
-      exchangeRate: `1 CAD = ${exchangeRate} XAF`
+      exchangeRate: `1 CAD = ${exchangeRate} XAF`,
+      originalAmount: `${transaction.amount.toLocaleString()} XAF`,
+      originalFees: `${(transaction.sendoFees || 0).toLocaleString()} XAF`,
+      originalTotal: `${transaction.totalAmount.toLocaleString()} XAF`
+    };
+  } else if (isCACAMTransfer) {
+    // For CA-CAM: amount is in XAF, convert to CAD for display
+    // sendoFees is also in XAF, needs conversion to CAD
+    const amountInCAD = (transaction.amount / exchangeRate).toFixed(2);
+    const feesInCAD = ((transaction.sendoFees || 0) / exchangeRate).toFixed(2);
+    const totalInCAD = (transaction.totalAmount / exchangeRate).toFixed(2);
+    
+    return {
+      amount: `${amountInCAD} CAD`,
+      fees: `${feesInCAD} CAD`,
+      total: `${totalInCAD} CAD`,
+      exchangeRate: `1 CAD = ${exchangeRate} XAF`,
+      originalAmount: `${transaction.amount.toLocaleString()} XAF`,
+      originalFees: `${(transaction.sendoFees || 0).toLocaleString()} XAF`,
+      originalTotal: `${transaction.totalAmount.toLocaleString()} XAF`
     };
   } else {
     // Normal display in original currency
     return {
-      amount: `${transaction.amount} ${transaction.currency}`,
+      amount: `${transaction.amount.toLocaleString()} ${transaction.currency}`,
       fees: `${(transaction.sendoFees || 0).toLocaleString()} ${transaction.currency}`,
       total: `${transaction.totalAmount.toLocaleString()} ${transaction.currency}`,
       exchangeRate: null
@@ -87,9 +104,7 @@ const getDisplayAmounts = () => {
   }
 };
 
-const displayAmounts = getDisplayAmounts();
-
-// Then in your JSX, find the amount section (around line 800-820) and replace it with:
+  const displayAmounts = getDisplayAmounts();
 
   if (!transaction) {
     return (
@@ -176,9 +191,7 @@ const displayAmounts = getDisplayAmounts();
     return transaction.type;
   };
 
-// Special receipt template for CAM-CA transfers (Cameroun -> Canada)
-
-  const generateCAMCAReceiptHTML = (transaction, senderData, receiverInfo, logoBase64) => {
+   const generateCAMCAReceiptHTML = (transaction, senderData, receiverInfo, logoBase64) => {
     const logoUrl = logoBase64;
     const senderInfo = senderData;
     const receiverData = transaction.receiver;
@@ -556,11 +569,6 @@ const displayAmounts = getDisplayAmounts();
             </div>
           </div>
           
-          <!-- Exchange Rate -->
-          <div class="exchange-rate-box">
-            <span>💱 Taux de change appliqué</span>
-            <strong>1 CAD = ${exchangeRate} XAF</strong>
-          </div>
           
           <!-- Amounts in XAF -->
           <div class="amounts-container">
@@ -657,6 +665,7 @@ const displayAmounts = getDisplayAmounts();
     `;
   };
 
+ 
 // Special receipt template for CA-CAM transfers (Canada -> Cameroun)
 const generateCACAMReceiptHTML = (transaction, senderData, receiverInfo, logoBase64) => {
   const logoUrl = logoBase64;
@@ -674,11 +683,12 @@ const generateCACAMReceiptHTML = (transaction, senderData, receiverInfo, logoBas
     counterpartName = `${receiverInfo?.data?.firstname || ''} ${receiverInfo?.data?.lastname || ''}`;
   }
 
-  // For CA-CAM transfers, amount received = amount sent (no fees deducted)
+  // For CA-CAM transfers, amount is in XAF in the transaction, but should be displayed in CAD
   const cadAmount = (transaction.amount / exchangeRate).toFixed(2);
   const cadFees = (transaction.sendoFees / exchangeRate).toFixed(2);
-  const xafAmount = transaction.amount; // Amount sent in XAF (but it's actually the amount in CAD converted)
-  const xafReceived = (transaction.amount * exchangeRate).toFixed(0); // Amount received in XAF = amount sent in CAD * rate
+  const cadTotal = (transaction.totalAmount / exchangeRate).toFixed(2);
+  const xafAmount = transaction.amount; // Original XAF amount
+  const xafReceived = transaction.amount; // Amount received in XAF
   
   // Format dates
   const operationDate = moment(transaction.createdAt).format('DD/MM/YYYY HH:mm');
@@ -1037,12 +1047,6 @@ const generateCACAMReceiptHTML = (transaction, senderData, receiverInfo, logoBas
           </div>
         </div>
         
-        <!-- Exchange Rate -->
-        <div class="exchange-rate-box">
-          <span>💱 Taux de change appliqué</span>
-          <strong>1 CAD = ${exchangeRate} XAF</strong>
-        </div>
-        
         <!-- Amounts in CAD -->
         <div class="amounts-container">
           <div class="currency-tabs">
@@ -1053,15 +1057,15 @@ const generateCACAMReceiptHTML = (transaction, senderData, receiverInfo, logoBas
           <table class="amount-table">
             <tr>
               <td>Montant envoyé</td>
-              <td>${transaction.amount.toLocaleString()} CAD</td>
+              <td>${cadAmount} CAD</td>
             </tr>
             <tr>
               <td>Frais de transfert</td>
-              <td>${transaction.sendoFees.toLocaleString()} CAD</td>
+              <td>${cadFees} CAD</td>
             </tr>
             <tr style="background: #f1f5f9; font-weight: bold;">
               <td>Total débité</td>
-              <td>${transaction.totalAmount.toLocaleString()} CAD</td>
+              <td>${cadTotal} CAD</td>
             </tr>
           </table>
         </div>
@@ -1076,31 +1080,31 @@ const generateCACAMReceiptHTML = (transaction, senderData, receiverInfo, logoBas
           <table class="amount-table">
             <tr>
               <td>Montant envoyé</td>
-              <td>${(transaction.amount * exchangeRate).toLocaleString()} XAF</td>
+              <td>${xafAmount.toLocaleString()} XAF</td>
             </tr>
             <tr>
               <td>Frais de transfert</td>
-              <td style="color: #ef4444;">- ${(transaction.sendoFees * exchangeRate).toLocaleString()} XAF</td>
+              <td style="color: #ef4444;">- ${(transaction.sendoFees || 0).toLocaleString()} XAF</td>
             </tr>
             <tr style="border-bottom: none;">
               <td style="font-weight: 700;">Total débité</td>
-              <td style="font-weight: 700;">${(transaction.totalAmount * exchangeRate).toLocaleString()} XAF</td>
+              <td style="font-weight: 700;">${(transaction.totalAmount).toLocaleString()} XAF</td>
             </tr>
           </table>
         </div>
         
-        <!-- Amount Received (IMPORTANT: amount sent without fees) -->
+        <!-- Amount Received -->
         <div class="amount-received">
           <span>💰 MONTANT REÇU PAR LE BÉNÉFICIAIRE</span>
-          <strong>${(transaction.amount * exchangeRate).toLocaleString()} XAF</strong>
+          <strong>${xafAmount.toLocaleString()} XAF</strong>
         </div>
         
         <div style="background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 12px 15px; margin: 20px 0; display: flex; align-items: center; gap: 10px;">
           <span style="font-size: 20px;">ℹ️</span>
           <span style="color: #9a3412; font-size: 13px;">
-            <strong>Note importante:</strong> Le bénéficiaire reçoit exactement ${(transaction.amount * exchangeRate).toLocaleString()} XAF, 
-            soit l'équivalent du montant envoyé (${transaction.amount.toLocaleString()} CAD) sans déduction des frais. 
-            Les frais de ${transaction.sendoFees.toLocaleString()} CAD (${(transaction.sendoFees * exchangeRate).toLocaleString()} XAF) sont à la charge de l'expéditeur.
+            <strong>Note importante:</strong> Le bénéficiaire reçoit exactement ${xafAmount.toLocaleString()} XAF, 
+            soit l'équivalent du montant envoyé (${cadAmount} CAD) sans déduction des frais. 
+            Les frais de ${(transaction.sendoFees || 0).toLocaleString()} XAF (${cadFees} CAD) sont à la charge de l'expéditeur.
           </span>
         </div>
         
@@ -1109,33 +1113,32 @@ const generateCACAMReceiptHTML = (transaction, senderData, receiverInfo, logoBas
           📋 Référence de transaction: ${transaction.transactionId}
         </div>
         
-        <!-- Footer -->
         <!-- Footer with Legal Information -->
-          <div class="footer">
-            <div style="background: #f8fafc; padding: 20px; border-radius: 12px; margin-bottom: 20px; text-align: left; border-left: 4px solid #11998e;">
-              <p style="font-size: 12px; color: #1e293b; margin: 0 0 10px 0; line-height: 1.5;">
-                <strong style="color: #0f172a;">Sendo</strong> est enregistrée comme entreprise de services monétaires auprès du Centre d’analyse des opérations et déclarations financières du Canada (CANAFE) sous le numéro d'enregistrement <strong style="color: #0f172a;">C100000856</strong>. Sendo est également titulaire d'un permis délivré par Revenu Québec sous le numéro <strong style="color: #0f172a;">19525</strong>.
-              </p>
-              <p style="font-size: 12px; color: #1e293b; margin: 0 0 5px 0; line-height: 1.5;">
-                Au Cameroun, Sendo opère en partenariat avec <strong style="color: #0f172a;">Maviance</strong>, agrégateur de paiement agréé en Afrique, ainsi qu'avec des banques partenaires pour l'émission de ses cartes Visa.
-              </p>
-            </div>
-            
-            <div style="border-top: 1px solid #e2e8f0; padding-top: 20px; margin-top: 10px;">
-              <p style="font-size: 14px; font-weight: 600; color: #1e293b; margin-bottom: 8px;">
-                CE REÇU EST UN JUSTIFICATIF OFFICIEL DE TRANSFERT
-              </p>
-              <p style="font-size: 12px; color: #475569; margin-bottom: 5px;">
-                Ce document a été généré électroniquement par Sendo le ${emissionDate} à ${moment().format('HH:mm')}.
-              </p>
-              <p style="font-size: 12px; color: #475569; margin-bottom: 15px;">
-                Il est valable sans signature manuscrite conformément aux conditions générales d'utilisation du service.
-              </p>
-              <p style="font-size: 11px; color: #64748b; margin-top: 15px;">
-                Sendo - Transferts d'argent internationaux • support@sendo.com • www.sendo.com
-              </p>
-            </div>
+        <div class="footer">
+          <div style="background: #f8fafc; padding: 20px; border-radius: 12px; margin-bottom: 20px; text-align: left; border-left: 4px solid #11998e;">
+            <p style="font-size: 12px; color: #1e293b; margin: 0 0 10px 0; line-height: 1.5;">
+              <strong style="color: #0f172a;">Sendo</strong> est enregistrée comme entreprise de services monétaires auprès du Centre d’analyse des opérations et déclarations financières du Canada (CANAFE) sous le numéro d'enregistrement <strong style="color: #0f172a;">C100000856</strong>. Sendo est également titulaire d'un permis délivré par Revenu Québec sous le numéro <strong style="color: #0f172a;">19525</strong>.
+            </p>
+            <p style="font-size: 12px; color: #1e293b; margin: 0 0 5px 0; line-height: 1.5;">
+              Au Cameroun, Sendo opère en partenariat avec <strong style="color: #0f172a;">Maviance</strong>, agrégateur de paiement agréé en Afrique, ainsi qu'avec des banques partenaires pour l'émission de ses cartes Visa.
+            </p>
           </div>
+          
+          <div style="border-top: 1px solid #e2e8f0; padding-top: 20px; margin-top: 10px;">
+            <p style="font-size: 14px; font-weight: 600; color: #1e293b; margin-bottom: 8px;">
+              CE REÇU EST UN JUSTIFICATIF OFFICIEL DE TRANSFERT
+            </p>
+            <p style="font-size: 12px; color: #475569; margin-bottom: 5px;">
+              Ce document a été généré électroniquement par Sendo le ${emissionDate} à ${moment().format('HH:mm')}.
+            </p>
+            <p style="font-size: 12px; color: #475569; margin-bottom: 15px;">
+              Il est valable sans signature manuscrite conformément aux conditions générales d'utilisation du service.
+            </p>
+            <p style="font-size: 11px; color: #64748b; margin-top: 15px;">
+              Sendo - Transferts d'argent internationaux • support@sendo.com • www.sendo.com
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   </body>
@@ -1697,31 +1700,31 @@ const handleDownloadReceipt = async () => {
   try {
     const logoUrl = "https://res.cloudinary.com/dviktmefh/image/upload/v1758140850/WhatsApp_Image_2025-09-17_at_21.26.01_hjgtfa.jpg";
     
-    // Générer le HTML en fonction du type de transaction
-    let html;
-    if (transaction.description === "Transfert CAM-CA") {
-      html = generateCAMCAReceiptHTML(transaction, userData, userInfos, logoUrl);
-    } else if (transaction.description === "Transfert CA-CAM") {
-      html = generateCACAMReceiptHTML(transaction, userData, userInfos, logoUrl);
-    } else if (transaction.type === 'FUND_SUBSCRIPTION') {
-      html = generateFundSubscriptionReceiptHTML(transaction, userData, logoUrl);
-    } else {
-      html = generateReceiptHTML(transaction, user, getTypeLabel, logoUrl);
-    }
-    
-    const { uri } = await Print.printToFileAsync({ html });
-    
-    // Nom du fichier adapté au type de transaction
-    let fileName = 'Reçu_Sendo';
-    if (transaction.type === 'FUND_SUBSCRIPTION') {
-      fileName = `Souscription_Fonds_${transaction.transactionId}`;
-    } else if (transaction.description === "Transfert CAM-CA") {
-      fileName = `Transfert_CAM-CA_${transaction.transactionId}`;
-    } else if (transaction.description === "Transfert CA-CAM") {
-      fileName = `Transfert_CA-CAM_${transaction.transactionId}`;
-    } else {
-      fileName = `Reçu_Sendo_${transaction.transactionId}`;
-    }
+     // Générer le HTML en fonction du type de transaction
+      let html;
+      if (transaction.description === "Transfert CAM-CA") {
+        html = generateCAMCAReceiptHTML(transaction, userData, userInfos, logoUrl);
+      } else if (transaction.description === "Transfert mobile CA-CAM") {
+        html = generateCACAMReceiptHTML(transaction, userData, userInfos, logoUrl);
+      } else if (transaction.type === 'FUND_SUBSCRIPTION') {
+        html = generateFundSubscriptionReceiptHTML(transaction, userData, logoUrl);
+      } else {
+        html = generateReceiptHTML(transaction, user, getTypeLabel, logoUrl);
+      }
+      
+      const { uri } = await Print.printToFileAsync({ html });
+      
+      // Nom du fichier adapté au type de transaction
+      let fileName = 'Reçu_Sendo';
+      if (transaction.type === 'FUND_SUBSCRIPTION') {
+        fileName = `Souscription_Fonds_${transaction.transactionId}`;
+      } else if (transaction.description === "Transfert CAM-CA") {
+        fileName = `Transfert_CAM-CA_${transaction.transactionId}`;
+      } else if (transaction.description === "Transfert mobile CA-CAM") {
+        fileName = `Transfert_CA-CAM_${transaction.transactionId}`;
+      } else {
+        fileName = `Reçu_Sendo_${transaction.transactionId}`;
+      }
     
     const newUri = `${FileSystem.documentDirectory}${fileName}.pdf`;
     await FileSystem.moveAsync({ from: uri, to: newUri });
@@ -2070,7 +2073,9 @@ const handleDownloadReceipt = async () => {
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
         <View className="items-center my-4 px-4">
           <Text className="text-lg font-semibold text-gray-700">
-            {isCAMCATransfer ? "Transfert International CAM-CA" : "Transaction récents"}
+            {isCAMCATransfer ? "Transfert International CAM-CA" : 
+             isCACAMTransfer ? "Transfert International CA-CAM" : 
+             "Transaction récents"}
           </Text>
         </View>
 
@@ -2142,7 +2147,7 @@ const handleDownloadReceipt = async () => {
           ) : isCAMCATransfer ? (
             <>
               <Text className="text-gray-800 font-semibold text-sm mb-2">
-                Transfert  Cameroun - Canada
+                Transfert Cameroun - Canada
               </Text>
               <Text className="text-gray-600 text-sm">
                 {isSender ? "Destinataire :" : "Expéditeur :"}{" "}
@@ -2159,7 +2164,22 @@ const handleDownloadReceipt = async () => {
               <Text className="text-gray-600 text-sm">
                 Montant en CAD : {((transaction.amount / exchangeRate).toFixed(2))} CAD
               </Text>
-             
+            </>
+          ) : isCACAMTransfer ? (
+            <>
+              <Text className="text-gray-800 font-semibold text-sm mb-2">
+                Transfert Canada - Cameroun
+              </Text>
+              <Text className="text-gray-600 text-sm">
+                {isSender ? "Destinataire :" : "Expéditeur :"}{" "}
+                <Text className="font-semibold">
+                  {isSender
+                    ? `${transaction.receiver?.firstname || ''} ${transaction.receiver?.lastname || ''}`
+                    : `${userInfos?.data?.user?.firstname || ''} ${userInfos?.data?.user?.lastname || ''}`
+                  }
+                </Text>
+              </Text>
+              
             </>
           ) : displayType === 'BANK_TRANSFER' ? (
             <>
