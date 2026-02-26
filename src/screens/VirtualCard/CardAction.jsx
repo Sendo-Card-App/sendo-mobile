@@ -75,9 +75,9 @@ const CardActionScreen = ({ route }) => {
       setFeeAmount(depositFee);
       setTotalAmount(numericAmount + depositFee);
     } else {
-      // For withdrawals: net = amount - fixed fee
+      // For withdrawals: net = amount + fixed fee
       setFeeAmount(withdrawalFee);
-      setTotalAmount(numericAmount - withdrawalFee);
+      setTotalAmount(numericAmount + withdrawalFee);
     }
   }, [amount, actionType, depositFee, withdrawalFee]);
 
@@ -274,7 +274,7 @@ const CardActionScreen = ({ route }) => {
                   <Text style={styles.totalLabel}>
                     {actionType === 'recharge' 
                       ? t('manageVirtualCard.totalToPay') || 'Total à payer'
-                      : t('manageVirtualCard.netToReceive') || 'Net à recevoir'}:
+                      : t('manageVirtualCard.netToReceive') || 'Montant à recevoir'}:
                   </Text>
                   <Text style={[
                     styles.totalValue,

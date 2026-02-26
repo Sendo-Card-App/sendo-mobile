@@ -14,11 +14,6 @@ import {
   useUpdatePasswordMutation,
   useGetMyProfileQuery,
 } from '../../services/Auth/authAPI';
-import {
-  sendPushNotification,
-  sendPushTokenToBackend,
-  registerForPushNotificationsAsync,
-} from '../../services/notificationService';
 import Toast from 'react-native-toast-message';
 import Loader from '../../components/Loader';
 import { Ionicons, AntDesign } from '@expo/vector-icons';
@@ -32,10 +27,11 @@ const ChangePassword = ({ navigation }) => {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-
   const { data: profile } = useGetMyProfileQuery();
- const [updatePassword, { isLoading }] = useUpdatePasswordMutation();
+  const [updatePassword, { isLoading }] = useUpdatePasswordMutation();
 
+  // Password regex: at least one uppercase, one number, one special character, minimum 8 characters
+  const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+[\]{};':"\\|,.<>/?]).{8,}$/;
 
   const getPasswordStrength = (password) => {
     let strength = 0;
@@ -53,7 +49,7 @@ const ChangePassword = ({ navigation }) => {
 
   const handlePasswordUpdate = async () => {
     try {
-      const userId = profile?.data?.id;
+      const userId = profile?.data?.user?.id;
       const result = await updatePassword({
         userId,
         oldPassword,
@@ -61,24 +57,6 @@ const ChangePassword = ({ navigation }) => {
       }).unwrap();
 
       if (result.status === 200 || result.code === 200) {
-        try {
-          const pushToken = await registerForPushNotificationsAsync();
-          if (pushToken) {
-            await sendPushTokenToBackend(
-              pushToken,
-              "Password Updated",
-              "Your password has been changed successfully",
-              "SUCCESS_MODIFY_PASSWORD"
-            );
-          }
-          await sendPushNotification(
-            "Security Update",
-            "Your password has been changed successfully"
-          );
-        } catch (notificationError) {
-          console.warn("Notification failed silently:", notificationError);
-        }
-
         Toast.show({
           type: 'success',
           text1: t('Password updated'),
@@ -95,7 +73,7 @@ const ChangePassword = ({ navigation }) => {
         });
       }
     } catch (err) {
-      console.error('UpdatePassword error:', err);
+     console.error('UpdatePassword error:', JSON.stringify(err, null, 2));
       Toast.show({
         type: 'error',
         text1: t('Wrong password'),
@@ -115,7 +93,7 @@ const ChangePassword = ({ navigation }) => {
       return;
     }
 
-    const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+[\]{};':"\\|,.<>/?]).{8,}$/;
+    // Use the password regex for validation
     if (!passwordRegex.test(newPassword)) {
       Toast.show({
         type: 'error',
@@ -133,14 +111,69 @@ const ChangePassword = ({ navigation }) => {
     handlePasswordUpdate();
   };
 
+  // Password requirements hint component
+  const PasswordRequirements = () => {
+    if (newPassword.length === 0) return null;
+    
+    return (
+      <View style={{ marginBottom: 20, paddingHorizontal: 5 }}>
+        <Text style={{ fontSize: 12, color: '#666', marginBottom: 8 }}>
+          {t('Password must contain:')}
+        </Text>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 15, marginBottom: 5 }}>
+            <View style={{ 
+              width: 8, 
+              height: 8, 
+              borderRadius: 4, 
+              backgroundColor: /[A-Z]/.test(newPassword) ? '#2ecc71' : '#ccc',
+              marginRight: 4 
+            }} />
+            <Text style={{ fontSize: 11, color: '#666' }}>Uppercase</Text>
+          </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 15, marginBottom: 5 }}>
+            <View style={{ 
+              width: 8, 
+              height: 8, 
+              borderRadius: 4, 
+              backgroundColor: /\d/.test(newPassword) ? '#2ecc71' : '#ccc',
+              marginRight: 4 
+            }} />
+            <Text style={{ fontSize: 11, color: '#666' }}>Number</Text>
+          </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 15, marginBottom: 5 }}>
+            <View style={{ 
+              width: 8, 
+              height: 8, 
+              borderRadius: 4, 
+              backgroundColor: /[!@#$%^&*()_+[\]{};':"\\|,.<>/?]/.test(newPassword) ? '#2ecc71' : '#ccc',
+              marginRight: 4 
+            }} />
+            <Text style={{ fontSize: 11, color: '#666' }}>Special</Text>
+          </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 15, marginBottom: 5 }}>
+            <View style={{ 
+              width: 8, 
+              height: 8, 
+              borderRadius: 4, 
+              backgroundColor: newPassword.length >= 8 ? '#2ecc71' : '#ccc',
+              marginRight: 4 
+            }} />
+            <Text style={{ fontSize: 11, color: '#666' }}>8+ chars</Text>
+          </View>
+        </View>
+      </View>
+    );
+  };
+
   return (
     <KeyboardAvoidingView
       style={{ flex: 1, backgroundColor: '#fff' }}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
-      
     >
-       <StatusBar backgroundColor="#7ddd7d" barStyle="light-content" />
+      <StatusBar backgroundColor="#7ddd7d" barStyle="light-content" />
+      
       {/* Header */}
       <View
         style={{
@@ -154,7 +187,7 @@ const ChangePassword = ({ navigation }) => {
         }}
       >
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 40 }}>
-           <AntDesign name="left" size={24} color="white" />
+          <AntDesign name="left" size={24} color="white" />
         </TouchableOpacity>
 
         <Text style={{ color: '#fff', fontSize: 20, fontWeight: 'bold', flex: 1, textAlign: 'center' }}>
@@ -165,7 +198,7 @@ const ChangePassword = ({ navigation }) => {
       </View>
 
       <ScrollView
-        contentContainerStyle={{ padding: 20, flexGrow: 1, justifyContent: 'center' }}
+        contentContainerStyle={{ padding: 20, flexGrow: 1 }}
         keyboardShouldPersistTaps="handled"
       >
         <Text style={{ fontSize: 24, fontWeight: 'bold', textAlign: 'center', marginBottom: 30, color: '#333' }}>
@@ -186,6 +219,7 @@ const ChangePassword = ({ navigation }) => {
               borderWidth: 1,
               borderRadius: 10,
               paddingLeft: 15,
+              paddingRight: 45,
               backgroundColor: '#f9f9f9',
             }}
           />
@@ -208,6 +242,7 @@ const ChangePassword = ({ navigation }) => {
               borderWidth: 1,
               borderRadius: 10,
               paddingLeft: 15,
+              paddingRight: 45,
               backgroundColor: '#f9f9f9',
             }}
           />
@@ -218,13 +253,16 @@ const ChangePassword = ({ navigation }) => {
 
         {/* Password Strength */}
         {newPassword.length > 0 && (
-          <View style={{ marginBottom: 20 }}>
+          <View style={{ marginBottom: 10 }}>
             <View style={{ height: 8, width: '100%', backgroundColor: '#eee', borderRadius: 10, overflow: 'hidden' }}>
               <View style={{ height: '100%', width: passwordStrength.width, backgroundColor: passwordStrength.color }} />
             </View>
             <Text style={{ marginTop: 5, color: passwordStrength.color }}>{passwordStrength.label}</Text>
           </View>
         )}
+
+        {/* Password Requirements */}
+        <PasswordRequirements />
 
         {/* Confirm Password */}
         <View style={{ marginBottom: 20, position: 'relative' }}>
@@ -240,6 +278,7 @@ const ChangePassword = ({ navigation }) => {
               borderWidth: 1,
               borderRadius: 10,
               paddingLeft: 15,
+              paddingRight: 45,
               backgroundColor: '#f9f9f9',
             }}
           />
@@ -249,31 +288,30 @@ const ChangePassword = ({ navigation }) => {
         </View>
 
         {/* Submit */}
-       <TouchableOpacity
-        onPress={handleSubmit}
-        disabled={isLoading}
-        style={{
-          backgroundColor: '#7ddd7d',
-          paddingVertical: 15,
-          borderRadius: 10,
-          alignItems: 'center',
-          marginTop: 20,
-          elevation: 3,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.2,
-          shadowRadius: 3,
-        }}
-      >
-        {isLoading ? (
-          <Loader color="#fff" />
-        ) : (
-          <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 18 }}>
-            {t('submit')}
-          </Text>
-        )}
-      </TouchableOpacity>
-
+        <TouchableOpacity
+          onPress={handleSubmit}
+          disabled={isLoading}
+          style={{
+            backgroundColor: '#7ddd7d',
+            paddingVertical: 15,
+            borderRadius: 10,
+            alignItems: 'center',
+            marginTop: 20,
+            elevation: 3,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.2,
+            shadowRadius: 3,
+          }}
+        >
+          {isLoading ? (
+            <Loader color="#fff" />
+          ) : (
+            <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 18 }}>
+              {t('submit')}
+            </Text>
+          )}
+        </TouchableOpacity>
 
         <Toast />
       </ScrollView>

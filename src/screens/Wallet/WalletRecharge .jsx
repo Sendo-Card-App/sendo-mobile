@@ -15,7 +15,7 @@ import { Ionicons, AntDesign } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 import TopLogo from "../../images/TopLogo.png";
 import { useTranslation } from "react-i18next";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native"; // Add useRoute
 import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
 import { useGetConfigQuery } from "../../services/Config/configApi";
 import {
@@ -30,12 +30,17 @@ import Loader from "../../components/Loader";
 const WalletRecharge = () => {
   const { t } = useTranslation();
   const navigation = useNavigation();
+  const route = useRoute(); // Add route to get params
+
+  // Get the service type from navigation params (OM or MTN)
+  const { service } = route.params || {};
 
   const [phone, setPhone] = useState("");
   const [amount, setAmount] = useState("");
   const [userWalletId, setUserWalletId] = useState("");
   const [checkParams, setCheckParams] = useState(null);
   const [showUnavailableModal, setShowUnavailableModal] = useState(false);
+  const [unavailableService, setUnavailableService] = useState("");
 
   const { data: userProfile } = useGetUserProfileQuery();
   const userId = userProfile?.data?.user?.id;
@@ -72,7 +77,10 @@ const WalletRecharge = () => {
 
   const SENDO_DEPOSIT_PERCENTAGE = getConfigValue("SENDO_DEPOSIT_PERCENTAGE");
   const SENDO_DEPOSIT_FEES = getConfigValue("SENDO_DEPOSIT_FEES");
-  const DEPOSIT_MOBILE_AVAILABILITY = getConfigValue("DEPOSIT_MOBILE_AVAILABILITY");
+  
+  // Service-specific availability flags
+  const DEPOSIT_OM_SERVICE_AVAILABILITY = getConfigValue("DEPOSIT_OM_SERVICE_AVAILABILITY");
+  const DEPOSIT_MOMO_SERVICE_AVAILABILITY = getConfigValue("DEPOSIT_MOMO_SERVICE_AVAILABILITY");
 
   useEffect(() => {
     const walletId =
@@ -110,13 +118,27 @@ const WalletRecharge = () => {
       return true;
     }
     
-    // Check if DEPOSIT_MOBILE_AVAILABILITY is set to "1" (available)
-    return DEPOSIT_MOBILE_AVAILABILITY === "1";
+    // Check service-specific availability based on the service param
+    if (service === 'OM') {
+      return DEPOSIT_OM_SERVICE_AVAILABILITY === "1";
+    } else if (service === 'MTN') {
+      return DEPOSIT_MOMO_SERVICE_AVAILABILITY === "1";
+    }
+    
+    // If no service specified (shouldn't happen), return false
+    return false;
+  };
+
+  const getServiceName = () => {
+    if (service === 'OM') return "Orange Money";
+    if (service === 'MTN') return "MTN Mobile Money";
+    return "Mobile Money";
   };
 
   const handleRecharge = async () => {
-    // First check if mobile deposit service is available
+    // First check if the specific mobile deposit service is available
     if (!checkServiceAvailability()) {
+      setUnavailableService(getServiceName());
       setShowUnavailableModal(true);
       return;
     }
@@ -142,24 +164,24 @@ const WalletRecharge = () => {
     }
 
     // Validate amount range
-      const numericAmount = parseFloat(
-        amount?.toString().replace(/\s|,/g, "")
-      );
+    const numericAmount = parseFloat(
+      amount?.toString().replace(/\s|,/g, "")
+    );
 
-      if (
-        !trimmedPhone ||
-        isNaN(numericAmount) ||
-        numericAmount < 500 ||
-        numericAmount > 490000
-      ) {
-        Toast.show({
-          type: "error",
-          text1: "Erreur",
-          text2:
-            "Le montant doit être compris entre 500 et 490 000 XAF.",
-        });
-        return;
-      }
+    if (
+      !trimmedPhone ||
+      isNaN(numericAmount) ||
+      numericAmount < 500 ||
+      numericAmount > 490000
+    ) {
+      Toast.show({
+        type: "error",
+        text1: "Erreur",
+        text2:
+          "Le montant doit être compris entre 500 et 490 000 XAF.",
+      });
+      return;
+    }
 
     if (!userWalletId) {
       Toast.show({
@@ -171,6 +193,7 @@ const WalletRecharge = () => {
     }
 
     try {
+      // Include the service type in the recharge request
       const response = await rechargeWallet({
         phone: normalizedPhone,
         email: userProfile?.data?.user?.email,
@@ -178,6 +201,7 @@ const WalletRecharge = () => {
         address: userProfile?.data?.user?.address || "Adresse générique",
         amount: parseFloat(amount),
         matriculeWallet: userWalletId,
+        service: service, // Pass the service type (OM or MTN) to the API
       }).unwrap();
 
       const trid =
@@ -276,7 +300,7 @@ const WalletRecharge = () => {
         </View>
         <View className="border border-dashed border-white mt-1 mb-1 " />
         <Text className="text-center text-white text-2xl my-3">
-          {t("walletRecharge.title")}
+          {service === 'OM' ? t('walletRecharge.titleOm') : t('walletRecharge.titleMtn')}
         </Text>
       <View className="flex-1 py-6 bg-white px-6 rounded-t-3xl">
         <View className="flex-row items-center justify-center gap-2 mt-2 mb-6">
@@ -386,11 +410,12 @@ const WalletRecharge = () => {
             </View>
             
             <Text style={styles.modalTitle}>
-              Service Temporarily Unavailable
+              {unavailableService} Temporarily Unavailable
             </Text>
             
             <Text style={styles.modalMessage}>
-              The mobile deposit service is currently unavailable. Please try again later or contact support for assistance.
+              The {unavailableService} deposit service is currently unavailable. 
+              Please try again later or contact support for assistance.
             </Text>
             
             <View style={styles.modalButtonContainer}>

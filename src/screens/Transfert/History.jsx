@@ -19,6 +19,7 @@ import { useNavigation } from "@react-navigation/native";
 import SkeletonLoader from '../../components/SkeletonLoader';
 import { useGetTransactionHistoryQuery } from "../../services/WalletApi/walletApi";
 import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
+import { useGetConfigQuery } from '../../services/Config/configApi';
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -31,20 +32,92 @@ const isSmallScreen = width < 375;
 
 const HistoryCard = ({ transaction, user, onPress }) => {
   const { t } = useTranslation();
+  const { data: userProfile } = useGetUserProfileQuery();
+  const { data: configData } = useGetConfigQuery();
   
-  // CORRECTION: Déterminer quel montant afficher
-  const description = transaction.description || '';
-  let displayAmount = transaction.amount;
+  const getExchangeRate = () => {
+    const config = configData?.data;
+    const rate = config?.find(item => item.name === 'SENDO_VALUE_CAD_CAM_CA')?.value;
+    return rate ? parseFloat(rate) : 482;
+  };
+
+  const exchangeRate = getExchangeRate();
+  const userCountry = userProfile?.data?.user?.country;
   
-  if (
-    transaction.type === 'PAYMENT' || 
-    transaction.type === 'TONTINE_PAYMENT' || 
-    transaction.type === 'VIEW_CARD_DETAILS' ||
-    description?.trim() === "Retrait par SENDO" ||
-    description?.trim() === "Dépôt par SENDO"
-  ) {
-    displayAmount = transaction.totalAmount;
-  }
+  // Format transaction display for history
+  const formatTransactionForHistory = (item) => {
+    let displayAmount = item.amount;
+    let displayCurrency = item.currency;
+    let displayDescription = item.description || '';
+    
+    // Handle CAM-CA transfers (Cameroun -> Canada) - identified by bankName
+    if (item.bankName === "Transfert CAM-CA") {
+      if (userCountry === "Canada") {
+        const amountInCAD = (item.amount / exchangeRate).toFixed(2);
+        return {
+          amount: parseFloat(amountInCAD),
+          currency: "CAD",
+          description: item.bankName,
+          formattedAmount: `${amountInCAD} CAD`,
+          originalAmount: item.amount,
+          originalCurrency: "XAF"
+        };
+      } else {
+        return {
+          amount: item.amount,
+          currency: "FCFA",
+          description: item.bankName,
+          formattedAmount: `${item.amount.toLocaleString('fr-FR')} XAF`,
+          originalAmount: item.amount,
+          originalCurrency: "XAF"
+        };
+      }
+    }
+    
+    // Handle CA-CAM transfers (Canada -> Cameroun) - identified by description
+    if (item.description === "Transfert mobile CA-CAM") {
+      if (userCountry === "Canada") {
+        const amountInCAD = (item.amount / exchangeRate).toFixed(2);
+        return {
+          amount: parseFloat(amountInCAD),
+          currency: "CAD",
+          description: item.description,
+          formattedAmount: `${amountInCAD} CAD`,
+          originalAmount: item.amount,
+          originalCurrency: "XAF"
+        };
+      } else {
+        return {
+          amount: item.amount,
+          currency: "FCFA",
+          description: item.description,
+          formattedAmount: `${item.amount.toLocaleString('fr-FR')} XAF`,
+          originalAmount: item.amount,
+          originalCurrency: "XAF"
+        };
+      }
+    }
+    
+    // Handle regular transactions
+    if (
+      item.type === 'PAYMENT' || 
+      item.type === 'TONTINE_PAYMENT' || 
+      item.type === 'VIEW_CARD_DETAILS' ||
+      item.description?.trim() === "Retrait par SENDO" ||
+      item.description?.trim() === "Dépôt par SENDO"
+    ) {
+      displayAmount = item.totalAmount;
+    }
+
+    return {
+      amount: displayAmount,
+      currency: item.currency,
+      description: displayDescription,
+      formattedAmount: `${displayAmount?.toLocaleString()} ${item.currency}`
+    };
+  };
+
+  const display = formatTransactionForHistory(transaction);
 
   const getStatusColor = (status) => {
     switch(status?.toUpperCase()) {
@@ -53,21 +126,6 @@ const HistoryCard = ({ transaction, user, onPress }) => {
       case 'PENDING': return 'text-yellow-600';
       case 'BLOCKED': return 'text-orange-600';
       default: return 'text-gray-600';
-    }
-  };
-
-  const getTypeLabel = (type) => {
-    switch(type?.toUpperCase()) {
-      case 'DEPOSIT': return t('history1.deposit');
-      case 'WITHDRAWAL': return t('history1.withdraw');
-      case 'TRANSFER': return t('history1.transfer');
-      case 'SHARED_PAYMENT': return t('history1.share');
-      case 'WALLET_TO_WALLET': return t('history1.wallet');
-      case 'VIEW_CARD_DETAILS': return t('history1.cardView');
-      case 'TONTINE_PAYMENT': return t('history1.tontine');
-      case 'FUND_REQUEST_PAYMENT': return t('history1.fund');
-      case 'PAYMENT': return t('history1.payment');
-      default: return type;
     }
   };
 
@@ -125,14 +183,13 @@ const HistoryCard = ({ transaction, user, onPress }) => {
             {transaction.transactionId || t('history1.unknownTransaction')}
           </Text>
           <Text className="text-gray-600 text-sm">
-            {description}
+            {display.description}
           </Text>
         </View>
       </View>
       <View className="flex-row justify-between items-center pt-2">
-        {/* CORRECTION: Utiliser displayAmount au lieu de transaction.amount */}
         <Text className="text-gray-600 text-lg font-bold">
-          {displayAmount?.toLocaleString()} {transaction.currency}
+          {display.formattedAmount}
         </Text>
         <View className="items-end">
           <Text className="text-gray-600 text-sm">
