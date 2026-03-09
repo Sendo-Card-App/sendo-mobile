@@ -431,14 +431,14 @@ const CardActionScreen = ({ route }) => {
             
             <Text style={styles.modalTitle}>
               {actionType === 'recharge' 
-                ? (t('manageVirtualCard.rechargeUnavailable') || 'Service de recharge temporairement indisponible')
-                : (t('manageVirtualCard.withdrawUnavailable') || 'Service de retrait temporairement indisponible')}
+                ? (t('manageVirtualCard.rechargeUnavailable'))
+                : (t('manageVirtualCard.withdrawUnavailable'))}
             </Text>
             
             <Text style={styles.modalMessage}>
               {actionType === 'recharge'
-                ? (t('manageVirtualCard.rechargeUnavailableMessage') || 'Le service de recharge de carte est actuellement indisponible. Veuillez réessayer plus tard ou contacter le support.')
-                : (t('manageVirtualCard.withdrawUnavailableMessage') || 'Le service de retrait de carte est actuellement indisponible. Veuillez réessayer plus tard ou contacter le support.')}
+                ? (t('manageVirtualCard.rechargeUnavailableMessage'))
+                : (t('manageVirtualCard.withdrawUnavailableMessage'))}
             </Text>
             
             <View style={styles.modalButtonContainer}>
