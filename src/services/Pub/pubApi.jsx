@@ -13,7 +13,7 @@ const TAG_TYPES = {
 export const pubApi = createApi({
   reducerPath: 'pubApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: process.env.EXPO_PUBLIC_API_URL,
+    baseUrl: process.env.EXPO_TEST_API_URL,
     prepareHeaders: (headers, { getState }) => {
       const { accessToken } = getState().auth;
       headers.set('Accept', 'application/json');

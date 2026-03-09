@@ -14,7 +14,7 @@ const TAG_TYPES = {
 export const kycApi = createApi({
   reducerPath: 'kycApi',
   baseQuery: fetchBaseQuery({ 
-    baseUrl: process.env.EXPO_PUBLIC_API_URL,
+    baseUrl: process.env.EXPO_TEST_API_URL,
     prepareHeaders: (headers, { getState }) => {
       const token = getState().auth.accessToken;
       if (token) {
