@@ -9,7 +9,7 @@ module.exports = {
   expo: {
     name: "Sendo",
     slug: "sendo",
-    version: "1.3.0",
+    version: "1.3.2",
     owner: "sfesendo",
     orientation: "portrait",
     icon: "./assets/icon-sendo.png",
