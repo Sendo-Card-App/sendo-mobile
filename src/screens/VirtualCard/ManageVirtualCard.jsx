@@ -46,8 +46,9 @@ const CARD_STATUS = {
   SUSPENDED: "SUSPENDED",
   PRE_ACTIVE: "PRE_ACTIVE",
   IN_TERMINATION: "IN_TERMINATION",
-  TERMINATED: ["TERMINATED", "FAILED_TERMINATION"],
-  PENDING: "PENDING"
+  TERMINATED: "TERMINATED",
+  FAILED_TERMINATION: "FAILED_TERMINATION",
+  PENDING: "PENDING",
 };
 
 
@@ -67,8 +68,12 @@ const ManageVirtualCard = () => {
   const { data: userProfile, isLoading: isProfileLoading, refetch } = useGetUserProfileQuery();
 
   const virtualCardFromProfile = userProfile?.data?.user?.virtualCard;
-  
+
   const profileCardStatus = virtualCardFromProfile?.status;
+
+  const isCardTerminated = (status) =>
+  ["TERMINATED", "FAILED_TERMINATION"].includes(profileCardStatus);
+   //console.log(profileCardStatus)
   const [selectedCardId, setSelectedCardId] = useState(null);
   const [readOnlyMode, setReadOnlyMode] = useState(false);
   const [iframeModalVisible, setIframeModalVisible] = useState(false);
@@ -110,7 +115,7 @@ const ManageVirtualCard = () => {
   const cardData = cardDetails?.data;
   const cardStatus = cardData?.status;
   const isCardFrozen = cardStatus === CARD_STATUS.FROZEN;
-  const isCardTerminated = profileCardStatus === CARD_STATUS.TERMINATED;
+  const isCardTerminatedStatus = isCardTerminated(cardStatus);
   const rejectionAttempts = cardData?.paymentRejectNumber ?? 0;
   const limit = 2;
 
