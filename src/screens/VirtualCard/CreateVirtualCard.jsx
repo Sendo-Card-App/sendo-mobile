@@ -19,6 +19,7 @@ import { useNavigation } from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
 import { useGetConfigQuery } from "../../services/Config/configApi";
 import { useGetUserProfileQuery } from "../../services/Auth/authAPI";
+import { useGetBalanceQuery } from "../../services/WalletApi/walletApi";
 import { useCreateVirtualCardMutation } from "../../services/Card/cardApi";
 import { Ionicons, AntDesign } from '@expo/vector-icons';
 
@@ -32,13 +33,28 @@ const CreateVirtualCard = () => {
   const [modalType, setModalType] = useState("success"); // 'success' | 'error'
 
   const [createVirtualCard, { isLoading }] = useCreateVirtualCardMutation();
+
   const { data: userProfile, isLoading: isProfileLoading } = useGetUserProfileQuery();
   const { data: configData, isLoading: isConfigLoading } = useGetConfigQuery();
+  
+  // Get user ID from profile
+  const userId = userProfile?.data?.user?.id;
+  
+  const {
+    data: balanceData,
+    isLoading: isBalanceLoading,
+    refetch: refetchBalance,
+  } = useGetBalanceQuery(userId, { 
+    skip: !userId,
+    pollingInterval: 1000,
+  });
+  
+  const TERMINATED_STATUSES = ["TERMINATED", "FAILED_TERMINATION", "IN_TERMINATION"];
 
   // Redirect if virtual card already exists AND is not TERMINATED
   useEffect(() => {
     const virtualCard = userProfile?.data?.user?.virtualCard;
-    if (virtualCard && virtualCard.status !== "TERMINATED") {
+    if (virtualCard && !TERMINATED_STATUSES.includes(virtualCard.status)) {
       navigation.replace("ManageVirtualCard");
     }
   }, [userProfile]);
@@ -50,6 +66,9 @@ const CreateVirtualCard = () => {
 
   const cardFees = getConfigValue("SENDO_CREATING_CARD_FEES");
   const isFirstCardFree = getConfigValue("IS_FREE_FIRST_CREATING_CARD") === "1";
+  
+  // Parse cardFees to number for comparison
+  const cardFeesNumber = parseInt(cardFees) || 0;
   const displayedFees = isFirstCardFree ? "0 XAF" : `${cardFees} XAF`;
   const total = displayedFees;
 
@@ -63,6 +82,21 @@ const CreateVirtualCard = () => {
     if (!name.trim()) {
       showModal("error", t("virtual_card.missing_name") || "Please enter your name");
       return;
+    }
+
+    // Check balance before creating card
+    const currentBalance = balanceData?.data?.balance || 0;
+    
+    // If card is not free, check if user has sufficient balance
+    if (!isFirstCardFree) {
+      if (currentBalance < cardFeesNumber) {
+        showModal(
+          "error",
+          t("virtual_card.insufficient_balance") || 
+          `Solde insuffisant. Vous avez besoin de ${cardFees} XAF pour créer une carte. Votre solde actuel est de ${currentBalance} XAF.`
+        );
+        return;
+      }
     }
 
     try {
@@ -85,7 +119,7 @@ const CreateVirtualCard = () => {
     }
   };
 
-  if (isProfileLoading) {
+  if (isProfileLoading || isBalanceLoading) {
     return (
       <SafeAreaView className="flex-1 justify-center items-center">
         <ActivityIndicator size="large" color="#7ddd7d" />
@@ -169,6 +203,25 @@ const CreateVirtualCard = () => {
             padding: 8, 
             paddingTop: 16 
           }}>
+          
+
+            {/* Show warning if balance insufficient */}
+            {!isFirstCardFree && balanceData?.data?.balance < cardFeesNumber && (
+              <View style={{
+                backgroundColor: '#FEF2F2',
+                borderRadius: 8,
+                padding: 12,
+                marginBottom: 16,
+                borderWidth: 1,
+                borderColor: '#FCA5A5',
+              }}>
+                <Text style={{ color: '#B91C1C', fontSize: 14, textAlign: 'center' }}>
+                  {t("virtual_card.insufficient_balance_warning") || 
+                   `⚠️ Solde insuffisant. `}
+                </Text>
+              </View>
+            )}
+
             {/* Input name */}
             <TextInput
               placeholder={t("virtual_card.enter_name") || "Enter your full name"}
@@ -193,9 +246,11 @@ const CreateVirtualCard = () => {
             {/* Create card button */}
             <TouchableOpacity
               onPress={handleCreateCard}
-              disabled={isLoading}
+              disabled={isLoading || (!isFirstCardFree && balanceData?.data?.balance < cardFeesNumber)}
               style={{ 
-                backgroundColor: '#7ddd7d', 
+                backgroundColor: (!isFirstCardFree && balanceData?.data?.balance < cardFeesNumber) 
+                  ? '#9CA3AF' 
+                  : '#7ddd7d', 
                 paddingVertical: 14, 
                 borderRadius: 999, 
                 marginTop: 24,
@@ -214,9 +269,13 @@ const CreateVirtualCard = () => {
                   fontSize: 18, 
                   fontWeight: 'bold', 
                   textAlign: 'center', 
-                  color: '#000' 
+                  color: (!isFirstCardFree && balanceData?.data?.balance < cardFeesNumber) 
+                    ? '#fff' 
+                    : '#000' 
                 }}>
-                  {t("virtual_card.create_now")}
+                  {(!isFirstCardFree && balanceData?.data?.balance < cardFeesNumber)
+                    ? (t("virtual_card.insufficient_balance_short") || "Solde insuffisant")
+                    : (t("virtual_card.create_now") || "Créer maintenant")}
                 </Text>
               )}
             </TouchableOpacity>
