@@ -38,26 +38,27 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { WebView } from 'react-native-webview';
 import * as ScreenCapture from 'expo-screen-capture';
 
-// Define card status constants for better maintainability
-const CARD_STATUS = {
-  ACTIVE: "ACTIVE",
-  FROZEN: "FROZEN",
-  BLOCKED: "BLOCKED",
-  SUSPENDED: "SUSPENDED",
-  PRE_ACTIVE: "PRE_ACTIVE",
-  IN_TERMINATION: "IN_TERMINATION",
-  TERMINATED: "TERMINATED",
-  FAILED_TERMINATION: "FAILED_TERMINATION",
-  PENDING: "PENDING",
-};
-
-
 const ManageVirtualCard = () => {
   const { t } = useTranslation();
   const { width } = Dimensions.get("screen");
   const navigation = useNavigation();
   const [checking, setChecking] = useState(false);
-  
+
+  const CARD_STATUS = {
+    ACTIVE: "ACTIVE",
+    FROZEN: "FROZEN",
+    BLOCKED: "BLOCKED",
+    SUSPENDED: "SUSPENDED",
+    PRE_ACTIVE: "PRE_ACTIVE",
+    TERMINATED: ["TERMINATED", "FAILED_TERMINATION", "IN_TERMINATION"],
+    PENDING: "PENDING"
+  };
+
+  // Helper function to check if status is terminated
+  const isTerminatedStatus = (status) => {
+    return CARD_STATUS.TERMINATED.includes(status);
+  };
+
   const {
     data: cards,
     isLoading: isCardsLoading,
@@ -68,12 +69,14 @@ const ManageVirtualCard = () => {
   const { data: userProfile, isLoading: isProfileLoading, refetch } = useGetUserProfileQuery();
 
   const virtualCardFromProfile = userProfile?.data?.user?.virtualCard;
-
+  
   const profileCardStatus = virtualCardFromProfile?.status;
+  //console.log('Profile Card Status:', profileCardStatus);
+  
+  // Check if status is in the TERMINATED array
+  const isCardInTermination = isTerminatedStatus(profileCardStatus);
+  //console.log('Is Card Terminated?', isCardInTermination);
 
-  const isCardTerminated = (status) =>
-  ["TERMINATED", "FAILED_TERMINATION"].includes(profileCardStatus);
-   //console.log(profileCardStatus)
   const [selectedCardId, setSelectedCardId] = useState(null);
   const [readOnlyMode, setReadOnlyMode] = useState(false);
   const [iframeModalVisible, setIframeModalVisible] = useState(false);
@@ -82,19 +85,19 @@ const ManageVirtualCard = () => {
   const [isLoadingIframe, setIsLoadingIframe] = useState(false);
   const [isLoadingFreeze, setIsLoadingFreeze] = useState(false);
   const [webViewLoading, setWebViewLoading] = useState(true);
-  const [showCreateNewModal, setShowCreateNewModal] = useState(false); // New state for create new card modal
+  const [showCreateNewModal, setShowCreateNewModal] = useState(false);
 
   const {
     data: cardDetails,
     isLoading: isDetailsLoading,
     refetch: refetchCardDetails,
   } = useGetVirtualCardDetailsQuery(selectedCardId, {
-    skip: !selectedCardId,
+    skip: !selectedCardId || isCardInTermination,
     pollingInterval: 1000,
   });
-  // console.log("Card Details API Response:", cardDetails);
+
   const { data: unlockStatus, isLoading: isUnlockStatusLoading } = useGetUnlockStatusQuery(selectedCardId, {
-    skip: !selectedCardId,
+    skip: !selectedCardId || isCardInTermination,
     pollingInterval: 1000,
   });
 
@@ -115,7 +118,6 @@ const ManageVirtualCard = () => {
   const cardData = cardDetails?.data;
   const cardStatus = cardData?.status;
   const isCardFrozen = cardStatus === CARD_STATUS.FROZEN;
-  const isCardTerminatedStatus = isCardTerminated(cardStatus);
   const rejectionAttempts = cardData?.paymentRejectNumber ?? 0;
   const limit = 2;
 
@@ -124,7 +126,7 @@ const ManageVirtualCard = () => {
     isLoading: isTransactionsLoading,
     refetch: refetchTransactions,
   } = useGetCardTransactionsQuery(cardData?.id, {
-    skip: !cardData?.id || isCardTerminated,
+    skip: !cardData?.id || isCardInTermination,
     pollingInterval: 1000, 
   });
 
@@ -133,7 +135,7 @@ const ManageVirtualCard = () => {
     isLoading: isBalanceLoading,
     refetch: refetchBalance,
   } = useGetCardBalanceQuery({ idCard: cardData?.id }, {
-    skip: !cardData?.id || isCardTerminated,
+    skip: !cardData?.id || isCardInTermination,
   });
 
   const {
@@ -141,7 +143,7 @@ const ManageVirtualCard = () => {
     isLoading: isDebtsLoading,
     refetch: refetchDebts,
   } = useGetCardDebtsQuery(cardData?.id, {
-    skip: !cardData?.id || isCardTerminated,
+    skip: !cardData?.id || isCardInTermination,
     pollingInterval: 1000, 
   });
 
@@ -164,30 +166,17 @@ const ManageVirtualCard = () => {
 
   const SENDO_VIEW_DETAILS_CARD_FEES = getConfigValue("SENDO_VIEW_DETAILS_CARD_FEES");
 
-  if (checking || isProfileLoading) {
-    return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" color="#7ddd7d" />
-      </View>
-    );
-  }
-
-  // Handle TERMINATED status - Show custom interface
+  // Handle different card statuses
   useEffect(() => {
-    if (isCardTerminated) {
+    if (isCardInTermination) {
       setShowCreateNewModal(true);
-    } else if (profileCardStatus === CARD_STATUS.IN_TERMINATION) {
-      Alert.alert(
-        "Suppression en cours",
-        "Votre carte est en cours de suppression. Certaines fonctionnalités peuvent être limitées."
-      );
     } else if (profileCardStatus === CARD_STATUS.SUSPENDED) {
       Alert.alert(
         "Carte suspendue",
         "Votre carte a été suspendue en raison d'une activité suspecte."
       );
     }
-  }, [profileCardStatus]);
+  }, [profileCardStatus, isCardInTermination]);
 
   const debouncedHandleFreezeUnfreeze = async () => {
     if (isProcessingFreeze) return;
@@ -458,34 +447,70 @@ const ManageVirtualCard = () => {
     refetchTransactions();
   };
 
-  if (isCardsLoading || isDetailsLoading) {
+  // Prevent showing loading state if we're already showing terminated interface
+  if (isCardsLoading || (isDetailsLoading && !isCardInTermination) || isProfileLoading) {
     return (
-      <View className="flex-1 justify-center items-center bg-white">
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
         <ActivityIndicator size="large" color="#7ddd7d" />
       </View>
     );
   }
 
-  // 🚀 TERMINATED CARD INTERFACE - Full screen dedicated interface for terminated cards
-  if (isCardTerminated) {
+  // TERMINATED CARD INTERFACE - Show for any terminated status
+  if (isCardInTermination) {
+    // Determine which specific status to show appropriate messaging
+    const isInTermination = profileCardStatus === "IN_TERMINATION";
+    const isFailedTermination = profileCardStatus === "FAILED_TERMINATION";
+    
+    let title = "Carte supprimée";
+    let description = "Votre carte virtuelle a été supprimée. Vous pouvez en créer une nouvelle pour continuer à utiliser les services de carte virtuelle.";
+    let iconColor = "#EF4444";
+    let bgColor = "bg-red-100";
+    let icon = "card-outline";
+    
+    if (isInTermination) {
+      title = "Suppression en cours";
+      description = "Votre carte est en cours de suppression. Ce processus peut prendre quelques instants.";
+      iconColor = "#F59E0B";
+      bgColor = "bg-yellow-100";
+      icon = "time-outline";
+    } else if (isFailedTermination) {
+      title = "Échec de suppression";
+      description = "La suppression de votre carte a échoué. Veuillez contacter le support.";
+      iconColor = "#EF4444";
+      bgColor = "bg-red-100";
+      icon = "alert-circle-outline";
+    }
+
     return (
       <View className="flex-1 bg-white">
         <SafeAreaView className="bg-[#7ddd7d] rounded-b-2xl">
           <StatusBar backgroundColor="#7ddd7d" barStyle="light-content" />
           <View className="flex-row items-center justify-between px-4 py-3 bg-[#7ddd7d] rounded-b-2xl">
             <TouchableOpacity
-              onPress={() => navigation.reset({
-                index: 0,
-                routes: [{ name: "MainTabs" }],
-              })}
+              onPress={() => {
+                if (navigation && navigation.reset) {
+                  navigation.reset({
+                    index: 0,
+                    routes: [{ name: "MainTabs" }],
+                  });
+                }
+              }}
               className="p-1"
             >
               <AntDesign name="left" size={24} color="white" />
             </TouchableOpacity>
             <Text className="text-2xl font-bold text-white text-center flex-1">
-              {t('manageVirtualCard.cardDeleted') || "Carte supprimée"}
+              {title}
             </Text>
-            <TouchableOpacity onPress={() => navigation.openDrawer()} className="p-1">
+            <TouchableOpacity 
+              onPress={() => {
+                if (navigation && navigation.openDrawer) {
+                  navigation.openDrawer();
+                }
+              }} 
+              className="p-1"
+            >
               <Ionicons name="menu-outline" size={28} color="#fff" />
             </TouchableOpacity>
           </View>
@@ -493,17 +518,16 @@ const ManageVirtualCard = () => {
 
         <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
           <View className="px-4 pt-8">
-            {/* Terminated Card Visual */}
+            {/* Card Visual */}
             <View className="items-center mb-8">
-              <View className="w-32 h-32 bg-red-100 rounded-full items-center justify-center mb-4">
-                <Ionicons name="card-outline" size={60} color="#EF4444" />
+              <View className={`w-32 h-32 ${bgColor} rounded-full items-center justify-center mb-4`}>
+                <Ionicons name={icon} size={60} color={iconColor} />
               </View>
               <Text className="text-3xl font-bold text-gray-800 text-center mb-2">
-                {t('manageVirtualCard.cardDeleted') || "Carte supprimée"}
+                {title}
               </Text>
               <Text className="text-base text-gray-600 text-center px-4 mb-6">
-                {t('manageVirtualCard.terminatedDescription') || 
-                  "Votre carte virtuelle a été supprimée. Vous pouvez en créer une nouvelle pour continuer à utiliser les services de carte virtuelle."}
+                {description}
               </Text>
             </View>
 
@@ -514,33 +538,51 @@ const ManageVirtualCard = () => {
                   <Ionicons name="information-outline" size={20} color="#F59E0B" />
                 </View>
                 <Text className="text-lg font-semibold text-gray-800">
-                  {t('manageVirtualCard.whyDeleted') || "Pourquoi ma carte a-t-elle été supprimée ?"}
+                  {isInTermination 
+                    ? "Que se passe-t-il ?"
+                    : "Pourquoi ma carte a-t-elle été supprimée ?"}
                 </Text>
               </View>
               <Text className="text-gray-600 ml-11">
-                {t('manageVirtualCard.terminatedReasons') || 
-                  "Une carte peut être supprimée pour plusieurs raisons : trop de tentatives de paiement échouées, demande de votre part, ou expiration de la carte."}
+                {isInTermination
+                  ? "Votre carte est en train d'être supprimée. Vous ne pourrez plus l'utiliser une fois le processus terminé."
+                  : "Une carte peut être supprimée pour plusieurs raisons : trop de tentatives de paiement échouées, demande de votre part, ou expiration de la carte."}
               </Text>
             </View>
 
-            {/* Action Buttons */}
-            <View className="px-4 pb-8">
-              <TouchableOpacity
-                className="bg-[#7ddd7d] py-5 px-6 rounded-xl mb-4 shadow-lg flex-row items-center justify-center"
-                onPress={() => navigation.navigate("CreateVirtualCard")}
-                activeOpacity={0.8}
-              >
-                <Ionicons name="add-circle-outline" size={24} color="white" style={{ marginRight: 10 }} />
-                <Text className="text-white font-bold text-lg text-center">
-                  {t('manageVirtualCard.createNewCard') || "CRÉER UNE NOUVELLE CARTE"}
+            {/* Loading indicator for in-termination */}
+            {isInTermination &&  (
+              <View className="items-center py-4 mb-4">
+                <ActivityIndicator size="large" color="#7ddd7d" />
+                <Text className="text-gray-600 mt-2">
+                  Traitement en cours...
                 </Text>
-              </TouchableOpacity>
+              </View>
+            )}
 
+            {/* Action Buttons - Only show create button for fully terminated, not for in-termination */}
+            {!isInTermination && isFailedTermination && (
+              <View className="px-4 pb-8">
+                <TouchableOpacity
+                  className="bg-[#7ddd7d] py-5 px-6 rounded-xl mb-4 shadow-lg flex-row items-center justify-center"
+                  onPress={() => {
+                    if (navigation && navigation.navigate) {
+                      navigation.navigate("CreateVirtualCard");
+                    }
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons name="add-circle-outline" size={24} color="white" style={{ marginRight: 10 }} />
+                  <Text className="text-white font-bold text-lg text-center">
+                    CRÉER UNE NOUVELLE CARTE
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
 
-              <Text className="text-xs text-gray-400 text-center mt-6">
-                {t('manageVirtualCard.needHelp') || "Besoin d'aide ? Contactez notre support"}
-              </Text>
-            </View>
+            <Text className="text-xs text-gray-400 text-center mt-6">
+              Besoin d'aide ? Contactez notre support
+            </Text>
           </View>
         </ScrollView>
       </View>
@@ -634,7 +676,7 @@ const ManageVirtualCard = () => {
           </View>
 
           {/* Rejection Attempts */}
-          {!isCardTerminated && rejectionAttempts > 0 && (
+          {!isCardInTermination && rejectionAttempts > 0 && (
             <View className="mb-1 mt-2">
               <View className="flex-row space-x-1 mb-2">
                 {[...Array(limit)].map((_, index) => (
@@ -688,7 +730,7 @@ const ManageVirtualCard = () => {
           )}
 
           {/* Action Buttons */}
-          {!isCardTerminated && profileCardStatus !== CARD_STATUS.BLOCKED && (
+          {!isCardInTermination && profileCardStatus !== CARD_STATUS.BLOCKED && (
             <View className="flex flex-row justify-between mt-1">
               <TouchableOpacity
                 className="flex flex-1 bg-gray-100 mx-1 py-1 px-4 rounded-xl flex-col items-center justify-center"
@@ -744,7 +786,7 @@ const ManageVirtualCard = () => {
           )}
 
           {/* Balance + Actions */}
-          {!isCardTerminated && profileCardStatus !== CARD_STATUS.BLOCKED && (
+          {!isCardInTermination && profileCardStatus !== CARD_STATUS.BLOCKED && (
             <>
               <View className="mt-4 bg-gray-100 rounded-xl p-4">
                 <View className="flex-row items-center justify-between">
@@ -831,7 +873,7 @@ const ManageVirtualCard = () => {
           )}
 
           {/* Transactions */}
-          {!isCardTerminated && (
+          {!isCardInTermination && (
             <View className="mt-2 mb-2">
               <View className="flex-row justify-between items-center mb-2">
                 <Text className="font-bold text-gray-700">{t('manageVirtualCard.history')}</Text>

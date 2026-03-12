@@ -57,7 +57,7 @@ const OnboardingCardScreen = () => {
 
    //console.log("card request:", JSON.stringify(cardRequest, null, 2));
  
-  const status = cardRequest?.data?.onboardingSession?.onboardingSessionStatus;
+  const status = cardRequest?.data?.sendoStatus;
     //console.log("card request:", JSON.stringify(status, null, 2));
   const [requestDate, setRequestDate] = useState(null);
   const [remainingTime, setRemainingTime] = useState(null);
@@ -152,7 +152,7 @@ const OnboardingCardScreen = () => {
         navigation.replace("CreateVirtualCard");
       }, 100);
     } else if (
-      ["ACTIVE", "PRE_ACTIVE", "FROZEN", "BLOCKED", "SUSPENDED", "TERMINATED", "IN_TERMINATION"].includes(finalStatus)
+      ["ACTIVE", "PRE_ACTIVE", "FROZEN", "BLOCKED", "SUSPENDED", "TERMINATED", "IN_TERMINATION", "FAILED_TERMINATION"].includes(finalStatus)
     ) {
       // User already has a card → manage it
       setTimeout(() => {
@@ -450,7 +450,7 @@ const OnboardingCardScreen = () => {
             <ActivityIndicator color="#fff" />
           ) : (
             <Text style={styles.buttonText}>
-              {status === 'REFUSED_TIMEOUT' 
+              {status === 'REFUSED_TIMEOUT' || status === 'REFUSED_SENDO' || status === 'REFUSED'
                 ? t('onboardingCard.button.retry')
                 : ['PENDING', 'WAITING_FOR_INFORMATION'].includes(status)
                 ? t('onboardingCard.button.pending')
