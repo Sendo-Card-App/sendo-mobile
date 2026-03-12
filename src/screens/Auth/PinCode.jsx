@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import { StatusBar, Platform, View, Text, ScrollView, TouchableOpacity, Image, TextInput , Alert, Linking } from 'react-native';
+import { StatusBar, Platform, View, Text, ScrollView, TouchableOpacity, Image, TextInput ,ActivityIndicator, Alert, Linking } from 'react-native';
 import { SafeAreaView } from "react-native-safe-area-context";
 import Modal from 'react-native-modal';
 import { useCreatePasscodeMutation } from '../../services/Auth/authAPI';
@@ -75,6 +75,7 @@ const PinCode = ({ navigation, route }) => {
     
     setInitialPinStatus();
   }, []);
+  
 
   useEffect(() => {
     const intervalId = setInterval(async () => {
