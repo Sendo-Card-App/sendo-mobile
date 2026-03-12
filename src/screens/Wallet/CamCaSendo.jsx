@@ -81,8 +81,8 @@ const CamCaSendo = ({ navigation }) => {
     return configItem ? configItem.value : null;
   };
 
-  const SENDO_VALUE_CAD_CAM_CA = getConfigValue('SENDO_VALUE_CAD_CAM_CA');
-  const exchangeRate = SENDO_VALUE_CAD_CAM_CA ? parseFloat(SENDO_VALUE_CAD_CAM_CA) : 450; 
+  const SENDO_VALUE_CAD_CA_CAM = getConfigValue('SENDO_VALUE_CAD_CA_CAM');
+  const exchangeRate = SENDO_VALUE_CAD_CA_CAM ? parseFloat(SENDO_VALUE_CAD_CA_CAM) : 450; 
   
   const TRANSFER_CAM_CA_AVAILABILITY = getConfigValue("TRANSFER_CAM_CA_AVAILABILITY");
   
@@ -554,7 +554,7 @@ const CamCaSendo = ({ navigation }) => {
                   </Text>
                   <Text style={styles.convertedTotal}>
                     {isCameroon ? 
-                      formatCurrency(conversion.totalCAD, 'CAD') : 
+                      formatCurrency(conversion.amountCAD, 'CAD') : 
                       formatCurrency(conversion.amountXAF, 'FCFA')
                     }
                   </Text>
@@ -738,8 +738,8 @@ const CamCaSendo = ({ navigation }) => {
                     <Text style={styles.summaryLabel}>Montant reçu:</Text>
                     <Text style={styles.summaryValue}>
                       {isCameroon ? 
-                        formatCurrency(conversion.totalCAD, 'CAD') : 
-                        formatCurrency(conversion.totalXAF, 'FCFA')
+                        formatCurrency(conversion.amountCAD, 'CAD') : 
+                        formatCurrency(conversion.amountXAF, 'FCFA')
                       }
                     </Text>
                   </View>

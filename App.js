@@ -290,7 +290,7 @@ function ManageVirtualCardWrapper() {
 
   // Render OnboardingCard conditionally instead of navigating
   if (isCardMissingOrEmpty || (status !== 'ACTIVE' && status !== 'PRE_ACTIVE' && status !== 'FROZEN'
-     && status !== 'BLOCKED' && status !== 'SUPENDED' && status !== 'TERMINATED' && status !== 'IN_TERMINATION')) {
+     && status !== 'BLOCKED' && status !== 'SUPENDED' && status !== 'TERMINATED' && status !== 'IN_TERMINATION'  && status !== 'FAILED_TERMINATION')) {
     return <OnboardingCard />;
   }
 
